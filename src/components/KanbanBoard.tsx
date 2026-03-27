@@ -148,7 +148,7 @@ export function KanbanBoard() {
               )}
               {!swimlane.collapsed && (
                 <SortableContext items={columns.map(c => `sortable-col-${c.id}`)} strategy={horizontalListSortingStrategy}>
-                  <div className="flex gap-4">
+                  <div className="flex gap-3">
                     {columns.map(col => (
                       <SortableColumn key={`${col.id}-${swimlane.id}`} column={col}>
                         {(dragHandleProps) => (
@@ -165,7 +165,7 @@ export function KanbanBoard() {
 
                     {/* Add another list */}
                     {swimlane.id === swimlanes[0]?.id && (
-                      <div className="shrink-0 w-72">
+                      <div className="shrink-0 w-64">
                         {showAddColumn ? (
                           <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-3">
                             <input

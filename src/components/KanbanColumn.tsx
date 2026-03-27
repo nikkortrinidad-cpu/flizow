@@ -43,7 +43,7 @@ export function KanbanColumn({ column, cards, swimlaneId, onCardClick, dragHandl
   };
 
   return (
-    <div className="flex-shrink-0 w-72 rounded-xl overflow-hidden" style={{ backgroundColor: `${column.color}10` }}>
+    <div className="flex-shrink-0 w-64 rounded-xl overflow-hidden" style={{ backgroundColor: `${column.color}10` }}>
       <div className="h-1.5 w-full" style={{ backgroundColor: column.color }} />
       <div className="flex items-center justify-between py-2.5 px-3">
         <div className="flex items-center gap-2">
