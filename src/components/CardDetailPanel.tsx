@@ -122,6 +122,16 @@ export function CardDetailPanel({ card, onClose }: Props) {
   };
 
 
+  const descriptionDirty = description !== card.description;
+
+  const handleSaveDescription = () => {
+    store.updateCard(card.id, { description });
+  };
+
+  const handleCancelDescription = () => {
+    setDescription(card.description);
+  };
+
   const column = state.columns.find(c => c.id === card.columnId);
   const activities = state.activityLog.filter(a => a.cardId === card.id).slice(0, 20);
 
@@ -665,6 +675,22 @@ export function CardDetailPanel({ card, onClose }: Props) {
                   {hasUnsavedChanges ? 'Unsaved changes' : 'All changes saved'}
                 </div>
               }
+              footerLeft={descriptionDirty ? (
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={handleSaveDescription}
+                    className="text-xs bg-primary text-white px-3 py-1 rounded-lg hover:bg-primary-dark transition font-medium"
+                  >
+                    Save
+                  </button>
+                  <button
+                    onClick={handleCancelDescription}
+                    className="text-xs text-slate-500 dark:text-slate-400 px-3 py-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition font-medium"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              ) : undefined}
             />
 
             {/* Progress bar section */}

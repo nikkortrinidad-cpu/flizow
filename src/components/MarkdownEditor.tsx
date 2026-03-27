@@ -13,6 +13,7 @@ interface Props {
   maxLength: number;
   placeholder?: string;
   headerRight?: React.ReactNode;
+  footerLeft?: React.ReactNode;
 }
 
 // Configure marked for converting legacy markdown content
@@ -26,7 +27,7 @@ function markdownToHtml(md: string): string {
   return DOMPurify.sanitize(raw);
 }
 
-export function MarkdownEditor({ value, onChange, maxLength, placeholder, headerRight }: Props) {
+export function MarkdownEditor({ value, onChange, maxLength, placeholder, headerRight, footerLeft }: Props) {
   const [showHeadingMenu, setShowHeadingMenu] = useState(false);
   const headingMenuRef = useRef<HTMLDivElement>(null);
   const isInternalUpdate = useRef(false);
@@ -289,7 +290,8 @@ export function MarkdownEditor({ value, onChange, maxLength, placeholder, header
           </div>
         </div>
 
-      <div className="flex justify-end mt-1 ml-5">
+      <div className="flex items-center justify-between mt-1 ml-5">
+        <div>{footerLeft}</div>
         <span className={`text-[11px] ${
           charCount >= maxLength ? 'text-red-500 font-medium' :
           charCount >= maxLength * 0.9 ? 'text-yellow-500' :
