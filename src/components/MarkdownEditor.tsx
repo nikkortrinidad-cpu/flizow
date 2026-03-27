@@ -1,14 +1,11 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
+import { useEditor, EditorContent } from '@tiptap/react';
+import StarterKit from '@tiptap/starter-kit';
+import Link from '@tiptap/extension-link';
+import Image from '@tiptap/extension-image';
+import Placeholder from '@tiptap/extension-placeholder';
 import { marked } from 'marked';
 import DOMPurify from 'dompurify';
-import {
-  wrapSelection,
-  insertAtLineStart,
-  insertLink,
-  insertImage,
-  setHeading,
-  type InsertResult,
-} from '../utils/markdownInsert';
 
 interface Props {
   value: string;
@@ -17,24 +14,82 @@ interface Props {
   placeholder?: string;
 }
 
-// Configure marked for safety
-marked.setOptions({
-  breaks: true,
-  gfm: true,
-});
+// Configure marked for converting legacy markdown content
+marked.setOptions({ breaks: true, gfm: true });
 
-function renderMarkdown(md: string): string {
+function markdownToHtml(md: string): string {
+  // If content already looks like HTML, return as-is
+  if (md.startsWith('<') && (md.includes('</p>') || md.includes('</h'))) return md;
   const raw = marked.parse(md);
   if (typeof raw !== 'string') return '';
   return DOMPurify.sanitize(raw);
 }
 
 export function MarkdownEditor({ value, onChange, maxLength, placeholder }: Props) {
-  const [mode, setMode] = useState<'edit' | 'preview'>('edit');
   const [showHeadingMenu, setShowHeadingMenu] = useState(false);
+  const [showSource, setShowSource] = useState(false);
   const headingMenuRef = useRef<HTMLDivElement>(null);
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const pendingCursor = useRef<{ start: number; end: number } | null>(null);
+  const isInternalUpdate = useRef(false);
+
+  const editor = useEditor({
+    extensions: [
+      StarterKit.configure({
+        heading: { levels: [1, 2, 3, 4, 5] },
+      }),
+      Link.configure({
+        openOnClick: false,
+        HTMLAttributes: { class: 'text-primary underline hover:text-primary-dark' },
+      }),
+      Image.configure({
+        HTMLAttributes: { class: 'max-w-full rounded-lg my-2' },
+      }),
+      Placeholder.configure({
+        placeholder: placeholder || 'Add a description...',
+      }),
+    ],
+    content: value ? markdownToHtml(value) : '',
+    editorProps: {
+      attributes: {
+        class: 'outline-none min-h-[120px] p-3 text-sm text-slate-600 dark:text-slate-300 prose-editor',
+      },
+      handleKeyDown: (_view, event) => {
+        const mod = event.metaKey || event.ctrlKey;
+        if (mod && event.altKey && event.key >= '0' && event.key <= '5') {
+          event.preventDefault();
+          const level = parseInt(event.key);
+          if (level === 0) {
+            editor?.chain().focus().setParagraph().run();
+          } else {
+            editor?.chain().focus().toggleHeading({ level: level as 1|2|3|4|5 }).run();
+          }
+          return true;
+        }
+        return false;
+      },
+    },
+    onUpdate: ({ editor: ed }) => {
+      const textLen = ed.getText().length;
+      if (textLen > maxLength) {
+        // Truncate by reverting
+        ed.commands.undo();
+        return;
+      }
+      isInternalUpdate.current = true;
+      const html = ed.getHTML();
+      onChange(html === '<p></p>' ? '' : html);
+    },
+  });
+
+  // Sync external value changes (only if not from our own update)
+  useEffect(() => {
+    if (isInternalUpdate.current) {
+      isInternalUpdate.current = false;
+      return;
+    }
+    if (editor && value !== editor.getHTML()) {
+      editor.commands.setContent(value ? markdownToHtml(value) : '');
+    }
+  }, [value, editor]);
 
   // Close heading dropdown on outside click
   useEffect(() => {
@@ -48,185 +103,58 @@ export function MarkdownEditor({ value, onChange, maxLength, placeholder }: Prop
     return () => document.removeEventListener('mousedown', handleClick);
   }, [showHeadingMenu]);
 
-  // Restore cursor after React re-render
-  useEffect(() => {
-    if (pendingCursor.current && textareaRef.current) {
-      const { start, end } = pendingCursor.current;
-      textareaRef.current.setSelectionRange(start, end);
-      textareaRef.current.focus();
-      pendingCursor.current = null;
-    }
-  }, [value]);
-
-  const applyInsert = useCallback((result: InsertResult) => {
-    if (result.newValue.length > maxLength) return;
-    onChange(result.newValue);
-    pendingCursor.current = { start: result.selectionStart, end: result.selectionEnd };
-  }, [onChange, maxLength]);
-
-  const getSelection = () => {
-    const ta = textareaRef.current;
-    if (!ta) return { start: 0, end: 0 };
-    return { start: ta.selectionStart, end: ta.selectionEnd };
-  };
-
-  const handleBold = () => {
-    const { start, end } = getSelection();
-    applyInsert(wrapSelection(value, start, end, '**', '**'));
-  };
-
-  const handleItalic = () => {
-    const { start, end } = getSelection();
-    applyInsert(wrapSelection(value, start, end, '_', '_'));
-  };
-
-  const handleStrikethrough = () => {
-    const { start, end } = getSelection();
-    applyInsert(wrapSelection(value, start, end, '~~', '~~'));
-  };
-
-  const handleCode = () => {
-    const { start, end } = getSelection();
-    const selected = value.slice(start, end);
-    if (selected.includes('\n')) {
-      applyInsert(wrapSelection(value, start, end, '```\n', '\n```'));
+  const handleHeading = useCallback((level: number) => {
+    if (!editor) return;
+    if (level === 0) {
+      editor.chain().focus().setParagraph().run();
     } else {
-      applyInsert(wrapSelection(value, start, end, '`', '`'));
+      editor.chain().focus().toggleHeading({ level: level as 1|2|3|4|5 }).run();
     }
-  };
-
-  const handleHeading = (level: number) => {
-    const { start } = getSelection();
-    applyInsert(setHeading(value, start, level));
     setShowHeadingMenu(false);
-  };
+  }, [editor]);
 
-  const handleUnorderedList = () => {
-    const { start, end } = getSelection();
-    applyInsert(insertAtLineStart(value, start, end, '- '));
-  };
-
-  const handleOrderedList = () => {
-    const { start, end } = getSelection();
-    applyInsert(insertAtLineStart(value, start, end, (i) => `${i + 1}. `));
-  };
-
-  const handleLink = () => {
-    const { start, end } = getSelection();
-    applyInsert(insertLink(value, start, end));
-  };
-
-  const handleImage = () => {
-    const { start, end } = getSelection();
-    applyInsert(insertImage(value, start, end));
-  };
-
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    const mod = e.metaKey || e.ctrlKey;
-    if (mod && e.key === 'b') { e.preventDefault(); handleBold(); }
-    if (mod && e.key === 'i') { e.preventDefault(); handleItalic(); }
-    if (mod && e.key === 'k') { e.preventDefault(); handleLink(); }
-    // Alt+Cmd/Ctrl+0-5 for headings
-    if (mod && e.altKey && e.key >= '0' && e.key <= '5') {
-      e.preventDefault();
-      handleHeading(parseInt(e.key));
+  const handleLink = useCallback(() => {
+    if (!editor) return;
+    const url = prompt('Enter URL:');
+    if (url) {
+      editor.chain().focus().setLink({ href: url }).run();
     }
-  };
+  }, [editor]);
+
+  const handleImage = useCallback(() => {
+    if (!editor) return;
+    const url = prompt('Enter image URL:');
+    if (url) {
+      editor.chain().focus().setImage({ src: url }).run();
+    }
+  }, [editor]);
 
   const isMac = typeof navigator !== 'undefined' && /Mac/.test(navigator.platform);
   const headingShortcut = (n: number) => isMac ? `\u2325\u2318${n}` : `Ctrl+Alt+${n}`;
 
-  const tools: { label: string; icon: React.ReactNode; action: () => void; title: string }[] = [
-    {
-      label: 'B',
-      icon: <span className="text-[11px] font-bold leading-none">B</span>,
-      action: handleBold,
-      title: 'Bold (Ctrl+B)',
-    },
-    {
-      label: 'I',
-      icon: <span className="text-[11px] font-bold italic leading-none">I</span>,
-      action: handleItalic,
-      title: 'Italic (Ctrl+I)',
-    },
-    {
-      label: 'S',
-      icon: <span className="text-[11px] font-bold line-through leading-none">S</span>,
-      action: handleStrikethrough,
-      title: 'Strikethrough',
-    },
-    {
-      label: 'code',
-      icon: (
-        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
-        </svg>
-      ),
-      action: handleCode,
-      title: 'Code',
-    },
-    { label: 'sep', icon: null, action: () => {}, title: '' },
-    {
-      label: 'ul',
-      icon: (
-        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-          <circle cx="1" cy="6" r="1" fill="currentColor" />
-          <circle cx="1" cy="12" r="1" fill="currentColor" />
-          <circle cx="1" cy="18" r="1" fill="currentColor" />
-        </svg>
-      ),
-      action: handleUnorderedList,
-      title: 'Bullet List',
-    },
-    {
-      label: 'ol',
-      icon: (
-        <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 6h13M8 12h13M8 18h13" />
-          <text x="1" y="8" fontSize="7" fill="currentColor" stroke="none" fontFamily="sans-serif">1</text>
-          <text x="1" y="14" fontSize="7" fill="currentColor" stroke="none" fontFamily="sans-serif">2</text>
-          <text x="1" y="20" fontSize="7" fill="currentColor" stroke="none" fontFamily="sans-serif">3</text>
-        </svg>
-      ),
-      action: handleOrderedList,
-      title: 'Numbered List',
-    },
-    { label: 'sep2', icon: null, action: () => {}, title: '' },
-    {
-      label: 'link',
-      icon: (
-        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
-        </svg>
-      ),
-      action: handleLink,
-      title: 'Insert Link (Ctrl+K)',
-    },
-    {
-      label: 'image',
-      icon: (
-        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-        </svg>
-      ),
-      action: handleImage,
-      title: 'Insert Image',
-    },
-  ];
+  const charCount = editor ? editor.getText().length : 0;
+
+  const toolBtn = (active: boolean) =>
+    `w-6 h-6 flex items-center justify-center rounded transition ${
+      active
+        ? 'bg-primary/15 text-primary'
+        : 'text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-600 hover:text-slate-700 dark:hover:text-slate-200'
+    }`;
+
+  if (!editor) return null;
 
   return (
     <div>
       <div className="flex items-center justify-between mb-1">
         <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">Description</label>
         <button
-          onClick={() => setMode(mode === 'edit' ? 'preview' : 'edit')}
+          onClick={() => setShowSource(!showSource)}
           className="text-[10px] text-primary hover:text-primary-dark font-medium transition">
-          {mode === 'edit' ? 'Preview' : 'Edit'}
+          {showSource ? 'Editor' : 'View Source'}
         </button>
       </div>
 
-      {mode === 'edit' && (
+      {!showSource ? (
         <>
           <div className="flex items-center gap-0.5 border border-slate-200 dark:border-slate-600 border-b-0 rounded-t-lg bg-slate-50 dark:bg-slate-700 px-1.5 py-1">
             {/* Heading dropdown */}
@@ -264,47 +192,103 @@ export function MarkdownEditor({ value, onChange, maxLength, placeholder }: Prop
               )}
             </div>
             <div className="w-px h-4 bg-slate-200 dark:bg-slate-600 mx-1" />
-            {tools.map(tool =>
-              tool.icon === null ? (
-                <div key={tool.label} className="w-px h-4 bg-slate-200 dark:bg-slate-600 mx-1" />
-              ) : (
-                <button
-                  key={tool.label}
-                  onClick={(e) => { e.preventDefault(); tool.action(); }}
-                  title={tool.title}
-                  className="w-6 h-6 flex items-center justify-center rounded text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-600 hover:text-slate-700 dark:hover:text-slate-200 transition"
-                >
-                  {tool.icon}
-                </button>
-              )
-            )}
-          </div>
-          <textarea
-            ref={textareaRef}
-            value={value}
-            onChange={e => { if (e.target.value.length <= maxLength) onChange(e.target.value); }}
-            onKeyDown={handleKeyDown}
-            maxLength={maxLength}
-            placeholder={placeholder || 'Add a description...'}
-            className="w-full min-h-[120px] text-sm text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-600 rounded-b-lg p-3 outline-none focus:border-primary resize-none bg-white dark:bg-slate-700 font-mono"
-          />
-        </>
-      )}
 
-      {mode === 'preview' && (
-        <div
-          className="markdown-preview w-full min-h-[120px] text-sm text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-600 rounded-lg p-3 bg-white dark:bg-slate-700 overflow-auto"
-          dangerouslySetInnerHTML={{ __html: renderMarkdown(value) || '<span class="text-slate-400 dark:text-slate-500 italic">Nothing to preview</span>' }}
+            {/* Bold */}
+            <button onClick={() => editor.chain().focus().toggleBold().run()}
+              title={`Bold (${isMac ? '\u2318' : 'Ctrl+'}B)`}
+              className={toolBtn(editor.isActive('bold'))}>
+              <span className="text-[11px] font-bold leading-none">B</span>
+            </button>
+
+            {/* Italic */}
+            <button onClick={() => editor.chain().focus().toggleItalic().run()}
+              title={`Italic (${isMac ? '\u2318' : 'Ctrl+'}I)`}
+              className={toolBtn(editor.isActive('italic'))}>
+              <span className="text-[11px] font-bold italic leading-none">I</span>
+            </button>
+
+            {/* Strikethrough */}
+            <button onClick={() => editor.chain().focus().toggleStrike().run()}
+              title="Strikethrough"
+              className={toolBtn(editor.isActive('strike'))}>
+              <span className="text-[11px] font-bold line-through leading-none">S</span>
+            </button>
+
+            {/* Code */}
+            <button onClick={() => editor.chain().focus().toggleCode().run()}
+              title="Inline Code"
+              className={toolBtn(editor.isActive('code'))}>
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+              </svg>
+            </button>
+
+            <div className="w-px h-4 bg-slate-200 dark:bg-slate-600 mx-1" />
+
+            {/* Bullet List */}
+            <button onClick={() => editor.chain().focus().toggleBulletList().run()}
+              title="Bullet List"
+              className={toolBtn(editor.isActive('bulletList'))}>
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                <circle cx="1" cy="6" r="1" fill="currentColor" />
+                <circle cx="1" cy="12" r="1" fill="currentColor" />
+                <circle cx="1" cy="18" r="1" fill="currentColor" />
+              </svg>
+            </button>
+
+            {/* Ordered List */}
+            <button onClick={() => editor.chain().focus().toggleOrderedList().run()}
+              title="Numbered List"
+              className={toolBtn(editor.isActive('orderedList'))}>
+              <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 6h13M8 12h13M8 18h13" />
+                <text x="1" y="8" fontSize="7" fill="currentColor" stroke="none" fontFamily="sans-serif">1</text>
+                <text x="1" y="14" fontSize="7" fill="currentColor" stroke="none" fontFamily="sans-serif">2</text>
+                <text x="1" y="20" fontSize="7" fill="currentColor" stroke="none" fontFamily="sans-serif">3</text>
+              </svg>
+            </button>
+
+            <div className="w-px h-4 bg-slate-200 dark:bg-slate-600 mx-1" />
+
+            {/* Link */}
+            <button onClick={handleLink}
+              title={`Insert Link (${isMac ? '\u2318' : 'Ctrl+'}K)`}
+              className={toolBtn(editor.isActive('link'))}>
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+              </svg>
+            </button>
+
+            {/* Image */}
+            <button onClick={handleImage}
+              title="Insert Image"
+              className={toolBtn(false)}>
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
+            </button>
+          </div>
+
+          <div className="border border-slate-200 dark:border-slate-600 rounded-b-lg bg-white dark:bg-slate-700 overflow-hidden">
+            <EditorContent editor={editor} />
+          </div>
+        </>
+      ) : (
+        <textarea
+          value={value}
+          readOnly
+          className="w-full min-h-[120px] text-sm text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-600 rounded-lg p-3 outline-none bg-slate-50 dark:bg-slate-700 font-mono resize-none"
         />
       )}
 
       <div className="flex justify-end mt-1">
         <span className={`text-[11px] ${
-          value.length >= maxLength ? 'text-red-500 font-medium' :
-          value.length >= maxLength * 0.9 ? 'text-yellow-500' :
+          charCount >= maxLength ? 'text-red-500 font-medium' :
+          charCount >= maxLength * 0.9 ? 'text-yellow-500' :
           'text-slate-400'
         }`}>
-          {value.length}/{maxLength}
+          {charCount}/{maxLength}
         </span>
       </div>
     </div>
