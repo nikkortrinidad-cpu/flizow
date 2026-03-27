@@ -892,7 +892,7 @@ export function CardDetailPanel({ card, onClose }: Props) {
                       <p className="text-[10px] mt-0.5">Start the conversation below</p>
                     </div>
                   ) : (
-                    [...card.comments].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).map((c, i, arr) => {
+                    [...card.comments].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).map((c) => {
                       const author = state.members.find(m => m.id === c.authorId);
                       const totalReplies = countAllReplies(c.replies || []);
                       const isCollapsed = collapsedComments.has(c.id);
