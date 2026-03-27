@@ -1,4 +1,6 @@
 import { v4 as uuid } from 'uuid';
+import { doc, setDoc, onSnapshot, type Unsubscribe } from 'firebase/firestore';
+import { db } from '../lib/firebase';
 import type {
   BoardState, Card, Column, Swimlane, Label, TeamMember,
   Notification, FilterState, Priority, Comment, ChecklistItem
@@ -42,14 +44,12 @@ function loadState(): BoardState {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (raw) {
       const parsed = JSON.parse(raw);
-      // Ensure savedColors exists for older stored states
       if (!parsed.savedColors) {
         parsed.savedColors = ['#ef4444', '#f97316', '#f59e0b', '#10b981', '#3b82f6', '#6366f1', '#8b5cf6', '#ec4899'];
       }
       if (!parsed.theme) {
         parsed.theme = 'light';
       }
-      // Ensure checklist and startDate exist for older stored cards
       if (parsed.cards) {
         parsed.cards.forEach((c: Card) => {
           if (!c.checklist) c.checklist = [];
@@ -65,20 +65,120 @@ function loadState(): BoardState {
   return createDefaultState();
 }
 
+function migrateState(parsed: any): BoardState {
+  if (!parsed.savedColors) {
+    parsed.savedColors = ['#ef4444', '#f97316', '#f59e0b', '#10b981', '#3b82f6', '#6366f1', '#8b5cf6', '#ec4899'];
+  }
+  if (!parsed.theme) parsed.theme = 'light';
+  if (!parsed.columns) parsed.columns = [];
+  if (!parsed.swimlanes) parsed.swimlanes = [];
+  if (!parsed.cards) parsed.cards = [];
+  if (!parsed.labels) parsed.labels = [];
+  if (!parsed.members) parsed.members = [];
+  if (!parsed.notifications) parsed.notifications = [];
+  if (!parsed.activityLog) parsed.activityLog = [];
+  if (!parsed.filters) parsed.filters = { search: '', assigneeIds: [], labelIds: [], priorities: [], dueDateRange: { from: null, to: null } };
+
+  parsed.cards.forEach((c: Card) => {
+    if (!c.checklist) c.checklist = [];
+    c.checklist.forEach((item: any) => {
+      if (item.assigneeId === undefined) item.assigneeId = null;
+    });
+    if (c.startDate === undefined) c.startDate = null;
+  });
+  return parsed as BoardState;
+}
+
 type Listener = () => void;
 
 class BoardStore {
   private state: BoardState;
   private listeners: Set<Listener> = new Set();
+  private userId: string | null = null;
+  private firestoreUnsub: Unsubscribe | null = null;
+  private saveTimeout: ReturnType<typeof setTimeout> | null = null;
+  private ignoreNextSnapshot = false;
 
   constructor() {
     this.state = loadState();
+  }
+
+  // --- Firebase sync ---
+  setUser(userId: string | null, displayName?: string, email?: string, photoURL?: string) {
+    // Unsubscribe from previous user's data
+    if (this.firestoreUnsub) {
+      this.firestoreUnsub();
+      this.firestoreUnsub = null;
+    }
+
+    this.userId = userId;
+
+    if (userId) {
+      // Update the first member to reflect the logged-in user
+      if (displayName || email) {
+        const me = this.state.members.find(m => m.id === 'user-1');
+        if (me) {
+          me.name = displayName || me.name;
+          me.email = email || me.email;
+          me.avatar = photoURL || me.avatar;
+        }
+      }
+
+      // Listen for realtime updates from Firestore
+      const docRef = doc(db, 'boards', userId);
+      this.firestoreUnsub = onSnapshot(docRef, (snapshot) => {
+        if (this.ignoreNextSnapshot) {
+          this.ignoreNextSnapshot = false;
+          return;
+        }
+        if (snapshot.exists()) {
+          const data = snapshot.data();
+          if (data && data.boardState) {
+            const cloudState = migrateState(JSON.parse(data.boardState));
+            // Preserve local-only state (filters, theme)
+            cloudState.filters = this.state.filters;
+            cloudState.theme = this.state.theme;
+            this.state = cloudState;
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(this.state));
+            this.listeners.forEach(l => l());
+          }
+        } else {
+          // No cloud data yet — push local data up
+          this.saveToFirestore();
+        }
+      });
+    }
+  }
+
+  private saveToFirestore() {
+    if (!this.userId) return;
+
+    // Debounce Firestore writes to avoid excessive API calls
+    if (this.saveTimeout) clearTimeout(this.saveTimeout);
+    this.saveTimeout = setTimeout(async () => {
+      try {
+        this.ignoreNextSnapshot = true;
+        const docRef = doc(db, 'boards', this.userId!);
+        // Save state without filters (they're local-only)
+        const stateToSave = { ...this.state };
+        stateToSave.filters = { search: '', assigneeIds: [], labelIds: [], priorities: [], dueDateRange: { from: null, to: null } };
+        await setDoc(docRef, {
+          boardState: JSON.stringify(stateToSave),
+          updatedAt: new Date().toISOString(),
+        });
+      } catch (err) {
+        console.error('Failed to save to Firestore:', err);
+        this.ignoreNextSnapshot = false;
+      }
+    }, 1000);
   }
 
   private save() {
     this.state = { ...this.state };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(this.state));
     this.listeners.forEach(l => l());
+    // Also push to Firestore if user is logged in
+    this.saveToFirestore();
   }
 
   subscribe(listener: Listener) {
@@ -179,7 +279,6 @@ class BoardStore {
     card.order = newOrder;
     card.updatedAt = new Date().toISOString();
 
-    // reorder cards in the target column+swimlane
     const siblings = this.state.cards
       .filter(c => c.columnId === toColumnId && c.swimlaneId === toSwimlaneId && c.id !== cardId)
       .sort((a, b) => a.order - b.order);
