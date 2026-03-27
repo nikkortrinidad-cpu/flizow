@@ -10,7 +10,7 @@ export function Filters() {
   return (
     <div className="flex items-center gap-3 flex-wrap">
       <div className="relative">
-        <svg className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 dark:text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
         </svg>
         <input
@@ -18,7 +18,7 @@ export function Filters() {
           value={f.search}
           onChange={e => store.setFilters({ search: e.target.value })}
           placeholder="Search cards..."
-          className="pl-8 pr-3 py-1.5 text-sm border border-slate-200 rounded-lg outline-none focus:border-primary w-52 bg-white"
+          className="pl-8 pr-3 py-1.5 text-sm border border-slate-200 dark:border-slate-600 rounded-lg outline-none focus:border-primary w-52 bg-white dark:bg-slate-700 dark:text-slate-100 dark:placeholder:text-slate-400"
         />
       </div>
 
@@ -30,7 +30,7 @@ export function Filters() {
             store.setFilters({ assigneeIds: [...f.assigneeIds, v] });
           }
         }}
-        className="text-xs border border-slate-200 rounded-lg px-2 py-1.5 outline-none bg-white text-slate-600"
+        className="text-xs border border-slate-200 dark:border-slate-600 rounded-lg px-2 py-1.5 outline-none bg-white dark:bg-slate-700 text-slate-600 dark:text-slate-300"
       >
         <option value="">Assignee</option>
         {state.members.map(m => (
@@ -46,7 +46,7 @@ export function Filters() {
             store.setFilters({ priorities: [...f.priorities, v] });
           }
         }}
-        className="text-xs border border-slate-200 rounded-lg px-2 py-1.5 outline-none bg-white text-slate-600"
+        className="text-xs border border-slate-200 dark:border-slate-600 rounded-lg px-2 py-1.5 outline-none bg-white dark:bg-slate-700 text-slate-600 dark:text-slate-300"
       >
         <option value="">Priority</option>
         <option value="low">Low</option>
@@ -63,7 +63,7 @@ export function Filters() {
             store.setFilters({ labelIds: [...f.labelIds, v] });
           }
         }}
-        className="text-xs border border-slate-200 rounded-lg px-2 py-1.5 outline-none bg-white text-slate-600"
+        className="text-xs border border-slate-200 dark:border-slate-600 rounded-lg px-2 py-1.5 outline-none bg-white dark:bg-slate-700 text-slate-600 dark:text-slate-300"
       >
         <option value="">Label</option>
         {state.labels.map(l => (
@@ -86,7 +86,7 @@ export function Filters() {
           {f.priorities.map(p => (
             <span key={p}
               onClick={() => store.setFilters({ priorities: f.priorities.filter(pr => pr !== p) })}
-              className="text-[10px] bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded-full cursor-pointer hover:bg-yellow-200">
+              className="text-[10px] bg-yellow-100 text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-300 px-2 py-0.5 rounded-full cursor-pointer hover:bg-yellow-200 dark:hover:bg-yellow-900/60">
               {p} &times;
             </span>
           ))}

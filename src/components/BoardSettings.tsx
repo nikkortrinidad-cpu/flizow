@@ -21,7 +21,7 @@ function SortableColumnRow({ col, children }: { col: Column; children: React.Rea
   };
   return (
     <div ref={setNodeRef} style={style} {...attributes}
-      className="flex items-center gap-3 bg-slate-50 rounded-lg p-3">
+      className="flex items-center gap-3 bg-slate-50 dark:bg-slate-700 rounded-lg p-3">
       <button {...listeners} className="cursor-grab active:cursor-grabbing text-slate-300 hover:text-slate-500 touch-none">
         <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
           <path d="M7 2a2 2 0 10.001 4.001A2 2 0 007 2zm0 6a2 2 0 10.001 4.001A2 2 0 007 8zm0 6a2 2 0 10.001 4.001A2 2 0 007 14zm6-8a2 2 0 10-.001-4.001A2 2 0 0013 6zm0 2a2 2 0 10.001 4.001A2 2 0 0013 8zm0 6a2 2 0 10.001 4.001A2 2 0 0013 14z" />
@@ -34,7 +34,7 @@ function SortableColumnRow({ col, children }: { col: Column; children: React.Rea
 
 export function BoardSettings({ onClose }: { onClose: () => void }) {
   const { state } = useBoard();
-  const [tab, setTab] = useState<'columns' | 'swimlanes' | 'labels' | 'members'>('columns');
+  const [tab, setTab] = useState<'general' | 'columns' | 'swimlanes' | 'labels' | 'members'>('general');
   const [newName, setNewName] = useState('');
   const [newColor, setNewColor] = useState('#6366f1');
   const [newEmail, setNewEmail] = useState('');
@@ -56,6 +56,7 @@ export function BoardSettings({ onClose }: { onClose: () => void }) {
   };
 
   const tabs = [
+    { id: 'general' as const, label: 'General' },
     { id: 'columns' as const, label: 'Columns' },
     { id: 'swimlanes' as const, label: 'Swimlanes' },
     { id: 'labels' as const, label: 'Labels' },
@@ -77,21 +78,21 @@ export function BoardSettings({ onClose }: { onClose: () => void }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       <div className="absolute inset-0 bg-black/20 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-xl max-h-[80vh] overflow-hidden">
-        <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-slate-800">Board Settings</h2>
-          <button onClick={onClose} className="text-slate-400 hover:text-slate-600 p-1 rounded hover:bg-slate-100 transition">
+      <div className="relative bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-xl max-h-[80vh] overflow-hidden">
+        <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between">
+          <h2 className="text-lg font-semibold text-slate-800 dark:text-slate-100">Board Settings</h2>
+          <button onClick={onClose} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 p-1 rounded hover:bg-slate-100 dark:hover:bg-slate-700 transition">
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
         </div>
 
-        <div className="flex border-b border-slate-100">
+        <div className="flex border-b border-slate-100 dark:border-slate-700">
           {tabs.map(t => (
             <button key={t.id} onClick={() => setTab(t.id)}
               className={`flex-1 text-sm py-2.5 font-medium transition ${
-                tab === t.id ? 'text-primary border-b-2 border-primary' : 'text-slate-400 hover:text-slate-600'
+                tab === t.id ? 'text-primary border-b-2 border-primary' : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'
               }`}>
               {t.label}
             </button>
@@ -99,6 +100,62 @@ export function BoardSettings({ onClose }: { onClose: () => void }) {
         </div>
 
         <div className="p-6 overflow-y-auto max-h-[60vh]">
+          {tab === 'general' && (
+            <div className="space-y-6">
+              <div>
+                <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-200 mb-3">Appearance</h3>
+                <div className="flex items-center justify-between bg-slate-50 dark:bg-slate-700 rounded-lg p-4">
+                  <div>
+                    <p className="text-sm font-medium dark:text-slate-200">Theme</p>
+                    <p className="text-xs text-slate-400 dark:text-slate-400 mt-0.5">Choose light or dark mode</p>
+                  </div>
+                  <div className="flex items-center bg-slate-200 dark:bg-slate-600 rounded-lg p-0.5">
+                    <button
+                      onClick={() => store.setTheme('light')}
+                      className={`flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-md transition ${
+                        state.theme === 'light'
+                          ? 'bg-white text-slate-800 shadow-sm'
+                          : 'text-slate-500 dark:text-slate-300 hover:text-slate-700'
+                      }`}>
+                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+                      </svg>
+                      Light
+                    </button>
+                    <button
+                      onClick={() => store.setTheme('dark')}
+                      className={`flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-md transition ${
+                        state.theme === 'dark'
+                          ? 'bg-slate-800 text-white shadow-sm'
+                          : 'text-slate-500 dark:text-slate-300 hover:text-slate-700'
+                      }`}>
+                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+                      </svg>
+                      Dark
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-200 mb-3">Danger Zone</h3>
+                <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-red-700 dark:text-red-400">Reset Board</p>
+                      <p className="text-xs text-red-500 dark:text-red-400/70 mt-0.5">Delete all data and start fresh</p>
+                    </div>
+                    <button onClick={() => { if (confirm('Are you sure? This will delete ALL cards, columns, and settings.')) { store.resetBoard(); onClose(); } }}
+                      className="text-xs bg-red-500 text-white px-3 py-1.5 rounded-lg hover:bg-red-600 transition font-medium">
+                      Reset
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
           {tab === 'columns' && (
             <DndContext sensors={settingsSensors} collisionDetection={closestCenter} onDragEnd={handleColumnDragEnd}>
               <SortableContext items={sortedColumns.map(c => c.id)} strategy={verticalListSortingStrategy}>
@@ -137,7 +194,7 @@ export function BoardSettings({ onClose }: { onClose: () => void }) {
           {tab === 'swimlanes' && (
             <div className="space-y-2">
               {state.swimlanes.sort((a, b) => a.order - b.order).map(s => (
-                <div key={s.id} className="flex items-center gap-3 bg-slate-50 rounded-lg p-3">
+                <div key={s.id} className="flex items-center gap-3 bg-slate-50 dark:bg-slate-700 rounded-lg p-3">
                   <div className="relative flex-1 group/swimname">
                     <input value={s.title}
                       onChange={e => store.updateSwimlane(s.id, { title: e.target.value })}
@@ -158,7 +215,7 @@ export function BoardSettings({ onClose }: { onClose: () => void }) {
           {tab === 'labels' && (
             <div className="space-y-2">
               {state.labels.map(l => (
-                <div key={l.id} className="flex items-center gap-3 bg-slate-50 rounded-lg p-3">
+                <div key={l.id} className="flex items-center gap-3 bg-slate-50 dark:bg-slate-700 rounded-lg p-3">
                   <div className="w-4 h-4 rounded-full" style={{ backgroundColor: l.color }} />
                   <span className="flex-1 text-sm font-medium">{l.name}</span>
                   <button onClick={() => store.deleteLabel(l.id)}
@@ -173,7 +230,7 @@ export function BoardSettings({ onClose }: { onClose: () => void }) {
           {tab === 'members' && (
             <div className="space-y-2">
               {state.members.map(m => (
-                <div key={m.id} className="flex items-center gap-3 bg-slate-50 rounded-lg p-3">
+                <div key={m.id} className="flex items-center gap-3 bg-slate-50 dark:bg-slate-700 rounded-lg p-3">
                   <div className="w-7 h-7 rounded-full bg-primary/20 text-primary text-xs font-bold flex items-center justify-center">
                     {m.name.charAt(0).toUpperCase()}
                   </div>
@@ -191,33 +248,35 @@ export function BoardSettings({ onClose }: { onClose: () => void }) {
             </div>
           )}
 
-          <div className="mt-4 flex gap-2">
-            <input value={newName} onChange={e => setNewName(e.target.value)}
-              onKeyDown={e => { if (e.key === 'Enter') handleAdd(); }}
-              placeholder={tab === 'members' ? 'Name' : `New ${tab.slice(0, -1)} name`}
-              className="flex-1 text-sm border border-slate-200 rounded-lg px-3 py-2 outline-none focus:border-primary" />
-            {tab === 'labels' && (
-              <ColorPicker value={newColor} onChange={setNewColor} size="md" />
-            )}
-            {tab === 'members' && (
-              <>
-                <input value={newEmail} onChange={e => setNewEmail(e.target.value)}
-                  placeholder="Email"
-                  className="flex-1 text-sm border border-slate-200 rounded-lg px-3 py-2 outline-none focus:border-primary" />
-                <select value={newRole} onChange={e => setNewRole(e.target.value as UserRole)}
-                  className="text-xs border border-slate-200 rounded-lg px-2 outline-none">
-                  <option value="admin">Admin</option>
-                  <option value="manager">Manager</option>
-                  <option value="member">Member</option>
-                  <option value="viewer">Viewer</option>
-                </select>
-              </>
-            )}
-            <button onClick={handleAdd}
-              className="bg-primary text-white text-sm px-4 py-2 rounded-lg hover:bg-primary-dark transition">
-              Add
-            </button>
-          </div>
+          {tab !== 'general' && (
+            <div className="mt-4 flex gap-2">
+              <input value={newName} onChange={e => setNewName(e.target.value)}
+                onKeyDown={e => { if (e.key === 'Enter') handleAdd(); }}
+                placeholder={tab === 'members' ? 'Name' : `New ${tab.slice(0, -1)} name`}
+                className="flex-1 text-sm border border-slate-200 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 rounded-lg px-3 py-2 outline-none focus:border-primary" />
+              {tab === 'labels' && (
+                <ColorPicker value={newColor} onChange={setNewColor} size="md" />
+              )}
+              {tab === 'members' && (
+                <>
+                  <input value={newEmail} onChange={e => setNewEmail(e.target.value)}
+                    placeholder="Email"
+                    className="flex-1 text-sm border border-slate-200 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 rounded-lg px-3 py-2 outline-none focus:border-primary" />
+                  <select value={newRole} onChange={e => setNewRole(e.target.value as UserRole)}
+                    className="text-xs border border-slate-200 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 rounded-lg px-2 outline-none">
+                    <option value="admin">Admin</option>
+                    <option value="manager">Manager</option>
+                    <option value="member">Member</option>
+                    <option value="viewer">Viewer</option>
+                  </select>
+                </>
+              )}
+              <button onClick={handleAdd}
+                className="bg-primary text-white text-sm px-4 py-2 rounded-lg hover:bg-primary-dark transition">
+                Add
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </div>

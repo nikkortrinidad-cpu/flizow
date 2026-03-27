@@ -1,5 +1,7 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 @theme {
   --color-primary: #6366f1;
   --color-primary-dark: #4f46e5;
@@ -24,6 +26,12 @@ body {
   color: #1e293b;
 }
 
+.dark body,
+html.dark body {
+  background: #0f172a;
+  color: #e2e8f0;
+}
+
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
@@ -37,4 +45,19 @@ body {
 }
 ::-webkit-scrollbar-thumb:hover {
   background: #94a3b8;
+}
+
+html.dark ::-webkit-scrollbar-thumb {
+  background: #475569;
+}
+html.dark ::-webkit-scrollbar-thumb:hover {
+  background: #64748b;
+}
+
+@keyframes slide-in {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
+}
+.animate-slide-in {
+  animation: slide-in 0.2s ease-out;
 }

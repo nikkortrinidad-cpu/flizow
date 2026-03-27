@@ -7,9 +7,9 @@ export function NotificationsPanel({ onClose: _onClose }: { onClose: () => void 
   const notifications = state.notifications;
 
   return (
-    <div className="absolute right-0 top-12 w-80 bg-white rounded-xl shadow-xl border border-slate-200 z-50 overflow-hidden">
-      <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-between">
-        <h3 className="text-sm font-semibold text-slate-700">Notifications</h3>
+    <div className="absolute right-0 top-12 w-80 bg-white dark:bg-slate-800 rounded-xl shadow-xl border border-slate-200 dark:border-slate-700 z-50 overflow-hidden">
+      <div className="px-4 py-3 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between">
+        <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-200">Notifications</h3>
         <div className="flex gap-2">
           <button onClick={() => store.markAllNotificationsRead()}
             className="text-[10px] text-primary hover:underline">Mark all read</button>
@@ -24,7 +24,7 @@ export function NotificationsPanel({ onClose: _onClose }: { onClose: () => void 
         {notifications.map(n => (
           <div key={n.id}
             onClick={() => store.markNotificationRead(n.id)}
-            className={`px-4 py-2.5 border-b border-slate-50 cursor-pointer hover:bg-slate-50 transition ${
+            className={`px-4 py-2.5 border-b border-slate-50 dark:border-slate-700 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-700 transition ${
               !n.read ? 'bg-primary/5' : ''
             }`}>
             <div className="flex items-start gap-2">
@@ -34,8 +34,8 @@ export function NotificationsPanel({ onClose: _onClose }: { onClose: () => void 
                 n.type === 'error' ? 'bg-red-400' : 'bg-blue-400'
               }`} />
               <div>
-                <p className="text-xs text-slate-600">{n.message}</p>
-                <p className="text-[10px] text-slate-400 mt-0.5">
+                <p className="text-xs text-slate-600 dark:text-slate-300">{n.message}</p>
+                <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5">
                   {new Date(n.timestamp).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
                 </p>
               </div>

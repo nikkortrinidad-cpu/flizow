@@ -130,15 +130,15 @@ export function KanbanBoard() {
                 <div className="flex items-center gap-2 mb-3">
                   <button
                     onClick={() => store.updateSwimlane(swimlane.id, { collapsed: !swimlane.collapsed })}
-                    className="text-slate-400 hover:text-slate-600 transition"
+                    className="text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300 transition"
                   >
                     <svg className={`w-4 h-4 transition-transform ${swimlane.collapsed ? '' : 'rotate-90'}`}
                       fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                     </svg>
                   </button>
-                  <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wider">{swimlane.title}</h3>
-                  <span className="text-[10px] text-slate-400">
+                  <h3 className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">{swimlane.title}</h3>
+                  <span className="text-[10px] text-slate-400 dark:text-slate-500">
                     ({filteredCards.filter(c => c.swimlaneId === swimlane.id).length} cards)
                   </span>
                 </div>

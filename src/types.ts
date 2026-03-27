@@ -82,6 +82,7 @@ export interface BoardState {
   activityLog: ActivityEntry[];
   filters: FilterState;
   savedColors: string[];
+  theme: 'light' | 'dark';
 }
 
 export interface FilterState {

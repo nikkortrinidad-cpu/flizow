@@ -42,7 +42,7 @@ export function KanbanColumn({ column, cards, swimlaneId, onCardClick, dragHandl
       <div className="flex items-center justify-between py-2.5 px-3">
         <div className="flex items-center gap-2">
           {dragHandleProps && (
-            <button {...dragHandleProps} className="cursor-grab active:cursor-grabbing text-slate-400 hover:text-slate-600 touch-none -ml-1">
+            <button {...dragHandleProps} className="cursor-grab active:cursor-grabbing text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300 touch-none -ml-1">
               <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                 <path d="M7 2a2 2 0 10.001 4.001A2 2 0 007 2zm0 6a2 2 0 10.001 4.001A2 2 0 007 8zm0 6a2 2 0 10.001 4.001A2 2 0 007 14zm6-8a2 2 0 10-.001-4.001A2 2 0 0013 6zm0 2a2 2 0 10.001 4.001A2 2 0 0013 8zm0 6a2 2 0 10.001 4.001A2 2 0 0013 14z" />
               </svg>
@@ -62,31 +62,31 @@ export function KanbanColumn({ column, cards, swimlaneId, onCardClick, dragHandl
                 if (e.key === 'Enter') { (e.target as HTMLInputElement).blur(); }
                 if (e.key === 'Escape') { setEditTitle(column.title); setIsEditing(false); }
               }}
-              className="text-sm font-semibold text-slate-700 uppercase tracking-wide bg-amber-50 border border-primary rounded px-1.5 py-0.5 outline-none w-28"
+              className="text-sm font-semibold text-slate-700 dark:text-slate-200 uppercase tracking-wide bg-amber-50 dark:bg-slate-700 border border-primary rounded px-1.5 py-0.5 outline-none w-28"
             />
           ) : (
             <h3
               onDoubleClick={() => { setEditTitle(column.title); setIsEditing(true); }}
-              className="text-sm font-semibold text-slate-700 uppercase tracking-wide cursor-pointer hover:text-primary transition group/rename flex items-center gap-1"
+              className="text-sm font-semibold text-slate-700 dark:text-slate-200 uppercase tracking-wide cursor-pointer hover:text-primary transition group/rename flex items-center gap-1"
               title="Double-click to rename"
             >
               {column.title}
-              <svg className="w-3 h-3 text-slate-300 opacity-0 group-hover/rename:opacity-100 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-3 h-3 text-slate-300 dark:text-slate-500 opacity-0 group-hover/rename:opacity-100 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
               </svg>
             </h3>
           )}
           <span className={`text-xs font-medium px-1.5 py-0.5 rounded-full ${
-            wipExceeded ? 'bg-red-100 text-red-600' :
-            wipAtLimit ? 'bg-yellow-100 text-yellow-600' :
-            'bg-slate-100 text-slate-500'
+            wipExceeded ? 'bg-red-100 text-red-600 dark:bg-red-900/40 dark:text-red-400' :
+            wipAtLimit ? 'bg-yellow-100 text-yellow-600 dark:bg-yellow-900/40 dark:text-yellow-400' :
+            'bg-slate-100 text-slate-500 dark:bg-slate-700 dark:text-slate-400'
           }`}>
             {cards.length}{column.wipLimit > 0 ? `/${column.wipLimit}` : ''}
           </span>
         </div>
         <button
           onClick={() => setShowAdd(!showAdd)}
-          className="w-6 h-6 flex items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition"
+          className="w-6 h-6 flex items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-600 dark:text-slate-500 dark:hover:bg-slate-700 dark:hover:text-slate-300 transition"
         >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -107,14 +107,14 @@ export function KanbanColumn({ column, cards, swimlaneId, onCardClick, dragHandl
         </SortableContext>
 
         {showAdd && (
-          <div className="bg-white rounded-lg border border-slate-200 p-2">
+          <div className="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-600 p-2">
             <input
               autoFocus
               value={newTitle}
               onChange={e => setNewTitle(e.target.value)}
               onKeyDown={e => { if (e.key === 'Enter') handleAddCard(); if (e.key === 'Escape') setShowAdd(false); }}
               placeholder="Card title..."
-              className="w-full text-sm border-none outline-none placeholder:text-slate-300 mb-2"
+              className="w-full text-sm border-none outline-none placeholder:text-slate-300 dark:placeholder:text-slate-500 mb-2 bg-transparent dark:text-slate-100"
             />
             <div className="flex gap-1">
               <button onClick={handleAddCard}
@@ -122,7 +122,7 @@ export function KanbanColumn({ column, cards, swimlaneId, onCardClick, dragHandl
                 Add
               </button>
               <button onClick={() => setShowAdd(false)}
-                className="text-xs text-slate-400 px-2 py-1 hover:text-slate-600 transition">
+                className="text-xs text-slate-400 px-2 py-1 hover:text-slate-600 dark:hover:text-slate-300 transition">
                 Cancel
               </button>
             </div>

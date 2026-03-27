@@ -33,6 +33,7 @@ function createDefaultState(): BoardState {
     notifications: [], activityLog: [],
     filters: { search: '', assigneeIds: [], labelIds: [], priorities: [], dueDateRange: { from: null, to: null } },
     savedColors: ['#ef4444', '#f97316', '#f59e0b', '#10b981', '#3b82f6', '#6366f1', '#8b5cf6', '#ec4899'],
+    theme: 'light',
   };
 }
 
@@ -44,6 +45,9 @@ function loadState(): BoardState {
       // Ensure savedColors exists for older stored states
       if (!parsed.savedColors) {
         parsed.savedColors = ['#ef4444', '#f97316', '#f59e0b', '#10b981', '#3b82f6', '#6366f1', '#8b5cf6', '#ec4899'];
+      }
+      if (!parsed.theme) {
+        parsed.theme = 'light';
       }
       return parsed;
     }
@@ -342,6 +346,12 @@ class BoardStore {
       return diff <= days;
     });
     return entries.length;
+  }
+
+  // --- Theme ---
+  setTheme(theme: 'light' | 'dark') {
+    this.state.theme = theme;
+    this.save();
   }
 
   // --- Saved Colors ---

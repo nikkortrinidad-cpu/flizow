@@ -53,7 +53,7 @@ export function ColorPicker({ value, onChange, size = 'sm' }: Props) {
       <button
         ref={buttonRef}
         onClick={(e) => { e.stopPropagation(); setOpen(!open); }}
-        className={`${sizeClass} rounded-lg border-2 border-slate-200 hover:border-primary cursor-pointer transition shrink-0`}
+        className={`${sizeClass} rounded-lg border-2 border-slate-200 dark:border-slate-600 hover:border-primary cursor-pointer transition shrink-0`}
         style={{ backgroundColor: value }}
         title="Click to pick color"
       />
@@ -61,19 +61,19 @@ export function ColorPicker({ value, onChange, size = 'sm' }: Props) {
       {open && createPortal(
         <div
           ref={popupRef}
-          className="fixed z-[9999] bg-white rounded-xl shadow-xl border border-slate-200 p-3 w-56"
+          className="fixed z-[9999] bg-white dark:bg-slate-800 rounded-xl shadow-xl border border-slate-200 dark:border-slate-700 p-3 w-56"
           style={{ top: pos.top, left: pos.left }}
           onClick={e => e.stopPropagation()}
           onMouseDown={e => e.stopPropagation()}
         >
-          <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wide mb-2">Saved Palette</p>
+          <p className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wide mb-2">Saved Palette</p>
           <div className="flex flex-wrap gap-1.5 mb-3">
             {state.savedColors.map(color => (
               <div key={color} className="relative group/swatch">
                 <button
                   onClick={() => { onChange(color); }}
                   className={`w-7 h-7 rounded-lg border-2 transition ${
-                    value === color ? 'border-primary scale-110 shadow-sm' : 'border-transparent hover:border-slate-300'
+                    value === color ? 'border-primary scale-110 shadow-sm' : 'border-transparent hover:border-slate-300 dark:hover:border-slate-500'
                   }`}
                   style={{ backgroundColor: color }}
                   title={color}
@@ -92,8 +92,8 @@ export function ColorPicker({ value, onChange, size = 'sm' }: Props) {
             )}
           </div>
 
-          <div className="border-t border-slate-100 pt-2.5">
-            <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wide mb-1.5">Custom Color</p>
+          <div className="border-t border-slate-100 dark:border-slate-700 pt-2.5">
+            <p className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wide mb-1.5">Custom Color</p>
             <div className="flex items-center gap-2">
               <input
                 type="color"
@@ -101,7 +101,7 @@ export function ColorPicker({ value, onChange, size = 'sm' }: Props) {
                 onChange={e => onChange(e.target.value)}
                 className="w-8 h-8 rounded cursor-pointer border-none"
               />
-              <span className="text-xs text-slate-500 font-mono flex-1">{value}</span>
+              <span className="text-xs text-slate-500 dark:text-slate-400 font-mono flex-1">{value}</span>
               <button
                 onClick={handleSaveColor}
                 className="text-[10px] bg-primary/10 text-primary px-2 py-1 rounded-md font-medium hover:bg-primary/20 transition"
