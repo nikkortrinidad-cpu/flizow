@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import {
   DndContext, DragOverlay, closestCorners, PointerSensor, useSensor, useSensors,
   type DragStartEvent, type DragEndEvent, type DragOverEvent,
@@ -33,6 +33,9 @@ export function KanbanBoard() {
   const { state } = useBoard();
   const [activeCard, setActiveCard] = useState<Card | null>(null);
   const [selectedCard, setSelectedCard] = useState<Card | null>(null);
+  const [showAddColumn, setShowAddColumn] = useState(false);
+  const [newColumnTitle, setNewColumnTitle] = useState('');
+  const newColumnInputRef = useRef<HTMLInputElement>(null);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } })
@@ -159,6 +162,62 @@ export function KanbanBoard() {
                         )}
                       </SortableColumn>
                     ))}
+
+                    {/* Add another column */}
+                    {swimlane.id === swimlanes[0]?.id && (
+                      <div className="shrink-0 w-72">
+                        {showAddColumn ? (
+                          <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-3">
+                            <input
+                              ref={newColumnInputRef}
+                              value={newColumnTitle}
+                              onChange={e => setNewColumnTitle(e.target.value)}
+                              onKeyDown={e => {
+                                if (e.key === 'Enter' && newColumnTitle.trim()) {
+                                  store.addColumn(newColumnTitle.trim());
+                                  setNewColumnTitle('');
+                                  setShowAddColumn(false);
+                                } else if (e.key === 'Escape') {
+                                  setNewColumnTitle('');
+                                  setShowAddColumn(false);
+                                }
+                              }}
+                              placeholder="Enter column title..."
+                              className="w-full text-sm font-medium border border-slate-200 dark:border-slate-600 rounded-lg px-3 py-2 outline-none focus:border-primary bg-white dark:bg-slate-700 dark:text-slate-200 mb-2"
+                              autoFocus
+                            />
+                            <div className="flex items-center gap-2">
+                              <button
+                                onClick={() => {
+                                  if (newColumnTitle.trim()) {
+                                    store.addColumn(newColumnTitle.trim());
+                                    setNewColumnTitle('');
+                                    setShowAddColumn(false);
+                                  }
+                                }}
+                                className="text-xs bg-primary text-white px-3 py-1.5 rounded-lg hover:bg-primary-dark transition font-medium"
+                              >
+                                Add column
+                              </button>
+                              <button
+                                onClick={() => { setNewColumnTitle(''); setShowAddColumn(false); }}
+                                className="text-xs text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 px-2 py-1.5 transition"
+                              >
+                                Cancel
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          <button
+                            onClick={() => { setShowAddColumn(true); setTimeout(() => newColumnInputRef.current?.focus(), 50); }}
+                            className="w-full flex items-center justify-center gap-2 py-3 rounded-xl border-2 border-dashed border-slate-300 dark:border-slate-600 text-sm font-medium text-slate-500 dark:text-slate-400 hover:border-primary hover:text-primary dark:hover:border-primary dark:hover:text-primary hover:bg-primary/5 transition"
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
+                            Add another column
+                          </button>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </SortableContext>
               )}
