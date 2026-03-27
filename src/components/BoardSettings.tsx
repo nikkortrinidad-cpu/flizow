@@ -34,7 +34,7 @@ function SortableColumnRow({ col, children }: { col: Column; children: React.Rea
 
 export function BoardSettings({ onClose }: { onClose: () => void }) {
   const { state } = useBoard();
-  const [tab, setTab] = useState<'general' | 'columns' | 'swimlanes' | 'labels' | 'members' | 'trash'>('general');
+  const [tab, setTab] = useState<'general' | 'columns' | 'swimlanes' | 'labels' | 'members' | 'trash' | 'archive'>('general');
   const [newName, setNewName] = useState('');
   const [newColor, setNewColor] = useState('#6366f1');
   const [newEmail, setNewEmail] = useState('');
@@ -62,6 +62,7 @@ export function BoardSettings({ onClose }: { onClose: () => void }) {
     { id: 'labels' as const, label: 'Labels' },
     { id: 'members' as const, label: 'Team' },
     { id: 'trash' as const, label: 'Trash' },
+    { id: 'archive' as const, label: 'Archive' },
   ];
 
   const handleAdd = () => {
@@ -337,7 +338,89 @@ export function BoardSettings({ onClose }: { onClose: () => void }) {
             );
           })()}
 
-          {tab !== 'general' && tab !== 'trash' && (
+          {tab === 'archive' && (() => {
+            const archiveItems = store.getArchive();
+            return (
+              <div>
+                {archiveItems.length > 0 && (
+                  <div className="flex items-center justify-between mb-4">
+                    <p className="text-xs text-slate-400 dark:text-slate-500">
+                      {archiveItems.length} item{archiveItems.length > 1 ? 's' : ''} archived
+                    </p>
+                  </div>
+                )}
+
+                {archiveItems.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-12 text-slate-400 dark:text-slate-500">
+                    <svg className="w-12 h-12 mb-3 opacity-30" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
+                    </svg>
+                    <p className="text-sm font-medium">Archive is empty</p>
+                    <p className="text-xs mt-1">Archived lists and cards will appear here</p>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {archiveItems.map(item => {
+                      const isCard = item.type === 'card';
+                      const name = isCard ? (item.data as Card).title : (item.data as Column).title;
+                      const archivedDate = new Date(item.archivedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+
+                      return (
+                        <div key={item.id} className="flex items-center gap-3 bg-slate-50 dark:bg-slate-700 rounded-lg p-3">
+                          {/* Icon */}
+                          <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${isCard ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-500' : 'bg-purple-50 dark:bg-purple-900/30 text-purple-500'}`}>
+                            {isCard ? (
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg>
+                            ) : (
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7" /></svg>
+                            )}
+                          </div>
+
+                          {/* Info */}
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-slate-700 dark:text-slate-200 truncate">{name}</p>
+                            <div className="flex items-center gap-2 mt-0.5">
+                              <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${isCard ? 'bg-blue-100 text-blue-600 dark:bg-blue-900/40 dark:text-blue-400' : 'bg-purple-100 text-purple-600 dark:bg-purple-900/40 dark:text-purple-400'}`}>
+                                {isCard ? 'Card' : 'List'}
+                                {!isCard && item.associatedCards && item.associatedCards.length > 0 && ` + ${item.associatedCards.length} card${item.associatedCards.length > 1 ? 's' : ''}`}
+                              </span>
+                              <span className="text-[10px] text-slate-400">Archived {archivedDate}</span>
+                            </div>
+                          </div>
+
+                          {/* Actions */}
+                          <div className="flex items-center gap-1 shrink-0">
+                            <button
+                              onClick={() => store.restoreFromArchive(item.id)}
+                              className="text-[11px] text-primary hover:text-primary-dark font-medium px-2 py-1 rounded hover:bg-primary/5 transition"
+                              title="Restore"
+                            >
+                              Restore
+                            </button>
+                            <button
+                              onClick={() => { if (window.confirm(`Permanently delete "${name}"? This cannot be undone.`)) store.deleteFromArchive(item.id); }}
+                              className="text-slate-300 hover:text-red-500 transition p-1 rounded hover:bg-red-50 dark:hover:bg-red-900/20"
+                              title="Delete permanently"
+                            >
+                              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                              </svg>
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+
+                <div className="mt-4 p-3 bg-indigo-50 dark:bg-indigo-900/20 rounded-lg border border-indigo-200 dark:border-indigo-800">
+                  <p className="text-[11px] text-indigo-700 dark:text-indigo-400 font-medium">Archived items are kept permanently until you restore or delete them.</p>
+                </div>
+              </div>
+            );
+          })()}
+
+          {tab !== 'general' && tab !== 'trash' && tab !== 'archive' && (
             <div className="mt-4 flex gap-2">
               <input value={newName} onChange={e => setNewName(e.target.value)}
                 onKeyDown={e => { if (e.key === 'Enter') handleAdd(); }}

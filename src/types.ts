@@ -90,6 +90,14 @@ export interface TrashItem {
   associatedCards?: Card[];
 }
 
+export interface ArchiveItem {
+  id: string;
+  type: 'card' | 'column';
+  data: Card | Column;
+  archivedAt: string;
+  associatedCards?: Card[];
+}
+
 export interface BoardState {
   columns: Column[];
   swimlanes: Swimlane[];
@@ -102,6 +110,7 @@ export interface BoardState {
   savedColors: string[];
   theme: 'light' | 'dark';
   trash: TrashItem[];
+  archive: ArchiveItem[];
 }
 
 export interface FilterState {

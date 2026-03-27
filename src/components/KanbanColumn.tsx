@@ -131,7 +131,7 @@ export function KanbanColumn({ column, cards, swimlaneId, onCardClick, dragHandl
                 {/* Archive List */}
                 <button
                   onClick={() => {
-                    store.deleteColumn(column.id);
+                    store.archiveColumn(column.id);
                     setShowColumnMenu(false);
                   }}
                   className="w-full flex items-center gap-2.5 px-3 py-2 text-xs text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition"

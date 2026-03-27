@@ -3,7 +3,7 @@ import { doc, setDoc, onSnapshot, type Unsubscribe } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import type {
   BoardState, Card, Column, Swimlane, Label, TeamMember,
-  Notification, FilterState, Priority, Comment, ChecklistItem, TrashItem
+  Notification, FilterState, Priority, Comment, ChecklistItem, TrashItem, ArchiveItem
 } from '../types';
 
 const STORAGE_KEY = 'kanban-board-state';
@@ -37,6 +37,7 @@ function createDefaultState(): BoardState {
     savedColors: ['#ef4444', '#f97316', '#f59e0b', '#10b981', '#3b82f6', '#6366f1', '#8b5cf6', '#ec4899'],
     theme: 'light',
     trash: [],
+    archive: [],
   };
 }
 
@@ -52,6 +53,7 @@ function loadState(): BoardState {
         parsed.theme = 'light';
       }
       if (!parsed.trash) parsed.trash = [];
+      if (!parsed.archive) parsed.archive = [];
       if (parsed.cards) {
         parsed.cards.forEach((c: Card) => {
           if (!c.checklist) c.checklist = [];
@@ -80,6 +82,7 @@ function migrateState(parsed: any): BoardState {
   if (!parsed.notifications) parsed.notifications = [];
   if (!parsed.activityLog) parsed.activityLog = [];
   if (!parsed.trash) parsed.trash = [];
+  if (!parsed.archive) parsed.archive = [];
   if (!parsed.filters) parsed.filters = { search: '', assigneeIds: [], labelIds: [], priorities: [], dueDateRange: { from: null, to: null } };
 
   parsed.cards.forEach((c: Card) => {
@@ -619,6 +622,83 @@ class BoardStore {
   getTrash(): TrashItem[] {
     this.cleanupTrash();
     return this.state.trash.sort((a, b) => new Date(b.deletedAt).getTime() - new Date(a.deletedAt).getTime());
+  }
+
+  // --- Archive ---
+  archiveCard(cardId: string) {
+    const card = this.state.cards.find(c => c.id === cardId);
+    if (!card) return;
+    const archiveItem: ArchiveItem = {
+      id: uuid(),
+      type: 'card',
+      data: { ...card },
+      archivedAt: new Date().toISOString(),
+    };
+    this.state.archive.push(archiveItem);
+    this.state.cards = this.state.cards.filter(c => c.id !== cardId);
+    this.logActivity(cardId, 'user-1', 'archived', `Archived card "${card.title}"`);
+    this.addNotification(`Card "${card.title}" archived`, 'info', cardId);
+    this.save();
+  }
+
+  archiveColumn(colId: string) {
+    const col = this.state.columns.find(c => c.id === colId);
+    if (!col) return;
+    const associatedCards = this.state.cards.filter(c => c.columnId === colId).map(c => ({ ...c }));
+    const archiveItem: ArchiveItem = {
+      id: uuid(),
+      type: 'column',
+      data: { ...col },
+      archivedAt: new Date().toISOString(),
+      associatedCards,
+    };
+    this.state.archive.push(archiveItem);
+    this.state.cards = this.state.cards.filter(c => c.columnId !== colId);
+    this.state.columns = this.state.columns.filter(c => c.id !== colId);
+    this.logActivity(colId, 'user-1', 'archived', `Archived list "${col.title}"`);
+    this.addNotification(`List "${col.title}" archived`, 'info');
+    this.save();
+  }
+
+  restoreFromArchive(archiveId: string) {
+    const item = this.state.archive.find(a => a.id === archiveId);
+    if (!item) return;
+
+    if (item.type === 'card') {
+      const card = item.data as Card;
+      const colExists = this.state.columns.some(c => c.id === card.columnId);
+      if (!colExists && this.state.columns.length > 0) {
+        card.columnId = this.state.columns[0].id;
+      }
+      card.order = this.state.cards.filter(c => c.columnId === card.columnId).length;
+      this.state.cards.push(card);
+      this.logActivity(card.id, 'user-1', 'restored', `Restored card "${card.title}" from archive`);
+      this.addNotification(`Card "${card.title}" restored from archive`, 'success', card.id);
+    } else if (item.type === 'column') {
+      const col = item.data as Column;
+      col.order = this.state.columns.length;
+      this.state.columns.push(col);
+      if (item.associatedCards) {
+        item.associatedCards.forEach(card => {
+          card.columnId = col.id;
+          this.state.cards.push(card);
+        });
+      }
+      this.logActivity(col.id, 'user-1', 'restored', `Restored list "${col.title}" from archive`);
+      this.addNotification(`List "${col.title}" restored from archive`, 'success');
+    }
+
+    this.state.archive = this.state.archive.filter(a => a.id !== archiveId);
+    this.save();
+  }
+
+  deleteFromArchive(archiveId: string) {
+    this.state.archive = this.state.archive.filter(a => a.id !== archiveId);
+    this.save();
+  }
+
+  getArchive(): ArchiveItem[] {
+    return this.state.archive.sort((a, b) => new Date(b.archivedAt).getTime() - new Date(a.archivedAt).getTime());
   }
 }
 
