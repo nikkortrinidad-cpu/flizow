@@ -207,6 +207,13 @@ export function MarkdownEditor({ value, onChange, maxLength, placeholder }: Prop
               <span className="text-[11px] font-bold italic leading-none">I</span>
             </button>
 
+            {/* Underline */}
+            <button onClick={() => editor.chain().focus().toggleUnderline().run()}
+              title={`Underline (${isMac ? '\u2318' : 'Ctrl+'}U)`}
+              className={toolBtn(editor.isActive('underline'))}>
+              <span className="text-[11px] font-bold underline leading-none">U</span>
+            </button>
+
             {/* Strikethrough */}
             <button onClick={() => editor.chain().focus().toggleStrike().run()}
               title="Strikethrough"
