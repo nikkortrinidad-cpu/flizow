@@ -119,7 +119,7 @@ export function KanbanColumn({ column, cards, swimlaneId, onCardClick, dragHandl
               </button>
             </div>
           </div>
-        ) : cards.length === 0 && (
+        ) : (
           <button
             onClick={() => setShowAdd(true)}
             className="w-full flex items-center gap-1.5 text-xs text-slate-400 dark:text-slate-500 hover:text-primary dark:hover:text-primary py-2 px-2 rounded-lg hover:bg-white/60 dark:hover:bg-slate-700/40 transition"
