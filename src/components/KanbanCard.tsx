@@ -51,7 +51,7 @@ export function KanbanCard({ card, onClick }: { card: Card; onClick: () => void 
       {...attributes}
       {...listeners}
       onClick={onClick}
-      className="relative bg-white dark:bg-slate-800 rounded-lg border-2 border-slate-200 dark:border-slate-600 p-3 cursor-grab active:cursor-grabbing
+      className="relative bg-white dark:bg-slate-800 rounded-lg border-2 border-transparent p-3 cursor-grab active:cursor-grabbing
         hover:border-primary/40 hover:shadow-md transition-all group overflow-hidden"
     >
       {/* Edit icon - top right */}
