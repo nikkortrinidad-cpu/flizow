@@ -429,7 +429,7 @@ export function CardDetailPanel({ card, onClose }: Props) {
             </div>
 
             {/* Two-column fields */}
-            <div className="grid grid-cols-2 gap-0 border border-slate-200 dark:border-slate-700 rounded-xl bg-slate-50/50 dark:bg-slate-700/20">
+            <div className="ml-5 grid grid-cols-2 gap-0 border border-slate-200 dark:border-slate-700 rounded-xl bg-slate-50/50 dark:bg-slate-700/20">
               {/* Status */}
               <div className="relative flex items-center gap-2 px-3 py-2.5 border-b border-r border-slate-200 dark:border-slate-700 min-w-0">
                 <span className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400 shrink-0">
