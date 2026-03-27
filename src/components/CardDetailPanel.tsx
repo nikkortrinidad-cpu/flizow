@@ -52,8 +52,11 @@ export function CardDetailPanel({ card, onClose }: Props) {
   };
 
   const handleDeleteLabel = (id: string) => {
-    store.deleteLabel(id);
-    setSelectedLabels(prev => prev.filter(l => l !== id));
+    const label = state.labels.find(l => l.id === id);
+    if (confirm(`Are you sure you want to delete the label "${label?.name}"? This will remove it from all cards.`)) {
+      store.deleteLabel(id);
+      setSelectedLabels(prev => prev.filter(l => l !== id));
+    }
   };
 
   const handleSave = () => {
