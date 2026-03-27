@@ -163,7 +163,7 @@ export function KanbanBoard() {
                       </SortableColumn>
                     ))}
 
-                    {/* Add another column */}
+                    {/* Add another list */}
                     {swimlane.id === swimlanes[0]?.id && (
                       <div className="shrink-0 w-72">
                         {showAddColumn ? (
@@ -182,7 +182,7 @@ export function KanbanBoard() {
                                   setShowAddColumn(false);
                                 }
                               }}
-                              placeholder="Enter column title..."
+                              placeholder="Enter list title..."
                               className="w-full text-sm font-medium border border-slate-200 dark:border-slate-600 rounded-lg px-3 py-2 outline-none focus:border-primary bg-white dark:bg-slate-700 dark:text-slate-200 mb-2"
                               autoFocus
                             />
@@ -197,7 +197,7 @@ export function KanbanBoard() {
                                 }}
                                 className="text-xs bg-primary text-white px-3 py-1.5 rounded-lg hover:bg-primary-dark transition font-medium"
                               >
-                                Add column
+                                Add list
                               </button>
                               <button
                                 onClick={() => { setNewColumnTitle(''); setShowAddColumn(false); }}
@@ -213,7 +213,7 @@ export function KanbanBoard() {
                             className="w-full flex items-center justify-start gap-2 py-3 px-4 rounded-xl border-2 border-dashed border-slate-300 dark:border-slate-600 text-sm font-medium text-slate-500 dark:text-slate-400 hover:border-primary hover:text-primary dark:hover:border-primary dark:hover:text-primary hover:bg-primary/5 transition"
                           >
                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
-                            Add another column
+                            Add another list
                           </button>
                         )}
                       </div>
