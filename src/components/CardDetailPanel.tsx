@@ -845,7 +845,7 @@ export function CardDetailPanel({ card, onClose }: Props) {
         </div>
 
         {/* Right: Activity sidebar */}
-        <div className="w-96 shrink-0 border-l border-slate-100 dark:border-slate-700 flex flex-col bg-slate-50 dark:bg-slate-800/50">
+        <div className="w-[420px] shrink-0 border-l border-slate-100 dark:border-slate-700 flex flex-col bg-slate-50 dark:bg-slate-800/50">
           {/* Toggle header */}
           <div className="shrink-0 px-4 py-2.5 border-b border-slate-100 dark:border-slate-700 flex items-center gap-1 bg-white dark:bg-slate-800">
             <button
