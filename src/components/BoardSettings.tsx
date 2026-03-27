@@ -138,21 +138,7 @@ export function BoardSettings({ onClose }: { onClose: () => void }) {
                 </div>
               </div>
 
-              <div>
-                <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-200 mb-3">Danger Zone</h3>
-                <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-red-700 dark:text-red-400">Reset Board</p>
-                      <p className="text-xs text-red-500 dark:text-red-400/70 mt-0.5">Delete all data and start fresh</p>
-                    </div>
-                    <button onClick={() => { if (confirm('Are you sure? This will delete ALL cards, columns, and settings.')) { store.resetBoard(); onClose(); } }}
-                      className="text-xs bg-red-500 text-white px-3 py-1.5 rounded-lg hover:bg-red-600 transition font-medium">
-                      Reset
-                    </button>
-                  </div>
-                </div>
-              </div>
+              {/* Hidden Danger Zone — resetBoard() available in store if needed */}
             </div>
           )}
 
