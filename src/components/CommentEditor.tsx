@@ -101,7 +101,9 @@ export function CommentEditor({ onSubmit, placeholder: placeholderText, compact 
   };
 
   const insertMention = (name: string) => {
-    editor.chain().focus().insertContent(`<span class="mention" data-type="mention">@${name}</span>&nbsp;`).run();
+    editor.chain().focus()
+      .insertContent(`<a href="#mention" data-mention="true">@${name}</a> `)
+      .run();
     setShowMentionPicker(false);
     setMentionSearch('');
   };
