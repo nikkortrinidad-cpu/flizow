@@ -284,10 +284,16 @@ export function CardDetailPanel({ card, onClose }: Props) {
             </div>
           </div>
 
-          <button onClick={handleSave}
-            className="w-full bg-primary text-white py-2.5 rounded-lg text-sm font-medium hover:bg-primary-dark transition">
-            Save Changes
-          </button>
+          <div className="flex gap-2">
+            <button onClick={handleSave}
+              className="bg-primary text-white px-5 py-2 rounded-lg text-sm font-medium hover:bg-primary-dark transition">
+              Save
+            </button>
+            <button onClick={onClose}
+              className="text-sm text-slate-500 dark:text-slate-400 px-4 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition">
+              Cancel
+            </button>
+          </div>
         </div>
       </div>
     </div>
