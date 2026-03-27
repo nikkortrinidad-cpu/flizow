@@ -55,10 +55,6 @@ export function KanbanCard({ card, onClick }: { card: Card; onClick: () => void 
 
       <h4 className="text-sm font-medium text-slate-800 mb-1.5 leading-snug">{card.title}</h4>
 
-      {card.description && (
-        <p className="text-xs text-slate-400 mb-2 line-clamp-2">{card.description}</p>
-      )}
-
       <div className="flex items-center justify-between mt-2">
         <div className="flex items-center gap-2">
           <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded ${priorityColors[card.priority]}`}>
