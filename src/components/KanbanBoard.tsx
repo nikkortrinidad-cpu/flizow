@@ -12,7 +12,7 @@ import { KanbanCard } from './KanbanCard';
 import { CardDetailPanel } from './CardDetailPanel';
 import type { Card, Column } from '../types';
 
-function SortableColumn({ column, children }: { column: Column; children: React.ReactNode }) {
+function SortableColumn({ column, children }: { column: Column; children: (dragHandleProps: Record<string, unknown>) => React.ReactNode }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: `sortable-col-${column.id}`,
     data: { type: 'sortable-column', columnId: column.id },
@@ -24,12 +24,7 @@ function SortableColumn({ column, children }: { column: Column; children: React.
   };
   return (
     <div ref={setNodeRef} style={style} {...attributes}>
-      <div className="flex items-center gap-1 mb-1 cursor-grab active:cursor-grabbing" {...listeners}>
-        <svg className="w-4 h-4 text-slate-300" fill="currentColor" viewBox="0 0 20 20">
-          <path d="M7 2a2 2 0 10.001 4.001A2 2 0 007 2zm0 6a2 2 0 10.001 4.001A2 2 0 007 8zm0 6a2 2 0 10.001 4.001A2 2 0 007 14zm6-8a2 2 0 10-.001-4.001A2 2 0 0013 6zm0 2a2 2 0 10.001 4.001A2 2 0 0013 8zm0 6a2 2 0 10.001 4.001A2 2 0 0013 14z" />
-        </svg>
-      </div>
-      {children}
+      {children(listeners ?? {})}
     </div>
   );
 }
@@ -153,12 +148,15 @@ export function KanbanBoard() {
                   <div className="flex gap-4">
                     {columns.map(col => (
                       <SortableColumn key={`${col.id}-${swimlane.id}`} column={col}>
-                        <KanbanColumn
-                          column={col}
-                          cards={getColumnCards(col.id, swimlane.id)}
-                          swimlaneId={swimlane.id}
-                          onCardClick={handleCardClick}
-                        />
+                        {(dragHandleProps) => (
+                          <KanbanColumn
+                            column={col}
+                            cards={getColumnCards(col.id, swimlane.id)}
+                            swimlaneId={swimlane.id}
+                            onCardClick={handleCardClick}
+                            dragHandleProps={dragHandleProps}
+                          />
+                        )}
                       </SortableColumn>
                     ))}
                   </div>

@@ -12,9 +12,10 @@ interface Props {
   cards: Card[];
   swimlaneId: string;
   onCardClick: (card: Card) => void;
+  dragHandleProps?: Record<string, unknown>;
 }
 
-export function KanbanColumn({ column, cards, swimlaneId, onCardClick }: Props) {
+export function KanbanColumn({ column, cards, swimlaneId, onCardClick, dragHandleProps }: Props) {
   const canAdd = !NO_ADD_COLUMNS.includes(column.id);
   const [showAdd, setShowAdd] = useState(false);
   const [newTitle, setNewTitle] = useState('');
@@ -40,6 +41,13 @@ export function KanbanColumn({ column, cards, swimlaneId, onCardClick }: Props) 
     <div className="flex-shrink-0 w-72">
       <div className="flex items-center justify-between mb-3 px-1">
         <div className="flex items-center gap-2">
+          {dragHandleProps && (
+            <button {...dragHandleProps} className="cursor-grab active:cursor-grabbing text-slate-300 hover:text-slate-500 touch-none -ml-1">
+              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                <path d="M7 2a2 2 0 10.001 4.001A2 2 0 007 2zm0 6a2 2 0 10.001 4.001A2 2 0 007 8zm0 6a2 2 0 10.001 4.001A2 2 0 007 14zm6-8a2 2 0 10-.001-4.001A2 2 0 0013 6zm0 2a2 2 0 10.001 4.001A2 2 0 0013 8zm0 6a2 2 0 10.001 4.001A2 2 0 0013 14z" />
+              </svg>
+            </button>
+          )}
           <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: column.color }} />
           <h3 className="text-sm font-semibold text-slate-700 uppercase tracking-wide">{column.title}</h3>
           <span className={`text-xs font-medium px-1.5 py-0.5 rounded-full ${
