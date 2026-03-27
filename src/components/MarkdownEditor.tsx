@@ -12,6 +12,7 @@ interface Props {
   onChange: (value: string) => void;
   maxLength: number;
   placeholder?: string;
+  headerRight?: React.ReactNode;
 }
 
 // Configure marked for converting legacy markdown content
@@ -25,9 +26,8 @@ function markdownToHtml(md: string): string {
   return DOMPurify.sanitize(raw);
 }
 
-export function MarkdownEditor({ value, onChange, maxLength, placeholder }: Props) {
+export function MarkdownEditor({ value, onChange, maxLength, placeholder, headerRight }: Props) {
   const [showHeadingMenu, setShowHeadingMenu] = useState(false);
-  const [showSource, setShowSource] = useState(false);
   const headingMenuRef = useRef<HTMLDivElement>(null);
   const isInternalUpdate = useRef(false);
 
@@ -150,15 +150,10 @@ export function MarkdownEditor({ value, onChange, maxLength, placeholder }: Prop
           <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h7" /></svg>
           Description
         </label>
-        <button
-          onClick={() => setShowSource(!showSource)}
-          className="text-[10px] text-primary hover:text-primary-dark font-medium transition">
-          {showSource ? 'Editor' : 'View Source'}
-        </button>
+        {headerRight}
       </div>
 
-      {!showSource ? (
-        <>
+      <>
           <div className="flex items-center gap-1 border border-slate-200 dark:border-slate-600 border-b-0 rounded-t-lg bg-slate-50 dark:bg-slate-700 px-2 py-1.5">
             {/* Heading dropdown */}
             <div className="relative" ref={headingMenuRef}>
@@ -284,13 +279,6 @@ export function MarkdownEditor({ value, onChange, maxLength, placeholder }: Prop
             <EditorContent editor={editor} />
           </div>
         </>
-      ) : (
-        <textarea
-          value={value}
-          readOnly
-          className="w-full min-h-[200px] text-sm text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-600 rounded-lg p-3 outline-none bg-slate-50 dark:bg-slate-700 font-mono resize-none"
-        />
-      )}
 
       <div className="flex justify-end mt-1">
         <span className={`text-[11px] ${

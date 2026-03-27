@@ -625,22 +625,23 @@ export function CardDetailPanel({ card, onClose }: Props) {
               </div>
             </div>
 
-            <div className={`flex items-center justify-end gap-1.5 text-[11px] font-medium px-1 py-1 rounded-md transition-all ${
-              hasUnsavedChanges
-                ? 'text-amber-600 dark:text-amber-400'
-                : 'text-green-600 dark:text-green-400'
-            }`}>
-              <div className={`w-1.5 h-1.5 rounded-full ${
-                hasUnsavedChanges ? 'bg-amber-500' : 'bg-green-500'
-              }`} />
-              {hasUnsavedChanges ? 'Unsaved changes' : 'All changes saved'}
-            </div>
-
             <MarkdownEditor
               value={description}
               onChange={setDescription}
               maxLength={2000}
               placeholder="Add a description... (supports markdown)"
+              headerRight={
+                <div className={`flex items-center gap-1.5 text-[11px] font-medium px-1 py-0.5 rounded-md transition-all ${
+                  hasUnsavedChanges
+                    ? 'text-amber-600 dark:text-amber-400'
+                    : 'text-green-600 dark:text-green-400'
+                }`}>
+                  <div className={`w-1.5 h-1.5 rounded-full ${
+                    hasUnsavedChanges ? 'bg-amber-500' : 'bg-green-500'
+                  }`} />
+                  {hasUnsavedChanges ? 'Unsaved changes' : 'All changes saved'}
+                </div>
+              }
             />
 
             {/* Progress bar section */}
