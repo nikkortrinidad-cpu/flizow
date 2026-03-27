@@ -420,14 +420,14 @@ export function CardDetailPanel({ card, onClose }: Props) {
               {/* Table */}
               <div className="border border-slate-200 dark:border-slate-700 rounded-xl overflow-hidden">
                 {/* Table header */}
-                <div className="flex items-center bg-slate-100 dark:bg-slate-700/60 border-b border-slate-200 dark:border-slate-700 px-3 py-2">
+                <div className="flex items-center bg-slate-100 dark:bg-slate-700/60 border-b border-slate-200 dark:border-slate-700 px-4 py-2">
                   <span className="flex-1 text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">Name</span>
-                  <span className="w-28 text-right text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">Assignee</span>
+                  <span className="w-36 text-center text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">Assignee</span>
                 </div>
 
                 {/* Table rows */}
                 {(card.checklist || []).map(item => (
-                  <div key={item.id} className="flex items-center px-3 py-2 border-b border-slate-100 dark:border-slate-700/50 last:border-b-0 hover:bg-slate-50 dark:hover:bg-slate-700/30 group/check transition">
+                  <div key={item.id} className="flex items-center px-4 py-2 border-b border-slate-100 dark:border-slate-700/50 last:border-b-0 hover:bg-slate-50 dark:hover:bg-slate-700/30 group/check transition">
                     {/* Checkbox + Name */}
                     <div className="flex items-center gap-2.5 flex-1 min-w-0">
                       <button
@@ -458,7 +458,7 @@ export function CardDetailPanel({ card, onClose }: Props) {
                     </div>
 
                     {/* Assignee */}
-                    <div className="relative w-28 flex justify-end">
+                    <div className="relative w-36 flex justify-center">
                       {(() => {
                         const itemAssignee = state.members.find(m => m.id === item.assigneeId);
                         return (
