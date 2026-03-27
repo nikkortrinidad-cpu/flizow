@@ -3,7 +3,7 @@ import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import type { Card, Column } from '../types';
 import { KanbanCard } from './KanbanCard';
 import { store } from '../store/boardStore';
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 
 interface Props {
   column: Column;
@@ -19,6 +19,7 @@ export function KanbanColumn({ column, cards, swimlaneId, onCardClick, dragHandl
   const [isEditing, setIsEditing] = useState(false);
   const [editTitle, setEditTitle] = useState(column.title);
   const [showColumnMenu, setShowColumnMenu] = useState(false);
+  const menuButtonRef = useRef<HTMLButtonElement>(null);
   const [showListSettings, setShowListSettings] = useState(false);
   const [settingsTitle, setSettingsTitle] = useState(column.title);
   const [settingsWipLimit, setSettingsWipLimit] = useState(String(column.wipLimit));
@@ -93,6 +94,7 @@ export function KanbanColumn({ column, cards, swimlaneId, onCardClick, dragHandl
         {/* 3-dot menu */}
         <div className="relative">
           <button
+            ref={menuButtonRef}
             onClick={() => setShowColumnMenu(!showColumnMenu)}
             className="w-6 h-6 flex items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-600 dark:text-slate-500 dark:hover:bg-slate-700 dark:hover:text-slate-300 transition"
           >
@@ -103,8 +105,14 @@ export function KanbanColumn({ column, cards, swimlaneId, onCardClick, dragHandl
 
           {showColumnMenu && (
             <>
-              <div className="fixed inset-0 z-10" onClick={() => setShowColumnMenu(false)} />
-              <div className="absolute right-0 top-full mt-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-lg shadow-xl z-20 py-1 w-44">
+              <div className="fixed inset-0 z-[100]" onClick={() => setShowColumnMenu(false)} />
+              <div
+                className="fixed bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-lg shadow-xl z-[101] py-1 w-44"
+                style={(() => {
+                  const rect = menuButtonRef.current?.getBoundingClientRect();
+                  return rect ? { top: rect.bottom + 4, left: rect.right - 176 } : {};
+                })()}
+              >
                 {/* List Settings */}
                 <button
                   onClick={() => {
