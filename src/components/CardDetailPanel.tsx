@@ -645,7 +645,7 @@ export function CardDetailPanel({ card, onClose }: Props) {
 
             {/* Progress bar section */}
             {(card.checklist || []).length > 0 && (
-              <div>
+              <div className="mb-1">
                 <div className="flex items-center justify-between mb-1.5">
                   <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide flex items-center gap-1.5">
                     <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
