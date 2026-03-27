@@ -153,7 +153,7 @@ export function MarkdownEditor({ value, onChange, maxLength, placeholder, header
         {headerRight}
       </div>
 
-      <>
+      <div className="ml-5">
           <div className="flex items-center gap-1 border border-slate-200 dark:border-slate-600 border-b-0 rounded-t-lg bg-slate-50 dark:bg-slate-700 px-2 py-1.5">
             {/* Heading dropdown */}
             <div className="relative" ref={headingMenuRef}>
@@ -287,9 +287,9 @@ export function MarkdownEditor({ value, onChange, maxLength, placeholder, header
           <div className="border border-slate-200 dark:border-slate-600 rounded-b-lg bg-white dark:bg-slate-700 overflow-hidden">
             <EditorContent editor={editor} />
           </div>
-        </>
+        </div>
 
-      <div className="flex justify-end mt-1">
+      <div className="flex justify-end mt-1 ml-5">
         <span className={`text-[11px] ${
           charCount >= maxLength ? 'text-red-500 font-medium' :
           charCount >= maxLength * 0.9 ? 'text-yellow-500' :
