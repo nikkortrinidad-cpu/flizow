@@ -4,6 +4,7 @@ import { useBoard } from '../store/useStore';
 import { store } from '../store/boardStore';
 import { ColorPicker } from './ColorPicker';
 import { MarkdownEditor } from './MarkdownEditor';
+import { CommentEditor } from './CommentEditor';
 
 interface Props {
   card: Card;
@@ -86,9 +87,10 @@ export function CardDetailPanel({ card, onClose }: Props) {
     onClose();
   };
 
-  const handleAddComment = () => {
-    if (commentText.trim()) {
-      store.addComment(card.id, commentText.trim());
+  const handleAddComment = (html?: string) => {
+    const text = html || commentText.trim();
+    if (text) {
+      store.addComment(card.id, text);
       setCommentText('');
     }
   };
@@ -734,7 +736,7 @@ export function CardDetailPanel({ card, onClose }: Props) {
                             <span className="text-xs font-medium text-slate-700 dark:text-slate-200">{author?.name || 'Unknown'}</span>
                             <span className="text-[10px] text-slate-400 dark:text-slate-500">commented</span>
                           </div>
-                          <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">{c.text}</p>
+                          <div className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed prose-comment" dangerouslySetInnerHTML={{ __html: c.text }} />
                           <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-1.5">
                             {new Date(c.createdAt).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
                           </p>
@@ -764,17 +766,8 @@ export function CardDetailPanel({ card, onClose }: Props) {
           </div>
 
           {/* Comment input pinned at bottom */}
-          <div className="shrink-0 px-4 py-3 border-t border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800">
-            <div className="flex gap-1.5">
-              <input value={commentText} onChange={e => setCommentText(e.target.value)}
-                onKeyDown={e => { if (e.key === 'Enter') handleAddComment(); }}
-                placeholder="Write a comment..."
-                className="flex-1 text-xs border border-slate-200 dark:border-slate-600 rounded-lg px-2.5 py-1.5 outline-none focus:border-primary bg-slate-50 dark:bg-slate-700 dark:text-slate-200" />
-              <button onClick={handleAddComment}
-                className="text-xs bg-primary text-white px-2.5 py-1.5 rounded-lg hover:bg-primary-dark transition font-medium shrink-0">
-                Send
-              </button>
-            </div>
+          <div className="shrink-0 border-t border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800">
+            <CommentEditor onSubmit={(html) => handleAddComment(html)} />
           </div>
         </div>
         </div>
