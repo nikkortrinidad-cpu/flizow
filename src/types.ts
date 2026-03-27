@@ -23,6 +23,12 @@ export interface ActivityEntry {
   timestamp: string;
 }
 
+export interface ChecklistItem {
+  id: string;
+  text: string;
+  checked: boolean;
+}
+
 export interface Card {
   id: string;
   title: string;
@@ -33,6 +39,7 @@ export interface Card {
   labels: string[];
   comments: Comment[];
   attachments: string[];
+  checklist: ChecklistItem[];
   columnId: string;
   swimlaneId: string;
   order: number;

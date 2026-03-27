@@ -1,7 +1,7 @@
 import { v4 as uuid } from 'uuid';
 import type {
   BoardState, Card, Column, Swimlane, Label, TeamMember,
-  Notification, FilterState, Priority, Comment
+  Notification, FilterState, Priority, Comment, ChecklistItem
 } from '../types';
 
 const STORAGE_KEY = 'kanban-board-state';
@@ -48,6 +48,12 @@ function loadState(): BoardState {
       }
       if (!parsed.theme) {
         parsed.theme = 'light';
+      }
+      // Ensure checklist exists for older stored cards
+      if (parsed.cards) {
+        parsed.cards.forEach((c: Card) => {
+          if (!c.checklist) c.checklist = [];
+        });
       }
       return parsed;
     }
@@ -104,6 +110,7 @@ class BoardStore {
       labels: partial.labels || [],
       comments: [],
       attachments: [],
+      checklist: [],
       columnId: partial.columnId,
       swimlaneId: partial.swimlaneId || this.state.swimlanes[0]?.id || 'swim-default',
       order: this.state.cards.filter(c => c.columnId === partial.columnId).length,
@@ -194,6 +201,51 @@ class BoardStore {
     const comment: Comment = { id: uuid(), authorId: 'user-1', text, createdAt: new Date().toISOString() };
     card.comments.push(comment);
     this.logActivity(cardId, 'user-1', 'commented', `Commented on "${card.title}"`);
+    this.save();
+  }
+
+  // --- Checklist ---
+  addChecklistItem(cardId: string, text: string) {
+    const card = this.state.cards.find(c => c.id === cardId);
+    if (!card) return;
+    if (!card.checklist) card.checklist = [];
+    const item: ChecklistItem = { id: uuid(), text, checked: false };
+    card.checklist.push(item);
+    this.logActivity(cardId, 'user-1', 'updated', `Added checklist item "${text}" to "${card.title}"`);
+    this.save();
+    return item;
+  }
+
+  toggleChecklistItem(cardId: string, itemId: string) {
+    const card = this.state.cards.find(c => c.id === cardId);
+    if (!card) return;
+    const item = card.checklist?.find(i => i.id === itemId);
+    if (item) {
+      item.checked = !item.checked;
+      this.save();
+    }
+  }
+
+  deleteChecklistItem(cardId: string, itemId: string) {
+    const card = this.state.cards.find(c => c.id === cardId);
+    if (!card) return;
+    card.checklist = card.checklist.filter(i => i.id !== itemId);
+    this.save();
+  }
+
+  // --- Attachments ---
+  addAttachment(cardId: string, url: string) {
+    const card = this.state.cards.find(c => c.id === cardId);
+    if (!card) return;
+    card.attachments.push(url);
+    this.logActivity(cardId, 'user-1', 'updated', `Added attachment to "${card.title}"`);
+    this.save();
+  }
+
+  removeAttachment(cardId: string, index: number) {
+    const card = this.state.cards.find(c => c.id === cardId);
+    if (!card) return;
+    card.attachments.splice(index, 1);
     this.save();
   }
 
