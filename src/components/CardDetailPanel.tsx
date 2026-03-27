@@ -681,7 +681,7 @@ export function CardDetailPanel({ card, onClose }: Props) {
                     {Math.round(((card.checklist || []).filter(i => i.checked).length / (card.checklist || []).length) * 100)}%
                   </span>
                 </div>
-                <div className="w-full h-2 bg-slate-200 dark:bg-slate-600 rounded-full overflow-hidden">
+                <div className="ml-5 w-auto h-2 bg-slate-200 dark:bg-slate-600 rounded-full overflow-hidden">
                   <div
                     className="h-full bg-green-500 rounded-full transition-all duration-300"
                     style={{ width: `${((card.checklist || []).filter(i => i.checked).length / (card.checklist || []).length) * 100}%` }}
@@ -707,7 +707,7 @@ export function CardDetailPanel({ card, onClose }: Props) {
               </div>
 
               {/* Table */}
-              <div className="border border-slate-200 dark:border-slate-700 rounded-xl overflow-hidden">
+              <div className="ml-5 border border-slate-200 dark:border-slate-700 rounded-xl overflow-hidden">
                 {/* Table header */}
                 <div className="flex items-center bg-slate-100 dark:bg-slate-700/60 border-b border-slate-200 dark:border-slate-700 px-6 py-2">
                   <span className="flex-1 text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">Name</span>
