@@ -54,6 +54,7 @@ class BoardStore {
   }
 
   private save() {
+    this.state = { ...this.state };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(this.state));
     this.listeners.forEach(l => l());
   }

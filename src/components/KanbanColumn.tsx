@@ -5,6 +5,8 @@ import { KanbanCard } from './KanbanCard';
 import { store } from '../store/boardStore';
 import { useState } from 'react';
 
+const NO_ADD_COLUMNS = ['col-progress', 'col-review'];
+
 interface Props {
   column: Column;
   cards: Card[];
@@ -13,6 +15,7 @@ interface Props {
 }
 
 export function KanbanColumn({ column, cards, swimlaneId, onCardClick }: Props) {
+  const canAdd = !NO_ADD_COLUMNS.includes(column.id);
   const [showAdd, setShowAdd] = useState(false);
   const [newTitle, setNewTitle] = useState('');
   const droppableId = `${column.id}::${swimlaneId}`;
@@ -47,14 +50,16 @@ export function KanbanColumn({ column, cards, swimlaneId, onCardClick }: Props) 
             {cards.length}{column.wipLimit > 0 ? `/${column.wipLimit}` : ''}
           </span>
         </div>
-        <button
-          onClick={() => setShowAdd(!showAdd)}
-          className="w-6 h-6 flex items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition"
-        >
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-          </svg>
-        </button>
+        {canAdd && (
+          <button
+            onClick={() => setShowAdd(!showAdd)}
+            className="w-6 h-6 flex items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+            </svg>
+          </button>
+        )}
       </div>
 
       <div
@@ -69,7 +74,7 @@ export function KanbanColumn({ column, cards, swimlaneId, onCardClick }: Props) 
           ))}
         </SortableContext>
 
-        {showAdd && (
+        {canAdd && showAdd && (
           <div className="bg-white rounded-lg border border-slate-200 p-2">
             <input
               autoFocus
