@@ -695,7 +695,7 @@ export function CardDetailPanel({ card, onClose }: Props) {
         </div>
 
         {/* Right: Unified Activity sidebar */}
-        <div className="w-72 shrink-0 border-l border-slate-100 dark:border-slate-700 flex flex-col bg-slate-50 dark:bg-slate-800/50">
+        <div className="w-96 shrink-0 border-l border-slate-100 dark:border-slate-700 flex flex-col bg-slate-50 dark:bg-slate-800/50">
           <div className="shrink-0 px-4 py-3 border-b border-slate-100 dark:border-slate-700">
             <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">Activity</label>
           </div>
