@@ -161,7 +161,7 @@ export function CardDetailPanel({ card, onClose }: Props) {
       <div className="absolute inset-0 bg-black/20 backdrop-blur-sm" onClick={onClose} />
       <div className="relative w-full max-w-6xl h-[98vh] bg-white dark:bg-slate-800 shadow-2xl rounded-2xl flex flex-col overflow-hidden">
         {/* Title bar */}
-        <div className="shrink-0 flex items-center justify-end gap-1 px-6 py-3 border-b border-slate-100 dark:border-slate-700 bg-white dark:bg-slate-800">
+        <div className="shrink-0 flex items-center justify-end gap-1 px-6 py-1.5 border-b border-slate-100 dark:border-slate-700 bg-white dark:bg-slate-800">
           <span className="flex items-center gap-1.5 text-[11px] text-slate-400 dark:text-slate-500 mr-1">
             <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
