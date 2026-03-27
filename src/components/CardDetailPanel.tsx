@@ -608,58 +608,86 @@ export function CardDetailPanel({ card, onClose }: Props) {
           </div>
         </div>
 
-        {/* Right: Comments & Activity Log sidebar */}
+        {/* Right: Unified Activity sidebar */}
         <div className="w-80 shrink-0 border-l border-slate-100 dark:border-slate-700 flex flex-col bg-slate-50 dark:bg-slate-800/50">
-          <div className="flex-1 overflow-y-auto">
-            {/* Comments */}
-            <div className="px-4 pt-4 pb-3">
-              <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-3 block">Comments</label>
-              <div className="space-y-2.5 mb-3">
-                {card.comments.length === 0 && <p className="text-xs text-slate-400 dark:text-slate-500 italic">No comments yet.</p>}
-                {card.comments.map(c => {
-                  const author = state.members.find(m => m.id === c.authorId);
-                  return (
-                    <div key={c.id} className="bg-white dark:bg-slate-700 rounded-lg p-2.5 shadow-sm">
-                      <div className="flex items-center gap-2 mb-1">
-                        <div className="w-5 h-5 rounded-full bg-primary/20 text-primary text-[10px] font-bold flex items-center justify-center">
+          <div className="shrink-0 px-4 py-3 border-b border-slate-100 dark:border-slate-700">
+            <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">Activity</label>
+          </div>
+
+          {/* Unified timeline */}
+          <div className="flex-1 overflow-y-auto px-4 py-3">
+            <div className="space-y-3">
+              {(() => {
+                // Merge comments and activities into a single chronological feed
+                const feed: { type: 'comment' | 'activity'; timestamp: string; data: any }[] = [
+                  ...card.comments.map(c => ({ type: 'comment' as const, timestamp: c.createdAt, data: c })),
+                  ...activities.map(a => ({ type: 'activity' as const, timestamp: a.timestamp, data: a })),
+                ];
+                feed.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+
+                if (feed.length === 0) {
+                  return <p className="text-xs text-slate-400 dark:text-slate-500 italic">No activity yet.</p>;
+                }
+
+                return feed.map((item, i) => {
+                  if (item.type === 'comment') {
+                    const c = item.data;
+                    const author = state.members.find(m => m.id === c.authorId);
+                    return (
+                      <div key={`comment-${c.id}`} className="relative pl-6">
+                        {/* Timeline line */}
+                        {i < feed.length - 1 && (
+                          <div className="absolute left-[9px] top-6 bottom-[-12px] w-px bg-slate-200 dark:bg-slate-600" />
+                        )}
+                        {/* Avatar dot */}
+                        <div className="absolute left-0 top-0.5 w-[18px] h-[18px] rounded-full bg-primary/20 text-primary text-[9px] font-bold flex items-center justify-center">
                           {(author?.name || '?').charAt(0)}
                         </div>
-                        <span className="text-xs font-medium text-slate-600 dark:text-slate-300">{author?.name || 'Unknown'}</span>
-                        <span className="text-[10px] text-slate-400 dark:text-slate-500">
-                          {new Date(c.createdAt).toLocaleDateString()}
-                        </span>
+                        <div className="bg-white dark:bg-slate-700 rounded-lg p-2.5 shadow-sm">
+                          <div className="flex items-center gap-1.5 mb-1">
+                            <span className="text-xs font-medium text-slate-700 dark:text-slate-200">{author?.name || 'Unknown'}</span>
+                            <span className="text-[10px] text-slate-400 dark:text-slate-500">commented</span>
+                          </div>
+                          <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">{c.text}</p>
+                          <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-1.5">
+                            {new Date(c.createdAt).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                          </p>
+                        </div>
                       </div>
-                      <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">{c.text}</p>
-                    </div>
-                  );
-                })}
-              </div>
-              <div className="flex gap-1.5">
-                <input value={commentText} onChange={e => setCommentText(e.target.value)}
-                  onKeyDown={e => { if (e.key === 'Enter') handleAddComment(); }}
-                  placeholder="Write a comment..."
-                  className="flex-1 text-xs border border-slate-200 dark:border-slate-600 rounded-lg px-2.5 py-1.5 outline-none focus:border-primary bg-white dark:bg-slate-700 dark:text-slate-200" />
-                <button onClick={handleAddComment}
-                  className="text-xs bg-primary text-white px-2.5 py-1.5 rounded-lg hover:bg-primary-dark transition font-medium shrink-0">
-                  Send
-                </button>
-              </div>
+                    );
+                  } else {
+                    const a = item.data;
+                    return (
+                      <div key={`activity-${a.id}`} className="relative pl-6">
+                        {/* Timeline line */}
+                        {i < feed.length - 1 && (
+                          <div className="absolute left-[9px] top-4 bottom-[-12px] w-px bg-slate-200 dark:bg-slate-600" />
+                        )}
+                        {/* Activity dot */}
+                        <div className="absolute left-[5px] top-1 w-2 h-2 rounded-full bg-slate-300 dark:bg-slate-500 ring-2 ring-slate-50 dark:ring-slate-800" />
+                        <p className="text-xs text-slate-500 dark:text-slate-400">{a.detail}</p>
+                        <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5">
+                          {new Date(a.timestamp).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                        </p>
+                      </div>
+                    );
+                  }
+                });
+              })()}
             </div>
+          </div>
 
-            {/* Activity Log */}
-            <div className="border-t border-slate-200 dark:border-slate-700 px-4 pt-3 pb-4">
-              <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-3 block">Activity Log</label>
-              <div className="space-y-2.5">
-                {activities.length === 0 && <p className="text-xs text-slate-400 dark:text-slate-500 italic">No activity yet.</p>}
-                {activities.map(a => (
-                  <div key={a.id} className="text-xs">
-                    <p className="text-slate-500 dark:text-slate-400">{a.detail}</p>
-                    <p className="text-[10px] text-slate-300 dark:text-slate-600 mt-0.5">
-                      {new Date(a.timestamp).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
-                    </p>
-                  </div>
-                ))}
-              </div>
+          {/* Comment input pinned at bottom */}
+          <div className="shrink-0 px-4 py-3 border-t border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800">
+            <div className="flex gap-1.5">
+              <input value={commentText} onChange={e => setCommentText(e.target.value)}
+                onKeyDown={e => { if (e.key === 'Enter') handleAddComment(); }}
+                placeholder="Write a comment..."
+                className="flex-1 text-xs border border-slate-200 dark:border-slate-600 rounded-lg px-2.5 py-1.5 outline-none focus:border-primary bg-slate-50 dark:bg-slate-700 dark:text-slate-200" />
+              <button onClick={handleAddComment}
+                className="text-xs bg-primary text-white px-2.5 py-1.5 rounded-lg hover:bg-primary-dark transition font-medium shrink-0">
+                Send
+              </button>
             </div>
           </div>
         </div>
