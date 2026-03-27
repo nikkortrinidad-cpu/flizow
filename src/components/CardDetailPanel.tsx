@@ -37,6 +37,8 @@ export function CardDetailPanel({ card, onClose }: Props) {
   const [sharePublicLink, setSharePublicLink] = useState(false);
   const [sharePermission, setSharePermission] = useState<'full_edit' | 'can_comment' | 'view_only'>('full_edit');
   const [shareLinkCopied, setShareLinkCopied] = useState(false);
+  const [sharedInvites, setSharedInvites] = useState<{ name: string; permission: string }[]>([]);
+  const [shareInviteError, setShareInviteError] = useState('');
 
   /* Hidden Attachment state — available if needed */
 
@@ -153,21 +155,56 @@ export function CardDetailPanel({ card, onClose }: Props) {
                   <div className="flex gap-2">
                     <input
                       value={shareInviteEmail}
-                      onChange={e => setShareInviteEmail(e.target.value)}
+                      onChange={e => { setShareInviteEmail(e.target.value); setShareInviteError(''); }}
+                      onKeyDown={e => { if (e.key === 'Enter') (e.currentTarget.nextElementSibling as HTMLButtonElement)?.click(); }}
                       placeholder="Invite by name or email"
-                      className="flex-1 text-sm border border-slate-200 dark:border-slate-600 rounded-lg px-3 py-2 outline-none focus:border-primary bg-white dark:bg-slate-700 dark:text-slate-200"
+                      className={`flex-1 text-sm border rounded-lg px-3 py-2 outline-none bg-white dark:bg-slate-700 dark:text-slate-200 ${shareInviteError ? 'border-red-400 focus:border-red-500' : 'border-slate-200 dark:border-slate-600 focus:border-primary'}`}
                     />
                     <button
                       onClick={() => {
-                        if (shareInviteEmail.trim()) {
-                          setShareInviteEmail('');
+                        const val = shareInviteEmail.trim();
+                        if (!val) {
+                          setShareInviteError('Please enter a name or email');
+                          return;
                         }
+                        if (sharedInvites.some(s => s.name.toLowerCase() === val.toLowerCase())) {
+                          setShareInviteError('Already invited');
+                          return;
+                        }
+                        setSharedInvites([...sharedInvites, { name: val, permission: sharePermission === 'full_edit' ? 'Full edit' : sharePermission === 'can_comment' ? 'Can comment' : 'View only' }]);
+                        setShareInviteEmail('');
+                        setShareInviteError('');
                       }}
                       className="text-sm bg-primary text-white px-4 py-2 rounded-lg hover:bg-primary-dark transition font-medium shrink-0"
                     >
                       Invite
                     </button>
                   </div>
+                  {shareInviteError && (
+                    <p className="text-xs text-red-500 mt-1.5">{shareInviteError}</p>
+                  )}
+                  {/* Invited members list */}
+                  {sharedInvites.length > 0 && (
+                    <div className="mt-3 space-y-1.5">
+                      {sharedInvites.map((inv, i) => (
+                        <div key={i} className="flex items-center justify-between bg-slate-50 dark:bg-slate-700/60 rounded-lg px-3 py-2">
+                          <div className="flex items-center gap-2">
+                            <div className="w-6 h-6 rounded-full bg-primary/20 text-primary text-[10px] font-bold flex items-center justify-center shrink-0">
+                              {inv.name.charAt(0).toUpperCase()}
+                            </div>
+                            <div>
+                              <p className="text-xs font-medium text-slate-700 dark:text-slate-200">{inv.name}</p>
+                              <p className="text-[10px] text-slate-400 dark:text-slate-500">Invited · {inv.permission}</p>
+                            </div>
+                          </div>
+                          <button onClick={() => setSharedInvites(sharedInvites.filter((_, j) => j !== i))}
+                            className="text-slate-400 hover:text-red-500 transition p-0.5" title="Remove">
+                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
 
                 {/* Options */}
