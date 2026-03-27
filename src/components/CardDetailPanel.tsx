@@ -952,9 +952,6 @@ export function CardDetailPanel({ card, onClose }: Props) {
 
                       return (
                         <div key={`comment-${c.id}`} className="relative pl-6">
-                          {i < arr.length - 1 && (
-                            <div className="absolute left-[9px] top-6 bottom-[-12px] w-px bg-slate-200 dark:bg-slate-600" />
-                          )}
                           <div className="absolute left-0 top-0.5 w-[18px] h-[18px] rounded-full bg-primary/20 text-primary text-[9px] font-bold flex items-center justify-center">
                             {(author?.name || '?').charAt(0)}
                           </div>
