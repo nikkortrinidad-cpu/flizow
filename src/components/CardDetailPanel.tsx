@@ -3,6 +3,7 @@ import type { Card, Priority } from '../types';
 import { useBoard } from '../store/useStore';
 import { store } from '../store/boardStore';
 import { ColorPicker } from './ColorPicker';
+import { MarkdownEditor } from './MarkdownEditor';
 
 interface Props {
   card: Card;
@@ -113,18 +114,12 @@ export function CardDetailPanel({ card, onClose }: Props) {
             </svg>
           </div>
 
-          <div>
-            <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1 block">Description</label>
-            <textarea value={description} onChange={e => { if (e.target.value.length <= 2000) setDescription(e.target.value); }}
-              maxLength={2000}
-              placeholder="Add a description..."
-              className="w-full min-h-[80px] text-sm text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-600 rounded-lg p-3 outline-none focus:border-primary resize-none bg-white dark:bg-slate-700" />
-            <div className="flex justify-end mt-1">
-              <span className={`text-[11px] ${description.length >= 2000 ? 'text-red-500 font-medium' : description.length >= 1800 ? 'text-yellow-500' : 'text-slate-400'}`}>
-                {description.length}/2000
-              </span>
-            </div>
-          </div>
+          <MarkdownEditor
+            value={description}
+            onChange={setDescription}
+            maxLength={2000}
+            placeholder="Add a description... (supports markdown)"
+          />
 
           <div className="grid grid-cols-2 gap-4">
             <div>
