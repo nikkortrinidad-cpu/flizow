@@ -30,6 +30,7 @@ export function CardDetailPanel({ card, onClose }: Props) {
   const [showLabelsDropdown, setShowLabelsDropdown] = useState(false);
   const [showDatesDropdown, setShowDatesDropdown] = useState(false);
   const [showPriorityDropdown, setShowPriorityDropdown] = useState(false);
+  const [showStatusDropdown, setShowStatusDropdown] = useState(false);
 
   // Section visibility toggles
   const [showChecklistSection, setShowChecklistSection] = useState((card.checklist || []).length > 0);
@@ -142,6 +143,49 @@ export function CardDetailPanel({ card, onClose }: Props) {
 
             {/* Action buttons row */}
             <div className="flex items-center gap-2 flex-wrap">
+              {/* Status dropdown */}
+              <div className="relative">
+                <button
+                  onClick={() => setShowStatusDropdown(!showStatusDropdown)}
+                  className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg border transition border-slate-200 dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-slate-700"
+                >
+                  <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: column?.color }} />
+                  <span className="text-slate-700 dark:text-slate-200">{column?.title || 'Status'}</span>
+                  <svg className="w-2.5 h-2.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+                {showStatusDropdown && (
+                  <>
+                    <div className="fixed inset-0 z-10" onClick={() => setShowStatusDropdown(false)} />
+                    <div className="absolute top-full left-0 mt-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-lg shadow-xl z-20 w-48 overflow-hidden">
+                      <div className="px-3 py-2 border-b border-slate-100 dark:border-slate-700">
+                        <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase">Status</span>
+                      </div>
+                      <div className="p-1.5 space-y-0.5">
+                        {[...state.columns].sort((a, b) => a.order - b.order).map(c => (
+                          <button key={c.id}
+                            onClick={() => { store.moveCard(card.id, c.id, card.swimlaneId, 0); setShowStatusDropdown(false); }}
+                            className={`w-full flex items-center gap-2.5 px-2.5 py-2 rounded-md text-xs font-medium transition hover:bg-slate-50 dark:hover:bg-slate-700 ${
+                              card.columnId === c.id
+                                ? 'bg-slate-100 dark:bg-slate-700 text-slate-800 dark:text-slate-100'
+                                : 'text-slate-600 dark:text-slate-300'
+                            }`}>
+                            <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: c.color }} />
+                            {c.title}
+                            {card.columnId === c.id && (
+                              <svg className="w-3.5 h-3.5 ml-auto text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={3}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                              </svg>
+                            )}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </>
+                )}
+              </div>
+
               {/* + Add dropdown */}
               <div className="relative">
                 <button
@@ -579,21 +623,6 @@ export function CardDetailPanel({ card, onClose }: Props) {
 
             {/* Hidden Attachment section — available in store if needed */}
 
-            <div>
-              <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1 block">Move to Column</label>
-              <div className="flex gap-1.5 flex-wrap">
-                {state.columns.map(c => (
-                  <button key={c.id}
-                    onClick={() => { store.moveCard(card.id, c.id, card.swimlaneId, 0); }}
-                    className={`text-xs px-2.5 py-1 rounded-full font-medium transition ${
-                      card.columnId === c.id ? 'text-white' : 'bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-600'
-                    }`}
-                    style={card.columnId === c.id ? { backgroundColor: c.color } : {}}>
-                    {c.title}
-                  </button>
-                ))}
-              </div>
-            </div>
 
             <div className="flex gap-2">
               <button onClick={handleSave}
