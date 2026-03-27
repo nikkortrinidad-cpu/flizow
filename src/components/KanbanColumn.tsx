@@ -19,6 +19,8 @@ export function KanbanColumn({ column, cards, swimlaneId, onCardClick, dragHandl
   const canAdd = !NO_ADD_COLUMNS.includes(column.id);
   const [showAdd, setShowAdd] = useState(false);
   const [newTitle, setNewTitle] = useState('');
+  const [isEditing, setIsEditing] = useState(false);
+  const [editTitle, setEditTitle] = useState(column.title);
   const droppableId = `${column.id}::${swimlaneId}`;
 
   const { setNodeRef, isOver } = useDroppable({
@@ -49,7 +51,29 @@ export function KanbanColumn({ column, cards, swimlaneId, onCardClick, dragHandl
             </button>
           )}
           <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: column.color }} />
-          <h3 className="text-sm font-semibold text-slate-700 uppercase tracking-wide">{column.title}</h3>
+          {isEditing ? (
+            <input
+              autoFocus
+              value={editTitle}
+              onChange={e => setEditTitle(e.target.value)}
+              onBlur={() => {
+                if (editTitle.trim()) store.updateColumn(column.id, { title: editTitle.trim() });
+                else setEditTitle(column.title);
+                setIsEditing(false);
+              }}
+              onKeyDown={e => {
+                if (e.key === 'Enter') { (e.target as HTMLInputElement).blur(); }
+                if (e.key === 'Escape') { setEditTitle(column.title); setIsEditing(false); }
+              }}
+              className="text-sm font-semibold text-slate-700 uppercase tracking-wide bg-white border border-primary rounded px-1.5 py-0.5 outline-none w-28"
+            />
+          ) : (
+            <h3
+              onDoubleClick={() => { setEditTitle(column.title); setIsEditing(true); }}
+              className="text-sm font-semibold text-slate-700 uppercase tracking-wide cursor-pointer hover:text-primary transition"
+              title="Double-click to rename"
+            >{column.title}</h3>
+          )}
           <span className={`text-xs font-medium px-1.5 py-0.5 rounded-full ${
             wipExceeded ? 'bg-red-100 text-red-600' :
             wipAtLimit ? 'bg-yellow-100 text-yellow-600' :
