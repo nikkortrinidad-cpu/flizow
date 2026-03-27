@@ -51,8 +51,8 @@ export function KanbanCard({ card, onClick }: { card: Card; onClick: () => void 
       {...attributes}
       {...listeners}
       onClick={onClick}
-      className="relative bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-600 p-3 cursor-grab active:cursor-grabbing
-        hover:border-primary/40 hover:shadow-md transition-all group"
+      className="relative bg-white dark:bg-slate-800 rounded-lg border-2 border-slate-200 dark:border-slate-600 p-3 cursor-grab active:cursor-grabbing
+        hover:border-primary hover:shadow-lg hover:bg-slate-50 dark:hover:border-primary-light dark:hover:bg-slate-750 transition-all group"
     >
       <div className="absolute top-2 right-2 flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
         <svg className="w-3.5 h-3.5 text-slate-300 dark:text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
