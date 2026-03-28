@@ -958,21 +958,39 @@ export function CardDetailPanel({ card, onClose }: Props) {
                       const totalReplies = countAllReplies(c.replies || []);
                       const isCollapsed = collapsedComments.has(c.id);
 
+                      const CONNECTOR_OFFSET = 19; // distance from child left edge back to parent's thread line center (avatarCenter 10 + gap 8 + 1)
+                      const AVATAR_CENTER = 10; // half of 20px avatar
+
                       const renderReplies = (replies: typeof card.comments) => {
                         return (
                           <div>
-                            {replies.map((reply) => {
+                            {replies.map((reply, idx) => {
                               const replyAuthor = state.members.find(m => m.id === reply.authorId);
                               const hasNestedReplies = (reply.replies || []).length > 0;
+                              const isLast = idx === replies.length - 1;
                               return (
-                                <div key={`reply-${reply.id}`} className="flex gap-2 mt-1.5">
+                                <div key={`reply-${reply.id}`} className="relative flex gap-2 mt-1.5">
+                                  {/* Facebook-style connector from parent's thread line to this avatar */}
+                                  {isLast ? (
+                                    /* Curved elbow for last child */
+                                    <div
+                                      className="absolute border-l-2 border-b-2 border-[#d1d1d6] dark:border-[#636366] rounded-bl-[10px]"
+                                      style={{ left: -CONNECTOR_OFFSET, top: -6, width: CONNECTOR_OFFSET, height: AVATAR_CENTER + 6 + 1 }}
+                                    />
+                                  ) : (
+                                    /* Straight vertical + horizontal arm for non-last */
+                                    <>
+                                      <div className="absolute w-[2px] bg-[#d1d1d6] dark:bg-[#636366]" style={{ left: -CONNECTOR_OFFSET, top: -6, bottom: 0 }} />
+                                      <div className="absolute h-[2px] bg-[#d1d1d6] dark:bg-[#636366]" style={{ left: -CONNECTOR_OFFSET, top: AVATAR_CENTER - 1, width: CONNECTOR_OFFSET }} />
+                                    </>
+                                  )}
                                   {/* Avatar column with thread line */}
-                                  <div className="flex flex-col items-center shrink-0">
+                                  <div className="flex flex-col items-center shrink-0 w-5">
                                     <div className="w-5 h-5 rounded-full bg-[#e8e8ed] dark:bg-[#3a3a3c] text-[#86868b] text-[10px] font-bold flex items-center justify-center shrink-0">
                                       {(replyAuthor?.name || '?').charAt(0)}
                                     </div>
                                     {hasNestedReplies && (
-                                      <div className="w-[2px] flex-1 bg-[#d1d1d6] dark:bg-[#636366] mt-0.5 rounded-full" />
+                                      <div className="w-[2px] flex-1 bg-[#d1d1d6] dark:bg-[#636366] mt-0.5" />
                                     )}
                                   </div>
                                   {/* Content column */}
@@ -1018,14 +1036,14 @@ export function CardDetailPanel({ card, onClose }: Props) {
                       };
 
                       return (
-                        <div key={`comment-${c.id}`} className="flex gap-2.5">
+                        <div key={`comment-${c.id}`} className="flex gap-2">
                           {/* Avatar column with thread line */}
-                          <div className="flex flex-col items-center shrink-0">
+                          <div className="flex flex-col items-center shrink-0 w-5">
                             <div className="w-5 h-5 rounded-full bg-[#0071e3]/10 text-primary text-[10px] font-bold flex items-center justify-center shrink-0">
                               {(author?.name || '?').charAt(0)}
                             </div>
                             {!isCollapsed && (c.replies || []).length > 0 && (
-                              <div className="w-[2px] flex-1 bg-[#d1d1d6] dark:bg-[#636366] mt-0.5 rounded-full" />
+                              <div className="w-[2px] flex-1 bg-[#d1d1d6] dark:bg-[#636366] mt-0.5" />
                             )}
                           </div>
                           {/* Content column */}
