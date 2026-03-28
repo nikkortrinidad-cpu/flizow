@@ -1263,8 +1263,8 @@ export function CardDetailPanel({ card, onClose }: Props) {
                           </div>
                           {/* Content column */}
                           <div className="flex-1 min-w-0 relative">
-                            {/* Bridge line from below avatar down through all replies */}
-                            {(!isCollapsed && (c.replies || []).length > 0 || replyingTo === c.id) && (
+                            {/* Bridge line from below avatar down through all replies / to toggle */}
+                            {(totalReplies > 0 || replyingTo === c.id) && (
                               <div
                                 className="absolute w-[2px] bg-[#d1d1d6] dark:bg-[#636366]"
                                 style={{ left: -CONNECTOR_OFFSET, top: AVATAR_SIZE, bottom: 0 }}
@@ -1347,15 +1347,38 @@ export function CardDetailPanel({ card, onClose }: Props) {
                             </div>
                             <ReactionPills cardId={card.id} comment={c} />
                             {totalReplies > 0 && (
-                              <button
-                                onClick={() => toggleCollapse(c.id)}
-                                className="flex items-center gap-1 mt-1 text-[11px] font-semibold text-primary hover:text-primary-dark transition"
-                              >
-                                <svg className={`w-3 h-3 transition-transform ${isCollapsed ? '' : 'rotate-90'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                              <div className="relative mt-1">
+                                {/* Mask to stop bridge line at the elbow when collapsed */}
+                                {isCollapsed && (
+                                  <div
+                                    className="absolute bg-[#f5f5f7] dark:bg-[#1c1c1e]"
+                                    style={{ left: -CONNECTOR_OFFSET, top: -2, bottom: 0, width: 2, zIndex: 1 }}
+                                  />
+                                )}
+                                {/* Curved elbow from bridge line to toggle */}
+                                <svg
+                                  className="absolute text-[#d1d1d6] dark:text-[#636366]"
+                                  style={{ left: -CONNECTOR_OFFSET, top: -2, width: CONNECTOR_OFFSET, height: AVATAR_CENTER + 3, zIndex: 2 }}
+                                  fill="none"
+                                  overflow="visible"
+                                >
+                                  <path
+                                    d={`M 1 0 Q 1 ${AVATAR_CENTER + 2} ${AVATAR_CENTER + 2} ${AVATAR_CENTER + 2} L ${CONNECTOR_OFFSET} ${AVATAR_CENTER + 2}`}
+                                    stroke="currentColor"
+                                    strokeWidth="2"
+                                  />
                                 </svg>
-                                {isCollapsed ? `View ${totalReplies} ${totalReplies === 1 ? 'reply' : 'replies'}` : `Hide ${totalReplies} ${totalReplies === 1 ? 'reply' : 'replies'}`}
-                              </button>
+                                <button
+                                  onClick={() => toggleCollapse(c.id)}
+                                  className="flex items-center gap-1 pl-1 text-[11px] font-semibold text-primary hover:text-primary-dark transition"
+                                  style={{ paddingTop: AVATAR_CENTER - 4 }}
+                                >
+                                  <svg className={`w-3 h-3 transition-transform ${isCollapsed ? '' : 'rotate-90'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                                  </svg>
+                                  {isCollapsed ? `View ${totalReplies} ${totalReplies === 1 ? 'reply' : 'replies'}` : `Hide ${totalReplies} ${totalReplies === 1 ? 'reply' : 'replies'}`}
+                                </button>
+                              </div>
                             )}
                             </>
                             )}
