@@ -1344,19 +1344,19 @@ export function CardDetailPanel({ card, onClose }: Props) {
                               >
                                 Reply
                               </button>
-                              {totalReplies > 0 && (
-                                <button
-                                  onClick={() => toggleCollapse(c.id)}
-                                  className="text-[10px] font-medium text-primary hover:text-primary-dark transition flex items-center gap-0.5"
-                                >
-                                  <svg className={`w-3 h-3 transition-transform ${isCollapsed ? '' : 'rotate-90'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                                  </svg>
-                                  {totalReplies} {totalReplies === 1 ? 'reply' : 'replies'}
-                                </button>
-                              )}
                             </div>
                             <ReactionPills cardId={card.id} comment={c} />
+                            {totalReplies > 0 && (
+                              <button
+                                onClick={() => toggleCollapse(c.id)}
+                                className="flex items-center gap-1 mt-1 text-[11px] font-semibold text-primary hover:text-primary-dark transition"
+                              >
+                                <svg className={`w-3 h-3 transition-transform ${isCollapsed ? '' : 'rotate-90'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                                </svg>
+                                {isCollapsed ? `View ${totalReplies} ${totalReplies === 1 ? 'reply' : 'replies'}` : `Hide ${totalReplies} ${totalReplies === 1 ? 'reply' : 'replies'}`}
+                              </button>
+                            )}
                             </>
                             )}
 
