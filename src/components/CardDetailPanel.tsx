@@ -78,27 +78,54 @@ interface Props {
   onClose: () => void;
 }
 
+const QUICK_REACTIONS = ['🙏', '👍', '🙂'];
+
 function AddReactionButton({ cardId, comment }: { cardId: string; comment: Comment }) {
-  const [showPicker, setShowPicker] = useState(false);
+  const [showQuick, setShowQuick] = useState(false);
+  const [showFullPicker, setShowFullPicker] = useState(false);
 
   return (
     <div className="relative">
       <button
-        onClick={() => setShowPicker(!showPicker)}
+        onClick={() => { setShowQuick(!showQuick); setShowFullPicker(false); }}
         className="text-[10px] font-medium text-[#86868b] hover:text-[#6e6e73] transition"
         title="Add reaction"
       >
         <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
       </button>
-      {showPicker && (
+      {showQuick && !showFullPicker && (
         <>
-          <div className="fixed inset-0 z-10" onClick={() => setShowPicker(false)} />
+          <div className="fixed inset-0 z-10" onClick={() => setShowQuick(false)} />
+          <div className="absolute bottom-full left-0 mb-1 z-20 flex items-center gap-0.5 bg-white dark:bg-[#2c2c2e] rounded-full shadow-lg border border-[#d2d2d7] dark:border-[#424245] px-1 py-0.5">
+            {QUICK_REACTIONS.map(emoji => (
+              <button
+                key={emoji}
+                onClick={() => { store.toggleReaction(cardId, comment.id, emoji); setShowQuick(false); }}
+                className="w-7 h-7 flex items-center justify-center rounded-full hover:bg-[#f0f0f5] dark:hover:bg-[#3a3a3c] transition text-base"
+              >
+                {emoji}
+              </button>
+            ))}
+            <button
+              onClick={() => setShowFullPicker(true)}
+              className="w-7 h-7 flex items-center justify-center rounded-full hover:bg-[#f0f0f5] dark:hover:bg-[#3a3a3c] transition text-[#86868b]"
+              title="More reactions"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" /></svg>
+            </button>
+          </div>
+        </>
+      )}
+      {showFullPicker && (
+        <>
+          <div className="fixed inset-0 z-10" onClick={() => { setShowFullPicker(false); setShowQuick(false); }} />
           <div className="absolute bottom-full left-0 mb-2 z-20">
             <Picker
               data={data}
               onEmojiSelect={(emoji: { native: string }) => {
                 store.toggleReaction(cardId, comment.id, emoji.native);
-                setShowPicker(false);
+                setShowFullPicker(false);
+                setShowQuick(false);
               }}
               theme="light"
               previewPosition="none"
