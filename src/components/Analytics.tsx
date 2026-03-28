@@ -15,10 +15,10 @@ export function Analytics({ onClose }: { onClose: () => void }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       <div className="absolute inset-0 bg-black/20 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-y-auto">
-        <div className="sticky top-0 bg-white dark:bg-slate-800 border-b border-slate-100 dark:border-slate-700 px-6 py-4 flex items-center justify-between z-10 rounded-t-2xl">
-          <h2 className="text-lg font-semibold text-slate-800 dark:text-slate-100">Analytics & Reports</h2>
-          <button onClick={onClose} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 p-1 rounded hover:bg-slate-100 dark:hover:bg-slate-700 transition">
+      <div className="relative bg-white dark:bg-[#1c1c1e] rounded-2xl shadow-2xl shadow-black/20 w-full max-w-3xl max-h-[90vh] overflow-y-auto">
+        <div className="sticky top-0 bg-white dark:bg-[#1c1c1e] border-b border-[#e8e8ed] dark:border-[#38383a] px-6 py-4 flex items-center justify-between z-10 rounded-t-2xl">
+          <h2 className="text-lg font-semibold text-[#1d1d1f] dark:text-[#f5f5f7]">Analytics & Reports</h2>
+          <button onClick={onClose} className="text-[#86868b] hover:text-[#6e6e73] dark:hover:text-[#aeaeb2] p-1 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 transition">
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
@@ -33,7 +33,7 @@ export function Analytics({ onClose }: { onClose: () => void }) {
               { label: 'Overdue', value: overdueCards, color: 'bg-red-50 text-red-600 dark:bg-red-900/30 dark:text-red-400' },
               { label: 'Team Members', value: state.members.length, color: 'bg-purple-50 text-purple-600 dark:bg-purple-900/30 dark:text-purple-400' },
             ].map(stat => (
-              <div key={stat.label} className={`rounded-xl p-4 ${stat.color}`}>
+              <div key={stat.label} className={`rounded-2xl p-4 ${stat.color}`}>
                 <p className="text-2xl font-bold">{stat.value}</p>
                 <p className="text-xs font-medium opacity-70 mt-1">{stat.label}</p>
               </div>
@@ -41,8 +41,8 @@ export function Analytics({ onClose }: { onClose: () => void }) {
           </div>
 
           <div className="grid grid-cols-2 gap-6">
-            <div className="bg-slate-50 dark:bg-slate-700 rounded-xl p-4">
-              <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-200 mb-3">Cards by Column</h3>
+            <div className="bg-[#f5f5f7] dark:bg-[#2c2c2e] rounded-2xl p-4">
+              <h3 className="text-sm font-semibold text-[#1d1d1f] dark:text-[#e5e5ea] mb-3">Cards by Column</h3>
               <ResponsiveContainer width="100%" height={200}>
                 <BarChart data={columnData}>
                   <XAxis dataKey="name" tick={{ fontSize: 11 }} />
@@ -57,8 +57,8 @@ export function Analytics({ onClose }: { onClose: () => void }) {
               </ResponsiveContainer>
             </div>
 
-            <div className="bg-slate-50 dark:bg-slate-700 rounded-xl p-4">
-              <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-200 mb-3">Cards by Priority</h3>
+            <div className="bg-[#f5f5f7] dark:bg-[#2c2c2e] rounded-2xl p-4">
+              <h3 className="text-sm font-semibold text-[#1d1d1f] dark:text-[#e5e5ea] mb-3">Cards by Priority</h3>
               <ResponsiveContainer width="100%" height={250}>
                 <PieChart>
                   <Pie data={priorityData} dataKey="count" nameKey="name" cx="50%" cy="45%"
@@ -74,24 +74,24 @@ export function Analytics({ onClose }: { onClose: () => void }) {
             </div>
           </div>
 
-          <div className="bg-slate-50 dark:bg-slate-700 rounded-xl p-4">
-            <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-200 mb-3">Recent Activity</h3>
+          <div className="bg-[#f5f5f7] dark:bg-[#2c2c2e] rounded-2xl p-4">
+            <h3 className="text-sm font-semibold text-[#1d1d1f] dark:text-[#e5e5ea] mb-3">Recent Activity</h3>
             <div className="space-y-1.5 max-h-60 overflow-y-auto">
               {state.activityLog.slice(0, 30).map(a => (
                 <div key={a.id} className="flex items-start gap-3 text-xs py-1">
-                  <span className="text-slate-300 dark:text-slate-500 shrink-0 w-32">
+                  <span className="text-[#86868b] dark:text-[#6e6e73] shrink-0 w-32">
                     {new Date(a.timestamp).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
                   </span>
                   <span className={`shrink-0 px-1.5 py-0.5 rounded text-[10px] font-medium ${
                     a.action === 'created' ? 'bg-green-100 text-green-600 dark:bg-green-900/40 dark:text-green-400' :
                     a.action === 'moved' ? 'bg-blue-100 text-blue-600 dark:bg-blue-900/40 dark:text-blue-400' :
                     a.action === 'deleted' ? 'bg-red-100 text-red-600 dark:bg-red-900/40 dark:text-red-400' :
-                    'bg-slate-100 text-slate-500 dark:bg-slate-600 dark:text-slate-400'
+                    'bg-[#f5f5f7] text-[#86868b] dark:bg-[#3a3a3c] dark:text-[#86868b]'
                   }`}>{a.action}</span>
-                  <span className="text-slate-500 dark:text-slate-400">{a.detail}</span>
+                  <span className="text-[#86868b] dark:text-[#86868b]">{a.detail}</span>
                 </div>
               ))}
-              {state.activityLog.length === 0 && <p className="text-xs text-slate-400">No activity yet.</p>}
+              {state.activityLog.length === 0 && <p className="text-xs text-[#86868b]">No activity yet.</p>}
             </div>
           </div>
         </div>

@@ -126,22 +126,22 @@ export function KanbanBoard() {
         onDragOver={handleDragOver}
         onDragEnd={handleDragEnd}
       >
-        <div className="flex-1 overflow-x-auto overflow-y-auto p-6">
+        <div className="flex-1 overflow-x-auto overflow-y-auto p-6 bg-[#f5f5f7] dark:bg-[#1c1c1e]">
           {swimlanes.map(swimlane => (
             <div key={swimlane.id} className="mb-6">
               {swimlanes.length > 1 && (
                 <div className="flex items-center gap-2 mb-3">
                   <button
                     onClick={() => store.updateSwimlane(swimlane.id, { collapsed: !swimlane.collapsed })}
-                    className="text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300 transition"
+                    className="text-[#86868b] hover:text-[#1d1d1f] dark:text-[#86868b] dark:hover:text-[#f5f5f7] transition"
                   >
                     <svg className={`w-4 h-4 transition-transform ${swimlane.collapsed ? '' : 'rotate-90'}`}
                       fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                     </svg>
                   </button>
-                  <h3 className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">{swimlane.title}</h3>
-                  <span className="text-[10px] text-slate-400 dark:text-slate-500">
+                  <h3 className="text-xs font-semibold text-[#86868b] uppercase tracking-wider">{swimlane.title}</h3>
+                  <span className="text-[10px] text-[#86868b]">
                     ({filteredCards.filter(c => c.swimlaneId === swimlane.id).length} cards)
                   </span>
                 </div>
@@ -167,7 +167,7 @@ export function KanbanBoard() {
                     {swimlane.id === swimlanes[0]?.id && (
                       <div className="shrink-0 w-64">
                         {showAddColumn ? (
-                          <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-3">
+                          <div className="bg-white dark:bg-[#1c1c1e] rounded-2xl shadow-sm border border-[#d2d2d7] dark:border-[#424245] p-3">
                             <input
                               ref={newColumnInputRef}
                               value={newColumnTitle}
@@ -183,7 +183,7 @@ export function KanbanBoard() {
                                 }
                               }}
                               placeholder="Enter list title..."
-                              className="w-full text-sm font-medium border border-slate-200 dark:border-slate-600 rounded-lg px-3 py-2 outline-none focus:border-primary bg-white dark:bg-slate-700 dark:text-slate-200 mb-2"
+                              className="w-full text-sm font-medium border border-[#d2d2d7] dark:border-[#424245] rounded-xl px-3 py-2 outline-none focus:border-[#0071e3] bg-white dark:bg-[#2c2c2e] dark:text-[#f5f5f7] mb-2"
                               autoFocus
                             />
                             <div className="flex items-center gap-2">
@@ -195,13 +195,13 @@ export function KanbanBoard() {
                                     setShowAddColumn(false);
                                   }
                                 }}
-                                className="text-xs bg-primary text-white px-3 py-1.5 rounded-lg hover:bg-primary-dark transition font-medium"
+                                className="text-xs bg-[#0071e3] text-white px-3 py-1.5 rounded-full hover:bg-[#0077ed] transition font-medium"
                               >
                                 Add list
                               </button>
                               <button
                                 onClick={() => { setNewColumnTitle(''); setShowAddColumn(false); }}
-                                className="text-xs text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 px-2 py-1.5 transition"
+                                className="text-xs text-[#86868b] hover:text-[#1d1d1f] dark:hover:text-[#f5f5f7] px-2 py-1.5 transition"
                               >
                                 Cancel
                               </button>
@@ -210,7 +210,7 @@ export function KanbanBoard() {
                         ) : (
                           <button
                             onClick={() => { setShowAddColumn(true); setTimeout(() => newColumnInputRef.current?.focus(), 50); }}
-                            className="w-full flex items-center justify-start gap-2 py-3 px-4 rounded-xl border-2 border-dashed border-slate-300 dark:border-slate-600 text-sm font-medium text-slate-500 dark:text-slate-400 hover:border-primary hover:text-primary dark:hover:border-primary dark:hover:text-primary hover:bg-primary/5 transition"
+                            className="w-full flex items-center justify-start gap-2 py-3 px-4 rounded-full bg-white dark:bg-[#1c1c1e] border border-[#d2d2d7] dark:border-[#424245] text-sm font-medium text-[#86868b] hover:border-[#0071e3] hover:text-[#0071e3] hover:bg-white/80 dark:hover:bg-[#2c2c2e] transition"
                           >
                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
                             Add another list

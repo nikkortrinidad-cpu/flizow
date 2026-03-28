@@ -5,17 +5,17 @@ import { useBoard } from '../store/useStore';
 import { store } from '../store/boardStore';
 
 const priorityColors: Record<string, string> = {
-  low: 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300',
-  medium: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-300',
-  high: 'bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-300',
-  urgent: 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300',
+  low: 'bg-[#007aff]/10 text-[#007aff]',
+  medium: 'bg-[#ff9f0a]/10 text-[#ff9500]',
+  high: 'bg-[#ff6b00]/10 text-[#ff6b00]',
+  urgent: 'bg-[#ff3b30]/10 text-[#ff3b30]',
 };
 
 const priorityDots: Record<string, string> = {
-  low: 'bg-blue-400',
-  medium: 'bg-yellow-400',
-  high: 'bg-orange-400',
-  urgent: 'bg-red-500',
+  low: 'bg-[#007aff]',
+  medium: 'bg-[#ff9500]',
+  high: 'bg-[#ff6b00]',
+  urgent: 'bg-[#ff3b30]',
 };
 
 export function KanbanCard({ card, onClick }: { card: Card; onClick: () => void }) {
@@ -51,12 +51,12 @@ export function KanbanCard({ card, onClick }: { card: Card; onClick: () => void 
       {...attributes}
       {...listeners}
       onClick={onClick}
-      className="relative bg-white dark:bg-slate-800 rounded-lg border-2 border-transparent p-3 cursor-grab active:cursor-grabbing
-        hover:border-primary/40 hover:shadow-md transition-all group overflow-hidden"
+      className="relative bg-white dark:bg-[#1c1c1e] rounded-xl shadow-sm shadow-black/[0.04] border border-[#e8e8ed] dark:border-[#38383a] p-3 cursor-grab active:cursor-grabbing
+        hover:shadow-md hover:shadow-black/[0.08] transition-all duration-200 group overflow-hidden"
     >
       {/* Edit icon - top right */}
       <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
-        <svg className="w-3.5 h-3.5 text-slate-300 dark:text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg className="w-3.5 h-3.5 text-[#d2d2d7] dark:text-[#424245]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
         </svg>
       </div>
@@ -71,8 +71,8 @@ export function KanbanCard({ card, onClick }: { card: Card; onClick: () => void 
             title={isComplete ? 'Completed' : 'Mark complete'}
             className={`w-4.5 h-4.5 shrink-0 rounded-full border-2 flex items-center justify-center transition-all ${
               isComplete
-                ? 'bg-green-500 border-green-500 text-white'
-                : 'border-slate-300 dark:border-slate-500 hover:border-green-400 hover:bg-green-50 dark:hover:bg-green-900/20 text-transparent hover:text-green-400'
+                ? 'bg-[#34c759] border-[#34c759] text-white'
+                : 'border-[#d2d2d7] dark:border-[#424245] hover:border-[#34c759] hover:bg-[#34c759]/10 text-transparent hover:text-[#34c759]'
             }`}
           >
             <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={3}>
@@ -86,17 +86,17 @@ export function KanbanCard({ card, onClick }: { card: Card; onClick: () => void 
           {cardLabels.length > 0 && (
             <div className="flex flex-wrap gap-1 mb-2">
               {cardLabels.map(l => (
-                <span key={l.id} className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full text-white"
+                <span key={l.id} className="text-[10px] font-medium px-1.5 py-0.5 rounded-full text-white"
                   style={{ backgroundColor: l.color }}>{l.name}</span>
               ))}
             </div>
           )}
 
-          <h4 className="text-sm font-medium text-slate-800 dark:text-slate-100 mb-1.5 leading-snug">{card.title}</h4>
+          <h4 className="text-sm font-medium text-[#1d1d1f] dark:text-[#f5f5f7] mb-1.5 leading-snug">{card.title}</h4>
 
           <div className="flex items-center justify-between mt-2">
             <div className="flex items-center gap-2">
-              <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded ${priorityColors[card.priority]}`}>
+              <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full ${priorityColors[card.priority]}`}>
                 <span className={`inline-block w-1.5 h-1.5 rounded-full mr-1 ${priorityDots[card.priority]}`}></span>
                 {card.priority}
               </span>
@@ -104,12 +104,12 @@ export function KanbanCard({ card, onClick }: { card: Card; onClick: () => void 
 
             <div className="flex items-center gap-2">
               {card.dueDate && (
-                <span className={`text-[10px] ${isOverdue ? 'text-red-500 font-semibold' : 'text-slate-400 dark:text-slate-500'}`}>
+                <span className={`text-[10px] ${isOverdue ? 'text-[#ff3b30] font-semibold' : 'text-[#86868b]'}`}>
                   {new Date(card.dueDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                 </span>
               )}
               {card.comments.length > 0 && (
-                <span className="text-[10px] text-slate-400 dark:text-slate-500 flex items-center gap-0.5">
+                <span className="text-[10px] text-[#86868b] flex items-center gap-0.5">
                   <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
                   </svg>
@@ -117,7 +117,7 @@ export function KanbanCard({ card, onClick }: { card: Card; onClick: () => void 
                 </span>
               )}
               {assignee && (
-                <div className="w-5 h-5 rounded-full bg-primary/20 text-primary text-[10px] font-bold flex items-center justify-center"
+                <div className="w-5 h-5 rounded-full bg-[#0071e3]/15 text-[#0071e3] text-[10px] font-bold flex items-center justify-center ring-1 ring-white dark:ring-[#1c1c1e]"
                   title={assignee.id === store.getCurrentMemberId() ? `${assignee.name} (You)` : assignee.name}>
                   {assignee.name.charAt(0).toUpperCase()}
                 </div>

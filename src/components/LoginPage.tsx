@@ -19,25 +19,25 @@ export function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-[#f5f5f7] flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         {/* Logo and title */}
-        <div className="text-center mb-8">
-          <div className="w-16 h-16 bg-primary rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg shadow-primary/20">
-            <svg className="w-9 h-9 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div className="text-center mb-12">
+          <div className="w-20 h-20 bg-[#1d1d1f] rounded-[20px] flex items-center justify-center mx-auto mb-6">
+            <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2" />
             </svg>
           </div>
-          <h1 className="text-3xl font-bold text-slate-800 mb-2">Kanban Board</h1>
-          <p className="text-slate-500 text-sm">Project Management Tool</p>
+          <h1 className="text-4xl font-semibold tracking-tight text-[#1d1d1f] mb-2">Kanban Board</h1>
+          <p className="text-lg text-[#86868b] font-normal">Project Management</p>
         </div>
 
         {/* Sign in card */}
-        <div className="bg-white rounded-2xl shadow-xl border border-slate-100 p-8">
-          <h2 className="text-lg font-semibold text-slate-700 text-center mb-6">Sign in to continue</h2>
+        <div className="bg-white rounded-2xl shadow-sm p-10">
+          <h2 className="text-[17px] font-medium text-[#1d1d1f] text-center mb-8">Sign in to continue</h2>
 
           {error && (
-            <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-600 text-xs rounded-lg">
+            <div className="mb-6 p-3 bg-[#ff3b30]/5 text-[#ff3b30] text-sm rounded-xl text-center">
               {error}
             </div>
           )}
@@ -45,10 +45,10 @@ export function LoginPage() {
           <button
             onClick={handleGoogleSignIn}
             disabled={loading}
-            className="w-full flex items-center justify-center gap-3 py-3 px-4 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 hover:border-slate-300 transition text-sm font-medium text-slate-700 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full flex items-center justify-center gap-3 py-3.5 px-4 bg-[#1d1d1f] text-white rounded-full hover:bg-[#333336] transition-all text-[15px] font-medium disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {loading ? (
-              <div className="w-5 h-5 border-2 border-slate-300 border-t-primary rounded-full animate-spin" />
+              <div className="w-5 h-5 border-2 border-[#d2d2d7] border-t-[#1d1d1f] rounded-full animate-spin" />
             ) : (
               <svg className="w-5 h-5" viewBox="0 0 24 24">
                 <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 01-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4"/>
@@ -60,12 +60,12 @@ export function LoginPage() {
             {loading ? 'Signing in...' : 'Continue with Google'}
           </button>
 
-          <p className="text-[11px] text-slate-400 text-center mt-6">
+          <p className="text-[13px] text-[#86868b] text-center mt-8">
             Your data syncs across all your devices automatically
           </p>
         </div>
 
-        <p className="text-[10px] text-slate-400 text-center mt-6">
+        <p className="text-[12px] text-[#86868b] text-center mt-8">
           Powered by Firebase &middot; Hosted on GitHub Pages
         </p>
       </div>

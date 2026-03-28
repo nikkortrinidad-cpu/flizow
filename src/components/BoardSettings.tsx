@@ -21,8 +21,8 @@ function SortableColumnRow({ col, children }: { col: Column; children: React.Rea
   };
   return (
     <div ref={setNodeRef} style={style} {...attributes}
-      className="flex items-center gap-3 bg-slate-50 dark:bg-slate-700 rounded-lg p-3">
-      <button {...listeners} className="cursor-grab active:cursor-grabbing text-slate-300 hover:text-slate-500 touch-none">
+      className="flex items-center gap-3 bg-[#f5f5f7] dark:bg-[#2c2c2e] rounded-xl p-3">
+      <button {...listeners} className="cursor-grab active:cursor-grabbing text-[#86868b] hover:text-[#6e6e73] touch-none">
         <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
           <path d="M7 2a2 2 0 10.001 4.001A2 2 0 007 2zm0 6a2 2 0 10.001 4.001A2 2 0 007 8zm0 6a2 2 0 10.001 4.001A2 2 0 007 14zm6-8a2 2 0 10-.001-4.001A2 2 0 0013 6zm0 2a2 2 0 10.001 4.001A2 2 0 0013 8zm0 6a2 2 0 10.001 4.001A2 2 0 0013 14z" />
         </svg>
@@ -80,10 +80,10 @@ export function BoardSettings({ onClose }: { onClose: () => void }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       <div className="absolute inset-0 bg-black/20 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-2xl max-h-[80vh] overflow-hidden">
-        <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-slate-800 dark:text-slate-100">Board Settings</h2>
-          <button onClick={onClose} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 p-1 rounded hover:bg-slate-100 dark:hover:bg-slate-700 transition">
+      <div className="relative bg-white dark:bg-[#1c1c1e] rounded-2xl shadow-2xl shadow-black/20 w-full max-w-2xl max-h-[80vh] overflow-hidden">
+        <div className="px-6 py-4 border-b border-[#e8e8ed] dark:border-[#38383a] flex items-center justify-between">
+          <h2 className="text-lg font-semibold text-[#1d1d1f] dark:text-[#f5f5f7]">Board Settings</h2>
+          <button onClick={onClose} className="text-[#86868b] hover:text-[#6e6e73] dark:hover:text-[#aeaeb2] p-1 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 transition">
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
@@ -91,13 +91,13 @@ export function BoardSettings({ onClose }: { onClose: () => void }) {
         </div>
 
         <div className="flex">
-          <div className="w-40 shrink-0 border-r border-slate-100 dark:border-slate-700 py-3 px-2">
+          <div className="w-40 shrink-0 border-r border-[#e8e8ed] dark:border-[#38383a] py-3 px-2">
             {tabs.map(t => (
               <button key={t.id} onClick={() => setTab(t.id)}
-                className={`w-full text-left text-sm px-3 py-2 rounded-lg font-medium transition mb-0.5 ${
+                className={`w-full text-left text-sm px-3 py-2 rounded-full font-medium transition mb-0.5 ${
                   tab === t.id
-                    ? 'bg-primary/10 text-primary'
-                    : 'text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-700 dark:hover:text-slate-200'
+                    ? 'bg-[#1d1d1f] text-white dark:bg-white dark:text-black'
+                    : 'text-[#86868b] dark:text-[#86868b] hover:bg-black/5 dark:hover:bg-white/10 hover:text-[#1d1d1f] dark:hover:text-[#e5e5ea]'
                 }`}>
                 {t.label}
               </button>
@@ -108,19 +108,19 @@ export function BoardSettings({ onClose }: { onClose: () => void }) {
           {tab === 'general' && (
             <div className="space-y-6">
               <div>
-                <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-200 mb-3">Appearance</h3>
-                <div className="flex items-center justify-between bg-slate-50 dark:bg-slate-700 rounded-lg p-4">
+                <h3 className="text-sm font-semibold text-[#1d1d1f] dark:text-[#e5e5ea] mb-3">Appearance</h3>
+                <div className="flex items-center justify-between bg-[#f5f5f7] dark:bg-[#2c2c2e] rounded-2xl p-4">
                   <div>
-                    <p className="text-sm font-medium dark:text-slate-200">Theme</p>
-                    <p className="text-xs text-slate-400 dark:text-slate-400 mt-0.5">Choose light or dark mode</p>
+                    <p className="text-sm font-medium dark:text-[#e5e5ea]">Theme</p>
+                    <p className="text-xs text-[#86868b] dark:text-[#86868b] mt-0.5">Choose light or dark mode</p>
                   </div>
-                  <div className="flex items-center bg-slate-200 dark:bg-slate-600 rounded-lg p-0.5">
+                  <div className="flex items-center bg-[#e8e8ed] dark:bg-[#3a3a3c] rounded-full p-0.5">
                     <button
                       onClick={() => store.setTheme('light')}
-                      className={`flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-md transition ${
+                      className={`flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-full transition ${
                         state.theme === 'light'
-                          ? 'bg-white text-slate-800 shadow-sm'
-                          : 'text-slate-500 dark:text-slate-300 hover:text-slate-700'
+                          ? 'bg-white text-[#1d1d1f] shadow-sm'
+                          : 'text-[#86868b] dark:text-[#aeaeb2] hover:text-[#1d1d1f]'
                       }`}>
                       <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
@@ -129,10 +129,10 @@ export function BoardSettings({ onClose }: { onClose: () => void }) {
                     </button>
                     <button
                       onClick={() => store.setTheme('dark')}
-                      className={`flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-md transition ${
+                      className={`flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-full transition ${
                         state.theme === 'dark'
-                          ? 'bg-slate-800 text-white shadow-sm'
-                          : 'text-slate-500 dark:text-slate-300 hover:text-slate-700'
+                          ? 'bg-[#1c1c1e] text-white shadow-sm'
+                          : 'text-[#86868b] dark:text-[#aeaeb2] hover:text-[#1d1d1f]'
                       }`}>
                       <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
@@ -158,26 +158,26 @@ export function BoardSettings({ onClose }: { onClose: () => void }) {
                       <div className="relative flex-1 group/colname">
                         <input value={col.title}
                           onChange={e => store.updateColumn(col.id, { title: e.target.value })}
-                          className="w-full text-sm bg-transparent outline-none font-medium rounded px-1.5 py-0.5 -ml-1.5 border border-transparent hover:border-slate-200 focus:border-primary focus:bg-amber-50 transition" />
-                        <svg className="absolute right-1 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-300 opacity-0 group-hover/colname:opacity-100 transition-opacity pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          className="w-full text-sm bg-transparent outline-none font-medium rounded px-1.5 py-0.5 -ml-1.5 border border-transparent hover:border-[#d2d2d7] focus:border-primary focus:bg-amber-50 transition" />
+                        <svg className="absolute right-1 top-1/2 -translate-y-1/2 w-3 h-3 text-[#aeaeb2] opacity-0 group-hover/colname:opacity-100 transition-opacity pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
                         </svg>
                       </div>
                       <div className="flex items-center gap-1">
-                        <span className="text-[10px] text-slate-400">WIP:</span>
+                        <span className="text-[10px] text-[#86868b]">WIP:</span>
                         <input type="number" min="0" value={col.wipLimit}
                           onChange={e => store.updateColumn(col.id, { wipLimit: parseInt(e.target.value) || 0 })}
-                          className="w-12 text-xs text-center border border-slate-200 rounded px-1 py-0.5 outline-none" />
+                          className="w-12 text-xs text-center border border-[#d2d2d7] dark:border-[#424245] rounded-lg px-1 py-0.5 outline-none focus:border-[#0071e3]" />
                       </div>
                       <button onClick={() => store.archiveColumn(col.id)}
-                        className="text-slate-300 hover:text-amber-500 transition"
+                        className="text-[#86868b] hover:text-[#ff9f0a] transition"
                         title="Archive list">
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
                         </svg>
                       </button>
                       <button onClick={() => store.deleteColumn(col.id)}
-                        className="text-slate-300 hover:text-red-500 transition"
+                        className="text-[#86868b] hover:text-[#ff3b30] transition"
                         title="Delete list">
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -193,17 +193,17 @@ export function BoardSettings({ onClose }: { onClose: () => void }) {
           {tab === 'swimlanes' && (
             <div className="space-y-2">
               {state.swimlanes.sort((a, b) => a.order - b.order).map(s => (
-                <div key={s.id} className="flex items-center gap-3 bg-slate-50 dark:bg-slate-700 rounded-lg p-3">
+                <div key={s.id} className="flex items-center gap-3 bg-[#f5f5f7] dark:bg-[#2c2c2e] rounded-xl p-3">
                   <div className="relative flex-1 group/swimname">
                     <input value={s.title}
                       onChange={e => store.updateSwimlane(s.id, { title: e.target.value })}
-                      className="w-full text-sm bg-transparent outline-none font-medium rounded px-1.5 py-0.5 -ml-1.5 border border-transparent hover:border-slate-200 focus:border-primary focus:bg-amber-50 transition" />
-                    <svg className="absolute right-1 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-300 opacity-0 group-hover/swimname:opacity-100 transition-opacity pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      className="w-full text-sm bg-transparent outline-none font-medium rounded px-1.5 py-0.5 -ml-1.5 border border-transparent hover:border-[#d2d2d7] focus:border-primary focus:bg-amber-50 transition" />
+                    <svg className="absolute right-1 top-1/2 -translate-y-1/2 w-3 h-3 text-[#aeaeb2] opacity-0 group-hover/swimname:opacity-100 transition-opacity pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
                     </svg>
                   </div>
                   <button onClick={() => store.deleteSwimlane(s.id)}
-                    className="text-slate-300 hover:text-red-500 transition text-xs">
+                    className="text-[#86868b] hover:text-[#ff3b30] transition text-xs">
                     Delete
                   </button>
                 </div>
@@ -214,11 +214,11 @@ export function BoardSettings({ onClose }: { onClose: () => void }) {
           {tab === 'labels' && (
             <div className="space-y-2">
               {state.labels.map(l => (
-                <div key={l.id} className="flex items-center gap-3 bg-slate-50 dark:bg-slate-700 rounded-lg p-3">
+                <div key={l.id} className="flex items-center gap-3 bg-[#f5f5f7] dark:bg-[#2c2c2e] rounded-xl p-3">
                   <div className="w-4 h-4 rounded-full" style={{ backgroundColor: l.color }} />
                   <span className="flex-1 text-sm font-medium">{l.name}</span>
                   <button onClick={() => store.deleteLabel(l.id)}
-                    className="text-slate-300 hover:text-red-500 transition text-xs">
+                    className="text-[#86868b] hover:text-[#ff3b30] transition text-xs">
                     Delete
                   </button>
                 </div>
@@ -229,18 +229,18 @@ export function BoardSettings({ onClose }: { onClose: () => void }) {
           {tab === 'members' && (
             <div className="space-y-2">
               {state.members.map(m => (
-                <div key={m.id} className="flex items-center gap-3 bg-slate-50 dark:bg-slate-700 rounded-lg p-3">
+                <div key={m.id} className="flex items-center gap-3 bg-[#f5f5f7] dark:bg-[#2c2c2e] rounded-xl p-3">
                   <div className="w-7 h-7 rounded-full bg-primary/20 text-primary text-xs font-bold flex items-center justify-center">
                     {m.name.charAt(0).toUpperCase()}
                   </div>
                   <div className="flex-1">
-                    <p className="text-sm font-medium">{m.name}{m.id === store.getCurrentMemberId() && <span className="text-xs text-slate-400 font-normal ml-1">(You)</span>}</p>
-                    <p className="text-[10px] text-slate-400">{m.email}</p>
+                    <p className="text-sm font-medium">{m.name}{m.id === store.getCurrentMemberId() && <span className="text-xs text-[#86868b] font-normal ml-1">(You)</span>}</p>
+                    <p className="text-[10px] text-[#86868b]">{m.email}</p>
                   </div>
-                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-slate-200 text-slate-600 font-medium">{m.role}</span>
+                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#e8e8ed] dark:bg-[#3a3a3c] text-[#6e6e73] dark:text-[#aeaeb2] font-medium">{m.role}</span>
                   {m.id !== 'user-1' && (
                     <button onClick={() => store.deleteMember(m.id)}
-                      className="text-slate-300 hover:text-red-500 transition text-xs">Remove</button>
+                      className="text-[#86868b] hover:text-[#ff3b30] transition text-xs">Remove</button>
                   )}
                 </div>
               ))}
@@ -260,12 +260,12 @@ export function BoardSettings({ onClose }: { onClose: () => void }) {
               <div>
                 {trashItems.length > 0 && (
                   <div className="flex items-center justify-between mb-4">
-                    <p className="text-xs text-slate-400 dark:text-slate-500">
+                    <p className="text-xs text-[#86868b] dark:text-[#6e6e73]">
                       {trashItems.length} item{trashItems.length > 1 ? 's' : ''} in trash
                     </p>
                     <button
                       onClick={() => { if (window.confirm('Permanently delete all items in trash? This cannot be undone.')) store.emptyTrash(); }}
-                      className="text-[11px] text-red-500 hover:text-red-600 font-medium px-2 py-1 rounded hover:bg-red-50 dark:hover:bg-red-900/20 transition"
+                      className="text-[11px] text-[#ff3b30] hover:text-[#ff3b30] font-medium px-2 py-1 rounded-lg hover:bg-[#ff3b30]/5 dark:hover:bg-[#ff3b30]/10 transition"
                     >
                       Empty trash
                     </button>
@@ -273,7 +273,7 @@ export function BoardSettings({ onClose }: { onClose: () => void }) {
                 )}
 
                 {trashItems.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center py-12 text-slate-400 dark:text-slate-500">
+                  <div className="flex flex-col items-center justify-center py-12 text-[#86868b] dark:text-[#6e6e73]">
                     <svg className="w-12 h-12 mb-3 opacity-30" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                     </svg>
@@ -289,7 +289,7 @@ export function BoardSettings({ onClose }: { onClose: () => void }) {
                       const deletedDate = new Date(item.deletedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 
                       return (
-                        <div key={item.id} className="flex items-center gap-3 bg-slate-50 dark:bg-slate-700 rounded-lg p-3">
+                        <div key={item.id} className="flex items-center gap-3 bg-[#f5f5f7] dark:bg-[#2c2c2e] rounded-xl p-3">
                           {/* Icon */}
                           <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${isCard ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-500' : 'bg-purple-50 dark:bg-purple-900/30 text-purple-500'}`}>
                             {isCard ? (
@@ -301,14 +301,14 @@ export function BoardSettings({ onClose }: { onClose: () => void }) {
 
                           {/* Info */}
                           <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium text-slate-700 dark:text-slate-200 truncate">{name}</p>
+                            <p className="text-sm font-medium text-[#1d1d1f] dark:text-[#e5e5ea] truncate">{name}</p>
                             <div className="flex items-center gap-2 mt-0.5">
                               <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${isCard ? 'bg-blue-100 text-blue-600 dark:bg-blue-900/40 dark:text-blue-400' : 'bg-purple-100 text-purple-600 dark:bg-purple-900/40 dark:text-purple-400'}`}>
                                 {isCard ? 'Card' : 'List'}
                                 {!isCard && item.associatedCards && item.associatedCards.length > 0 && ` + ${item.associatedCards.length} card${item.associatedCards.length > 1 ? 's' : ''}`}
                               </span>
-                              <span className="text-[10px] text-slate-400">Deleted {deletedDate}</span>
-                              <span className={`text-[10px] font-medium ${daysLeft <= 3 ? 'text-red-500' : daysLeft <= 7 ? 'text-amber-500' : 'text-slate-400'}`}>
+                              <span className="text-[10px] text-[#86868b]">Deleted {deletedDate}</span>
+                              <span className={`text-[10px] font-medium ${daysLeft <= 3 ? 'text-[#ff3b30]' : daysLeft <= 7 ? 'text-amber-500' : 'text-slate-400'}`}>
                                 {daysLeft}d left
                               </span>
                             </div>
@@ -325,7 +325,7 @@ export function BoardSettings({ onClose }: { onClose: () => void }) {
                             </button>
                             <button
                               onClick={() => { if (window.confirm(`Permanently delete "${name}"? This cannot be undone.`)) store.permanentDeleteFromTrash(item.id); }}
-                              className="text-slate-300 hover:text-red-500 transition p-1 rounded hover:bg-red-50 dark:hover:bg-red-900/20"
+                              className="text-[#86868b] hover:text-[#ff3b30] transition p-1 rounded hover:bg-[#ff3b30]/5 dark:hover:bg-red-900/20"
                               title="Delete permanently"
                             >
                               <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -352,14 +352,14 @@ export function BoardSettings({ onClose }: { onClose: () => void }) {
               <div>
                 {archiveItems.length > 0 && (
                   <div className="flex items-center justify-between mb-4">
-                    <p className="text-xs text-slate-400 dark:text-slate-500">
+                    <p className="text-xs text-[#86868b] dark:text-[#6e6e73]">
                       {archiveItems.length} item{archiveItems.length > 1 ? 's' : ''} archived
                     </p>
                   </div>
                 )}
 
                 {archiveItems.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center py-12 text-slate-400 dark:text-slate-500">
+                  <div className="flex flex-col items-center justify-center py-12 text-[#86868b] dark:text-[#6e6e73]">
                     <svg className="w-12 h-12 mb-3 opacity-30" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
                     </svg>
@@ -374,7 +374,7 @@ export function BoardSettings({ onClose }: { onClose: () => void }) {
                       const archivedDate = new Date(item.archivedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 
                       return (
-                        <div key={item.id} className="flex items-center gap-3 bg-slate-50 dark:bg-slate-700 rounded-lg p-3">
+                        <div key={item.id} className="flex items-center gap-3 bg-[#f5f5f7] dark:bg-[#2c2c2e] rounded-xl p-3">
                           {/* Icon */}
                           <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${isCard ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-500' : 'bg-purple-50 dark:bg-purple-900/30 text-purple-500'}`}>
                             {isCard ? (
@@ -386,13 +386,13 @@ export function BoardSettings({ onClose }: { onClose: () => void }) {
 
                           {/* Info */}
                           <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium text-slate-700 dark:text-slate-200 truncate">{name}</p>
+                            <p className="text-sm font-medium text-[#1d1d1f] dark:text-[#e5e5ea] truncate">{name}</p>
                             <div className="flex items-center gap-2 mt-0.5">
                               <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${isCard ? 'bg-blue-100 text-blue-600 dark:bg-blue-900/40 dark:text-blue-400' : 'bg-purple-100 text-purple-600 dark:bg-purple-900/40 dark:text-purple-400'}`}>
                                 {isCard ? 'Card' : 'List'}
                                 {!isCard && item.associatedCards && item.associatedCards.length > 0 && ` + ${item.associatedCards.length} card${item.associatedCards.length > 1 ? 's' : ''}`}
                               </span>
-                              <span className="text-[10px] text-slate-400">Archived {archivedDate}</span>
+                              <span className="text-[10px] text-[#86868b]">Archived {archivedDate}</span>
                             </div>
                           </div>
 
@@ -407,7 +407,7 @@ export function BoardSettings({ onClose }: { onClose: () => void }) {
                             </button>
                             <button
                               onClick={() => { if (window.confirm(`Permanently delete "${name}"? This cannot be undone.`)) store.deleteFromArchive(item.id); }}
-                              className="text-slate-300 hover:text-red-500 transition p-1 rounded hover:bg-red-50 dark:hover:bg-red-900/20"
+                              className="text-[#86868b] hover:text-[#ff3b30] transition p-1 rounded hover:bg-[#ff3b30]/5 dark:hover:bg-red-900/20"
                               title="Delete permanently"
                             >
                               <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -433,7 +433,7 @@ export function BoardSettings({ onClose }: { onClose: () => void }) {
               <input value={newName} onChange={e => setNewName(e.target.value)}
                 onKeyDown={e => { if (e.key === 'Enter') handleAdd(); }}
                 placeholder={tab === 'members' ? 'Name' : tab === 'columns' ? 'New list name' : `New ${tab.slice(0, -1)} name`}
-                className="flex-1 text-sm border border-slate-200 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 rounded-lg px-3 py-2 outline-none focus:border-primary" />
+                className="flex-1 text-sm border border-[#d2d2d7] dark:border-[#424245] dark:bg-[#2c2c2e] dark:text-[#f5f5f7] rounded-xl px-3 py-2 outline-none focus:border-[#0071e3]" />
               {tab === 'labels' && (
                 <ColorPicker value={newColor} onChange={setNewColor} size="md" />
               )}
@@ -441,9 +441,9 @@ export function BoardSettings({ onClose }: { onClose: () => void }) {
                 <>
                   <input value={newEmail} onChange={e => setNewEmail(e.target.value)}
                     placeholder="Email"
-                    className="flex-1 text-sm border border-slate-200 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 rounded-lg px-3 py-2 outline-none focus:border-primary" />
+                    className="flex-1 text-sm border border-[#d2d2d7] dark:border-[#424245] dark:bg-[#2c2c2e] dark:text-[#f5f5f7] rounded-xl px-3 py-2 outline-none focus:border-[#0071e3]" />
                   <select value={newRole} onChange={e => setNewRole(e.target.value as UserRole)}
-                    className="text-xs border border-slate-200 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 rounded-lg px-2 outline-none">
+                    className="text-xs border border-[#d2d2d7] dark:border-[#424245] dark:bg-[#2c2c2e] dark:text-[#f5f5f7] rounded-xl px-2 outline-none">
                     <option value="admin">Admin</option>
                     <option value="manager">Manager</option>
                     <option value="member">Member</option>
@@ -452,7 +452,7 @@ export function BoardSettings({ onClose }: { onClose: () => void }) {
                 </>
               )}
               <button onClick={handleAdd}
-                className="bg-primary text-white text-sm px-4 py-2 rounded-lg hover:bg-primary-dark transition">
+                className="bg-[#0071e3] text-white text-sm px-4 py-2 rounded-full hover:bg-[#0077ED] transition">
                 Add
               </button>
             </div>

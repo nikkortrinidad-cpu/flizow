@@ -53,7 +53,7 @@ export function ColorPicker({ value, onChange, size = 'sm' }: Props) {
       <button
         ref={buttonRef}
         onClick={(e) => { e.stopPropagation(); setOpen(!open); }}
-        className={`${sizeClass} rounded-lg border-2 border-slate-200 dark:border-slate-600 hover:border-primary cursor-pointer transition shrink-0`}
+        className={`${sizeClass} rounded-full border-2 border-[#d2d2d7] dark:border-[#424245] hover:border-[#0071e3] cursor-pointer transition shrink-0`}
         style={{ backgroundColor: value }}
         title="Click to pick color"
       />
@@ -61,26 +61,26 @@ export function ColorPicker({ value, onChange, size = 'sm' }: Props) {
       {open && createPortal(
         <div
           ref={popupRef}
-          className="fixed z-[9999] bg-white dark:bg-slate-800 rounded-xl shadow-xl border border-slate-200 dark:border-slate-700 p-3 w-56"
+          className="fixed z-[9999] bg-white dark:bg-[#2c2c2e] rounded-xl shadow-lg shadow-black/10 border border-[#d2d2d7] dark:border-[#424245] p-3 w-56"
           style={{ top: pos.top, left: pos.left }}
           onClick={e => e.stopPropagation()}
           onMouseDown={e => e.stopPropagation()}
         >
-          <p className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wide mb-2">Saved Palette</p>
+          <p className="text-[10px] font-semibold text-[#86868b] dark:text-[#6e6e73] uppercase tracking-wide mb-2">Saved Palette</p>
           <div className="flex flex-wrap gap-1.5 mb-3">
             {state.savedColors.map(color => (
               <div key={color} className="relative group/swatch">
                 <button
                   onClick={() => { onChange(color); }}
-                  className={`w-7 h-7 rounded-lg border-2 transition ${
-                    value === color ? 'border-primary scale-110 shadow-sm' : 'border-transparent hover:border-slate-300 dark:hover:border-slate-500'
+                  className={`w-7 h-7 rounded-full border-2 transition ${
+                    value === color ? 'border-[#0071e3] scale-110 ring-2 ring-[#0071e3]/20' : 'border-transparent hover:border-[#aeaeb2] dark:hover:border-[#6e6e73]'
                   }`}
                   style={{ backgroundColor: color }}
                   title={color}
                 />
                 <button
                   onClick={(e) => handleRemoveColor(color, e)}
-                  className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-red-500 text-white rounded-full text-[8px] leading-none flex items-center justify-center opacity-0 group-hover/swatch:opacity-100 transition-opacity"
+                  className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-[#ff3b30] text-white rounded-full text-[8px] leading-none flex items-center justify-center opacity-0 group-hover/swatch:opacity-100 transition-opacity"
                   title="Remove from palette"
                 >
                   &times;
@@ -88,20 +88,20 @@ export function ColorPicker({ value, onChange, size = 'sm' }: Props) {
               </div>
             ))}
             {state.savedColors.length === 0 && (
-              <p className="text-[10px] text-slate-400 italic">No saved colors yet</p>
+              <p className="text-[10px] text-[#86868b] italic">No saved colors yet</p>
             )}
           </div>
 
-          <div className="border-t border-slate-100 dark:border-slate-700 pt-2.5">
-            <p className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wide mb-1.5">Custom Color</p>
+          <div className="border-t border-[#e8e8ed] dark:border-[#38383a] pt-2.5">
+            <p className="text-[10px] font-semibold text-[#86868b] dark:text-[#6e6e73] uppercase tracking-wide mb-1.5">Custom Color</p>
             <div className="flex items-center gap-2">
               <input
                 type="color"
                 value={value}
                 onChange={e => onChange(e.target.value)}
-                className="w-8 h-8 rounded cursor-pointer border-none"
+                className="w-8 h-8 rounded-lg cursor-pointer border-none"
               />
-              <span className="text-xs text-slate-500 dark:text-slate-400 font-mono flex-1">{value}</span>
+              <span className="text-xs text-[#86868b] dark:text-[#86868b] font-mono flex-1">{value}</span>
               <button
                 onClick={handleSaveColor}
                 className="text-[10px] bg-primary/10 text-primary px-2 py-1 rounded-md font-medium hover:bg-primary/20 transition"

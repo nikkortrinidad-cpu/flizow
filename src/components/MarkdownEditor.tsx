@@ -150,10 +150,10 @@ export function MarkdownEditor({ value, onChange, maxLength, placeholder, header
   const hasContent = editor ? editor.getText().trim().length > 0 : false;
 
   const toolBtn = (active: boolean) =>
-    `w-8 h-8 flex items-center justify-center rounded transition ${
+    `w-8 h-8 flex items-center justify-center rounded-lg transition ${
       active
-        ? 'bg-primary/15 text-primary'
-        : 'text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-600 hover:text-slate-700 dark:hover:text-slate-200'
+        ? 'bg-[#0071e3]/10 text-[#0071e3]'
+        : 'text-[#86868b] dark:text-[#86868b] hover:bg-black/5 dark:hover:bg-white/10 hover:text-[#1d1d1f] dark:hover:text-[#e5e5ea]'
     }`;
 
   if (!editor) return null;
@@ -161,7 +161,7 @@ export function MarkdownEditor({ value, onChange, maxLength, placeholder, header
   return (
     <div>
       <div className="flex items-center justify-between mb-3">
-        <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide flex items-center gap-1.5">
+        <label className="text-xs font-semibold text-[#86868b] dark:text-[#86868b] uppercase tracking-wide flex items-center gap-1.5">
           <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h7" /></svg>
           Description
         </label>
@@ -176,18 +176,18 @@ export function MarkdownEditor({ value, onChange, maxLength, placeholder, header
           onMouseLeave={() => setIsHovered(false)}
           onClick={() => onEditStart?.()}
         >
-          <div className={`border rounded-lg min-h-[80px] p-3 text-sm transition-all ${
+          <div className={`border rounded-xl min-h-[80px] p-3 text-sm transition-all ${
             isHovered
-              ? 'border-primary/40 bg-primary/[0.02] dark:bg-primary/[0.04]'
-              : 'border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700'
+              ? 'border-[#0071e3]/30 bg-[#0071e3]/[0.02] dark:bg-[#0071e3]/[0.04]'
+              : 'border-[#d2d2d7] dark:border-[#424245] bg-white dark:bg-[#2c2c2e]'
           }`}>
             {hasContent ? (
               <div
-                className="prose-editor text-slate-600 dark:text-slate-300"
+                className="prose-editor text-[#6e6e73] dark:text-[#aeaeb2]"
                 dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(value) }}
               />
             ) : (
-              <p className="text-slate-400 dark:text-slate-500 italic">{placeholder || 'Add a description...'}</p>
+              <p className="text-[#86868b] dark:text-[#6e6e73] italic">{placeholder || 'Add a description...'}</p>
             )}
           </div>
           {/* Hover edit indicator */}
@@ -203,13 +203,13 @@ export function MarkdownEditor({ value, onChange, maxLength, placeholder, header
       ) : (
         <>
           <div className="ml-5">
-            <div className="flex items-center gap-1 border border-slate-200 dark:border-slate-600 border-b-0 rounded-t-lg bg-slate-50 dark:bg-slate-700 px-2 py-1.5">
+            <div className="flex items-center gap-1 border border-[#d2d2d7] dark:border-[#424245] border-b-0 rounded-t-xl bg-[#f5f5f7] dark:bg-[#2c2c2e] px-2 py-1.5">
               {/* Heading dropdown */}
               <div className="relative" ref={headingMenuRef}>
                 <button
                   onClick={(e) => { e.preventDefault(); setShowHeadingMenu(!showHeadingMenu); }}
                   title="Text style"
-                  className="h-8 flex items-center gap-1 rounded text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-600 hover:text-slate-700 dark:hover:text-slate-200 transition px-2"
+                  className="h-8 flex items-center gap-1 rounded-lg text-[#86868b] dark:text-[#86868b] hover:bg-black/5 dark:hover:bg-white/10 hover:text-[#1d1d1f] dark:hover:text-[#e5e5ea] transition px-2"
                 >
                   <span className="text-[13px] font-bold leading-none">H</span>
                   <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -217,7 +217,7 @@ export function MarkdownEditor({ value, onChange, maxLength, placeholder, header
                   </svg>
                 </button>
                 {showHeadingMenu && (
-                  <div className="absolute top-full left-0 mt-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-lg shadow-xl z-50 py-1 w-52 overflow-hidden">
+                  <div className="absolute top-full left-0 mt-1 bg-white dark:bg-[#2c2c2e] border border-[#d2d2d7] dark:border-[#424245] rounded-xl shadow-lg shadow-black/10 z-50 py-1 w-52 overflow-hidden">
                     {[
                       { level: 0, label: 'Plain Text', className: 'text-xs' },
                       { level: 1, label: 'Heading 1', className: 'text-base font-bold' },
@@ -229,16 +229,16 @@ export function MarkdownEditor({ value, onChange, maxLength, placeholder, header
                       <button
                         key={h.level}
                         onClick={(e) => { e.preventDefault(); handleHeading(h.level); }}
-                        className={`w-full flex items-center justify-between px-3 py-1.5 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 transition ${h.className}`}
+                        className={`w-full flex items-center justify-between px-3 py-1.5 hover:bg-black/5 dark:hover:bg-white/10 text-[#1d1d1f] dark:text-[#aeaeb2] transition ${h.className}`}
                       >
                         <span>{h.label}</span>
-                        <span className="text-[10px] font-normal text-slate-400 dark:text-slate-500 ml-3">{headingShortcut(h.level)}</span>
+                        <span className="text-[10px] font-normal text-[#86868b] dark:text-[#6e6e73] ml-3">{headingShortcut(h.level)}</span>
                       </button>
                     ))}
                   </div>
                 )}
               </div>
-              <div className="w-px h-5 bg-slate-200 dark:bg-slate-600 mx-1.5" />
+              <div className="w-px h-5 bg-[#d2d2d7] dark:bg-[#424245] mx-1.5" />
 
               {/* Bold */}
               <button onClick={() => editor.chain().focus().toggleBold().run()}
@@ -277,7 +277,7 @@ export function MarkdownEditor({ value, onChange, maxLength, placeholder, header
                 </svg>
               </button>
 
-              <div className="w-px h-5 bg-slate-200 dark:bg-slate-600 mx-1.5" />
+              <div className="w-px h-5 bg-[#d2d2d7] dark:bg-[#424245] mx-1.5" />
 
               {/* Bullet List */}
               <button onClick={() => editor.chain().focus().toggleBulletList().run()}
@@ -303,7 +303,7 @@ export function MarkdownEditor({ value, onChange, maxLength, placeholder, header
                 </svg>
               </button>
 
-              <div className="w-px h-5 bg-slate-200 dark:bg-slate-600 mx-1.5" />
+              <div className="w-px h-5 bg-[#d2d2d7] dark:bg-[#424245] mx-1.5" />
 
               {/* Link */}
               <button onClick={handleLink}
@@ -333,7 +333,7 @@ export function MarkdownEditor({ value, onChange, maxLength, placeholder, header
               </button>
             </div>
 
-            <div className="border border-slate-200 dark:border-slate-600 rounded-b-lg bg-white dark:bg-slate-700 overflow-hidden">
+            <div className="border border-[#d2d2d7] dark:border-[#424245] rounded-b-xl bg-white dark:bg-[#2c2c2e] overflow-hidden">
               <EditorContent editor={editor} />
             </div>
           </div>
@@ -341,9 +341,9 @@ export function MarkdownEditor({ value, onChange, maxLength, placeholder, header
           <div className="flex items-center justify-between mt-1 ml-5">
             <div>{footerLeft}</div>
             <span className={`text-[11px] ${
-              charCount >= maxLength ? 'text-red-500 font-medium' :
-              charCount >= maxLength * 0.9 ? 'text-yellow-500' :
-              'text-slate-400'
+              charCount >= maxLength ? 'text-[#ff3b30] font-medium' :
+              charCount >= maxLength * 0.9 ? 'text-[#ff9f0a]' :
+              'text-[#86868b]'
             }`}>
               {charCount}/{maxLength}
             </span>

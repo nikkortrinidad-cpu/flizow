@@ -81,10 +81,10 @@ export function CommentEditor({ onSubmit, placeholder: placeholderText, compact 
   };
 
   const toolBtn = (active: boolean) =>
-    `p-1.5 rounded transition ${active ? 'bg-primary/15 text-primary' : 'text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-600'}`;
+    `p-1.5 rounded-lg transition ${active ? 'bg-[#0071e3]/10 text-[#0071e3]' : 'text-[#86868b] dark:text-[#6e6e73] hover:text-[#6e6e73] dark:hover:text-[#aeaeb2] hover:bg-black/5 dark:hover:bg-white/10'}`;
 
   const actionBtn = (active: boolean = false) =>
-    `p-1.5 rounded-lg transition ${active ? 'bg-primary/15 text-primary' : 'text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700'}`;
+    `p-1.5 rounded-lg transition ${active ? 'bg-[#0071e3]/10 text-[#0071e3]' : 'text-[#86868b] dark:text-[#6e6e73] hover:text-[#6e6e73] dark:hover:text-[#aeaeb2] hover:bg-black/5 dark:hover:bg-white/10'}`;
 
   const addLink = () => {
     const url = window.prompt('Enter URL:');
@@ -138,7 +138,7 @@ export function CommentEditor({ onSubmit, placeholder: placeholderText, compact 
     <div onKeyDown={handleKeyDown} className="relative">
       {/* Formatting toolbar — shown/hidden via toggle */}
       {showToolbar && (
-        <div className="flex items-center gap-0.5 px-2 py-1.5 border-b border-slate-100 dark:border-slate-700 flex-wrap bg-slate-50 dark:bg-slate-800/80">
+        <div className="flex items-center gap-0.5 px-2 py-1.5 border-b border-[#e8e8ed] dark:border-[#38383a] flex-wrap bg-[#f5f5f7] dark:bg-[#1c1c1e]">
           {/* Bold */}
           <button onClick={() => editor.chain().focus().toggleBold().run()}
             title="Bold" className={toolBtn(editor.isActive('bold'))}>
@@ -163,7 +163,7 @@ export function CommentEditor({ onSubmit, placeholder: placeholderText, compact 
             <span className="text-[11px] font-bold line-through leading-none w-4 h-4 flex items-center justify-center">S</span>
           </button>
 
-          <div className="w-px h-4 bg-slate-200 dark:bg-slate-600 mx-0.5" />
+          <div className="w-px h-4 bg-[#d2d2d7] dark:bg-[#424245] mx-0.5" />
 
           {/* Bullet List */}
           <button onClick={() => editor.chain().focus().toggleBulletList().run()}
@@ -177,7 +177,7 @@ export function CommentEditor({ onSubmit, placeholder: placeholderText, compact 
             <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M6 17h3l2-4V7H5v6h3zm8 0h3l2-4V7h-6v6h3z" /></svg>
           </button>
 
-          <div className="w-px h-4 bg-slate-200 dark:bg-slate-600 mx-0.5" />
+          <div className="w-px h-4 bg-[#d2d2d7] dark:bg-[#424245] mx-0.5" />
 
           {/* Link */}
           <button onClick={addLink}
@@ -203,7 +203,7 @@ export function CommentEditor({ onSubmit, placeholder: placeholderText, compact 
       <EditorContent editor={editor} />
 
       {/* Bottom action bar */}
-      <div className="flex items-center justify-between px-2 py-1.5 border-t border-slate-100 dark:border-slate-700">
+      <div className="flex items-center justify-between px-2 py-1.5 border-t border-[#e8e8ed] dark:border-[#38383a]">
         {/* Left: action buttons */}
         <div className="flex items-center gap-0.5">
           {/* Formatting toggle */}
@@ -227,15 +227,15 @@ export function CommentEditor({ onSubmit, placeholder: placeholderText, compact 
             {showMentionPicker && (
               <>
                 <div className="fixed inset-0 z-10" onClick={() => { setShowMentionPicker(false); setMentionSearch(''); }} />
-                <div className="absolute bottom-full left-0 mb-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-xl shadow-xl z-20 w-[220px] overflow-hidden">
+                <div className="absolute bottom-full left-0 mb-2 bg-white dark:bg-[#2c2c2e] border border-[#d2d2d7] dark:border-[#424245] rounded-xl shadow-lg shadow-black/10 z-20 w-[220px] overflow-hidden">
                   <div className="px-2.5 pt-2.5 pb-1.5">
-                    <p className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wide mb-1.5">Mention</p>
+                    <p className="text-[10px] font-semibold text-[#86868b] dark:text-[#6e6e73] uppercase tracking-wide mb-1.5">Mention</p>
                     <input
                       autoFocus
                       value={mentionSearch}
                       onChange={e => setMentionSearch(e.target.value)}
                       placeholder="Search members..."
-                      className="w-full text-xs border border-slate-200 dark:border-slate-600 rounded-lg px-2.5 py-1.5 outline-none focus:border-primary bg-slate-50 dark:bg-slate-700 dark:text-slate-200"
+                      className="w-full text-xs border border-[#d2d2d7] dark:border-[#424245] rounded-lg px-2.5 py-1.5 outline-none focus:border-[#0071e3] bg-[#f5f5f7] dark:bg-[#2c2c2e] dark:text-[#e5e5ea]"
                     />
                   </div>
                   <div className="max-h-[160px] overflow-y-auto py-1">
@@ -245,17 +245,17 @@ export function CommentEditor({ onSubmit, placeholder: placeholderText, compact 
                         <button
                           key={m.id}
                           onClick={() => insertMention(m.name)}
-                          className="w-full flex items-center gap-2.5 px-3 py-1.5 text-xs text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition"
+                          className="w-full flex items-center gap-2.5 px-3 py-1.5 text-xs text-[#1d1d1f] dark:text-[#e5e5ea] hover:bg-black/5 dark:hover:bg-white/10 transition"
                         >
                           <div className="w-5 h-5 rounded-full bg-gradient-to-br from-primary to-primary-dark flex items-center justify-center text-white text-[10px] font-bold shrink-0">
                             {m.avatar ? <img src={m.avatar} alt="" className="w-full h-full rounded-full object-cover" /> : m.name.charAt(0).toUpperCase()}
                           </div>
                           <span className="truncate">{m.name}</span>
-                          {m.id === currentMemberId && <span className="text-[10px] text-slate-400 dark:text-slate-500">(You)</span>}
+                          {m.id === currentMemberId && <span className="text-[10px] text-[#86868b] dark:text-[#6e6e73]">(You)</span>}
                         </button>
                       ))}
                     {state.members.filter(m => m.name.toLowerCase().includes(mentionSearch.toLowerCase())).length === 0 && (
-                      <p className="text-[10px] text-slate-400 dark:text-slate-500 text-center py-2">No members found</p>
+                      <p className="text-[10px] text-[#86868b] dark:text-[#6e6e73] text-center py-2">No members found</p>
                     )}
                   </div>
                 </div>
@@ -275,12 +275,12 @@ export function CommentEditor({ onSubmit, placeholder: placeholderText, compact 
             {showEmojiPicker && (
               <>
                 <div className="fixed inset-0 z-10" onClick={() => setShowEmojiPicker(false)} />
-                <div className="absolute bottom-full left-0 mb-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-xl shadow-xl z-20 p-2 w-[220px]">
-                  <p className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wide mb-1.5 px-1">Emoji</p>
+                <div className="absolute bottom-full left-0 mb-2 bg-white dark:bg-[#2c2c2e] border border-[#d2d2d7] dark:border-[#424245] rounded-xl shadow-lg shadow-black/10 z-20 p-2 w-[220px]">
+                  <p className="text-[10px] font-semibold text-[#86868b] dark:text-[#6e6e73] uppercase tracking-wide mb-1.5 px-1">Emoji</p>
                   <div className="grid grid-cols-10 gap-0.5">
                     {EMOJI_LIST.map(emoji => (
                       <button key={emoji} onClick={() => insertEmoji(emoji)}
-                        className="w-6 h-6 flex items-center justify-center text-sm hover:bg-slate-100 dark:hover:bg-slate-700 rounded transition">
+                        className="w-6 h-6 flex items-center justify-center text-sm hover:bg-black/5 dark:hover:bg-white/10 rounded transition">
                         {emoji}
                       </button>
                     ))}
@@ -302,21 +302,21 @@ export function CommentEditor({ onSubmit, placeholder: placeholderText, compact 
             {showGifPicker && (
               <>
                 <div className="fixed inset-0 z-10" onClick={() => setShowGifPicker(false)} />
-                <div className="absolute bottom-full left-0 mb-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-xl shadow-xl z-20 p-3 w-[240px]">
-                  <p className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wide mb-2 px-0.5">GIF & Stickers</p>
+                <div className="absolute bottom-full left-0 mb-2 bg-white dark:bg-[#2c2c2e] border border-[#d2d2d7] dark:border-[#424245] rounded-xl shadow-lg shadow-black/10 z-20 p-3 w-[240px]">
+                  <p className="text-[10px] font-semibold text-[#86868b] dark:text-[#6e6e73] uppercase tracking-wide mb-2 px-0.5">GIF & Stickers</p>
                   <input
                     placeholder="Search GIFs..."
-                    className="w-full text-xs border border-slate-200 dark:border-slate-600 rounded-lg px-2.5 py-1.5 outline-none focus:border-primary bg-slate-50 dark:bg-slate-700 dark:text-slate-200 mb-2"
+                    className="w-full text-xs border border-[#d2d2d7] dark:border-[#424245] rounded-lg px-2.5 py-1.5 outline-none focus:border-[#0071e3] bg-[#f5f5f7] dark:bg-[#2c2c2e] dark:text-[#e5e5ea] mb-2"
                   />
                   <div className="grid grid-cols-3 gap-1.5">
                     {['👋','🎊','🤩','💥','🌟','😂','🥳','❤️‍🔥','🫡'].map((s, i) => (
                       <button key={i} onClick={() => { editor.chain().focus().insertContent(s).run(); setShowGifPicker(false); }}
-                        className="aspect-square bg-slate-100 dark:bg-slate-700 rounded-lg flex items-center justify-center text-xl hover:bg-slate-200 dark:hover:bg-slate-600 transition">
+                        className="aspect-square bg-[#f5f5f7] dark:bg-[#2c2c2e] rounded-lg flex items-center justify-center text-xl hover:bg-black/5 dark:hover:bg-white/10 transition">
                         {s}
                       </button>
                     ))}
                   </div>
-                  <p className="text-[9px] text-slate-400 dark:text-slate-500 text-center mt-2">GIF integration coming soon</p>
+                  <p className="text-[9px] text-[#86868b] dark:text-[#6e6e73] text-center mt-2">GIF integration coming soon</p>
                 </div>
               </>
             )}
@@ -338,7 +338,7 @@ export function CommentEditor({ onSubmit, placeholder: placeholderText, compact 
           <button onClick={handleSubmit}
             disabled={isEmpty}
             title="Send (⌘+Enter)"
-            className={`text-white px-2.5 h-8 rounded-l-lg transition flex items-center justify-center ${isEmpty ? 'bg-primary/40 cursor-not-allowed' : 'bg-primary hover:bg-primary-dark'}`}>
+            className={`text-white px-2.5 h-8 rounded-l-xl transition flex items-center justify-center ${isEmpty ? 'bg-[#0071e3]/40 cursor-not-allowed' : 'bg-[#0071e3] hover:bg-[#0077ED]'}`}>
             <svg className="w-4 h-4 rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" /></svg>
           </button>
           <div className="relative">
@@ -346,7 +346,7 @@ export function CommentEditor({ onSubmit, placeholder: placeholderText, compact 
               onClick={() => !isEmpty && setShowScheduleMenu(!showScheduleMenu)}
               disabled={isEmpty}
               title="Schedule send"
-              className={`text-white px-1.5 h-8 rounded-r-lg transition border-l border-white/20 flex items-center justify-center ${isEmpty ? 'bg-primary/40 cursor-not-allowed' : 'bg-primary hover:bg-primary-dark'}`}
+              className={`text-white px-1.5 h-8 rounded-r-xl transition border-l border-white/20 flex items-center justify-center ${isEmpty ? 'bg-[#0071e3]/40 cursor-not-allowed' : 'bg-[#0071e3] hover:bg-[#0077ED]'}`}
             >
               <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
@@ -355,9 +355,9 @@ export function CommentEditor({ onSubmit, placeholder: placeholderText, compact 
             {showScheduleMenu && (
               <>
                 <div className="fixed inset-0 z-10" onClick={() => { setShowScheduleMenu(false); setShowCustomPicker(false); }} />
-                <div className="absolute bottom-full right-0 mb-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-xl shadow-xl z-20 w-56 overflow-hidden">
+                <div className="absolute bottom-full right-0 mb-2 bg-white dark:bg-[#2c2c2e] border border-[#d2d2d7] dark:border-[#424245] rounded-xl shadow-lg shadow-black/10 z-20 w-56 overflow-hidden">
                   <div className="px-3 pt-3 pb-1.5">
-                    <p className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wide">Schedule send</p>
+                    <p className="text-[10px] font-semibold text-[#86868b] dark:text-[#6e6e73] uppercase tracking-wide">Schedule send</p>
                   </div>
                   <div className="py-1">
                     <button
@@ -371,9 +371,9 @@ export function CommentEditor({ onSubmit, placeholder: placeholderText, compact 
                         setIsEmpty(true);
                         setShowScheduleMenu(false);
                       }}
-                      className="w-full flex items-center gap-2.5 px-3 py-2 text-xs text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition"
+                      className="w-full flex items-center gap-2.5 px-3 py-2 text-xs text-[#1d1d1f] dark:text-[#e5e5ea] hover:bg-black/5 dark:hover:bg-white/10 transition"
                     >
-                      <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                      <svg className="w-4 h-4 text-[#86868b]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                       In 20 minutes
                     </button>
                     <button
@@ -387,9 +387,9 @@ export function CommentEditor({ onSubmit, placeholder: placeholderText, compact 
                         setIsEmpty(true);
                         setShowScheduleMenu(false);
                       }}
-                      className="w-full flex items-center gap-2.5 px-3 py-2 text-xs text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition"
+                      className="w-full flex items-center gap-2.5 px-3 py-2 text-xs text-[#1d1d1f] dark:text-[#e5e5ea] hover:bg-black/5 dark:hover:bg-white/10 transition"
                     >
-                      <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                      <svg className="w-4 h-4 text-[#86868b]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                       In 2 hours
                     </button>
                     <button
@@ -405,19 +405,19 @@ export function CommentEditor({ onSubmit, placeholder: placeholderText, compact 
                         setIsEmpty(true);
                         setShowScheduleMenu(false);
                       }}
-                      className="w-full flex items-center gap-2.5 px-3 py-2 text-xs text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition"
+                      className="w-full flex items-center gap-2.5 px-3 py-2 text-xs text-[#1d1d1f] dark:text-[#e5e5ea] hover:bg-black/5 dark:hover:bg-white/10 transition"
                     >
-                      <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                      <svg className="w-4 h-4 text-[#86868b]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                       Tomorrow at 9:00 AM
                     </button>
                   </div>
-                  <div className="border-t border-slate-100 dark:border-slate-700">
+                  <div className="border-t border-[#e8e8ed] dark:border-[#38383a]">
                     {!showCustomPicker ? (
                       <button
                         onClick={() => setShowCustomPicker(true)}
-                        className="w-full flex items-center gap-2.5 px-3 py-2.5 text-xs text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition"
+                        className="w-full flex items-center gap-2.5 px-3 py-2.5 text-xs text-[#1d1d1f] dark:text-[#e5e5ea] hover:bg-black/5 dark:hover:bg-white/10 transition"
                       >
-                        <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                        <svg className="w-4 h-4 text-[#86868b]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
                         Pick a custom time
                       </button>
                     ) : (
@@ -427,7 +427,7 @@ export function CommentEditor({ onSubmit, placeholder: placeholderText, compact 
                           value={customDateTime}
                           onChange={e => setCustomDateTime(e.target.value)}
                           min={new Date().toISOString().slice(0, 16)}
-                          className="w-full text-xs border border-slate-200 dark:border-slate-600 rounded-lg px-2.5 py-1.5 outline-none focus:border-primary bg-white dark:bg-slate-700 dark:text-slate-200"
+                          className="w-full text-xs border border-[#d2d2d7] dark:border-[#424245] rounded-lg px-2.5 py-1.5 outline-none focus:border-[#0071e3] bg-white dark:bg-[#2c2c2e] dark:text-[#e5e5ea]"
                         />
                         <button
                           onClick={() => {
@@ -441,7 +441,7 @@ export function CommentEditor({ onSubmit, placeholder: placeholderText, compact 
                             setShowCustomPicker(false);
                             setCustomDateTime('');
                           }}
-                          className="w-full text-xs bg-primary text-white px-3 py-1.5 rounded-lg hover:bg-primary-dark transition font-medium"
+                          className="w-full text-xs bg-[#0071e3] text-white px-3 py-1.5 rounded-lg hover:bg-[#0077ED] transition font-medium"
                         >
                           Schedule
                         </button>
