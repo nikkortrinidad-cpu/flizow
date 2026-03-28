@@ -78,11 +78,47 @@ interface Props {
   onClose: () => void;
 }
 
-function ReactionBar({ cardId, comment }: { cardId: string; comment: Comment }) {
+function AddReactionButton({ cardId, comment }: { cardId: string; comment: Comment }) {
   const [showPicker, setShowPicker] = useState(false);
+
+  return (
+    <div className="relative">
+      <button
+        onClick={() => setShowPicker(!showPicker)}
+        className="text-[10px] font-medium text-[#86868b] hover:text-[#6e6e73] transition"
+        title="Add reaction"
+      >
+        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+      </button>
+      {showPicker && (
+        <>
+          <div className="fixed inset-0 z-10" onClick={() => setShowPicker(false)} />
+          <div className="absolute bottom-full left-0 mb-2 z-20">
+            <Picker
+              data={data}
+              onEmojiSelect={(emoji: { native: string }) => {
+                store.toggleReaction(cardId, comment.id, emoji.native);
+                setShowPicker(false);
+              }}
+              theme="light"
+              previewPosition="none"
+              skinTonePosition="search"
+              perLine={8}
+              maxFrequentRows={2}
+            />
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+function ReactionPills({ cardId, comment }: { cardId: string; comment: Comment }) {
   const reactions = comment.reactions || {};
   const currentUserId = store.getCurrentMemberId();
   const hasReactions = Object.keys(reactions).length > 0;
+
+  if (!hasReactions) return null;
 
   return (
     <div className="flex flex-wrap items-center gap-1 mt-1">
@@ -100,38 +136,6 @@ function ReactionBar({ cardId, comment }: { cardId: string; comment: Comment }) 
           <span className="text-[10px] font-medium">{userIds.length}</span>
         </button>
       ))}
-      <div className="relative">
-        <button
-          onClick={() => setShowPicker(!showPicker)}
-          className={`w-6 h-6 flex items-center justify-center rounded-full border transition ${
-            hasReactions
-              ? 'border-[#d2d2d7] dark:border-[#424245] text-[#86868b] hover:bg-[#f0f0f5] dark:hover:bg-[#3a3a3c]'
-              : 'border-transparent text-[#86868b] hover:text-[#6e6e73]'
-          }`}
-          title="Add reaction"
-        >
-          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-        </button>
-        {showPicker && (
-          <>
-            <div className="fixed inset-0 z-10" onClick={() => setShowPicker(false)} />
-            <div className="absolute bottom-full left-0 mb-2 z-20">
-              <Picker
-                data={data}
-                onEmojiSelect={(emoji: { native: string }) => {
-                  store.toggleReaction(cardId, comment.id, emoji.native);
-                  setShowPicker(false);
-                }}
-                theme="light"
-                previewPosition="none"
-                skinTonePosition="search"
-                perLine={8}
-                maxFrequentRows={2}
-              />
-            </div>
-          </>
-        )}
-      </div>
     </div>
   );
 }
@@ -1192,8 +1196,9 @@ export function CardDetailPanel({ card, onClose }: Props) {
                                       >
                                         Reply
                                       </button>
+                                      <AddReactionButton cardId={card.id} comment={reply} />
                                     </div>
-                                    <ReactionBar cardId={card.id} comment={reply} />
+                                    <ReactionPills cardId={card.id} comment={reply} />
                                     </>
                                     )}
                                     {/* Nested replies */}
@@ -1338,6 +1343,7 @@ export function CardDetailPanel({ card, onClose }: Props) {
                               >
                                 Reply
                               </button>
+                              <AddReactionButton cardId={card.id} comment={c} />
                               {totalReplies > 0 && (
                                 <button
                                   onClick={() => toggleCollapse(c.id)}
@@ -1350,7 +1356,7 @@ export function CardDetailPanel({ card, onClose }: Props) {
                                 </button>
                               )}
                             </div>
-                            <ReactionBar cardId={card.id} comment={c} />
+                            <ReactionPills cardId={card.id} comment={c} />
                             </>
                             )}
 
