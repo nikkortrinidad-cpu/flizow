@@ -34,6 +34,7 @@ export function CardDetailPanel({ card, onClose }: Props) {
   const [checklistAssigneeDropdown, setChecklistAssigneeDropdown] = useState<string | null>(null);
   const [showShareModal, setShowShareModal] = useState(false);
   const [showCardMenu, setShowCardMenu] = useState(false);
+  const cardMenuRef = useRef<HTMLDivElement>(null);
   const [activityTab, setActivityTab] = useState<'comments' | 'activity'>('comments');
   const [replyingTo, setReplyingTo] = useState<string | null>(null);
   const [collapsedComments, setCollapsedComments] = useState<Set<string>>(
@@ -48,6 +49,18 @@ export function CardDetailPanel({ card, onClose }: Props) {
       return next;
     });
   };
+
+  // Close card menu on outside click
+  useEffect(() => {
+    if (!showCardMenu) return;
+    function handleClick(e: MouseEvent) {
+      if (cardMenuRef.current && !cardMenuRef.current.contains(e.target as Node)) {
+        setShowCardMenu(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, [showCardMenu]);
 
   const countAllReplies = (replies: typeof card.comments): number => {
     let count = 0;
@@ -183,9 +196,7 @@ export function CardDetailPanel({ card, onClose }: Props) {
               </svg>
             </button>
             {showCardMenu && (
-              <>
-                <div className="fixed inset-0 z-30" onClick={() => setShowCardMenu(false)} />
-                <div className="absolute right-0 top-full mt-1 bg-white dark:bg-[#1c1c1e] border border-[#d2d2d7] dark:border-[#424245] rounded-xl shadow-lg shadow-black/10 z-40 py-1.5 w-48">
+                <div ref={cardMenuRef} className="absolute right-0 top-full mt-1 bg-white dark:bg-[#1c1c1e] border border-[#d2d2d7] dark:border-[#424245] rounded-xl shadow-lg shadow-black/10 z-40 py-1.5 w-48">
                   {/* Duplicate */}
                   <button
                     onClick={() => {
@@ -238,7 +249,6 @@ export function CardDetailPanel({ card, onClose }: Props) {
                     Delete card
                   </button>
                 </div>
-              </>
             )}
           </div>
 
