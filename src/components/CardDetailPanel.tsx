@@ -1190,13 +1190,13 @@ export function CardDetailPanel({ card, onClose }: Props) {
                                       <p className="text-[10px] text-[#86868b]">
                                         {new Date(reply.createdAt).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
                                       </p>
+                                      <AddReactionButton cardId={card.id} comment={reply} />
                                       <button
                                         onClick={() => setReplyingTo(replyingTo === reply.id ? null : reply.id)}
                                         className="text-[10px] font-semibold text-[#86868b] hover:text-primary transition"
                                       >
                                         Reply
                                       </button>
-                                      <AddReactionButton cardId={card.id} comment={reply} />
                                     </div>
                                     <ReactionPills cardId={card.id} comment={reply} />
                                     </>
@@ -1337,13 +1337,13 @@ export function CardDetailPanel({ card, onClose }: Props) {
                                   Scheduled {new Date(c.scheduledAt).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
                                 </span>
                               )}
+                              <AddReactionButton cardId={card.id} comment={c} />
                               <button
                                 onClick={() => setReplyingTo(replyingTo === c.id ? null : c.id)}
                                 className={`text-[10px] font-medium transition ${c.authorId === store.getCurrentMemberId() ? 'text-[#5f6368] hover:text-[#1d1d1f]' : 'text-[#86868b] hover:text-primary'}`}
                               >
                                 Reply
                               </button>
-                              <AddReactionButton cardId={card.id} comment={c} />
                               {totalReplies > 0 && (
                                 <button
                                   onClick={() => toggleCollapse(c.id)}
