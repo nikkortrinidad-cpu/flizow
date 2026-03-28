@@ -978,10 +978,15 @@ export function CardDetailPanel({ card, onClose }: Props) {
                                   {/* Connector from parent's bridge line to this avatar */}
                                   {isLast ? (
                                     <>
-                                      {/* Curved elbow (SVG for smooth curve) — no straight stem, curves immediately */}
+                                      {/* Mask hides parent's bridge line where SVG curve takes over (renders first, below SVG) */}
+                                      <div
+                                        className="absolute bg-[#f5f5f7] dark:bg-[#1c1c1e]"
+                                        style={{ left: -CO, top: -2, bottom: -300, width: 2, zIndex: 1 }}
+                                      />
+                                      {/* Curved elbow (SVG for smooth curve) — renders above the mask */}
                                       <svg
                                         className="absolute text-[#d1d1d6] dark:text-[#636366]"
-                                        style={{ left: -CO, top: -2, width: CO, height: AC + 3 }}
+                                        style={{ left: -CO, top: -2, width: CO, height: AC + 3, zIndex: 2 }}
                                         fill="none"
                                         overflow="visible"
                                       >
@@ -991,11 +996,6 @@ export function CardDetailPanel({ card, onClose }: Props) {
                                           strokeWidth="2"
                                         />
                                       </svg>
-                                      {/* Mask hides parent's bridge line where SVG curve takes over */}
-                                      <div
-                                        className="absolute bg-[#f5f5f7] dark:bg-[#1c1c1e]"
-                                        style={{ left: -CO, top: -2, bottom: -300, width: 2 }}
-                                      />
                                     </>
                                   ) : (
                                     /* Straight horizontal arm for non-last children */
