@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
+import DOMPurify from 'dompurify';
 import type { Card, Priority, Comment } from '../types';
 import { useBoard } from '../store/useStore';
 import { store } from '../store/boardStore';
@@ -8,6 +9,69 @@ import { MarkdownEditor } from './MarkdownEditor';
 import { CommentEditor } from './CommentEditor';
 import data from '@emoji-mart/data';
 import Picker from '@emoji-mart/react';
+
+function stripHtml(html: string): string {
+  const doc = new DOMParser().parseFromString(html, 'text/html');
+  return doc.body.textContent || '';
+}
+
+function CommentMenu({ cardId, comment, isOpen, onToggle, onClose, onEdit, copiedId, onCopy }: {
+  cardId: string;
+  comment: Comment;
+  isOpen: boolean;
+  onToggle: () => void;
+  onClose: () => void;
+  onEdit: () => void;
+  copiedId: string | null;
+  onCopy: () => void;
+}) {
+  const isOwn = comment.authorId === store.getCurrentMemberId();
+  return (
+    <div className="relative shrink-0">
+      <button
+        onClick={onToggle}
+        className="w-5 h-5 flex items-center justify-center rounded-full text-[#86868b] hover:bg-black/5 dark:hover:bg-white/10 opacity-0 group-hover/comment:opacity-100 group-hover/reply:opacity-100 transition"
+      >
+        <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/></svg>
+      </button>
+      {isOpen && (
+        <>
+          <div className="fixed inset-0 z-10" onClick={onClose} />
+          <div className="absolute right-0 top-full mt-1 bg-white dark:bg-[#2c2c2e] border border-[#d2d2d7] dark:border-[#424245] rounded-lg shadow-lg shadow-black/10 z-20 py-1 min-w-[140px]">
+            {isOwn && (
+              <button
+                onClick={onEdit}
+                className="w-full text-left px-3 py-1.5 text-xs text-[#1d1d1f] dark:text-[#e5e5ea] hover:bg-[#f0f0f5] dark:hover:bg-[#3a3a3c] flex items-center gap-2"
+              >
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
+                Edit
+              </button>
+            )}
+            <button
+              onClick={onCopy}
+              className="w-full text-left px-3 py-1.5 text-xs text-[#1d1d1f] dark:text-[#e5e5ea] hover:bg-[#f0f0f5] dark:hover:bg-[#3a3a3c] flex items-center gap-2"
+            >
+              {copiedId === comment.id ? (
+                <><svg className="w-3.5 h-3.5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg><span className="text-emerald-500">Copied!</span></>
+              ) : (
+                <><svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>Copy text</>
+              )}
+            </button>
+            {isOwn && (
+              <button
+                onClick={() => { store.deleteComment(cardId, comment.id); onClose(); }}
+                className="w-full text-left px-3 py-1.5 text-xs text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 flex items-center gap-2"
+              >
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                Delete
+              </button>
+            )}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
 
 interface Props {
   card: Card;
@@ -1024,9 +1088,9 @@ export function CardDetailPanel({ card, onClose }: Props) {
                       // Connector math: avatar=20px, gap-2=8px, content starts at 28px
                       // Parent's avatar center at x=10 in parent = x=-18 from content column
                       // Bridge line (2px) at left=-19 in content col = x=9..11 in parent = centered on avatar
-                      const CO = 19; // connector offset from content column left to parent line center
-                      const AC = 10; // avatar center Y (half of 20px)
-                      const AV = 20; // full avatar diameter
+                      const CONNECTOR_OFFSET = 19;
+                      const AVATAR_CENTER = 10;
+                      const AVATAR_SIZE = 20;
 
 
                       const renderReplies = (replies: typeof card.comments, parentId: string) => {
@@ -1044,17 +1108,17 @@ export function CardDetailPanel({ card, onClose }: Props) {
                                     /* Mask hides parent's bridge line below the last elbow */
                                     <div
                                       className="absolute bg-[#f5f5f7] dark:bg-[#1c1c1e]"
-                                      style={{ left: -CO, top: -2, bottom: 0, width: 2, zIndex: 1 }}
+                                      style={{ left: -CONNECTOR_OFFSET, top: -2, bottom: 0, width: 2, zIndex: 1 }}
                                     />
                                   )}
                                   <svg
                                     className="absolute text-[#d1d1d6] dark:text-[#636366]"
-                                    style={{ left: -CO, top: -2, width: CO, height: AC + 3, zIndex: 2 }}
+                                    style={{ left: -CONNECTOR_OFFSET, top: -2, width: CONNECTOR_OFFSET, height: AVATAR_CENTER + 3, zIndex: 2 }}
                                     fill="none"
                                     overflow="visible"
                                   >
                                     <path
-                                      d={`M 1 0 Q 1 ${AC + 2} ${AC + 1} ${AC + 2} L ${CO} ${AC + 2}`}
+                                      d={`M 1 0 Q 1 ${AVATAR_CENTER + 2} ${AVATAR_CENTER + 1} ${AVATAR_CENTER + 2} L ${CONNECTOR_OFFSET} ${AVATAR_CENTER + 2}`}
                                       stroke="currentColor"
                                       strokeWidth="2"
                                     />
@@ -1071,7 +1135,7 @@ export function CardDetailPanel({ card, onClose }: Props) {
                                     {(hasNestedReplies || replyingTo === reply.id) && (
                                       <div
                                         className="absolute w-[2px] bg-[#d1d1d6] dark:bg-[#636366]"
-                                        style={{ left: -CO, top: AV, bottom: 0 }}
+                                        style={{ left: -CONNECTOR_OFFSET, top: AVATAR_SIZE, bottom: 0 }}
                                       />
                                     )}
                                     {editingComment === reply.id ? (
@@ -1099,52 +1163,18 @@ export function CardDetailPanel({ card, onClose }: Props) {
                                     <div className="group/reply flex items-start gap-1">
                                       <div className={`flex-1 min-w-0 rounded-2xl px-3 py-2 ${reply.authorId === store.getCurrentMemberId() ? 'bg-[#d3e3fd]' : 'bg-[#f5f5f7] dark:bg-[#3a3a3c]/50'}`}>
                                         <span className={`text-xs font-semibold ${reply.authorId === store.getCurrentMemberId() ? 'text-[#1d1d1f]' : 'text-[#1d1d1f] dark:text-[#e5e5ea]'}`}>{replyAuthor?.name || 'Unknown'}{replyAuthor?.id === store.getCurrentMemberId() && <span className={`text-[10px] font-normal ml-1 ${reply.authorId === store.getCurrentMemberId() ? 'text-[#5f6368]' : 'text-[#86868b]'}`}>(You)</span>}</span>
-                                        <div className={`text-xs leading-relaxed prose-comment ${reply.authorId === store.getCurrentMemberId() ? 'text-[#1d1d1f]' : 'text-[#1d1d1f] dark:text-[#e5e5ea]'}`} dangerouslySetInnerHTML={{ __html: reply.text }} />
+                                        <div className={`text-xs leading-relaxed prose-comment ${reply.authorId === store.getCurrentMemberId() ? 'text-[#1d1d1f]' : 'text-[#1d1d1f] dark:text-[#e5e5ea]'}`} dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(reply.text) }} />
                                       </div>
-                                      {/* 3-dot menu */}
-                                      <div className="relative shrink-0">
-                                        <button
-                                          onClick={() => setCommentMenu(commentMenu === reply.id ? null : reply.id)}
-                                          className="w-5 h-5 flex items-center justify-center rounded-full text-[#86868b] hover:bg-black/5 dark:hover:bg-white/10 opacity-0 group-hover/reply:opacity-100 transition"
-                                        >
-                                          <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/></svg>
-                                        </button>
-                                        {commentMenu === reply.id && (
-                                          <>
-                                            <div className="fixed inset-0 z-10" onClick={() => setCommentMenu(null)} />
-                                            <div className="absolute right-0 top-full mt-1 bg-white dark:bg-[#2c2c2e] border border-[#d2d2d7] dark:border-[#424245] rounded-lg shadow-lg shadow-black/10 z-20 py-1 min-w-[140px]">
-                                              {reply.authorId === store.getCurrentMemberId() && (
-                                                <button
-                                                  onClick={() => { setEditingComment(reply.id); setReplyingTo(null); setCommentMenu(null); }}
-                                                  className="w-full text-left px-3 py-1.5 text-xs text-[#1d1d1f] dark:text-[#e5e5ea] hover:bg-[#f0f0f5] dark:hover:bg-[#3a3a3c] flex items-center gap-2"
-                                                >
-                                                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
-                                                  Edit
-                                                </button>
-                                              )}
-                                              <button
-                                                onClick={() => { navigator.clipboard.writeText(reply.text.replace(/<[^>]*>/g, '')); setCopiedComment(reply.id); setTimeout(() => { setCopiedComment(null); setCommentMenu(null); }, 1000); }}
-                                                className="w-full text-left px-3 py-1.5 text-xs text-[#1d1d1f] dark:text-[#e5e5ea] hover:bg-[#f0f0f5] dark:hover:bg-[#3a3a3c] flex items-center gap-2"
-                                              >
-                                                {copiedComment === reply.id ? (
-                                                  <><svg className="w-3.5 h-3.5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg><span className="text-emerald-500">Copied!</span></>
-                                                ) : (
-                                                  <><svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>Copy text</>
-                                                )}
-                                              </button>
-                                              {reply.authorId === store.getCurrentMemberId() && (
-                                                <button
-                                                  onClick={() => { store.deleteComment(card.id, reply.id); setCommentMenu(null); }}
-                                                  className="w-full text-left px-3 py-1.5 text-xs text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 flex items-center gap-2"
-                                                >
-                                                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-                                                  Delete
-                                                </button>
-                                              )}
-                                            </div>
-                                          </>
-                                        )}
-                                      </div>
+                                      <CommentMenu
+                                        cardId={card.id}
+                                        comment={reply}
+                                        isOpen={commentMenu === reply.id}
+                                        onToggle={() => setCommentMenu(commentMenu === reply.id ? null : reply.id)}
+                                        onClose={() => setCommentMenu(null)}
+                                        onEdit={() => { setEditingComment(reply.id); setReplyingTo(null); setCommentMenu(null); }}
+                                        copiedId={copiedComment}
+                                        onCopy={() => { navigator.clipboard.writeText(stripHtml(reply.text)); setCopiedComment(reply.id); setTimeout(() => { setCopiedComment(null); setCommentMenu(null); }, 1000); }}
+                                      />
                                     </div>
                                     <div className="flex items-center gap-3 mt-0.5 mb-0.5">
                                       <p className="text-[10px] text-[#86868b]">
@@ -1161,24 +1191,24 @@ export function CardDetailPanel({ card, onClose }: Props) {
                                     </>
                                     )}
                                     {/* Nested replies */}
-                                    {hasNestedReplies && renderReplies(reply.replies!, reply.id)}
+                                    {hasNestedReplies && renderReplies(reply.replies ?? [], reply.id)}
                                     {/* Reply input with curved elbow connector */}
                                     {replyingTo === reply.id && (
                                       <div className="relative flex gap-2 mt-2 mb-2">
                                         {/* Mask to hide bridge line below this elbow */}
                                         <div
                                           className="absolute bg-[#f5f5f7] dark:bg-[#1c1c1e]"
-                                          style={{ left: -CO, top: -2, bottom: 0, width: 2, zIndex: 1 }}
+                                          style={{ left: -CONNECTOR_OFFSET, top: -2, bottom: 0, width: 2, zIndex: 1 }}
                                         />
                                         {/* Curved elbow connector */}
                                         <svg
                                           className="absolute text-[#d1d1d6] dark:text-[#636366]"
-                                          style={{ left: -CO, top: -2, width: CO, height: AC + 3, zIndex: 2 }}
+                                          style={{ left: -CONNECTOR_OFFSET, top: -2, width: CONNECTOR_OFFSET, height: AVATAR_CENTER + 3, zIndex: 2 }}
                                           fill="none"
                                           overflow="visible"
                                         >
                                           <path
-                                            d={`M 1 0 Q 1 ${AC + 2} ${AC + 2} ${AC + 2} L ${CO} ${AC + 2}`}
+                                            d={`M 1 0 Q 1 ${AVATAR_CENTER + 2} ${AVATAR_CENTER + 2} ${AVATAR_CENTER + 2} L ${CONNECTOR_OFFSET} ${AVATAR_CENTER + 2}`}
                                             stroke="currentColor"
                                             strokeWidth="2"
                                           />
@@ -1226,7 +1256,7 @@ export function CardDetailPanel({ card, onClose }: Props) {
                             {(!isCollapsed && (c.replies || []).length > 0 || replyingTo === c.id) && (
                               <div
                                 className="absolute w-[2px] bg-[#d1d1d6] dark:bg-[#636366]"
-                                style={{ left: -CO, top: AV, bottom: 0 }}
+                                style={{ left: -CONNECTOR_OFFSET, top: AVATAR_SIZE, bottom: 0 }}
                               />
                             )}
                             {editingComment === c.id ? (
@@ -1256,52 +1286,18 @@ export function CardDetailPanel({ card, onClose }: Props) {
                                 <div className="flex items-center gap-1.5 mb-1">
                                   <span className={`text-xs font-medium ${c.authorId === store.getCurrentMemberId() ? 'text-[#1d1d1f]' : 'text-[#1d1d1f] dark:text-[#e5e5ea]'}`}>{author?.name || 'Unknown'}{author?.id === store.getCurrentMemberId() && <span className={`text-[10px] font-normal ml-1 ${c.authorId === store.getCurrentMemberId() ? 'text-[#5f6368]' : 'text-[#86868b]'}`}>(You)</span>}</span>
                                 </div>
-                                <div className={`text-xs leading-relaxed prose-comment ${c.authorId === store.getCurrentMemberId() ? 'text-[#1d1d1f]' : 'text-[#6e6e73] dark:text-[#aeaeb2]'}`} dangerouslySetInnerHTML={{ __html: c.text }} />
+                                <div className={`text-xs leading-relaxed prose-comment ${c.authorId === store.getCurrentMemberId() ? 'text-[#1d1d1f]' : 'text-[#6e6e73] dark:text-[#aeaeb2]'}`} dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(c.text) }} />
                               </div>
-                              {/* 3-dot menu */}
-                              <div className="relative shrink-0">
-                                <button
-                                  onClick={() => setCommentMenu(commentMenu === c.id ? null : c.id)}
-                                  className="w-6 h-6 flex items-center justify-center rounded-full text-[#86868b] hover:bg-black/5 dark:hover:bg-white/10 opacity-0 group-hover/comment:opacity-100 transition"
-                                >
-                                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/></svg>
-                                </button>
-                                {commentMenu === c.id && (
-                                  <>
-                                    <div className="fixed inset-0 z-10" onClick={() => setCommentMenu(null)} />
-                                    <div className="absolute right-0 top-full mt-1 bg-white dark:bg-[#2c2c2e] border border-[#d2d2d7] dark:border-[#424245] rounded-lg shadow-lg shadow-black/10 z-20 py-1 min-w-[140px]">
-                                      {c.authorId === store.getCurrentMemberId() && (
-                                        <button
-                                          onClick={() => { setEditingComment(c.id); setReplyingTo(null); setCommentMenu(null); }}
-                                          className="w-full text-left px-3 py-1.5 text-xs text-[#1d1d1f] dark:text-[#e5e5ea] hover:bg-[#f0f0f5] dark:hover:bg-[#3a3a3c] flex items-center gap-2"
-                                        >
-                                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
-                                          Edit
-                                        </button>
-                                      )}
-                                      <button
-                                        onClick={() => { navigator.clipboard.writeText(c.text.replace(/<[^>]*>/g, '')); setCopiedComment(c.id); setTimeout(() => { setCopiedComment(null); setCommentMenu(null); }, 1000); }}
-                                        className="w-full text-left px-3 py-1.5 text-xs text-[#1d1d1f] dark:text-[#e5e5ea] hover:bg-[#f0f0f5] dark:hover:bg-[#3a3a3c] flex items-center gap-2"
-                                      >
-                                        {copiedComment === c.id ? (
-                                          <><svg className="w-3.5 h-3.5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg><span className="text-emerald-500">Copied!</span></>
-                                        ) : (
-                                          <><svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>Copy text</>
-                                        )}
-                                      </button>
-                                      {c.authorId === store.getCurrentMemberId() && (
-                                        <button
-                                          onClick={() => { store.deleteComment(card.id, c.id); setCommentMenu(null); }}
-                                          className="w-full text-left px-3 py-1.5 text-xs text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 flex items-center gap-2"
-                                        >
-                                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-                                          Delete
-                                        </button>
-                                      )}
-                                    </div>
-                                  </>
-                                )}
-                              </div>
+                              <CommentMenu
+                                cardId={card.id}
+                                comment={c}
+                                isOpen={commentMenu === c.id}
+                                onToggle={() => setCommentMenu(commentMenu === c.id ? null : c.id)}
+                                onClose={() => setCommentMenu(null)}
+                                onEdit={() => { setEditingComment(c.id); setReplyingTo(null); setCommentMenu(null); }}
+                                copiedId={copiedComment}
+                                onCopy={() => { navigator.clipboard.writeText(stripHtml(c.text)); setCopiedComment(c.id); setTimeout(() => { setCopiedComment(null); setCommentMenu(null); }, 1000); }}
+                              />
                             </div>
                             <div className="flex items-center gap-3 mt-1.5">
                               <p className={`text-[10px] ${c.authorId === store.getCurrentMemberId() ? 'text-[#5f6368]' : 'text-[#86868b] dark:text-[#86868b]'}`}>
@@ -1336,7 +1332,7 @@ export function CardDetailPanel({ card, onClose }: Props) {
                             )}
 
                             {/* Replies — collapsible */}
-                            {!isCollapsed && (c.replies || []).length > 0 && renderReplies(c.replies!, c.id)}
+                            {!isCollapsed && (c.replies || []).length > 0 && renderReplies(c.replies ?? [], c.id)}
 
                             {/* Reply input with curved elbow connector */}
                             {replyingTo === c.id && (
@@ -1344,17 +1340,17 @@ export function CardDetailPanel({ card, onClose }: Props) {
                                 {/* Mask to hide bridge line below this elbow */}
                                 <div
                                   className="absolute bg-[#f5f5f7] dark:bg-[#1c1c1e]"
-                                  style={{ left: -CO, top: -2, bottom: 0, width: 2, zIndex: 1 }}
+                                  style={{ left: -CONNECTOR_OFFSET, top: -2, bottom: 0, width: 2, zIndex: 1 }}
                                 />
                                 {/* Curved elbow connector */}
                                 <svg
                                   className="absolute text-[#d1d1d6] dark:text-[#636366]"
-                                  style={{ left: -CO, top: -2, width: CO, height: AC + 3, zIndex: 2 }}
+                                  style={{ left: -CONNECTOR_OFFSET, top: -2, width: CONNECTOR_OFFSET, height: AVATAR_CENTER + 3, zIndex: 2 }}
                                   fill="none"
                                   overflow="visible"
                                 >
                                   <path
-                                    d={`M 1 0 Q 1 ${AC + 2} ${AC + 2} ${AC + 2} L ${CO} ${AC + 2}`}
+                                    d={`M 1 0 Q 1 ${AVATAR_CENTER + 2} ${AVATAR_CENTER + 2} ${AVATAR_CENTER + 2} L ${CONNECTOR_OFFSET} ${AVATAR_CENTER + 2}`}
                                     stroke="currentColor"
                                     strokeWidth="2"
                                   />

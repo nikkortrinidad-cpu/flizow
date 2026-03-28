@@ -330,8 +330,23 @@ class BoardStore {
     this.save();
   }
 
+  private getCard(cardId: string) {
+    return this.state.cards.find(c => c.id === cardId);
+  }
+
+  private findCommentInTree(comments: Comment[], commentId: string): Comment | undefined {
+    for (const node of comments) {
+      if (node.id === commentId) return node;
+      if (node.replies) {
+        const found = this.findCommentInTree(node.replies, commentId);
+        if (found) return found;
+      }
+    }
+    return undefined;
+  }
+
   addComment(cardId: string, text: string, scheduledAt?: string) {
-    const card = this.state.cards.find(c => c.id === cardId);
+    const card = this.getCard(cardId);
     if (!card) return;
     const comment: Comment = { id: uuid(), authorId: 'user-1', text, createdAt: new Date().toISOString(), scheduledAt };
     card.comments.push(comment);
@@ -344,19 +359,9 @@ class BoardStore {
   }
 
   addReply(cardId: string, commentId: string, text: string) {
-    const card = this.state.cards.find(c => c.id === cardId);
+    const card = this.getCard(cardId);
     if (!card) return;
-    const findComment = (comments: Comment[]): Comment | undefined => {
-      for (const c of comments) {
-        if (c.id === commentId) return c;
-        if (c.replies) {
-          const found = findComment(c.replies);
-          if (found) return found;
-        }
-      }
-      return undefined;
-    };
-    const comment = findComment(card.comments);
+    const comment = this.findCommentInTree(card.comments, commentId);
     if (!comment) return;
     if (!comment.replies) comment.replies = [];
     const reply: Comment = { id: uuid(), authorId: 'user-1', text, createdAt: new Date().toISOString() };
@@ -365,38 +370,18 @@ class BoardStore {
   }
 
   editComment(cardId: string, commentId: string, newText: string) {
-    const card = this.state.cards.find(c => c.id === cardId);
+    const card = this.getCard(cardId);
     if (!card) return;
-    const findComment = (comments: Comment[]): Comment | undefined => {
-      for (const c of comments) {
-        if (c.id === commentId) return c;
-        if (c.replies) {
-          const found = findComment(c.replies);
-          if (found) return found;
-        }
-      }
-      return undefined;
-    };
-    const comment = findComment(card.comments);
+    const comment = this.findCommentInTree(card.comments, commentId);
     if (!comment) return;
     comment.text = newText;
     this.save();
   }
 
   toggleReaction(cardId: string, commentId: string, emoji: string) {
-    const card = this.state.cards.find(c => c.id === cardId);
+    const card = this.getCard(cardId);
     if (!card) return;
-    const findComment = (comments: Comment[]): Comment | undefined => {
-      for (const c of comments) {
-        if (c.id === commentId) return c;
-        if (c.replies) {
-          const found = findComment(c.replies);
-          if (found) return found;
-        }
-      }
-      return undefined;
-    };
-    const comment = findComment(card.comments);
+    const comment = this.findCommentInTree(card.comments, commentId);
     if (!comment) return;
     if (!comment.reactions) comment.reactions = {};
     const userId = this.getCurrentMemberId();
@@ -412,20 +397,20 @@ class BoardStore {
   }
 
   deleteComment(cardId: string, commentId: string) {
-    const card = this.state.cards.find(c => c.id === cardId);
+    const card = this.getCard(cardId);
     if (!card) return;
-    const removeFromList = (comments: Comment[]): boolean => {
-      const idx = comments.findIndex(c => c.id === commentId);
+    const removeFromTree = (comments: Comment[]): boolean => {
+      const idx = comments.findIndex(node => node.id === commentId);
       if (idx !== -1) {
         comments.splice(idx, 1);
         return true;
       }
-      for (const c of comments) {
-        if (c.replies && removeFromList(c.replies)) return true;
+      for (const node of comments) {
+        if (node.replies && removeFromTree(node.replies)) return true;
       }
       return false;
     };
-    removeFromList(card.comments);
+    removeFromTree(card.comments);
     this.logActivity(cardId, 'user-1', 'updated', `Deleted a comment on "${card.title}"`);
     this.save();
   }
