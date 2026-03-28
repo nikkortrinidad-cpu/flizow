@@ -1,5 +1,5 @@
-import { useState, useRef } from 'react';
-import { useEditor, EditorContent } from '@tiptap/react';
+import { useState, useRef, useCallback } from 'react';
+import { useEditor, EditorContent, Extension } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Link from '@tiptap/extension-link';
 import Image from '@tiptap/extension-image';
@@ -34,6 +34,19 @@ export function CommentEditor({ onSubmit, placeholder: placeholderText, compact,
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [isEmpty, setIsEmpty] = useState(!initialContent);
+  const submitRef = useRef<() => void>(null);
+
+  const EnterSubmit = Extension.create({
+    name: 'enterSubmit',
+    addKeyboardShortcuts() {
+      return {
+        Enter: () => {
+          submitRef.current?.();
+          return true;
+        },
+      };
+    },
+  });
 
   const editor = useEditor({
     extensions: [
@@ -41,6 +54,7 @@ export function CommentEditor({ onSubmit, placeholder: placeholderText, compact,
         heading: false,
         codeBlock: false,
       }),
+      EnterSubmit,
       Link.configure({
         openOnClick: false,
         HTMLAttributes: { class: 'text-primary underline hover:text-primary-dark' },
@@ -65,21 +79,17 @@ export function CommentEditor({ onSubmit, placeholder: placeholderText, compact,
 
   if (!editor) return null;
 
-  const handleSubmit = () => {
+  const handleSubmit = useCallback(() => {
+    if (!editor) return;
     const html = editor.getHTML();
     const text = editor.getText().trim();
     if (!text) return;
     onSubmit(html);
     editor.commands.clearContent();
     setIsEmpty(true);
-  };
+  }, [editor, onSubmit]);
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
-      e.preventDefault();
-      handleSubmit();
-    }
-  };
+  submitRef.current = handleSubmit;
 
   const toolBtn = (active: boolean) =>
     `p-1.5 rounded-lg transition ${active ? 'bg-[#0071e3]/10 text-[#0071e3]' : 'text-[#86868b] dark:text-[#6e6e73] hover:text-[#6e6e73] dark:hover:text-[#aeaeb2] hover:bg-black/5 dark:hover:bg-white/10'}`;
@@ -136,7 +146,7 @@ export function CommentEditor({ onSubmit, placeholder: placeholderText, compact,
   };
 
   return (
-    <div onKeyDown={handleKeyDown} className="relative">
+    <div className="relative">
       {/* Formatting toolbar — shown/hidden via toggle */}
       {showToolbar && (
         <div className="flex items-center gap-0.5 px-2 py-1.5 border-b border-[#e8e8ed] dark:border-[#38383a] flex-wrap bg-[#f5f5f7] dark:bg-[#1c1c1e]">
