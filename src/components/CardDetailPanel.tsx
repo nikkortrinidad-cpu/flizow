@@ -1373,7 +1373,7 @@ export function CardDetailPanel({ card, onClose }: Props) {
                                 )}
                                 <button
                                   onClick={() => toggleCollapse(c.id)}
-                                  className={`flex items-center gap-1 text-[11px] font-semibold text-primary hover:text-primary-dark transition ${isCollapsed ? 'pl-1' : ''}`}
+                                  className={`flex items-center gap-1 text-[11px] font-semibold text-[#6e6e73] dark:text-[#aeaeb2] hover:text-[#1d1d1f] dark:hover:text-[#e5e5ea] transition ${isCollapsed ? 'pl-1' : ''}`}
                                   style={isCollapsed ? { paddingTop: AVATAR_CENTER - 4 } : undefined}
                                 >
                                   <svg className={`w-3 h-3 transition-transform ${isCollapsed ? '' : 'rotate-90'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
