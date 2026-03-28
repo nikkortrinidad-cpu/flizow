@@ -6,6 +6,8 @@ import Image from '@tiptap/extension-image';
 import Placeholder from '@tiptap/extension-placeholder';
 import { useBoard } from '../store/useStore';
 import { store } from '../store/boardStore';
+import data from '@emoji-mart/data';
+import Picker from '@emoji-mart/react';
 
 interface Props {
   onSubmit: (html: string, scheduledAt?: string) => void;
@@ -13,12 +15,6 @@ interface Props {
   compact?: boolean;
   initialContent?: string;
 }
-
-const EMOJI_LIST = [
-  '😀','😂','😍','🥰','😎','🤔','👍','👎','❤️','🔥',
-  '🎉','✅','⭐','💯','🚀','👀','💬','📌','⚡','✨',
-  '😊','😢','😡','🤝','👏','🙏','💪','🎯','📝','🏆',
-];
 
 export function CommentEditor({ onSubmit, placeholder: placeholderText, compact, initialContent }: Props) {
   const { state } = useBoard();
@@ -286,16 +282,19 @@ export function CommentEditor({ onSubmit, placeholder: placeholderText, compact,
             {showEmojiPicker && (
               <>
                 <div className="fixed inset-0 z-10" onClick={() => setShowEmojiPicker(false)} />
-                <div className="absolute bottom-full left-0 mb-2 bg-white dark:bg-[#2c2c2e] border border-[#d2d2d7] dark:border-[#424245] rounded-xl shadow-lg shadow-black/10 z-20 p-2 w-[220px]">
-                  <p className="text-[10px] font-semibold text-[#86868b] dark:text-[#6e6e73] uppercase tracking-wide mb-1.5 px-1">Emoji</p>
-                  <div className="grid grid-cols-10 gap-0.5">
-                    {EMOJI_LIST.map(emoji => (
-                      <button key={emoji} onClick={() => insertEmoji(emoji)}
-                        className="w-6 h-6 flex items-center justify-center text-sm hover:bg-black/5 dark:hover:bg-white/10 rounded transition">
-                        {emoji}
-                      </button>
-                    ))}
-                  </div>
+                <div className="absolute bottom-full left-0 mb-2 z-20">
+                  <Picker
+                    data={data}
+                    onEmojiSelect={(emoji: { native: string }) => {
+                      insertEmoji(emoji.native);
+                      setShowEmojiPicker(false);
+                    }}
+                    theme="light"
+                    previewPosition="none"
+                    skinTonePosition="search"
+                    perLine={8}
+                    maxFrequentRows={2}
+                  />
                 </div>
               </>
             )}
