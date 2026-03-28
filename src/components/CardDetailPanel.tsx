@@ -1048,8 +1048,12 @@ export function CardDetailPanel({ card, onClose }: Props) {
                                             strokeWidth="2"
                                           />
                                         </svg>
-                                        {/* Avatar spacer to align with reply items */}
-                                        <div className="shrink-0 w-5" />
+                                        {/* Current user avatar */}
+                                        <div className="shrink-0 w-5 flex justify-center relative z-10">
+                                          <div className="w-5 h-5 rounded-full bg-[#e8e8ed] dark:bg-[#3a3a3c] text-[#86868b] text-[10px] font-bold flex items-center justify-center">
+                                            {(state.members.find(m => m.id === store.getCurrentMemberId())?.name || '?').charAt(0)}
+                                          </div>
+                                        </div>
                                         {/* Editor */}
                                         <div className="flex-1 min-w-0">
                                           <CommentEditor
@@ -1149,8 +1153,12 @@ export function CardDetailPanel({ card, onClose }: Props) {
                                     strokeWidth="2"
                                   />
                                 </svg>
-                                {/* Avatar spacer to align with reply items */}
-                                <div className="shrink-0 w-5" />
+                                {/* Current user avatar */}
+                                <div className="shrink-0 w-5 flex justify-center relative z-10">
+                                  <div className="w-5 h-5 rounded-full bg-[#e8e8ed] dark:bg-[#3a3a3c] text-[#86868b] text-[10px] font-bold flex items-center justify-center">
+                                    {(state.members.find(m => m.id === store.getCurrentMemberId())?.name || '?').charAt(0)}
+                                  </div>
+                                </div>
                                 {/* Editor */}
                                 <div className="flex-1 min-w-0">
                                   <CommentEditor
