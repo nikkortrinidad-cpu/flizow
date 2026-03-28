@@ -4,6 +4,7 @@ import type { Card, Column } from '../types';
 import { KanbanCard } from './KanbanCard';
 import { store } from '../store/boardStore';
 import { useState, useRef } from 'react';
+import { createPortal } from 'react-dom';
 
 interface Props {
   column: Column;
@@ -43,7 +44,7 @@ export function KanbanColumn({ column, cards, swimlaneId, onCardClick, dragHandl
   };
 
   return (
-    <div className="flex-shrink-0 w-64 bg-white/60 dark:bg-[#1c1c1e]/60 backdrop-blur-sm rounded-2xl overflow-hidden border border-[#e8e8ed]/60 dark:border-[#424245]/60">
+    <div className="flex-shrink-0 w-64 bg-white/60 dark:bg-[#1c1c1e]/60 backdrop-blur-sm rounded-2xl border border-[#e8e8ed]/60 dark:border-[#424245]/60">
       <div className="flex items-center justify-between py-2.5 px-3">
         <div className="flex items-center gap-2">
           {dragHandleProps && (
@@ -104,11 +105,11 @@ export function KanbanColumn({ column, cards, swimlaneId, onCardClick, dragHandl
             </svg>
           </button>
 
-          {showColumnMenu && (
+          {showColumnMenu && createPortal(
             <>
-              <div className="fixed inset-0 z-[100]" onClick={() => setShowColumnMenu(false)} />
+              <div className="fixed inset-0 z-[250]" onClick={() => setShowColumnMenu(false)} />
               <div
-                className="fixed bg-white dark:bg-[#2c2c2e] border border-[#d2d2d7] dark:border-[#424245] rounded-xl shadow-lg shadow-black/10 z-[101] py-1 w-44"
+                className="fixed bg-white dark:bg-[#2c2c2e] border border-[#d2d2d7] dark:border-[#424245] rounded-xl shadow-lg shadow-black/10 z-[251] py-1 w-44"
                 style={(() => {
                   const rect = menuButtonRef.current?.getBoundingClientRect();
                   return rect ? { top: rect.bottom + 4, left: rect.right - 176 } : {};
@@ -125,7 +126,7 @@ export function KanbanColumn({ column, cards, swimlaneId, onCardClick, dragHandl
                   }}
                   className="w-full flex items-center gap-2.5 px-3 py-2 text-xs leading-normal text-[#1d1d1f] dark:text-[#f5f5f7] hover:bg-black/5 dark:hover:bg-white/10 transition"
                 >
-                  <svg className="w-3.5 h-3.5 text-[#86868b]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                  <svg className="w-3.5 h-3.5 text-[#86868b]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.11 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
                   List settings
                 </button>
 
@@ -157,13 +158,14 @@ export function KanbanColumn({ column, cards, swimlaneId, onCardClick, dragHandl
                   Delete list
                 </button>
               </div>
-            </>
+            </>,
+            document.body
           )}
         </div>
       </div>
 
       {/* List Settings Modal */}
-      {showListSettings && (
+      {showListSettings && createPortal(
         <>
           <div className="fixed inset-0 z-[300] bg-black/20 backdrop-blur-sm" onClick={() => setShowListSettings(false)} />
           <div className="fixed inset-0 z-[300] flex items-center justify-center pointer-events-none">
@@ -235,7 +237,8 @@ export function KanbanColumn({ column, cards, swimlaneId, onCardClick, dragHandl
               </div>
             </div>
           </div>
-        </>
+        </>,
+        document.body
       )}
 
       <div
