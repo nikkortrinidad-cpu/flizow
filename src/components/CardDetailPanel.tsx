@@ -991,10 +991,10 @@ export function CardDetailPanel({ card, onClose }: Props) {
                                           strokeWidth="2"
                                         />
                                       </svg>
-                                      {/* Mask hides parent's bridge line below the elbow */}
+                                      {/* Mask hides parent's bridge line where SVG curve takes over */}
                                       <div
                                         className="absolute bg-[#f5f5f7] dark:bg-[#1c1c1e]"
-                                        style={{ left: -CO, top: AC, bottom: -300, width: 2 }}
+                                        style={{ left: -CO, top: -2, bottom: -300, width: 2 }}
                                       />
                                     </>
                                   ) : (
