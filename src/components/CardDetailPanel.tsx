@@ -958,33 +958,45 @@ export function CardDetailPanel({ card, onClose }: Props) {
                       const totalReplies = countAllReplies(c.replies || []);
                       const isCollapsed = collapsedComments.has(c.id);
 
-                      const renderReplies = (replies: typeof card.comments, parentAvatarLeft: number = 9) => (
-                        <div className="relative" style={{ marginLeft: parentAvatarLeft }}>
+                      {/* Avatar sizes: parent=18px, reply=20px */}
+                      const PARENT_AVATAR = 18;
+                      const REPLY_AVATAR = 20;
+
+                      const renderReplies = (replies: typeof card.comments) => (
+                        <div className="relative" style={{ marginLeft: PARENT_AVATAR / 2 - 1 }}>
                           {replies.map((reply, idx) => {
                             const replyAuthor = state.members.find(m => m.id === reply.authorId);
                             const isLast = idx === replies.length - 1;
                             const hasNestedReplies = (reply.replies || []).length > 0;
+                            /* Reply avatar center Y is at pt-2 (8px) + avatar/2 (10px) = 18px from top of this div */
+                            const elbowY = 18;
                             return (
-                              <div key={`reply-${reply.id}`} className="relative mt-1">
-                                {/* Vertical line: from top to elbow bend for last item, full height for non-last */}
+                              <div key={`reply-${reply.id}`} className="relative">
+                                {/* Vertical line: stops at reply avatar center for last, full height for non-last */}
                                 <div
                                   className="absolute left-0 top-0 w-[2px] bg-[#c7c7cc] dark:bg-[#636366]"
-                                  style={{ height: isLast ? 16 : '100%' }}
+                                  style={{ height: isLast ? elbowY : '100%' }}
                                 />
-                                {/* Horizontal arm from vertical line to avatar */}
-                                <div className="absolute left-0 top-[14px] w-[20px] h-[2px] bg-[#c7c7cc] dark:bg-[#636366]" />
+                                {/* Horizontal arm: from vertical line to reply avatar left edge */}
+                                <div
+                                  className="absolute left-0 h-[2px] bg-[#c7c7cc] dark:bg-[#636366]"
+                                  style={{ top: elbowY - 1, width: 22 }}
+                                />
 
-                                <div className="relative pl-[28px] pt-1 pb-1">
-                                  {/* Reply avatar */}
-                                  <div className="absolute left-[20px] top-[5px] w-[20px] h-[20px] rounded-full bg-[#e8e8ed] dark:bg-[#3a3a3c] text-[#86868b] text-[10px] font-bold flex items-center justify-center" style={{ zIndex: 2 }}>
+                                <div className="relative pt-2 pb-1" style={{ paddingLeft: 22 + REPLY_AVATAR + 4 }}>
+                                  {/* Reply avatar — positioned so horizontal arm meets its left edge */}
+                                  <div
+                                    className="absolute rounded-full bg-[#e8e8ed] dark:bg-[#3a3a3c] text-[#86868b] text-[10px] font-bold flex items-center justify-center"
+                                    style={{ left: 22, top: 8, width: REPLY_AVATAR, height: REPLY_AVATAR, zIndex: 2 }}
+                                  >
                                     {(replyAuthor?.name || '?').charAt(0)}
                                   </div>
                                   {/* Reply bubble */}
-                                  <div className="ml-[16px] bg-[#f5f5f7] dark:bg-[#3a3a3c]/50 rounded-2xl px-3 py-2">
+                                  <div className="bg-[#f5f5f7] dark:bg-[#3a3a3c]/50 rounded-2xl px-3 py-2">
                                     <span className="text-xs font-semibold text-[#1d1d1f] dark:text-[#e5e5ea]">{replyAuthor?.name || 'Unknown'}{replyAuthor?.id === store.getCurrentMemberId() && <span className="text-[10px] text-[#86868b] font-normal ml-1">(You)</span>}</span>
                                     <div className="text-xs text-[#1d1d1f] dark:text-[#e5e5ea] leading-relaxed prose-comment" dangerouslySetInnerHTML={{ __html: reply.text }} />
                                   </div>
-                                  <div className="flex items-center gap-3 ml-[16px] mt-0.5 mb-0.5">
+                                  <div className="flex items-center gap-3 mt-0.5 mb-0.5">
                                     <p className="text-[10px] text-[#86868b]">
                                       {new Date(reply.createdAt).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
                                     </p>
@@ -997,12 +1009,16 @@ export function CardDetailPanel({ card, onClose }: Props) {
                                   </div>
                                 </div>
 
-                                {/* Nested replies — indented under this reply's avatar */}
-                                {hasNestedReplies && renderReplies(reply.replies!, 30)}
+                                {/* Nested replies */}
+                                {hasNestedReplies && (
+                                  <div style={{ marginLeft: 22 }}>
+                                    {renderReplies(reply.replies!)}
+                                  </div>
+                                )}
 
                                 {/* Reply input */}
                                 {replyingTo === reply.id && (
-                                  <div className="ml-[44px] mb-2">
+                                  <div style={{ marginLeft: 22 + REPLY_AVATAR + 4 }} className="mb-2">
                                     <CommentEditor
                                       onSubmit={(html) => {
                                         if (html) {
@@ -1023,7 +1039,6 @@ export function CardDetailPanel({ card, onClose }: Props) {
 
                       return (
                         <div key={`comment-${c.id}`} className="relative pl-6">
-                          {/* No standalone parent line — reply structure handles all connectors */}
                           <div className="absolute left-0 top-0.5 w-[18px] h-[18px] rounded-full bg-[#0071e3]/10 text-primary text-[10px] font-bold flex items-center justify-center" style={{ zIndex: 2 }}>
                             {(author?.name || '?').charAt(0)}
                           </div>
