@@ -69,12 +69,12 @@ export function KanbanColumn({ column, cards, swimlaneId, onCardClick, dragHandl
                 if (e.key === 'Enter') { (e.target as HTMLInputElement).blur(); }
                 if (e.key === 'Escape') { setEditTitle(column.title); setIsEditing(false); }
               }}
-              className="text-[13px] font-semibold text-[#1d1d1f] dark:text-[#f5f5f7] bg-white dark:bg-[#2c2c2e] border border-[#0071e3] rounded-lg px-1.5 py-0.5 outline-none w-28"
+              className="text-sm font-semibold text-[#1d1d1f] dark:text-[#f5f5f7] bg-white dark:bg-[#2c2c2e] border border-[#0071e3] rounded-lg px-1.5 py-0.5 outline-none w-28"
             />
           ) : (
             <h3
               onDoubleClick={() => { setEditTitle(column.title); setIsEditing(true); }}
-              className="text-[13px] font-semibold text-[#1d1d1f] dark:text-[#f5f5f7] cursor-pointer hover:text-[#0071e3] transition group/rename flex items-center gap-1"
+              className="text-sm font-semibold text-[#1d1d1f] dark:text-[#f5f5f7] cursor-pointer hover:text-[#0071e3] transition group/rename flex items-center gap-1"
               title="Double-click to rename"
             >
               {column.title}
