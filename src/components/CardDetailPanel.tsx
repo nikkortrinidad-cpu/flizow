@@ -958,33 +958,33 @@ export function CardDetailPanel({ card, onClose }: Props) {
                       const totalReplies = countAllReplies(c.replies || []);
                       const isCollapsed = collapsedComments.has(c.id);
 
-                      const renderReplies = (replies: typeof card.comments, depth: number = 1) => (
-                        <div className={`relative ${depth === 1 ? 'ml-[9px]' : 'ml-[17px]'}`}>
+                      const renderReplies = (replies: typeof card.comments, parentAvatarLeft: number = 9) => (
+                        <div className="relative" style={{ marginLeft: parentAvatarLeft }}>
                           {replies.map((reply, idx) => {
                             const replyAuthor = state.members.find(m => m.id === reply.authorId);
                             const isLast = idx === replies.length - 1;
-                            const hasMoreSiblings = !isLast;
+                            const hasNestedReplies = (reply.replies || []).length > 0;
                             return (
-                              <div key={`reply-${reply.id}`} className="relative">
-                                {/* Vertical line connecting to next sibling (only if there are more) */}
-                                {hasMoreSiblings && (
-                                  <div className="absolute left-0 top-0 bottom-0 w-[2px] bg-[#c7c7cc] dark:bg-[#636366]" />
-                                )}
-                                {/* Elbow connector └─ */}
-                                <div className="absolute left-0 top-0 w-[18px] h-[12px] overflow-hidden">
-                                  <div className="absolute left-0 top-0 w-[10px] h-[12px] border-l-2 border-b-2 border-[#c7c7cc] dark:border-[#636366] rounded-bl-lg" />
-                                </div>
-                                <div className="absolute left-[8px] top-[10px] w-[10px] h-[2px] bg-[#c7c7cc] dark:bg-[#636366]" />
+                              <div key={`reply-${reply.id}`} className="relative mt-1">
+                                {/* Vertical line: from top to elbow bend for last item, full height for non-last */}
+                                <div
+                                  className="absolute left-0 top-0 w-[2px] bg-[#c7c7cc] dark:bg-[#636366]"
+                                  style={{ height: isLast ? 16 : '100%' }}
+                                />
+                                {/* Horizontal arm from vertical line to avatar */}
+                                <div className="absolute left-0 top-[14px] w-[20px] h-[2px] bg-[#c7c7cc] dark:bg-[#636366]" />
 
-                                <div className="relative pl-[26px] pt-2 pb-1">
-                                  <div className="absolute left-[18px] top-[8px] w-[18px] h-[18px] rounded-full bg-[#e8e8ed] dark:bg-[#3a3a3c] text-[#86868b] text-[10px] font-bold flex items-center justify-center">
+                                <div className="relative pl-[28px] pt-1 pb-1">
+                                  {/* Reply avatar */}
+                                  <div className="absolute left-[20px] top-[5px] w-[20px] h-[20px] rounded-full bg-[#e8e8ed] dark:bg-[#3a3a3c] text-[#86868b] text-[10px] font-bold flex items-center justify-center" style={{ zIndex: 2 }}>
                                     {(replyAuthor?.name || '?').charAt(0)}
                                   </div>
-                                  <div className="ml-[14px] bg-[#f5f5f7] dark:bg-[#3a3a3c]/50 rounded-2xl px-3 py-2">
+                                  {/* Reply bubble */}
+                                  <div className="ml-[16px] bg-[#f5f5f7] dark:bg-[#3a3a3c]/50 rounded-2xl px-3 py-2">
                                     <span className="text-xs font-semibold text-[#1d1d1f] dark:text-[#e5e5ea]">{replyAuthor?.name || 'Unknown'}{replyAuthor?.id === store.getCurrentMemberId() && <span className="text-[10px] text-[#86868b] font-normal ml-1">(You)</span>}</span>
                                     <div className="text-xs text-[#1d1d1f] dark:text-[#e5e5ea] leading-relaxed prose-comment" dangerouslySetInnerHTML={{ __html: reply.text }} />
                                   </div>
-                                  <div className="flex items-center gap-3 ml-[14px] mt-0.5 mb-0.5">
+                                  <div className="flex items-center gap-3 ml-[16px] mt-0.5 mb-0.5">
                                     <p className="text-[10px] text-[#86868b]">
                                       {new Date(reply.createdAt).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
                                     </p>
@@ -997,12 +997,12 @@ export function CardDetailPanel({ card, onClose }: Props) {
                                   </div>
                                 </div>
 
-                                {/* Nested replies */}
-                                {(reply.replies || []).length > 0 && renderReplies(reply.replies!, depth + 1)}
+                                {/* Nested replies — indented under this reply's avatar */}
+                                {hasNestedReplies && renderReplies(reply.replies!, 30)}
 
-                                {/* Reply input for this reply */}
+                                {/* Reply input */}
                                 {replyingTo === reply.id && (
-                                  <div className="ml-[40px] mb-2">
+                                  <div className="ml-[44px] mb-2">
                                     <CommentEditor
                                       onSubmit={(html) => {
                                         if (html) {
@@ -1023,9 +1023,9 @@ export function CardDetailPanel({ card, onClose }: Props) {
 
                       return (
                         <div key={`comment-${c.id}`} className="relative pl-6">
-                          {/* Vertical line from avatar to replies */}
-                          {!isCollapsed && totalReplies > 0 && (
-                            <div className="absolute left-[8px] top-[20px] bottom-0 w-[2px] bg-[#c7c7cc] dark:bg-[#636366]" />
+                          {/* Vertical line from avatar down to replies */}
+                          {!isCollapsed && (c.replies || []).length > 0 && (
+                            <div className="absolute left-[8px] top-[20px] w-[2px] bg-[#c7c7cc] dark:bg-[#636366]" style={{ height: 'calc(100% - 20px)' }} />
                           )}
                           <div className="absolute left-0 top-0.5 w-[18px] h-[18px] rounded-full bg-[#0071e3]/10 text-primary text-[10px] font-bold flex items-center justify-center" style={{ zIndex: 2 }}>
                             {(author?.name || '?').charAt(0)}
