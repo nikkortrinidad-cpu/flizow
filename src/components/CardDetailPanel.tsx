@@ -80,6 +80,18 @@ interface Props {
 
 const QUICK_REACTIONS = ['🙏', '👍', '🙂'];
 
+function googleEmojiUrl(native: string): string {
+  const codes = [...native]
+    .map(c => c.codePointAt(0)!.toString(16))
+    .filter(c => c !== 'fe0f')
+    .join('_');
+  return `https://fonts.gstatic.com/s/e/notocoloremoji/latest/${codes}/emoji.svg`;
+}
+
+function GoogleEmoji({ emoji, size = 16 }: { emoji: string; size?: number }) {
+  return <img src={googleEmojiUrl(emoji)} alt={emoji} className="inline-block" style={{ width: size, height: size }} />;
+}
+
 function AddReactionButton({ cardId, comment }: { cardId: string; comment: Comment }) {
   const [showQuick, setShowQuick] = useState(false);
   const [showFullPicker, setShowFullPicker] = useState(false);
@@ -101,9 +113,9 @@ function AddReactionButton({ cardId, comment }: { cardId: string; comment: Comme
               <button
                 key={emoji}
                 onClick={() => { store.toggleReaction(cardId, comment.id, emoji); setShowQuick(false); }}
-                className="w-7 h-7 flex items-center justify-center rounded-full hover:bg-[#f0f0f5] dark:hover:bg-[#3a3a3c] transition text-base"
+                className="w-7 h-7 flex items-center justify-center rounded-full hover:bg-[#f0f0f5] dark:hover:bg-[#3a3a3c] transition"
               >
-                {emoji}
+                <GoogleEmoji emoji={emoji} size={18} />
               </button>
             ))}
             <button
@@ -122,6 +134,7 @@ function AddReactionButton({ cardId, comment }: { cardId: string; comment: Comme
           <div className="absolute bottom-full left-0 mb-2 z-20">
             <Picker
               data={data}
+              set="google"
               onEmojiSelect={(emoji: { native: string }) => {
                 store.toggleReaction(cardId, comment.id, emoji.native);
                 setShowFullPicker(false);
@@ -159,7 +172,7 @@ function ReactionPills({ cardId, comment }: { cardId: string; comment: Comment }
               : 'bg-white dark:bg-[#2c2c2e] border-[#d2d2d7] dark:border-[#424245] text-[#1d1d1f] dark:text-[#e5e5ea] hover:bg-[#f0f0f5] dark:hover:bg-[#3a3a3c]'
           }`}
         >
-          <span>{emoji}</span>
+          <GoogleEmoji emoji={emoji} size={14} />
           <span className="text-[10px] font-medium">{userIds.length}</span>
         </button>
       ))}
