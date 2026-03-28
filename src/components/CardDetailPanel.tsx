@@ -951,32 +951,44 @@ export function CardDetailPanel({ card, onClose }: Props) {
                       const isCollapsed = collapsedComments.has(c.id);
 
                       const renderReplies = (replies: typeof card.comments, depth: number = 1) => (
-                        <div className={`mt-2 space-y-2 ${depth === 1 ? 'ml-2' : 'ml-3'} border-l-2 border-[#c7c7cc] dark:border-[#636366] pl-3`}>
-                          {replies.map(reply => {
+                        <div className={`relative ${depth === 1 ? 'ml-[9px]' : 'ml-[17px]'}`}>
+                          {/* Vertical thread line */}
+                          <div className="absolute left-0 top-0 bottom-0 w-[2px] bg-[#c7c7cc] dark:bg-[#636366]" />
+                          {replies.map((reply, idx) => {
                             const replyAuthor = state.members.find(m => m.id === reply.authorId);
+                            const isLast = idx === replies.length - 1;
                             return (
-                              <div key={`reply-${reply.id}`}>
-                                <div className="relative pl-5">
-                                  <div className="absolute left-[-14px] top-3 w-[14px] h-0 border-t-2 border-[#c7c7cc] dark:border-[#636366]" />
-                                  <div className="absolute left-0 top-0.5 w-[14px] h-[14px] rounded-full bg-[#e8e8ed] dark:bg-[#3a3a3c] text-[#86868b] dark:text-[#86868b] text-[10px] font-bold flex items-center justify-center">
+                              <div key={`reply-${reply.id}`} className="relative">
+                                {/* Elbow connector: vertical segment + horizontal segment */}
+                                <div className="absolute left-0 top-0 w-[18px] h-[18px]">
+                                  {/* Vertical part down to the bend */}
+                                  <div className="absolute left-0 top-0 w-[2px] h-[10px] bg-[#c7c7cc] dark:bg-[#636366]" />
+                                  {/* Horizontal part from bend to avatar */}
+                                  <div className="absolute left-0 top-[10px] w-[18px] h-[2px] bg-[#c7c7cc] dark:bg-[#636366] rounded-bl-lg" />
+                                  {/* Rounded corner overlay */}
+                                  <div className="absolute left-0 top-[2px] w-[10px] h-[10px] border-l-2 border-b-2 border-[#c7c7cc] dark:border-[#636366] rounded-bl-lg bg-transparent" style={{ borderRight: 'none', borderTop: 'none' }} />
+                                </div>
+                                {/* Hide vertical line after last reply */}
+                                {isLast && <div className="absolute left-0 top-[12px] bottom-0 w-[2px] bg-white dark:bg-[#1c1c1e]" style={{ zIndex: 1 }} />}
+
+                                <div className="relative pl-[26px] pt-2 pb-1">
+                                  <div className="absolute left-[18px] top-[8px] w-[18px] h-[18px] rounded-full bg-[#e8e8ed] dark:bg-[#3a3a3c] text-[#86868b] text-[10px] font-bold flex items-center justify-center">
                                     {(replyAuthor?.name || '?').charAt(0)}
                                   </div>
-                                  <div className="bg-[#f5f5f7] dark:bg-[#3a3a3c]/50 rounded-lg p-2 shadow-sm">
-                                    <div className="flex items-center gap-1.5 mb-0.5">
-                                      <span className="text-xs font-medium text-[#1d1d1f] dark:text-[#e5e5ea]">{replyAuthor?.name || 'Unknown'}{replyAuthor?.id === store.getCurrentMemberId() && <span className="text-[10px] text-[#86868b] font-normal ml-1">(You)</span>}</span>
-                                    </div>
-                                    <div className="text-xs text-[#6e6e73] dark:text-[#aeaeb2] leading-relaxed prose-comment" dangerouslySetInnerHTML={{ __html: reply.text }} />
-                                    <div className="flex items-center gap-3 mt-1">
-                                      <p className="text-[10px] text-[#86868b] dark:text-[#86868b]">
-                                        {new Date(reply.createdAt).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
-                                      </p>
-                                      <button
-                                        onClick={() => setReplyingTo(replyingTo === reply.id ? null : reply.id)}
-                                        className="text-[10px] font-medium text-[#86868b] hover:text-primary transition"
-                                      >
-                                        Reply
-                                      </button>
-                                    </div>
+                                  <div className="ml-[14px] bg-[#f5f5f7] dark:bg-[#3a3a3c]/50 rounded-2xl px-3 py-2">
+                                    <span className="text-xs font-semibold text-[#1d1d1f] dark:text-[#e5e5ea]">{replyAuthor?.name || 'Unknown'}{replyAuthor?.id === store.getCurrentMemberId() && <span className="text-[10px] text-[#86868b] font-normal ml-1">(You)</span>}</span>
+                                    <div className="text-xs text-[#1d1d1f] dark:text-[#e5e5ea] leading-relaxed prose-comment" dangerouslySetInnerHTML={{ __html: reply.text }} />
+                                  </div>
+                                  <div className="flex items-center gap-3 ml-[14px] mt-0.5 mb-0.5">
+                                    <p className="text-[10px] text-[#86868b]">
+                                      {new Date(reply.createdAt).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                                    </p>
+                                    <button
+                                      onClick={() => setReplyingTo(replyingTo === reply.id ? null : reply.id)}
+                                      className="text-[10px] font-semibold text-[#86868b] hover:text-primary transition"
+                                    >
+                                      Reply
+                                    </button>
                                   </div>
                                 </div>
 
@@ -985,7 +997,7 @@ export function CardDetailPanel({ card, onClose }: Props) {
 
                                 {/* Reply input for this reply */}
                                 {replyingTo === reply.id && (
-                                  <div className="mt-2 ml-5">
+                                  <div className="ml-[40px] mb-2">
                                     <CommentEditor
                                       onSubmit={(html) => {
                                         if (html) {
@@ -1006,7 +1018,11 @@ export function CardDetailPanel({ card, onClose }: Props) {
 
                       return (
                         <div key={`comment-${c.id}`} className="relative pl-6">
-                          <div className="absolute left-0 top-0.5 w-[18px] h-[18px] rounded-full bg-[#0071e3]/10 text-primary text-[10px] font-bold flex items-center justify-center">
+                          {/* Vertical line from avatar to replies */}
+                          {!isCollapsed && totalReplies > 0 && (
+                            <div className="absolute left-[8px] top-[20px] bottom-0 w-[2px] bg-[#c7c7cc] dark:bg-[#636366]" />
+                          )}
+                          <div className="absolute left-0 top-0.5 w-[18px] h-[18px] rounded-full bg-[#0071e3]/10 text-primary text-[10px] font-bold flex items-center justify-center" style={{ zIndex: 2 }}>
                             {(author?.name || '?').charAt(0)}
                           </div>
                           <div className="bg-white dark:bg-[#2c2c2e] rounded-lg p-2.5 shadow-sm">
