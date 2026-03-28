@@ -101,6 +101,7 @@ export function CardDetailPanel({ card, onClose }: Props) {
   const [replyingTo, setReplyingTo] = useState<string | null>(null);
   const [editingComment, setEditingComment] = useState<string | null>(null);
   const [commentMenu, setCommentMenu] = useState<string | null>(null);
+  const [copiedComment, setCopiedComment] = useState<string | null>(null);
   const [collapsedComments, setCollapsedComments] = useState<Set<string>>(
     () => new Set(card.comments.filter(c => c.replies && c.replies.length > 0).map(c => c.id))
   );
@@ -1122,11 +1123,14 @@ export function CardDetailPanel({ card, onClose }: Props) {
                                                 </button>
                                               )}
                                               <button
-                                                onClick={() => { navigator.clipboard.writeText(reply.text.replace(/<[^>]*>/g, '')); setCommentMenu(null); }}
+                                                onClick={() => { navigator.clipboard.writeText(reply.text.replace(/<[^>]*>/g, '')); setCopiedComment(reply.id); setTimeout(() => { setCopiedComment(null); setCommentMenu(null); }, 1000); }}
                                                 className="w-full text-left px-3 py-1.5 text-xs text-[#1d1d1f] dark:text-[#e5e5ea] hover:bg-[#f0f0f5] dark:hover:bg-[#3a3a3c] flex items-center gap-2"
                                               >
-                                                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
-                                                Copy text
+                                                {copiedComment === reply.id ? (
+                                                  <><svg className="w-3.5 h-3.5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg><span className="text-emerald-500">Copied!</span></>
+                                                ) : (
+                                                  <><svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>Copy text</>
+                                                )}
                                               </button>
                                               {reply.authorId === store.getCurrentMemberId() && (
                                                 <button
@@ -1276,11 +1280,14 @@ export function CardDetailPanel({ card, onClose }: Props) {
                                         </button>
                                       )}
                                       <button
-                                        onClick={() => { navigator.clipboard.writeText(c.text.replace(/<[^>]*>/g, '')); setCommentMenu(null); }}
+                                        onClick={() => { navigator.clipboard.writeText(c.text.replace(/<[^>]*>/g, '')); setCopiedComment(c.id); setTimeout(() => { setCopiedComment(null); setCommentMenu(null); }, 1000); }}
                                         className="w-full text-left px-3 py-1.5 text-xs text-[#1d1d1f] dark:text-[#e5e5ea] hover:bg-[#f0f0f5] dark:hover:bg-[#3a3a3c] flex items-center gap-2"
                                       >
-                                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
-                                        Copy text
+                                        {copiedComment === c.id ? (
+                                          <><svg className="w-3.5 h-3.5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg><span className="text-emerald-500">Copied!</span></>
+                                        ) : (
+                                          <><svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>Copy text</>
+                                        )}
                                       </button>
                                       {c.authorId === store.getCurrentMemberId() && (
                                         <button
