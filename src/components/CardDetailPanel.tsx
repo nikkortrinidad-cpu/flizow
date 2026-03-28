@@ -981,7 +981,7 @@ export function CardDetailPanel({ card, onClose }: Props) {
                                       {/* Mask hides parent's bridge line where SVG curve takes over (renders first, below SVG) */}
                                       <div
                                         className="absolute bg-[#f5f5f7] dark:bg-[#1c1c1e]"
-                                        style={{ left: -CO, top: -2, bottom: -300, width: 2, zIndex: 1 }}
+                                        style={{ left: -CO, top: -2, bottom: 0, width: 2, zIndex: 1 }}
                                       />
                                       {/* Curved elbow (SVG for smooth curve) — renders above the mask */}
                                       <svg
