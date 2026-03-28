@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { KanbanBoard } from './components/KanbanBoard';
 import { Filters } from './components/Filters';
 import { NotificationsPanel } from './components/NotificationsPanel';
@@ -16,6 +16,22 @@ function App() {
   const [showAnalytics, setShowAnalytics] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
+  const notifRef = useRef<HTMLDivElement>(null);
+  const userMenuRef = useRef<HTMLDivElement>(null);
+
+  // Close dropdowns on outside click
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (showNotifications && notifRef.current && !notifRef.current.contains(e.target as Node)) {
+        setShowNotifications(false);
+      }
+      if (showUserMenu && userMenuRef.current && !userMenuRef.current.contains(e.target as Node)) {
+        setShowUserMenu(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, [showNotifications, showUserMenu]);
 
   const unreadCount = state.notifications.filter(n => !n.read).length;
   const isDark = state.theme === 'dark';
@@ -53,7 +69,7 @@ function App() {
   return (
     <div className={`h-screen flex flex-col ${isDark ? 'bg-black text-gray-100' : 'bg-[#f5f5f7] text-[#1d1d1f]'}`}>
       {/* Header */}
-      <header className={`${isDark ? 'bg-[#1d1d1f]/80 backdrop-blur-xl border-[#424245]' : 'bg-white/80 backdrop-blur-xl border-[#d2d2d7]'} border-b px-6 py-3.5 flex items-center justify-between shrink-0`}>
+      <header className={`${isDark ? 'bg-[#1d1d1f]/80 backdrop-blur-xl border-[#424245]' : 'bg-white/80 backdrop-blur-xl border-[#d2d2d7]'} border-b px-6 py-3.5 flex items-center justify-between shrink-0 relative z-[200]`}>
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 bg-[#1d1d1f] dark:bg-white rounded-lg flex items-center justify-center">
             <svg className="w-5 h-5 text-white dark:text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -61,8 +77,8 @@ function App() {
             </svg>
           </div>
           <div>
-            <h1 className={`text-[15px] font-semibold leading-tight tracking-tight ${isDark ? 'text-gray-100' : 'text-[#1d1d1f]'}`}>Kanban Board</h1>
-            <p className={`text-[11px] ${isDark ? 'text-[#86868b]' : 'text-[#86868b]'}`}>Project Management</p>
+            <h1 className={`text-sm font-semibold leading-snug tracking-tight ${isDark ? 'text-gray-100' : 'text-[#1d1d1f]'}`}>Kanban Board</h1>
+            <p className={`text-xs leading-normal ${isDark ? 'text-[#86868b]' : 'text-[#86868b]'}`}>Project Management</p>
           </div>
         </div>
 
@@ -82,14 +98,14 @@ function App() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
             </svg>
           </button>
-          <div className="relative">
-            <button onClick={() => setShowNotifications(!showNotifications)}
+          <div ref={notifRef} className="relative">
+            <button onClick={() => { setShowNotifications(!showNotifications); setShowUserMenu(false); }}
               className="relative flex items-center justify-center text-[#86868b] hover:text-[#1d1d1f] dark:hover:text-white w-9 h-9 rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition">
               <svg className="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
               </svg>
               {unreadCount > 0 && (
-                <span className="absolute top-0.5 right-0.5 w-4 h-4 bg-[#ff3b30] text-white text-[9px] font-bold rounded-full flex items-center justify-center">
+                <span className="absolute top-0.5 right-0.5 w-4 h-4 bg-[#ff3b30] text-white text-[10px] font-bold rounded-full flex items-center justify-center">
                   {unreadCount > 9 ? '9+' : unreadCount}
                 </span>
               )}
@@ -98,9 +114,9 @@ function App() {
           </div>
 
           {/* User avatar with dropdown */}
-          <div className="relative ml-1">
+          <div ref={userMenuRef} className="relative ml-1">
             <button
-              onClick={() => setShowUserMenu(!showUserMenu)}
+              onClick={() => { setShowUserMenu(!showUserMenu); setShowNotifications(false); }}
               className="w-8 h-8 rounded-full overflow-hidden ring-2 ring-transparent hover:ring-black/10 dark:hover:ring-white/20 transition"
             >
               {user.photoURL ? (
@@ -113,24 +129,21 @@ function App() {
             </button>
 
             {showUserMenu && (
-              <>
-                <div className="fixed inset-0 z-40" onClick={() => setShowUserMenu(false)} />
-                <div className="absolute right-0 top-full mt-2 bg-white dark:bg-[#2c2c2e] border border-[#d2d2d7] dark:border-[#424245] rounded-xl shadow-lg shadow-black/10 z-50 py-2 w-56">
-                  <div className="px-3 py-2 border-b border-[#d2d2d7] dark:border-[#424245]">
-                    <p className="text-xs font-medium text-[#1d1d1f] dark:text-white truncate">{user.displayName}</p>
-                    <p className="text-[10px] text-[#86868b] truncate">{user.email}</p>
-                  </div>
-                  <button
-                    onClick={() => { logout(); setShowUserMenu(false); }}
-                    className="w-full flex items-center gap-2 px-3 py-2 text-xs text-[#ff3b30] hover:bg-[#ff3b30]/5 dark:hover:bg-[#ff3b30]/10 transition mt-1"
-                  >
-                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                    </svg>
-                    Sign out
-                  </button>
+              <div className="absolute right-0 top-full mt-2 bg-white dark:bg-[#2c2c2e] border border-[#d2d2d7] dark:border-[#424245] rounded-xl shadow-lg shadow-black/10 z-50 py-2 w-56">
+                <div className="px-3 py-2 border-b border-[#d2d2d7] dark:border-[#424245]">
+                  <p className="text-xs font-medium text-[#1d1d1f] dark:text-white truncate">{user.displayName}</p>
+                  <p className="text-[10px] text-[#86868b] truncate">{user.email}</p>
                 </div>
-              </>
+                <button
+                  onClick={() => { logout(); setShowUserMenu(false); }}
+                  className="w-full flex items-center gap-2 px-3 py-2 text-xs text-[#ff3b30] hover:bg-[#ff3b30]/5 dark:hover:bg-[#ff3b30]/10 transition mt-1"
+                >
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                  </svg>
+                  Sign out
+                </button>
+              </div>
             )}
           </div>
         </div>

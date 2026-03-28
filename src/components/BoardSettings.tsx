@@ -94,7 +94,7 @@ export function BoardSettings({ onClose }: { onClose: () => void }) {
           <div className="w-40 shrink-0 border-r border-[#e8e8ed] dark:border-[#38383a] py-3 px-2">
             {tabs.map(t => (
               <button key={t.id} onClick={() => setTab(t.id)}
-                className={`w-full text-left text-sm px-3 py-2 rounded-full font-medium transition mb-0.5 ${
+                className={`w-full text-left text-sm leading-normal px-3 py-2 rounded-full font-medium transition mb-0.5 ${
                   tab === t.id
                     ? 'bg-[#1d1d1f] text-white dark:bg-white dark:text-black'
                     : 'text-[#86868b] dark:text-[#86868b] hover:bg-black/5 dark:hover:bg-white/10 hover:text-[#1d1d1f] dark:hover:text-[#e5e5ea]'
@@ -265,7 +265,7 @@ export function BoardSettings({ onClose }: { onClose: () => void }) {
                     </p>
                     <button
                       onClick={() => { if (window.confirm('Permanently delete all items in trash? This cannot be undone.')) store.emptyTrash(); }}
-                      className="text-[11px] text-[#ff3b30] hover:text-[#ff3b30] font-medium px-2 py-1 rounded-lg hover:bg-[#ff3b30]/5 dark:hover:bg-[#ff3b30]/10 transition"
+                      className="text-xs text-[#ff3b30] hover:text-[#ff3b30] font-medium px-2 py-1 rounded-lg hover:bg-[#ff3b30]/5 dark:hover:bg-[#ff3b30]/10 transition"
                     >
                       Empty trash
                     </button>
@@ -318,7 +318,7 @@ export function BoardSettings({ onClose }: { onClose: () => void }) {
                           <div className="flex items-center gap-1 shrink-0">
                             <button
                               onClick={() => store.restoreFromTrash(item.id)}
-                              className="text-[11px] text-primary hover:text-primary-dark font-medium px-2 py-1 rounded hover:bg-primary/5 transition"
+                              className="text-xs text-primary hover:text-primary-dark font-medium px-2 py-1 rounded hover:bg-primary/5 transition"
                               title="Restore"
                             >
                               Restore
@@ -340,7 +340,7 @@ export function BoardSettings({ onClose }: { onClose: () => void }) {
                 )}
 
                 <div className="mt-4 p-3 bg-amber-50 dark:bg-amber-900/20 rounded-lg border border-amber-200 dark:border-amber-800">
-                  <p className="text-[11px] text-amber-700 dark:text-amber-400 font-medium">Items are automatically deleted after 30 days in the trash.</p>
+                  <p className="text-xs text-amber-700 dark:text-amber-400 font-medium">Items are automatically deleted after 30 days in the trash.</p>
                 </div>
               </div>
             );
@@ -400,7 +400,7 @@ export function BoardSettings({ onClose }: { onClose: () => void }) {
                           <div className="flex items-center gap-1 shrink-0">
                             <button
                               onClick={() => store.restoreFromArchive(item.id)}
-                              className="text-[11px] text-primary hover:text-primary-dark font-medium px-2 py-1 rounded hover:bg-primary/5 transition"
+                              className="text-xs text-primary hover:text-primary-dark font-medium px-2 py-1 rounded hover:bg-primary/5 transition"
                               title="Restore"
                             >
                               Restore
@@ -422,7 +422,7 @@ export function BoardSettings({ onClose }: { onClose: () => void }) {
                 )}
 
                 <div className="mt-4 p-3 bg-indigo-50 dark:bg-indigo-900/20 rounded-lg border border-indigo-200 dark:border-indigo-800">
-                  <p className="text-[11px] text-indigo-700 dark:text-indigo-400 font-medium">Archived items are kept permanently until you restore or delete them.</p>
+                  <p className="text-xs text-indigo-700 dark:text-indigo-400 font-medium">Archived items are kept permanently until you restore or delete them.</p>
                 </div>
               </div>
             );

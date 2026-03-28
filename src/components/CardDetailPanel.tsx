@@ -162,7 +162,7 @@ export function CardDetailPanel({ card, onClose }: Props) {
       <div className="relative w-full max-w-6xl h-[98vh] bg-white dark:bg-[#1c1c1e] shadow-2xl shadow-black/20 rounded-2xl flex flex-col overflow-hidden animate-fade-in">
         {/* Title bar */}
         <div className="shrink-0 flex items-center justify-end gap-1 px-6 py-1.5 border-b border-[#e8e8ed] dark:border-[#38383a] bg-white/80 dark:bg-[#1c1c1e]/80 backdrop-blur-xl">
-          <span className="flex items-center gap-1.5 text-[11px] text-[#86868b] dark:text-[#86868b] mr-1">
+          <span className="flex items-center gap-1.5 text-xs text-[#86868b] dark:text-[#86868b] mr-1">
             <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
             </svg>
@@ -428,7 +428,7 @@ export function CardDetailPanel({ card, onClose }: Props) {
           <div className="flex-1 overflow-y-auto p-6 space-y-7">
             <div className="relative group/title ml-5">
               <input value={title} onChange={e => setTitle(e.target.value)}
-                className="w-full text-2xl font-semibold text-[#1d1d1f] dark:text-[#f5f5f7] border border-transparent outline-none bg-transparent rounded-lg px-2 py-1 -ml-2 hover:border-[#d2d2d7] dark:hover:border-[#424245] focus:border-primary focus:bg-[#0071e3]/[0.03] dark:focus:bg-white/5 transition" />
+                className="w-full text-2xl font-semibold leading-tight text-[#1d1d1f] dark:text-[#f5f5f7] border border-transparent outline-none bg-transparent rounded-lg px-2 py-1 -ml-2 hover:border-[#d2d2d7] dark:hover:border-[#424245] focus:border-primary focus:bg-[#0071e3]/[0.03] dark:focus:bg-white/5 transition" />
               <svg className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-[#aeaeb2] dark:text-[#6e6e73] opacity-0 group-hover/title:opacity-100 transition-opacity pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
               </svg>
@@ -438,7 +438,7 @@ export function CardDetailPanel({ card, onClose }: Props) {
             <div className="ml-5 grid grid-cols-2 gap-0 border border-[#d2d2d7] dark:border-[#38383a] rounded-xl bg-[#f5f5f7]/50 dark:bg-[#2c2c2e]/30">
               {/* Status */}
               <div className="relative flex items-center gap-2 px-3 py-2.5 border-b border-r border-[#d2d2d7] dark:border-[#38383a] min-w-0">
-                <span className="flex items-center gap-1.5 text-xs text-[#86868b] dark:text-[#86868b] shrink-0">
+                <span className="flex items-center gap-1.5 text-xs leading-normal text-[#86868b] dark:text-[#86868b] shrink-0">
                   <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg>
                   Status
                 </span>
@@ -455,7 +455,7 @@ export function CardDetailPanel({ card, onClose }: Props) {
                         {[...state.columns].sort((a, b) => a.order - b.order).map(c => (
                           <button key={c.id}
                             onClick={() => { store.moveCard(card.id, c.id, card.swimlaneId, 0); setShowStatusDropdown(false); }}
-                            className={`w-full flex items-center gap-2.5 px-2.5 py-2 rounded-md text-xs font-medium transition hover:bg-black/5 dark:hover:bg-white/10 ${
+                            className={`w-full flex items-center gap-2.5 px-2.5 py-2 rounded-md text-xs leading-normal font-medium transition hover:bg-black/5 dark:hover:bg-white/10 ${
                               card.columnId === c.id ? 'bg-[#f5f5f7] dark:bg-[#2c2c2e] text-[#1d1d1f] dark:text-[#f5f5f7]' : 'text-[#6e6e73] dark:text-[#aeaeb2]'
                             }`}>
                             <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: c.color }} />
@@ -473,7 +473,7 @@ export function CardDetailPanel({ card, onClose }: Props) {
 
               {/* Assignees */}
               <div className="relative flex items-center gap-2 px-3 py-2.5 border-b border-[#d2d2d7] dark:border-[#38383a] min-w-0">
-                <span className="flex items-center gap-1.5 text-xs text-[#86868b] dark:text-[#86868b] shrink-0">
+                <span className="flex items-center gap-1.5 text-xs leading-normal text-[#86868b] dark:text-[#86868b] shrink-0">
                   <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
                   Assignees
                 </span>
@@ -483,10 +483,10 @@ export function CardDetailPanel({ card, onClose }: Props) {
                     if (assignee) {
                       return (
                         <div className="flex items-center gap-1.5 bg-[#e8e8ed] dark:bg-[#3a3a3c] rounded-full pl-0.5 pr-2 py-0.5">
-                          <div className="w-5 h-5 rounded-full bg-[#0071e3]/10 text-primary text-[9px] font-bold flex items-center justify-center">
+                          <div className="w-5 h-5 rounded-full bg-[#0071e3]/10 text-primary text-[10px] font-bold flex items-center justify-center">
                             {assignee.name.charAt(0).toUpperCase()}
                           </div>
-                          <span className="text-[11px] font-medium text-[#6e6e73] dark:text-[#aeaeb2]">{assignee.name}{assignee.id === store.getCurrentMemberId() && <span className="text-[10px] text-[#86868b] ml-1">(You)</span>}</span>
+                          <span className="text-xs font-medium text-[#6e6e73] dark:text-[#aeaeb2]">{assignee.name}{assignee.id === store.getCurrentMemberId() && <span className="text-[10px] text-[#86868b] ml-1">(You)</span>}</span>
                           <button onClick={() => setAssigneeId('')} className="text-[#86868b] hover:text-[#ff3b30] transition">
                             <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
                           </button>
@@ -503,7 +503,7 @@ export function CardDetailPanel({ card, onClose }: Props) {
                       {state.members.filter(m => m.id !== assigneeId).map(m => (
                         <button key={m.id} onClick={() => setAssigneeId(m.id)}
                           className="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-[#6e6e73] dark:text-[#aeaeb2] hover:bg-black/5 dark:hover:bg-white/10 transition">
-                          <div className="w-4 h-4 rounded-full bg-[#0071e3]/10 text-primary text-[8px] font-bold flex items-center justify-center">{m.name.charAt(0).toUpperCase()}</div>
+                          <div className="w-4 h-4 rounded-full bg-[#0071e3]/10 text-primary text-[10px] font-bold flex items-center justify-center">{m.name.charAt(0).toUpperCase()}</div>
                           {m.name}{m.id === store.getCurrentMemberId() && <span className="text-[10px] text-[#86868b] ml-1">(You)</span>}
                         </button>
                       ))}
@@ -517,7 +517,7 @@ export function CardDetailPanel({ card, onClose }: Props) {
 
               {/* Start Date */}
               <div className="flex items-center gap-2 px-3 py-2.5 border-b border-r border-[#d2d2d7] dark:border-[#38383a] min-w-0">
-                <span className="flex items-center gap-1.5 text-xs text-[#86868b] dark:text-[#86868b] shrink-0">
+                <span className="flex items-center gap-1.5 text-xs leading-normal text-[#86868b] dark:text-[#86868b] shrink-0">
                   <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
                   Start date
                 </span>
@@ -528,7 +528,7 @@ export function CardDetailPanel({ card, onClose }: Props) {
 
               {/* Priority */}
               <div className="relative flex items-center gap-2 px-3 py-2.5 border-b border-[#d2d2d7] dark:border-[#38383a] min-w-0">
-                <span className="flex items-center gap-1.5 text-xs text-[#86868b] dark:text-[#86868b] shrink-0">
+                <span className="flex items-center gap-1.5 text-xs leading-normal text-[#86868b] dark:text-[#86868b] shrink-0">
                   <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2zm9-13.5V9" /></svg>
                   Priority
                 </span>
@@ -552,7 +552,7 @@ export function CardDetailPanel({ card, onClose }: Props) {
                         ] as const).map(p => (
                           <button key={p.value}
                             onClick={() => { setPriority(p.value); setShowPriorityDropdown(false); }}
-                            className={`w-full flex items-center gap-2.5 px-2.5 py-2 rounded-md text-xs font-medium transition hover:bg-black/5 dark:hover:bg-white/10 ${
+                            className={`w-full flex items-center gap-2.5 px-2.5 py-2 rounded-md text-xs leading-normal font-medium transition hover:bg-black/5 dark:hover:bg-white/10 ${
                               priority === p.value ? 'bg-[#f5f5f7] dark:bg-[#2c2c2e] text-[#1d1d1f] dark:text-[#f5f5f7]' : 'text-[#6e6e73] dark:text-[#aeaeb2]'
                             }`}>
                             <span className={`w-2 h-2 rounded-full ${p.dot}`} />
@@ -570,7 +570,7 @@ export function CardDetailPanel({ card, onClose }: Props) {
 
               {/* Due Date */}
               <div className="flex items-center gap-2 px-3 py-2.5 border-r border-[#d2d2d7] dark:border-[#38383a] min-w-0 overflow-hidden">
-                <span className="flex items-center gap-1.5 text-xs text-[#86868b] dark:text-[#86868b] shrink-0">
+                <span className="flex items-center gap-1.5 text-xs leading-normal text-[#86868b] dark:text-[#86868b] shrink-0">
                   <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
                   Due date
                 </span>
@@ -581,14 +581,14 @@ export function CardDetailPanel({ card, onClose }: Props) {
                     }`} />
                   {!dueDate && <span className="text-[10px] text-[#86868b] dark:text-[#86868b]">Empty</span>}
                   {dueDate && new Date(dueDate) < new Date() && (
-                    <span className="text-[9px] font-semibold text-[#ff3b30] bg-[#ff3b30]/5 dark:bg-[#ff3b30]/10 px-1 py-0.5 rounded">Overdue</span>
+                    <span className="text-[10px] font-semibold text-[#ff3b30] bg-[#ff3b30]/5 dark:bg-[#ff3b30]/10 px-1 py-0.5 rounded">Overdue</span>
                   )}
                 </div>
               </div>
 
               {/* Labels */}
               <div className="relative flex items-center gap-2 px-3 py-2.5 min-w-0">
-                <span className="flex items-center gap-1.5 text-xs text-[#86868b] dark:text-[#86868b] shrink-0">
+                <span className="flex items-center gap-1.5 text-xs leading-normal text-[#86868b] dark:text-[#86868b] shrink-0">
                   <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" /></svg>
                   Labels
                 </span>
@@ -676,45 +676,47 @@ export function CardDetailPanel({ card, onClose }: Props) {
               </div>
             </div>
 
-            <MarkdownEditor
-              value={description}
-              onChange={handleDescriptionChange}
-              maxLength={2000}
-              placeholder="Add a description... (supports markdown)"
-              editing={descriptionEditing}
-              onEditStart={() => setDescriptionEditing(true)}
-              headerRight={descriptionEditing ? (
-                <div className={`flex items-center gap-1.5 text-[11px] font-medium px-1 py-0.5 rounded-md transition-all ${
-                  descriptionDirty
-                    ? 'text-amber-600 dark:text-[#ff9f0a]'
-                    : 'text-[#30d158] dark:text-[#30d158]'
-                }`}>
-                  <div className={`w-1.5 h-1.5 rounded-full ${
-                    descriptionDirty ? 'bg-amber-500' : 'bg-green-500'
-                  }`} />
-                  {descriptionDirty ? 'Unsaved changes' : 'All changes saved'}
-                </div>
-              ) : undefined}
-              footerLeft={descriptionEditing ? (
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={handleSaveDescription}
-                    disabled={!descriptionDirty}
-                    className={`text-xs text-white px-3 py-1 rounded-lg transition font-medium ${
-                      descriptionDirty ? 'bg-primary hover:bg-primary-dark' : 'bg-primary/40 cursor-not-allowed'
-                    }`}
-                  >
-                    Save
-                  </button>
-                  <button
-                    onClick={handleCancelDescription}
-                    className="text-xs text-[#86868b] dark:text-[#86868b] px-3 py-1 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 transition font-medium"
-                  >
-                    Cancel
-                  </button>
-                </div>
-              ) : undefined}
-            />
+            <div className="max-w-[680px]">
+              <MarkdownEditor
+                value={description}
+                onChange={handleDescriptionChange}
+                maxLength={2000}
+                placeholder="Add a description... (supports markdown)"
+                editing={descriptionEditing}
+                onEditStart={() => setDescriptionEditing(true)}
+                headerRight={descriptionEditing ? (
+                  <div className={`flex items-center gap-1.5 text-xs font-medium px-1 py-0.5 rounded-md transition-all ${
+                    descriptionDirty
+                      ? 'text-amber-600 dark:text-[#ff9f0a]'
+                      : 'text-[#30d158] dark:text-[#30d158]'
+                  }`}>
+                    <div className={`w-1.5 h-1.5 rounded-full ${
+                      descriptionDirty ? 'bg-amber-500' : 'bg-green-500'
+                    }`} />
+                    {descriptionDirty ? 'Unsaved changes' : 'All changes saved'}
+                  </div>
+                ) : undefined}
+                footerLeft={descriptionEditing ? (
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={handleSaveDescription}
+                      disabled={!descriptionDirty}
+                      className={`text-xs text-white px-3 py-1 rounded-lg transition font-medium ${
+                        descriptionDirty ? 'bg-primary hover:bg-primary-dark' : 'bg-primary/40 cursor-not-allowed'
+                      }`}
+                    >
+                      Save
+                    </button>
+                    <button
+                      onClick={handleCancelDescription}
+                      className="text-xs text-[#86868b] dark:text-[#86868b] px-3 py-1 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 transition font-medium"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                ) : undefined}
+              />
+            </div>
 
             {/* Progress bar section */}
             {(card.checklist || []).length > 0 && (
@@ -726,7 +728,7 @@ export function CardDetailPanel({ card, onClose }: Props) {
                     </svg>
                     Progress
                   </label>
-                  <span className="text-[11px] font-medium text-[#6e6e73] dark:text-[#aeaeb2]">
+                  <span className="text-xs font-medium text-[#6e6e73] dark:text-[#aeaeb2]">
                     {Math.round(((card.checklist || []).filter(i => i.checked).length / (card.checklist || []).length) * 100)}%
                   </span>
                 </div>
@@ -749,7 +751,7 @@ export function CardDetailPanel({ card, onClose }: Props) {
                   Checklist
                 </label>
                 {(card.checklist || []).length > 0 && (
-                  <span className="text-[11px] font-medium text-[#6e6e73] dark:text-[#aeaeb2]">
+                  <span className="text-xs font-medium text-[#6e6e73] dark:text-[#aeaeb2]">
                     {(card.checklist || []).filter(i => i.checked).length}/{(card.checklist || []).length} done
                   </span>
                 )}
@@ -759,8 +761,8 @@ export function CardDetailPanel({ card, onClose }: Props) {
               <div className="ml-5 border border-[#d2d2d7] dark:border-[#38383a] rounded-xl overflow-hidden">
                 {/* Table header */}
                 <div className="flex items-center bg-[#f5f5f7] dark:bg-[#2c2c2e]/60 border-b border-[#d2d2d7] dark:border-[#38383a] px-6 py-2">
-                  <span className="flex-1 text-[11px] font-semibold text-[#86868b] dark:text-[#86868b] uppercase tracking-wide">Name</span>
-                  <span className="w-44 text-left pl-2 text-[11px] font-semibold text-[#86868b] dark:text-[#86868b] uppercase tracking-wide">Assignee</span>
+                  <span className="flex-1 text-xs font-semibold text-[#86868b] dark:text-[#86868b] uppercase tracking-wide">Name</span>
+                  <span className="w-44 text-left pl-2 text-xs font-semibold text-[#86868b] dark:text-[#86868b] uppercase tracking-wide">Assignee</span>
                 </div>
 
                 {/* Table rows */}
@@ -806,10 +808,10 @@ export function CardDetailPanel({ card, onClose }: Props) {
                           >
                             {itemAssignee ? (
                               <>
-                                <div className="w-5 h-5 rounded-full bg-[#0071e3]/10 text-primary text-[9px] font-bold flex items-center justify-center shrink-0">
+                                <div className="w-5 h-5 rounded-full bg-[#0071e3]/10 text-primary text-[10px] font-bold flex items-center justify-center shrink-0">
                                   {itemAssignee.name.charAt(0).toUpperCase()}
                                 </div>
-                                <span className="text-[11px] font-medium text-[#6e6e73] dark:text-[#aeaeb2] truncate max-w-[80px]">{itemAssignee.name}{itemAssignee.id === store.getCurrentMemberId() ? ' (You)' : ''}</span>
+                                <span className="text-xs font-medium text-[#6e6e73] dark:text-[#aeaeb2] truncate max-w-[80px]">{itemAssignee.name}{itemAssignee.id === store.getCurrentMemberId() ? ' (You)' : ''}</span>
                               </>
                             ) : (
                               <div className="w-5 h-5 rounded-full border border-dashed border-[#d2d2d7] dark:border-[#48484a] flex items-center justify-center text-[#86868b]">
@@ -840,7 +842,7 @@ export function CardDetailPanel({ card, onClose }: Props) {
                                   item.assigneeId === m.id ? 'text-primary font-medium' : 'text-[#6e6e73] dark:text-[#aeaeb2]'
                                 }`}
                               >
-                                <div className="w-5 h-5 rounded-full bg-[#0071e3]/10 text-primary text-[9px] font-bold flex items-center justify-center shrink-0">
+                                <div className="w-5 h-5 rounded-full bg-[#0071e3]/10 text-primary text-[10px] font-bold flex items-center justify-center shrink-0">
                                   {m.name.charAt(0).toUpperCase()}
                                 </div>
                                 {m.name}{m.id === store.getCurrentMemberId() && <span className="text-[10px] text-[#86868b] ml-1">(You)</span>}
@@ -945,21 +947,21 @@ export function CardDetailPanel({ card, onClose }: Props) {
                             return (
                               <div key={`reply-${reply.id}`}>
                                 <div className="relative pl-5">
-                                  <div className="absolute left-0 top-0.5 w-[14px] h-[14px] rounded-full bg-[#e8e8ed] dark:bg-[#3a3a3c] text-[#86868b] dark:text-[#86868b] text-[7px] font-bold flex items-center justify-center">
+                                  <div className="absolute left-0 top-0.5 w-[14px] h-[14px] rounded-full bg-[#e8e8ed] dark:bg-[#3a3a3c] text-[#86868b] dark:text-[#86868b] text-[10px] font-bold flex items-center justify-center">
                                     {(replyAuthor?.name || '?').charAt(0)}
                                   </div>
                                   <div className="bg-[#f5f5f7] dark:bg-[#3a3a3c]/50 rounded-lg p-2 shadow-sm">
                                     <div className="flex items-center gap-1.5 mb-0.5">
-                                      <span className="text-[11px] font-medium text-[#1d1d1f] dark:text-[#e5e5ea]">{replyAuthor?.name || 'Unknown'}{replyAuthor?.id === store.getCurrentMemberId() && <span className="text-[10px] text-[#86868b] font-normal ml-1">(You)</span>}</span>
+                                      <span className="text-xs font-medium text-[#1d1d1f] dark:text-[#e5e5ea]">{replyAuthor?.name || 'Unknown'}{replyAuthor?.id === store.getCurrentMemberId() && <span className="text-[10px] text-[#86868b] font-normal ml-1">(You)</span>}</span>
                                     </div>
-                                    <div className="text-[11px] text-[#6e6e73] dark:text-[#aeaeb2] leading-relaxed prose-comment" dangerouslySetInnerHTML={{ __html: reply.text }} />
+                                    <div className="text-xs text-[#6e6e73] dark:text-[#aeaeb2] leading-relaxed prose-comment" dangerouslySetInnerHTML={{ __html: reply.text }} />
                                     <div className="flex items-center gap-3 mt-1">
-                                      <p className="text-[9px] text-[#86868b] dark:text-[#86868b]">
+                                      <p className="text-[10px] text-[#86868b] dark:text-[#86868b]">
                                         {new Date(reply.createdAt).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
                                       </p>
                                       <button
                                         onClick={() => setReplyingTo(replyingTo === reply.id ? null : reply.id)}
-                                        className="text-[9px] font-medium text-[#86868b] hover:text-primary transition"
+                                        className="text-[10px] font-medium text-[#86868b] hover:text-primary transition"
                                       >
                                         Reply
                                       </button>
@@ -993,7 +995,7 @@ export function CardDetailPanel({ card, onClose }: Props) {
 
                       return (
                         <div key={`comment-${c.id}`} className="relative pl-6">
-                          <div className="absolute left-0 top-0.5 w-[18px] h-[18px] rounded-full bg-[#0071e3]/10 text-primary text-[9px] font-bold flex items-center justify-center">
+                          <div className="absolute left-0 top-0.5 w-[18px] h-[18px] rounded-full bg-[#0071e3]/10 text-primary text-[10px] font-bold flex items-center justify-center">
                             {(author?.name || '?').charAt(0)}
                           </div>
                           <div className="bg-white dark:bg-[#2c2c2e] rounded-lg p-2.5 shadow-sm">
@@ -1006,7 +1008,7 @@ export function CardDetailPanel({ card, onClose }: Props) {
                                 {new Date(c.createdAt).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
                               </p>
                               {c.scheduledAt && new Date(c.scheduledAt) > new Date() && (
-                                <span className="text-[9px] font-medium text-amber-500 dark:text-[#ff9f0a] flex items-center gap-0.5">
+                                <span className="text-[10px] font-medium text-amber-500 dark:text-[#ff9f0a] flex items-center gap-0.5">
                                   <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                                   Scheduled {new Date(c.scheduledAt).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
                                 </span>

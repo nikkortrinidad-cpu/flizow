@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import {
   DndContext, DragOverlay, closestCorners, PointerSensor, useSensor, useSensors,
   type DragStartEvent, type DragEndEvent, type DragOverEvent,
@@ -36,6 +36,15 @@ export function KanbanBoard() {
   const [showAddColumn, setShowAddColumn] = useState(false);
   const [newColumnTitle, setNewColumnTitle] = useState('');
   const newColumnInputRef = useRef<HTMLInputElement>(null);
+
+  // Open card from store (e.g. notification click)
+  useEffect(() => {
+    if (store.selectedCardId) {
+      const card = state.cards.find(c => c.id === store.selectedCardId);
+      if (card) setSelectedCard(card);
+      store.selectedCardId = null;
+    }
+  }, [state]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } })
@@ -140,7 +149,7 @@ export function KanbanBoard() {
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                     </svg>
                   </button>
-                  <h3 className="text-xs font-semibold text-[#86868b] uppercase tracking-wider">{swimlane.title}</h3>
+                  <h3 className="text-xs font-semibold leading-snug text-[#86868b] uppercase tracking-wider">{swimlane.title}</h3>
                   <span className="text-[10px] text-[#86868b]">
                     ({filteredCards.filter(c => c.swimlaneId === swimlane.id).length} cards)
                   </span>

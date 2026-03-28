@@ -104,9 +104,20 @@ class BoardStore {
   private firestoreUnsub: Unsubscribe | null = null;
   private saveTimeout: ReturnType<typeof setTimeout> | null = null;
   private ignoreNextSnapshot = false;
+  selectedCardId: string | null = null;
 
   constructor() {
     this.state = loadState();
+  }
+
+  openCard(cardId: string) {
+    this.selectedCardId = cardId;
+    this.listeners.forEach(l => l());
+  }
+
+  closeCard() {
+    this.selectedCardId = null;
+    this.listeners.forEach(l => l());
   }
 
   // --- Firebase sync ---

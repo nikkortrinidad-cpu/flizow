@@ -80,7 +80,7 @@ export function ColorPicker({ value, onChange, size = 'sm' }: Props) {
                 />
                 <button
                   onClick={(e) => handleRemoveColor(color, e)}
-                  className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-[#ff3b30] text-white rounded-full text-[8px] leading-none flex items-center justify-center opacity-0 group-hover/swatch:opacity-100 transition-opacity"
+                  className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-[#ff3b30] text-white rounded-full text-[10px] leading-none flex items-center justify-center opacity-0 group-hover/swatch:opacity-100 transition-opacity"
                   title="Remove from palette"
                 >
                   &times;

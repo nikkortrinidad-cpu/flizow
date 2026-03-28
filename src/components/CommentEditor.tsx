@@ -142,25 +142,25 @@ export function CommentEditor({ onSubmit, placeholder: placeholderText, compact 
           {/* Bold */}
           <button onClick={() => editor.chain().focus().toggleBold().run()}
             title="Bold" className={toolBtn(editor.isActive('bold'))}>
-            <span className="text-[11px] font-bold leading-none w-4 h-4 flex items-center justify-center">B</span>
+            <span className="text-xs font-bold leading-none w-4 h-4 flex items-center justify-center">B</span>
           </button>
 
           {/* Italic */}
           <button onClick={() => editor.chain().focus().toggleItalic().run()}
             title="Italic" className={toolBtn(editor.isActive('italic'))}>
-            <span className="text-[11px] font-bold italic leading-none w-4 h-4 flex items-center justify-center">I</span>
+            <span className="text-xs font-bold italic leading-none w-4 h-4 flex items-center justify-center">I</span>
           </button>
 
           {/* Underline */}
           <button onClick={() => editor.chain().focus().toggleUnderline().run()}
             title="Underline" className={toolBtn(editor.isActive('underline'))}>
-            <span className="text-[11px] font-bold underline leading-none w-4 h-4 flex items-center justify-center">U</span>
+            <span className="text-xs font-bold underline leading-none w-4 h-4 flex items-center justify-center">U</span>
           </button>
 
           {/* Strikethrough */}
           <button onClick={() => editor.chain().focus().toggleStrike().run()}
             title="Strikethrough" className={toolBtn(editor.isActive('strike'))}>
-            <span className="text-[11px] font-bold line-through leading-none w-4 h-4 flex items-center justify-center">S</span>
+            <span className="text-xs font-bold line-through leading-none w-4 h-4 flex items-center justify-center">S</span>
           </button>
 
           <div className="w-px h-4 bg-[#d2d2d7] dark:bg-[#424245] mx-0.5" />
@@ -245,7 +245,7 @@ export function CommentEditor({ onSubmit, placeholder: placeholderText, compact 
                         <button
                           key={m.id}
                           onClick={() => insertMention(m.name)}
-                          className="w-full flex items-center gap-2.5 px-3 py-1.5 text-xs text-[#1d1d1f] dark:text-[#e5e5ea] hover:bg-black/5 dark:hover:bg-white/10 transition"
+                          className="w-full flex items-center gap-2.5 px-3 py-1.5 text-xs leading-normal text-[#1d1d1f] dark:text-[#e5e5ea] hover:bg-black/5 dark:hover:bg-white/10 transition"
                         >
                           <div className="w-5 h-5 rounded-full bg-gradient-to-br from-primary to-primary-dark flex items-center justify-center text-white text-[10px] font-bold shrink-0">
                             {m.avatar ? <img src={m.avatar} alt="" className="w-full h-full rounded-full object-cover" /> : m.name.charAt(0).toUpperCase()}
@@ -316,7 +316,7 @@ export function CommentEditor({ onSubmit, placeholder: placeholderText, compact 
                       </button>
                     ))}
                   </div>
-                  <p className="text-[9px] text-[#86868b] dark:text-[#6e6e73] text-center mt-2">GIF integration coming soon</p>
+                  <p className="text-[10px] text-[#86868b] dark:text-[#6e6e73] text-center mt-2">GIF integration coming soon</p>
                 </div>
               </>
             )}
@@ -371,7 +371,7 @@ export function CommentEditor({ onSubmit, placeholder: placeholderText, compact 
                         setIsEmpty(true);
                         setShowScheduleMenu(false);
                       }}
-                      className="w-full flex items-center gap-2.5 px-3 py-2 text-xs text-[#1d1d1f] dark:text-[#e5e5ea] hover:bg-black/5 dark:hover:bg-white/10 transition"
+                      className="w-full flex items-center gap-2.5 px-3 py-2 text-xs leading-normal text-[#1d1d1f] dark:text-[#e5e5ea] hover:bg-black/5 dark:hover:bg-white/10 transition"
                     >
                       <svg className="w-4 h-4 text-[#86868b]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                       In 20 minutes
@@ -387,7 +387,7 @@ export function CommentEditor({ onSubmit, placeholder: placeholderText, compact 
                         setIsEmpty(true);
                         setShowScheduleMenu(false);
                       }}
-                      className="w-full flex items-center gap-2.5 px-3 py-2 text-xs text-[#1d1d1f] dark:text-[#e5e5ea] hover:bg-black/5 dark:hover:bg-white/10 transition"
+                      className="w-full flex items-center gap-2.5 px-3 py-2 text-xs leading-normal text-[#1d1d1f] dark:text-[#e5e5ea] hover:bg-black/5 dark:hover:bg-white/10 transition"
                     >
                       <svg className="w-4 h-4 text-[#86868b]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                       In 2 hours
@@ -405,7 +405,7 @@ export function CommentEditor({ onSubmit, placeholder: placeholderText, compact 
                         setIsEmpty(true);
                         setShowScheduleMenu(false);
                       }}
-                      className="w-full flex items-center gap-2.5 px-3 py-2 text-xs text-[#1d1d1f] dark:text-[#e5e5ea] hover:bg-black/5 dark:hover:bg-white/10 transition"
+                      className="w-full flex items-center gap-2.5 px-3 py-2 text-xs leading-normal text-[#1d1d1f] dark:text-[#e5e5ea] hover:bg-black/5 dark:hover:bg-white/10 transition"
                     >
                       <svg className="w-4 h-4 text-[#86868b]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                       Tomorrow at 9:00 AM
@@ -415,7 +415,7 @@ export function CommentEditor({ onSubmit, placeholder: placeholderText, compact 
                     {!showCustomPicker ? (
                       <button
                         onClick={() => setShowCustomPicker(true)}
-                        className="w-full flex items-center gap-2.5 px-3 py-2.5 text-xs text-[#1d1d1f] dark:text-[#e5e5ea] hover:bg-black/5 dark:hover:bg-white/10 transition"
+                        className="w-full flex items-center gap-2.5 px-3 py-2.5 text-xs leading-normal text-[#1d1d1f] dark:text-[#e5e5ea] hover:bg-black/5 dark:hover:bg-white/10 transition"
                       >
                         <svg className="w-4 h-4 text-[#86868b]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
                         Pick a custom time

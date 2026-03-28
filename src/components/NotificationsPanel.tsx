@@ -1,8 +1,7 @@
 import { useBoard } from '../store/useStore';
 import { store } from '../store/boardStore';
 
-export function NotificationsPanel({ onClose: _onClose }: { onClose: () => void }) {
-  void _onClose;
+export function NotificationsPanel({ onClose }: { onClose: () => void }) {
   const { state } = useBoard();
   const notifications = state.notifications;
 
@@ -23,8 +22,14 @@ export function NotificationsPanel({ onClose: _onClose }: { onClose: () => void 
         )}
         {notifications.map(n => (
           <div key={n.id}
-            onClick={() => store.markNotificationRead(n.id)}
-            className={`px-4 py-3 border-b border-[#e8e8ed] dark:border-[#38383a] cursor-pointer hover:bg-black/[0.03] dark:hover:bg-white/10 transition ${
+            onClick={() => {
+              store.markNotificationRead(n.id);
+              if (n.cardId) {
+                store.openCard(n.cardId);
+                onClose();
+              }
+            }}
+            className={`px-4 py-3 border-b border-[#e8e8ed] dark:border-[#38383a] cursor-pointer hover:bg-black/[0.03] dark:hover:bg-white/10 transition leading-normal ${
               !n.read ? 'bg-[#0071e3]/5' : ''
             }`}>
             <div className="flex items-start gap-2">

@@ -78,7 +78,7 @@ export function Analytics({ onClose }: { onClose: () => void }) {
             <h3 className="text-sm font-semibold text-[#1d1d1f] dark:text-[#e5e5ea] mb-3">Recent Activity</h3>
             <div className="space-y-1.5 max-h-60 overflow-y-auto">
               {state.activityLog.slice(0, 30).map(a => (
-                <div key={a.id} className="flex items-start gap-3 text-xs py-1">
+                <div key={a.id} className="flex items-start gap-3 text-xs leading-normal py-1">
                   <span className="text-[#86868b] dark:text-[#6e6e73] shrink-0 w-32">
                     {new Date(a.timestamp).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
                   </span>

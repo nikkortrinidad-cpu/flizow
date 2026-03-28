@@ -191,7 +191,7 @@ export function MarkdownEditor({ value, onChange, maxLength, placeholder, header
             )}
           </div>
           {/* Hover edit indicator */}
-          <div className={`absolute top-2 right-2 flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-medium transition-all ${
+          <div className={`absolute top-2 right-2 flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium transition-all ${
             isHovered ? 'opacity-100' : 'opacity-0'
           } bg-primary/10 text-primary dark:bg-primary/20 dark:text-primary-light`}>
             <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -211,7 +211,7 @@ export function MarkdownEditor({ value, onChange, maxLength, placeholder, header
                   title="Text style"
                   className="h-8 flex items-center gap-1 rounded-lg text-[#86868b] dark:text-[#86868b] hover:bg-black/5 dark:hover:bg-white/10 hover:text-[#1d1d1f] dark:hover:text-[#e5e5ea] transition px-2"
                 >
-                  <span className="text-[13px] font-bold leading-none">H</span>
+                  <span className="text-xs font-bold leading-none">H</span>
                   <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M19 9l-7 7-7-7" />
                   </svg>
@@ -222,14 +222,14 @@ export function MarkdownEditor({ value, onChange, maxLength, placeholder, header
                       { level: 0, label: 'Plain Text', className: 'text-xs' },
                       { level: 1, label: 'Heading 1', className: 'text-base font-bold' },
                       { level: 2, label: 'Heading 2', className: 'text-sm font-bold' },
-                      { level: 3, label: 'Heading 3', className: 'text-[13px] font-semibold' },
+                      { level: 3, label: 'Heading 3', className: 'text-xs font-semibold' },
                       { level: 4, label: 'Heading 4', className: 'text-xs font-semibold' },
-                      { level: 5, label: 'Heading 5', className: 'text-[11px] font-semibold' },
+                      { level: 5, label: 'Heading 5', className: 'text-[10px] font-semibold' },
                     ].map(h => (
                       <button
                         key={h.level}
                         onClick={(e) => { e.preventDefault(); handleHeading(h.level); }}
-                        className={`w-full flex items-center justify-between px-3 py-1.5 hover:bg-black/5 dark:hover:bg-white/10 text-[#1d1d1f] dark:text-[#aeaeb2] transition ${h.className}`}
+                        className={`w-full flex items-center justify-between px-3 py-1.5 leading-normal hover:bg-black/5 dark:hover:bg-white/10 text-[#1d1d1f] dark:text-[#aeaeb2] transition ${h.className}`}
                       >
                         <span>{h.label}</span>
                         <span className="text-[10px] font-normal text-[#86868b] dark:text-[#6e6e73] ml-3">{headingShortcut(h.level)}</span>
@@ -340,7 +340,7 @@ export function MarkdownEditor({ value, onChange, maxLength, placeholder, header
 
           <div className="flex items-center justify-between mt-1 ml-5">
             <div>{footerLeft}</div>
-            <span className={`text-[11px] ${
+            <span className={`text-xs ${
               charCount >= maxLength ? 'text-[#ff3b30] font-medium' :
               charCount >= maxLength * 0.9 ? 'text-[#ff9f0a]' :
               'text-[#86868b]'

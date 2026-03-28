@@ -28,13 +28,13 @@ export function LoginPage() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2" />
             </svg>
           </div>
-          <h1 className="text-4xl font-semibold tracking-tight text-[#1d1d1f] mb-2">Kanban Board</h1>
-          <p className="text-lg text-[#86868b] font-normal">Project Management</p>
+          <h1 className="text-4xl font-semibold leading-tight tracking-tight text-[#1d1d1f] mb-2">Kanban Board</h1>
+          <p className="text-lg leading-normal text-[#86868b] font-normal">Project Management</p>
         </div>
 
         {/* Sign in card */}
         <div className="bg-white rounded-2xl shadow-sm p-10">
-          <h2 className="text-[17px] font-medium text-[#1d1d1f] text-center mb-8">Sign in to continue</h2>
+          <h2 className="text-base leading-snug font-medium text-[#1d1d1f] text-center mb-8">Sign in to continue</h2>
 
           {error && (
             <div className="mb-6 p-3 bg-[#ff3b30]/5 text-[#ff3b30] text-sm rounded-xl text-center">
@@ -45,7 +45,7 @@ export function LoginPage() {
           <button
             onClick={handleGoogleSignIn}
             disabled={loading}
-            className="w-full flex items-center justify-center gap-3 py-3.5 px-4 bg-[#1d1d1f] text-white rounded-full hover:bg-[#333336] transition-all text-[15px] font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full flex items-center justify-center gap-3 py-3.5 px-4 bg-[#1d1d1f] text-white rounded-full hover:bg-[#333336] transition-all text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {loading ? (
               <div className="w-5 h-5 border-2 border-[#d2d2d7] border-t-[#1d1d1f] rounded-full animate-spin" />
@@ -60,12 +60,12 @@ export function LoginPage() {
             {loading ? 'Signing in...' : 'Continue with Google'}
           </button>
 
-          <p className="text-[13px] text-[#86868b] text-center mt-8">
+          <p className="text-xs text-[#86868b] text-center mt-8">
             Your data syncs across all your devices automatically
           </p>
         </div>
 
-        <p className="text-[12px] text-[#86868b] text-center mt-8">
+        <p className="text-xs text-[#86868b] text-center mt-8">
           Powered by Firebase &middot; Hosted on GitHub Pages
         </p>
       </div>

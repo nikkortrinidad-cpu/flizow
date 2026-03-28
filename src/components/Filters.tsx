@@ -78,7 +78,7 @@ export function Filters() {
             return (
               <span key={id}
                 onClick={() => store.setFilters({ assigneeIds: f.assigneeIds.filter(a => a !== id) })}
-                className="text-[10px] bg-primary/10 text-primary px-2 py-0.5 rounded-full cursor-pointer hover:bg-primary/20">
+                className="text-[10px] leading-normal bg-primary/10 text-primary px-2 py-0.5 rounded-full cursor-pointer hover:bg-primary/20">
                 {m?.name}{m?.id === store.getCurrentMemberId() ? ' (You)' : ''} &times;
               </span>
             );
@@ -86,7 +86,7 @@ export function Filters() {
           {f.priorities.map(p => (
             <span key={p}
               onClick={() => store.setFilters({ priorities: f.priorities.filter(pr => pr !== p) })}
-              className="text-[10px] bg-yellow-100 text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-300 px-2 py-0.5 rounded-full cursor-pointer hover:bg-yellow-200 dark:hover:bg-yellow-900/60">
+              className="text-[10px] leading-normal bg-yellow-100 text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-300 px-2 py-0.5 rounded-full cursor-pointer hover:bg-yellow-200 dark:hover:bg-yellow-900/60">
               {p} &times;
             </span>
           ))}
@@ -95,14 +95,14 @@ export function Filters() {
             return (
               <span key={id}
                 onClick={() => store.setFilters({ labelIds: f.labelIds.filter(lb => lb !== id) })}
-                className="text-[10px] px-2 py-0.5 rounded-full cursor-pointer text-white"
+                className="text-[10px] leading-normal px-2 py-0.5 rounded-full cursor-pointer text-white"
                 style={{ backgroundColor: l?.color }}>
                 {l?.name} &times;
               </span>
             );
           })}
           <button onClick={() => store.clearFilters()}
-            className="text-[10px] text-[#86868b] hover:text-[#ff3b30] ml-1 rounded-full px-2 py-0.5 hover:bg-[#ff3b30]/5 transition">
+            className="text-[10px] leading-normal text-[#86868b] hover:text-[#ff3b30] ml-1 rounded-full px-2 py-0.5 hover:bg-[#ff3b30]/5 transition">
             Clear all
           </button>
         </div>
