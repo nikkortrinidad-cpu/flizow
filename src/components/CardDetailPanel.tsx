@@ -966,13 +966,14 @@ export function CardDetailPanel({ card, onClose }: Props) {
                       const AV = 20; // full avatar diameter
 
 
-                      const renderReplies = (replies: typeof card.comments) => {
+                      const renderReplies = (replies: typeof card.comments, parentId: string) => {
                         return (
                           <>
                             {replies.map((reply, idx) => {
                               const replyAuthor = state.members.find(m => m.id === reply.authorId);
                               const hasNestedReplies = (reply.replies || []).length > 0;
-                              const isLast = idx === replies.length - 1;
+                              // Not truly last if reply input is showing below
+                              const isLast = idx === replies.length - 1 && replyingTo !== parentId;
                               return (
                                 <div key={`reply-${reply.id}`} className="relative flex gap-2 mt-2">
                                   {/* Curved elbow connector from parent's bridge line to this avatar */}
@@ -1026,7 +1027,7 @@ export function CardDetailPanel({ card, onClose }: Props) {
                                       </button>
                                     </div>
                                     {/* Nested replies */}
-                                    {hasNestedReplies && renderReplies(reply.replies!)}
+                                    {hasNestedReplies && renderReplies(reply.replies!, reply.id)}
                                     {/* Reply input with curved elbow connector */}
                                     {replyingTo === reply.id && (
                                       <div className="relative flex gap-2 mt-2 mb-2">
@@ -1130,7 +1131,7 @@ export function CardDetailPanel({ card, onClose }: Props) {
                             </div>
 
                             {/* Replies — collapsible */}
-                            {!isCollapsed && (c.replies || []).length > 0 && renderReplies(c.replies!)}
+                            {!isCollapsed && (c.replies || []).length > 0 && renderReplies(c.replies!, c.id)}
 
                             {/* Reply input with curved elbow connector */}
                             {replyingTo === c.id && (
