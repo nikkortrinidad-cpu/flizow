@@ -1158,6 +1158,12 @@ export function CardDetailPanel({ card, onClose }: Props) {
                                           Cancel
                                         </button>
                                       </div>
+                                    ) : reply.deleted ? (
+                                    <div className="flex items-center gap-1.5 py-1">
+                                      <svg className="w-3.5 h-3.5 text-[#86868b]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" /></svg>
+                                      <span className="text-xs italic text-[#86868b]">{replyAuthor?.name || 'Someone'} removed a comment</span>
+                                      {reply.deletedAt && <span className="text-[10px] text-[#aeaeb2]">&middot; {new Date(reply.deletedAt).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>}
+                                    </div>
                                     ) : (
                                     <>
                                     <div className="group/reply flex items-start gap-1">
@@ -1279,6 +1285,23 @@ export function CardDetailPanel({ card, onClose }: Props) {
                                   Cancel
                                 </button>
                               </div>
+                            ) : c.deleted ? (
+                            <div className="flex items-center gap-1.5 py-1.5">
+                              <svg className="w-4 h-4 text-[#86868b]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" /></svg>
+                              <span className="text-xs italic text-[#86868b]">{author?.name || 'Someone'} removed a comment</span>
+                              {c.deletedAt && <span className="text-[10px] text-[#aeaeb2]">&middot; {new Date(c.deletedAt).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>}
+                              {totalReplies > 0 && (
+                                <button
+                                  onClick={() => toggleCollapse(c.id)}
+                                  className="text-[10px] font-medium text-primary hover:text-primary-dark transition flex items-center gap-0.5 ml-1"
+                                >
+                                  <svg className={`w-3 h-3 transition-transform ${isCollapsed ? '' : 'rotate-90'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                                  </svg>
+                                  {totalReplies} {totalReplies === 1 ? 'reply' : 'replies'}
+                                </button>
+                              )}
+                            </div>
                             ) : (
                             <>
                             <div className="group/comment flex items-start gap-1">

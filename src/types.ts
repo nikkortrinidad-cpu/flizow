@@ -15,6 +15,8 @@ export interface Comment {
   replies?: Comment[];
   scheduledAt?: string;
   reactions?: { [emoji: string]: string[] };
+  deleted?: boolean;
+  deletedAt?: string;
 }
 
 export interface ActivityEntry {

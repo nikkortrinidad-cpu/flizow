@@ -399,18 +399,12 @@ class BoardStore {
   deleteComment(cardId: string, commentId: string) {
     const card = this.getCard(cardId);
     if (!card) return;
-    const removeFromTree = (comments: Comment[]): boolean => {
-      const idx = comments.findIndex(node => node.id === commentId);
-      if (idx !== -1) {
-        comments.splice(idx, 1);
-        return true;
-      }
-      for (const node of comments) {
-        if (node.replies && removeFromTree(node.replies)) return true;
-      }
-      return false;
-    };
-    removeFromTree(card.comments);
+    const comment = this.findCommentInTree(card.comments, commentId);
+    if (!comment) return;
+    comment.deleted = true;
+    comment.deletedAt = new Date().toISOString();
+    comment.text = '';
+    comment.reactions = {};
     this.logActivity(cardId, 'user-1', 'updated', `Deleted a comment on "${card.title}"`);
     this.save();
   }
