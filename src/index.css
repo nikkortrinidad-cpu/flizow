@@ -74,7 +74,7 @@ html.dark ::-webkit-scrollbar-thumb:hover {
 }
 
 /* TipTap editor styles */
-.tiptap { outline: none; }
+.tiptap, .prose-editor { outline: none; overflow-wrap: break-word; word-break: break-word; }
 .tiptap p { margin: 0.3em 0; line-height: 1.6; }
 .tiptap h1 { font-size: 1.5em; font-weight: 600; margin: 0.5em 0 0.3em; letter-spacing: -0.02em; }
 .tiptap h2 { font-size: 1.25em; font-weight: 600; margin: 0.5em 0 0.3em; letter-spacing: -0.02em; }
