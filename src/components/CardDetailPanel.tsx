@@ -39,6 +39,7 @@ export function CardDetailPanel({ card, onClose }: Props) {
   const cardMenuBtnRef = useRef<HTMLButtonElement>(null);
   const [activityTab, setActivityTab] = useState<'comments' | 'activity'>('comments');
   const [replyingTo, setReplyingTo] = useState<string | null>(null);
+  const [editingComment, setEditingComment] = useState<string | null>(null);
   const [collapsedComments, setCollapsedComments] = useState<Set<string>>(
     () => new Set(card.comments.filter(c => c.replies && c.replies.length > 0).map(c => c.id))
   );
@@ -1011,6 +1012,28 @@ export function CardDetailPanel({ card, onClose }: Props) {
                                         style={{ left: -CO, top: AV, bottom: 0 }}
                                       />
                                     )}
+                                    {editingComment === reply.id ? (
+                                      <div className="bg-[#f5f5f7] dark:bg-[#3a3a3c]/50 rounded-2xl px-3 py-2">
+                                        <CommentEditor
+                                          onSubmit={(html) => {
+                                            if (html) {
+                                              store.editComment(card.id, reply.id, html);
+                                              setEditingComment(null);
+                                            }
+                                          }}
+                                          placeholder="Edit reply..."
+                                          compact
+                                          initialContent={reply.text}
+                                        />
+                                        <button
+                                          onClick={() => setEditingComment(null)}
+                                          className="text-[10px] font-medium text-[#86868b] hover:text-danger transition mt-1"
+                                        >
+                                          Cancel
+                                        </button>
+                                      </div>
+                                    ) : (
+                                    <>
                                     <div className="bg-[#f5f5f7] dark:bg-[#3a3a3c]/50 rounded-2xl px-3 py-2">
                                       <span className="text-xs font-semibold text-[#1d1d1f] dark:text-[#e5e5ea]">{replyAuthor?.name || 'Unknown'}{replyAuthor?.id === store.getCurrentMemberId() && <span className="text-[10px] text-[#86868b] font-normal ml-1">(You)</span>}</span>
                                       <div className="text-xs text-[#1d1d1f] dark:text-[#e5e5ea] leading-relaxed prose-comment" dangerouslySetInnerHTML={{ __html: reply.text }} />
@@ -1019,6 +1042,14 @@ export function CardDetailPanel({ card, onClose }: Props) {
                                       <p className="text-[10px] text-[#86868b]">
                                         {new Date(reply.createdAt).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
                                       </p>
+                                      {reply.authorId === store.getCurrentMemberId() && (
+                                        <button
+                                          onClick={() => { setEditingComment(reply.id); setReplyingTo(null); }}
+                                          className="text-[10px] font-semibold text-[#86868b] hover:text-primary transition"
+                                        >
+                                          Edit
+                                        </button>
+                                      )}
                                       <button
                                         onClick={() => setReplyingTo(replyingTo === reply.id ? null : reply.id)}
                                         className="text-[10px] font-semibold text-[#86868b] hover:text-primary transition"
@@ -1026,6 +1057,8 @@ export function CardDetailPanel({ card, onClose }: Props) {
                                         Reply
                                       </button>
                                     </div>
+                                    </>
+                                    )}
                                     {/* Nested replies */}
                                     {hasNestedReplies && renderReplies(reply.replies!, reply.id)}
                                     {/* Reply input with curved elbow connector */}
@@ -1095,6 +1128,27 @@ export function CardDetailPanel({ card, onClose }: Props) {
                                 style={{ left: -CO, top: AV, bottom: 0 }}
                               />
                             )}
+                            {editingComment === c.id ? (
+                              <div className="bg-white dark:bg-[#2c2c2e] rounded-lg p-2.5 shadow-sm">
+                                <CommentEditor
+                                  onSubmit={(html) => {
+                                    if (html) {
+                                      store.editComment(card.id, c.id, html);
+                                      setEditingComment(null);
+                                    }
+                                  }}
+                                  placeholder="Edit comment..."
+                                  compact
+                                  initialContent={c.text}
+                                />
+                                <button
+                                  onClick={() => setEditingComment(null)}
+                                  className="text-[10px] font-medium text-[#86868b] hover:text-danger transition mt-1"
+                                >
+                                  Cancel
+                                </button>
+                              </div>
+                            ) : (
                             <div className="bg-white dark:bg-[#2c2c2e] rounded-lg p-2.5 shadow-sm">
                               <div className="flex items-center gap-1.5 mb-1">
                                 <span className="text-xs font-medium text-[#1d1d1f] dark:text-[#e5e5ea]">{author?.name || 'Unknown'}{author?.id === store.getCurrentMemberId() && <span className="text-[10px] text-[#86868b] font-normal ml-1">(You)</span>}</span>
@@ -1109,6 +1163,14 @@ export function CardDetailPanel({ card, onClose }: Props) {
                                     <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                                     Scheduled {new Date(c.scheduledAt).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
                                   </span>
+                                )}
+                                {c.authorId === store.getCurrentMemberId() && (
+                                  <button
+                                    onClick={() => { setEditingComment(c.id); setReplyingTo(null); }}
+                                    className="text-[10px] font-medium text-[#86868b] hover:text-primary transition"
+                                  >
+                                    Edit
+                                  </button>
                                 )}
                                 <button
                                   onClick={() => setReplyingTo(replyingTo === c.id ? null : c.id)}
@@ -1129,6 +1191,7 @@ export function CardDetailPanel({ card, onClose }: Props) {
                                 )}
                               </div>
                             </div>
+                            )}
 
                             {/* Replies — collapsible */}
                             {!isCollapsed && (c.replies || []).length > 0 && renderReplies(c.replies!, c.id)}

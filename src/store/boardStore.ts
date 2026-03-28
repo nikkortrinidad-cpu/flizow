@@ -364,6 +364,25 @@ class BoardStore {
     this.save();
   }
 
+  editComment(cardId: string, commentId: string, newText: string) {
+    const card = this.state.cards.find(c => c.id === cardId);
+    if (!card) return;
+    const findComment = (comments: Comment[]): Comment | undefined => {
+      for (const c of comments) {
+        if (c.id === commentId) return c;
+        if (c.replies) {
+          const found = findComment(c.replies);
+          if (found) return found;
+        }
+      }
+      return undefined;
+    };
+    const comment = findComment(card.comments);
+    if (!comment) return;
+    comment.text = newText;
+    this.save();
+  }
+
   // --- Checklist ---
   addChecklistItem(cardId: string, text: string, assigneeId: string | null = null) {
     const card = this.state.cards.find(c => c.id === cardId);

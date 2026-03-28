@@ -11,6 +11,7 @@ interface Props {
   onSubmit: (html: string, scheduledAt?: string) => void;
   placeholder?: string;
   compact?: boolean;
+  initialContent?: string;
 }
 
 const EMOJI_LIST = [
@@ -19,7 +20,7 @@ const EMOJI_LIST = [
   '😊','😢','😡','🤝','👏','🙏','💪','🎯','📝','🏆',
 ];
 
-export function CommentEditor({ onSubmit, placeholder: placeholderText, compact }: Props) {
+export function CommentEditor({ onSubmit, placeholder: placeholderText, compact, initialContent }: Props) {
   const { state } = useBoard();
   const currentMemberId = store.getCurrentMemberId();
   const [showToolbar, setShowToolbar] = useState(false);
@@ -32,7 +33,7 @@ export function CommentEditor({ onSubmit, placeholder: placeholderText, compact 
   const [customDateTime, setCustomDateTime] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const [isEmpty, setIsEmpty] = useState(true);
+  const [isEmpty, setIsEmpty] = useState(!initialContent);
 
   const editor = useEditor({
     extensions: [
@@ -51,7 +52,7 @@ export function CommentEditor({ onSubmit, placeholder: placeholderText, compact 
         placeholder: placeholderText || 'Write a comment...',
       }),
     ],
-    content: '',
+    content: initialContent || '',
     editorProps: {
       attributes: {
         class: `outline-none text-xs text-slate-600 dark:text-slate-300 leading-relaxed overflow-y-auto px-3 py-2 ${compact ? 'min-h-[32px] max-h-[80px]' : 'min-h-[40px] max-h-[120px]'}`,
