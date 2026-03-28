@@ -978,15 +978,15 @@ export function CardDetailPanel({ card, onClose }: Props) {
                                   {/* Connector from parent's bridge line to this avatar */}
                                   {isLast ? (
                                     <>
-                                      {/* Curved elbow (SVG for smooth curve) */}
+                                      {/* Curved elbow (SVG for smooth curve) — no straight stem, curves immediately */}
                                       <svg
                                         className="absolute text-[#d1d1d6] dark:text-[#636366]"
-                                        style={{ left: -CO, top: -MT, width: CO, height: AC + MT + 1 }}
+                                        style={{ left: -CO, top: -2, width: CO, height: AC + 3 }}
                                         fill="none"
                                         overflow="visible"
                                       >
                                         <path
-                                          d={`M 1 0 L 1 ${AC} Q 1 ${AC + MT} ${AC + 1} ${AC + MT} L ${CO} ${AC + MT}`}
+                                          d={`M 1 0 Q 1 ${AC + 2} ${AC + 1} ${AC + 2} L ${CO} ${AC + 2}`}
                                           stroke="currentColor"
                                           strokeWidth="2"
                                         />
