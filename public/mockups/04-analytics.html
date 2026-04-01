@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mockup — Client Analytics</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', sans-serif; background: #f5f5f7; color: #1d1d1f; }
+
+  .header {
+    background: rgba(255,255,255,0.72);
+    backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+    border-bottom: 1px solid rgba(0,0,0,0.08);
+    padding: 0 32px; height: 56px;
+    display: flex; align-items: center; justify-content: space-between;
+    position: sticky; top: 0; z-index: 100;
+  }
+  .header-left { display: flex; align-items: center; gap: 12px; }
+  .header-logo { font-size: 18px; font-weight: 700; color: #1d1d1f; }
+  .header-right { display: flex; align-items: center; gap: 16px; }
+  .header-icon { width: 36px; height: 36px; border-radius: 50%; background: #e8e8ed; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 16px; color: #636366; }
+  .avatar { width: 36px; height: 36px; border-radius: 50%; background: linear-gradient(135deg, #0071e3, #40a0ff); color: white; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 600; }
+
+  .page { max-width: 1200px; margin: 0 auto; padding: 32px 24px; }
+
+  .breadcrumb { display: flex; align-items: center; gap: 8px; font-size: 14px; color: #86868b; margin-bottom: 20px; }
+  .breadcrumb a { color: #0071e3; text-decoration: none; font-weight: 500; }
+  .breadcrumb a:hover { text-decoration: underline; }
+  .breadcrumb .sep { color: #c7c7cc; }
+  .breadcrumb .current { color: #1d1d1f; font-weight: 600; }
+
+  .page-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; }
+  .page-title { font-size: 28px; font-weight: 700; color: #1d1d1f; }
+  .page-subtitle { font-size: 14px; color: #86868b; margin-top: 4px; }
+
+  .period-tabs { display: flex; gap: 4px; background: #e8e8ed; border-radius: 10px; padding: 3px; }
+  .period-tab { padding: 7px 16px; border-radius: 8px; font-size: 13px; font-weight: 500; cursor: pointer; color: #636366; border: none; background: transparent; }
+  .period-tab.active { background: white; color: #1d1d1f; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+
+  .section-title { font-size: 18px; font-weight: 600; color: #1d1d1f; margin-bottom: 16px; }
+
+  /* KPI Cards */
+  .kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px; margin-bottom: 24px;
+  }
+  .kpi-card {
+    background: white; border-radius: 16px; padding: 20px;
+    border: 1px solid rgba(0,0,0,0.04); box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+  }
+  .kpi-label { font-size: 13px; color: #86868b; margin-bottom: 8px; }
+  .kpi-value { font-size: 32px; font-weight: 700; color: #1d1d1f; margin-bottom: 4px; }
+  .kpi-change { font-size: 12px; font-weight: 500; display: flex; align-items: center; gap: 4px; }
+  .kpi-up { color: #1a8d44; }
+  .kpi-down { color: #d63030; }
+  .kpi-neutral { color: #86868b; }
+
+  /* Chart Cards */
+  .chart-grid-2 {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px; margin-bottom: 24px;
+  }
+  .chart-card {
+    background: white; border-radius: 16px; padding: 24px;
+    border: 1px solid rgba(0,0,0,0.04); box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+  }
+  .chart-title { font-size: 15px; font-weight: 600; color: #1d1d1f; margin-bottom: 20px; }
+
+  /* Simulated Bar Chart */
+  .bar-chart { display: flex; align-items: flex-end; gap: 8px; height: 180px; padding-top: 10px; }
+  .bar-group { display: flex; flex-direction: column; align-items: center; flex: 1; gap: 6px; }
+  .bar { border-radius: 6px 6px 0 0; width: 100%; min-width: 20px; transition: height 0.3s; }
+  .bar-label { font-size: 11px; color: #86868b; }
+  .bar-value { font-size: 11px; font-weight: 600; color: #1d1d1f; }
+
+  /* Simulated Pie Chart */
+  .pie-container { display: flex; align-items: center; gap: 30px; }
+  .pie-chart {
+    width: 160px; height: 160px; border-radius: 50%;
+    background: conic-gradient(
+      #0071e3 0deg 115deg,
+      #34c759 115deg 200deg,
+      #ff9500 200deg 270deg,
+      #ff3b30 270deg 310deg,
+      #e8e8ed 310deg 360deg
+    );
+    flex-shrink: 0;
+    position: relative;
+  }
+  .pie-hole {
+    position: absolute;
+    top: 30px; left: 30px; right: 30px; bottom: 30px;
+    background: white; border-radius: 50%;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+  }
+  .pie-hole-value { font-size: 24px; font-weight: 700; color: #1d1d1f; }
+  .pie-hole-label { font-size: 11px; color: #86868b; }
+  .pie-legend { display: flex; flex-direction: column; gap: 10px; }
+  .legend-item { display: flex; align-items: center; gap: 8px; font-size: 13px; }
+  .legend-dot { width: 10px; height: 10px; border-radius: 3px; flex-shrink: 0; }
+  .legend-label { color: #636366; flex: 1; }
+  .legend-value { font-weight: 600; color: #1d1d1f; }
+
+  /* Hours Table */
+  .hours-table { width: 100%; border-collapse: collapse; }
+  .hours-table th { text-align: left; font-size: 12px; font-weight: 600; color: #86868b; text-transform: uppercase; letter-spacing: 0.5px; padding: 8px 12px; border-bottom: 2px solid #f0f0f2; }
+  .hours-table td { padding: 12px; font-size: 13px; color: #1d1d1f; border-bottom: 1px solid #f5f5f7; }
+  .hours-table tr:last-child td { border-bottom: none; }
+  .hours-bar-cell { width: 40%; }
+  .hours-bar-wrap { display: flex; align-items: center; gap: 8px; }
+  .hours-bar { height: 8px; border-radius: 4px; }
+  .hours-bar-label { font-size: 12px; color: #86868b; white-space: nowrap; }
+
+  .member-cell { display: flex; align-items: center; gap: 8px; }
+  .member-cell-avatar { width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 9px; font-weight: 600; color: white; flex-shrink: 0; }
+
+  /* Profitability */
+  .profit-summary {
+    display: flex; gap: 24px; margin-bottom: 20px;
+  }
+  .profit-item { flex: 1; padding: 16px; background: #f5f5f7; border-radius: 12px; }
+  .profit-label { font-size: 12px; color: #86868b; margin-bottom: 4px; }
+  .profit-value { font-size: 22px; font-weight: 700; }
+  .profit-positive { color: #1a8d44; }
+  .profit-revenue { color: #0071e3; }
+  .profit-cost { color: #1d1d1f; }
+
+  /* Velocity Chart (simplified line chart) */
+  .velocity-chart { position: relative; height: 160px; display: flex; align-items: flex-end; }
+  .velocity-points { display: flex; align-items: flex-end; gap: 0; width: 100%; height: 100%; }
+  .velocity-col { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 4px; }
+  .velocity-dot { width: 8px; height: 8px; border-radius: 50%; background: #0071e3; }
+  .velocity-bar { width: 60%; border-radius: 4px 4px 0 0; background: linear-gradient(180deg, #0071e3, #40a0ff); }
+  .velocity-label { font-size: 10px; color: #86868b; }
+  .velocity-value { font-size: 10px; font-weight: 600; color: #1d1d1f; }
+
+  .nav-hint { text-align: center; padding: 40px 20px; color: #86868b; font-size: 14px; }
+  .nav-hint a { color: #0071e3; text-decoration: none; font-weight: 500; }
+  .nav-hint a:hover { text-decoration: underline; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-left">
+    <div class="header-logo">ProjectFlow</div>
+  </div>
+  <div class="header-right">
+    <div class="header-icon">🔔</div>
+    <div class="avatar">NT</div>
+  </div>
+</div>
+
+<div class="page">
+
+  <div class="breadcrumb">
+    <a href="01-clients.html">Clients</a>
+    <span class="sep">›</span>
+    <a href="02-services.html">Acme Corporation</a>
+    <span class="sep">›</span>
+    <span class="current">Analytics</span>
+  </div>
+
+  <div class="page-header">
+    <div>
+      <div class="page-title">📊 Client Analytics</div>
+      <div class="page-subtitle">Acme Corporation · Performance Overview</div>
+    </div>
+    <div class="period-tabs">
+      <button class="period-tab">7D</button>
+      <button class="period-tab active">30D</button>
+      <button class="period-tab">90D</button>
+      <button class="period-tab">1Y</button>
+      <button class="period-tab">All</button>
+    </div>
+  </div>
+
+  <!-- ===== KPI CARDS ===== -->
+  <div class="kpi-grid">
+    <div class="kpi-card">
+      <div class="kpi-label">Total Hours Worked</div>
+      <div class="kpi-value">247.5h</div>
+      <div class="kpi-change kpi-up">↑ 12% vs last month</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Total Billings</div>
+      <div class="kpi-value">$37,500</div>
+      <div class="kpi-change kpi-neutral">— Same as last month</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Tasks Completed</div>
+      <div class="kpi-value">34</div>
+      <div class="kpi-change kpi-up">↑ 8 more than last month</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Profitability</div>
+      <div class="kpi-value" style="color: #1a8d44;">+$13,125</div>
+      <div class="kpi-change kpi-up">↑ 54% margin</div>
+    </div>
+  </div>
+
+  <!-- ===== ROW: Task Breakdown + Task Velocity ===== -->
+  <div class="chart-grid-2">
+
+    <!-- Task Breakdown Pie -->
+    <div class="chart-card">
+      <div class="chart-title">Task Breakdown</div>
+      <div class="pie-container">
+        <div class="pie-chart">
+          <div class="pie-hole">
+            <div class="pie-hole-value">56</div>
+            <div class="pie-hole-label">Total Tasks</div>
+          </div>
+        </div>
+        <div class="pie-legend">
+          <div class="legend-item">
+            <div class="legend-dot" style="background: #0071e3;"></div>
+            <span class="legend-label">Done</span>
+            <span class="legend-value">18</span>
+          </div>
+          <div class="legend-item">
+            <div class="legend-dot" style="background: #34c759;"></div>
+            <span class="legend-label">In Progress</span>
+            <span class="legend-value">13</span>
+          </div>
+          <div class="legend-item">
+            <div class="legend-dot" style="background: #ff9500;"></div>
+            <span class="legend-label">In Review</span>
+            <span class="legend-value">11</span>
+          </div>
+          <div class="legend-item">
+            <div class="legend-dot" style="background: #ff3b30;"></div>
+            <span class="legend-label">Overdue</span>
+            <span class="legend-value">6</span>
+          </div>
+          <div class="legend-item">
+            <div class="legend-dot" style="background: #e8e8ed;"></div>
+            <span class="legend-label">To Do</span>
+            <span class="legend-value">8</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Task Velocity -->
+    <div class="chart-card">
+      <div class="chart-title">Task Velocity (tasks completed per week)</div>
+      <div class="velocity-chart">
+        <div class="velocity-points">
+          <div class="velocity-col">
+            <div class="velocity-value">5</div>
+            <div class="velocity-bar" style="height: 42%;"></div>
+            <div class="velocity-label">W1</div>
+          </div>
+          <div class="velocity-col">
+            <div class="velocity-value">8</div>
+            <div class="velocity-bar" style="height: 67%;"></div>
+            <div class="velocity-label">W2</div>
+          </div>
+          <div class="velocity-col">
+            <div class="velocity-value">6</div>
+            <div class="velocity-bar" style="height: 50%;"></div>
+            <div class="velocity-label">W3</div>
+          </div>
+          <div class="velocity-col">
+            <div class="velocity-value">10</div>
+            <div class="velocity-bar" style="height: 83%;"></div>
+            <div class="velocity-label">W4</div>
+          </div>
+          <div class="velocity-col">
+            <div class="velocity-value">7</div>
+            <div class="velocity-bar" style="height: 58%;"></div>
+            <div class="velocity-label">W5</div>
+          </div>
+          <div class="velocity-col">
+            <div class="velocity-value">12</div>
+            <div class="velocity-bar" style="height: 100%;"></div>
+            <div class="velocity-label">W6</div>
+          </div>
+          <div class="velocity-col">
+            <div class="velocity-value">9</div>
+            <div class="velocity-bar" style="height: 75%;"></div>
+            <div class="velocity-label">W7</div>
+          </div>
+          <div class="velocity-col">
+            <div class="velocity-value">11</div>
+            <div class="velocity-bar" style="height: 92%;"></div>
+            <div class="velocity-label">W8</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ===== ROW: Hours by Service + Hours by Team Member ===== -->
+  <div class="chart-grid-2">
+
+    <!-- Hours by Service -->
+    <div class="chart-card">
+      <div class="chart-title">Hours Worked by Service</div>
+      <table class="hours-table">
+        <thead>
+          <tr>
+            <th>Service</th>
+            <th>Hours</th>
+            <th class="hours-bar-cell">Distribution</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Website Redesign</td>
+            <td><strong>98.5h</strong></td>
+            <td class="hours-bar-cell">
+              <div class="hours-bar-wrap">
+                <div class="hours-bar" style="width: 80%; background: linear-gradient(90deg, #0071e3, #40a0ff);"></div>
+                <span class="hours-bar-label">40%</span>
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <td>Mobile App</td>
+            <td><strong>82.0h</strong></td>
+            <td class="hours-bar-cell">
+              <div class="hours-bar-wrap">
+                <div class="hours-bar" style="width: 66%; background: linear-gradient(90deg, #5856d6, #7a79e0);"></div>
+                <span class="hours-bar-label">33%</span>
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <td>SEO & Analytics</td>
+            <td><strong>45.0h</strong></td>
+            <td class="hours-bar-cell">
+              <div class="hours-bar-wrap">
+                <div class="hours-bar" style="width: 36%; background: linear-gradient(90deg, #34c759, #5dd87a);"></div>
+                <span class="hours-bar-label">18%</span>
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <td>Cloud Infrastructure</td>
+            <td><strong>22.0h</strong></td>
+            <td class="hours-bar-cell">
+              <div class="hours-bar-wrap">
+                <div class="hours-bar" style="width: 18%; background: linear-gradient(90deg, #ff9500, #ffb340);"></div>
+                <span class="hours-bar-label">9%</span>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Hours by Team Member -->
+    <div class="chart-card">
+      <div class="chart-title">Hours Worked by Team Member</div>
+      <table class="hours-table">
+        <thead>
+          <tr>
+            <th>Member</th>
+            <th>Hours</th>
+            <th class="hours-bar-cell">Distribution</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>
+              <div class="member-cell">
+                <div class="member-cell-avatar" style="background: linear-gradient(135deg, #34c759, #5dd87a);">AS</div>
+                Alex Smith
+              </div>
+            </td>
+            <td><strong>88.0h</strong></td>
+            <td class="hours-bar-cell">
+              <div class="hours-bar-wrap">
+                <div class="hours-bar" style="width: 80%; background: linear-gradient(90deg, #34c759, #5dd87a);"></div>
+                <span class="hours-bar-label">36%</span>
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <td>
+              <div class="member-cell">
+                <div class="member-cell-avatar" style="background: linear-gradient(135deg, #ff6b6b, #ff8e8e);">JK</div>
+                Jake Kim
+              </div>
+            </td>
+            <td><strong>72.5h</strong></td>
+            <td class="hours-bar-cell">
+              <div class="hours-bar-wrap">
+                <div class="hours-bar" style="width: 66%; background: linear-gradient(90deg, #ff6b6b, #ff8e8e);"></div>
+                <span class="hours-bar-label">29%</span>
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <td>
+              <div class="member-cell">
+                <div class="member-cell-avatar" style="background: linear-gradient(135deg, #0071e3, #40a0ff);">NT</div>
+                Nikko Trinidad
+              </div>
+            </td>
+            <td><strong>52.0h</strong></td>
+            <td class="hours-bar-cell">
+              <div class="hours-bar-wrap">
+                <div class="hours-bar" style="width: 47%; background: linear-gradient(90deg, #0071e3, #40a0ff);"></div>
+                <span class="hours-bar-label">21%</span>
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <td>
+              <div class="member-cell">
+                <div class="member-cell-avatar" style="background: linear-gradient(135deg, #5856d6, #7a79e0);">ML</div>
+                Maria Lopez
+              </div>
+            </td>
+            <td><strong>35.0h</strong></td>
+            <td class="hours-bar-cell">
+              <div class="hours-bar-wrap">
+                <div class="hours-bar" style="width: 32%; background: linear-gradient(90deg, #5856d6, #7a79e0);"></div>
+                <span class="hours-bar-label">14%</span>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+  </div>
+
+  <!-- ===== PROFITABILITY ===== -->
+  <div class="chart-card" style="margin-bottom: 24px;">
+    <div class="chart-title">Profitability Overview</div>
+    <div class="profit-summary">
+      <div class="profit-item">
+        <div class="profit-label">Total Revenue (3 months)</div>
+        <div class="profit-value profit-revenue">$37,500</div>
+      </div>
+      <div class="profit-item">
+        <div class="profit-label">Total Cost (labor)</div>
+        <div class="profit-value profit-cost">$24,375</div>
+      </div>
+      <div class="profit-item">
+        <div class="profit-label">Net Profit</div>
+        <div class="profit-value profit-positive">+$13,125</div>
+      </div>
+      <div class="profit-item">
+        <div class="profit-label">Profit Margin</div>
+        <div class="profit-value profit-positive">54%</div>
+      </div>
+    </div>
+
+    <!-- Monthly breakdown -->
+    <div class="chart-title" style="font-size: 13px; color: #86868b; margin-bottom: 12px;">Monthly Breakdown</div>
+    <div class="bar-chart" style="height: 140px;">
+      <div class="bar-group">
+        <div class="bar-value">$12.5k</div>
+        <div class="bar" style="height: 100%; background: linear-gradient(180deg, #0071e3, #40a0ff);"></div>
+        <div class="bar-label">Jan Rev</div>
+      </div>
+      <div class="bar-group">
+        <div class="bar-value">$8.1k</div>
+        <div class="bar" style="height: 65%; background: linear-gradient(180deg, #ff9500, #ffb340);"></div>
+        <div class="bar-label">Jan Cost</div>
+      </div>
+      <div class="bar-group" style="width: 10px; border-right: 1px solid #f0f0f2;"></div>
+      <div class="bar-group">
+        <div class="bar-value">$12.5k</div>
+        <div class="bar" style="height: 100%; background: linear-gradient(180deg, #0071e3, #40a0ff);"></div>
+        <div class="bar-label">Feb Rev</div>
+      </div>
+      <div class="bar-group">
+        <div class="bar-value">$7.9k</div>
+        <div class="bar" style="height: 63%; background: linear-gradient(180deg, #ff9500, #ffb340);"></div>
+        <div class="bar-label">Feb Cost</div>
+      </div>
+      <div class="bar-group" style="width: 10px; border-right: 1px solid #f0f0f2;"></div>
+      <div class="bar-group">
+        <div class="bar-value">$12.5k</div>
+        <div class="bar" style="height: 100%; background: linear-gradient(180deg, #0071e3, #40a0ff);"></div>
+        <div class="bar-label">Mar Rev</div>
+      </div>
+      <div class="bar-group">
+        <div class="bar-value">$8.4k</div>
+        <div class="bar" style="height: 67%; background: linear-gradient(180deg, #ff9500, #ffb340);"></div>
+        <div class="bar-label">Mar Cost</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== BILLING HISTORY ===== -->
+  <div class="chart-card">
+    <div class="chart-title">Billing History</div>
+    <table class="hours-table">
+      <thead>
+        <tr>
+          <th>Invoice</th>
+          <th>Date</th>
+          <th>Amount</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>#INV-2026-0042</td>
+          <td>Mar 25, 2026</td>
+          <td><strong>$12,500.00</strong></td>
+          <td><span style="padding: 3px 10px; border-radius: 6px; font-size: 12px; font-weight: 500; background: #e8f8ee; color: #1a8d44;">Paid</span></td>
+        </tr>
+        <tr>
+          <td>#INV-2026-0038</td>
+          <td>Feb 25, 2026</td>
+          <td><strong>$12,500.00</strong></td>
+          <td><span style="padding: 3px 10px; border-radius: 6px; font-size: 12px; font-weight: 500; background: #e8f8ee; color: #1a8d44;">Paid</span></td>
+        </tr>
+        <tr>
+          <td>#INV-2026-0031</td>
+          <td>Jan 25, 2026</td>
+          <td><strong>$12,500.00</strong></td>
+          <td><span style="padding: 3px 10px; border-radius: 6px; font-size: 12px; font-weight: 500; background: #e8f8ee; color: #1a8d44;">Paid</span></td>
+        </tr>
+        <tr>
+          <td>#INV-2025-0025</td>
+          <td>Dec 25, 2025</td>
+          <td><strong>$10,000.00</strong></td>
+          <td><span style="padding: 3px 10px; border-radius: 6px; font-size: 12px; font-weight: 500; background: #e8f8ee; color: #1a8d44;">Paid</span></td>
+        </tr>
+        <tr>
+          <td>#INV-2025-0019</td>
+          <td>Nov 25, 2025</td>
+          <td><strong>$10,000.00</strong></td>
+          <td><span style="padding: 3px 10px; border-radius: 6px; font-size: 12px; font-weight: 500; background: #e8f8ee; color: #1a8d44;">Paid</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="nav-hint">
+    <a href="02-services.html">← Back to Client Dashboard</a>
+  </div>
+
+</div>
+
+</body>
+</html>
