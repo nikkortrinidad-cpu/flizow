@@ -146,6 +146,66 @@
   }
   .status-active .status-dot { background: #34c759; }
   .status-paused .status-dot { background: #ff9500; }
+  .status-archived { background: #f0f0f2; color: #86868b; }
+  .status-archived .status-dot { background: #aeaeb2; }
+
+  /* Tabs */
+  .tabs {
+    display: flex; gap: 0; margin-bottom: 24px;
+    border-bottom: 2px solid #e8e8ed;
+  }
+  .tab {
+    padding: 10px 20px;
+    font-size: 14px; font-weight: 500;
+    color: #86868b;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -2px;
+    transition: all 0.2s;
+    background: none; border-left: none; border-right: none; border-top: none;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .tab:hover { color: #1d1d1f; }
+  .tab.active { color: #0071e3; border-bottom-color: #0071e3; font-weight: 600; }
+  .tab-count {
+    padding: 1px 8px; border-radius: 10px;
+    font-size: 12px; font-weight: 600;
+    background: #e8e8ed; color: #636366;
+  }
+  .tab.active .tab-count { background: #e8f0ff; color: #0071e3; }
+
+  /* Archive button on card */
+  .card-actions {
+    display: flex; justify-content: flex-end; margin-top: 14px;
+    opacity: 0; transition: opacity 0.15s;
+  }
+  .client-card:hover .card-actions { opacity: 1; }
+  .archive-btn {
+    padding: 5px 12px; border-radius: 6px;
+    font-size: 12px; font-weight: 500;
+    border: 1px solid #d2d2d7; background: white;
+    color: #86868b; cursor: pointer;
+    display: flex; align-items: center; gap: 4px;
+    transition: all 0.15s;
+  }
+  .archive-btn:hover { background: #f5f5f7; color: #1d1d1f; border-color: #aeaeb2; }
+  .restore-btn {
+    padding: 5px 12px; border-radius: 6px;
+    font-size: 12px; font-weight: 500;
+    border: 1px solid #d2d2d7; background: white;
+    color: #0071e3; cursor: pointer;
+    display: flex; align-items: center; gap: 4px;
+    transition: all 0.15s;
+  }
+  .restore-btn:hover { background: #e8f0ff; border-color: #0071e3; }
+
+  /* Archived card style */
+  .client-card.archived { opacity: 0.65; }
+  .client-card.archived:hover { opacity: 0.85; }
+
+  /* Hidden sections */
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
 
   /* Nav hint */
   .nav-hint {
@@ -187,158 +247,259 @@
     <button class="btn-primary">＋ Add Client</button>
   </div>
 
-  <div class="clients-grid">
+  <!-- Tabs -->
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('active')">
+      Active Clients <span class="tab-count">6</span>
+    </button>
+    <button class="tab" onclick="switchTab('archived')">
+      Archived <span class="tab-count">2</span>
+    </button>
+  </div>
 
-    <a href="02-services.html" class="client-card">
-      <div class="client-top">
-        <div class="client-avatar" style="background: linear-gradient(135deg, #0071e3, #40a0ff);">AC</div>
-        <div>
-          <div class="client-name">Acme Corporation</div>
-          <div class="client-company">Technology · San Francisco</div>
-        </div>
-      </div>
-      <div class="client-stats">
-        <div class="stat">
-          <div class="stat-value">4</div>
-          <div class="stat-label">Services</div>
-        </div>
-        <div class="stat">
-          <div class="stat-value">23</div>
-          <div class="stat-label">Active Tasks</div>
-        </div>
-      </div>
-      <div class="client-status status-active">
-        <div class="status-dot"></div>
-        Active
-      </div>
-    </a>
+  <!-- ACTIVE CLIENTS TAB -->
+  <div class="tab-content active" id="tab-active">
+    <div class="clients-grid">
 
-    <a href="02-services.html" class="client-card">
-      <div class="client-top">
-        <div class="client-avatar" style="background: linear-gradient(135deg, #ff6b6b, #ff8e8e);">GL</div>
-        <div>
-          <div class="client-name">GreenLeaf Studios</div>
-          <div class="client-company">Design Agency · Austin</div>
+      <a href="02-services.html" class="client-card">
+        <div class="client-top">
+          <div class="client-avatar" style="background: linear-gradient(135deg, #0071e3, #40a0ff);">AC</div>
+          <div>
+            <div class="client-name">Acme Corporation</div>
+            <div class="client-company">Technology · San Francisco</div>
+          </div>
         </div>
-      </div>
-      <div class="client-stats">
-        <div class="stat">
-          <div class="stat-value">2</div>
-          <div class="stat-label">Services</div>
+        <div class="client-stats">
+          <div class="stat">
+            <div class="stat-value">4</div>
+            <div class="stat-label">Services</div>
+          </div>
+          <div class="stat">
+            <div class="stat-value">23</div>
+            <div class="stat-label">Active Tasks</div>
+          </div>
         </div>
-        <div class="stat">
-          <div class="stat-value">11</div>
-          <div class="stat-label">Active Tasks</div>
+        <div class="client-status status-active">
+          <div class="status-dot"></div>
+          Active
         </div>
-      </div>
-      <div class="client-status status-active">
-        <div class="status-dot"></div>
-        Active
-      </div>
-    </a>
+        <div class="card-actions">
+          <button class="archive-btn" onclick="event.preventDefault(); event.stopPropagation();">📦 Archive</button>
+        </div>
+      </a>
 
-    <a href="02-services.html" class="client-card">
-      <div class="client-top">
-        <div class="client-avatar" style="background: linear-gradient(135deg, #5856d6, #7a79e0);">NV</div>
-        <div>
-          <div class="client-name">Nova Ventures</div>
-          <div class="client-company">Finance · New York</div>
+      <a href="02-services.html" class="client-card">
+        <div class="client-top">
+          <div class="client-avatar" style="background: linear-gradient(135deg, #ff6b6b, #ff8e8e);">GL</div>
+          <div>
+            <div class="client-name">GreenLeaf Studios</div>
+            <div class="client-company">Design Agency · Austin</div>
+          </div>
         </div>
-      </div>
-      <div class="client-stats">
-        <div class="stat">
-          <div class="stat-value">3</div>
-          <div class="stat-label">Services</div>
+        <div class="client-stats">
+          <div class="stat">
+            <div class="stat-value">2</div>
+            <div class="stat-label">Services</div>
+          </div>
+          <div class="stat">
+            <div class="stat-value">11</div>
+            <div class="stat-label">Active Tasks</div>
+          </div>
         </div>
-        <div class="stat">
-          <div class="stat-value">18</div>
-          <div class="stat-label">Active Tasks</div>
+        <div class="client-status status-active">
+          <div class="status-dot"></div>
+          Active
         </div>
-      </div>
-      <div class="client-status status-active">
-        <div class="status-dot"></div>
-        Active
-      </div>
-    </a>
+        <div class="card-actions">
+          <button class="archive-btn" onclick="event.preventDefault(); event.stopPropagation();">📦 Archive</button>
+        </div>
+      </a>
 
-    <a href="02-services.html" class="client-card">
-      <div class="client-top">
-        <div class="client-avatar" style="background: linear-gradient(135deg, #ff9500, #ffb340);">BR</div>
-        <div>
-          <div class="client-name">BrightPath Education</div>
-          <div class="client-company">EdTech · Seattle</div>
+      <a href="02-services.html" class="client-card">
+        <div class="client-top">
+          <div class="client-avatar" style="background: linear-gradient(135deg, #5856d6, #7a79e0);">NV</div>
+          <div>
+            <div class="client-name">Nova Ventures</div>
+            <div class="client-company">Finance · New York</div>
+          </div>
         </div>
-      </div>
-      <div class="client-stats">
-        <div class="stat">
-          <div class="stat-value">1</div>
-          <div class="stat-label">Services</div>
+        <div class="client-stats">
+          <div class="stat">
+            <div class="stat-value">3</div>
+            <div class="stat-label">Services</div>
+          </div>
+          <div class="stat">
+            <div class="stat-value">18</div>
+            <div class="stat-label">Active Tasks</div>
+          </div>
         </div>
-        <div class="stat">
-          <div class="stat-value">7</div>
-          <div class="stat-label">Active Tasks</div>
+        <div class="client-status status-active">
+          <div class="status-dot"></div>
+          Active
         </div>
-      </div>
-      <div class="client-status status-paused">
-        <div class="status-dot"></div>
-        Paused
-      </div>
-    </a>
+        <div class="card-actions">
+          <button class="archive-btn" onclick="event.preventDefault(); event.stopPropagation();">📦 Archive</button>
+        </div>
+      </a>
 
-    <a href="02-services.html" class="client-card">
-      <div class="client-top">
-        <div class="client-avatar" style="background: linear-gradient(135deg, #34c759, #5dd87a);">SP</div>
-        <div>
-          <div class="client-name">SpringBoard Health</div>
-          <div class="client-company">Healthcare · Chicago</div>
+      <a href="02-services.html" class="client-card">
+        <div class="client-top">
+          <div class="client-avatar" style="background: linear-gradient(135deg, #ff9500, #ffb340);">BR</div>
+          <div>
+            <div class="client-name">BrightPath Education</div>
+            <div class="client-company">EdTech · Seattle</div>
+          </div>
         </div>
-      </div>
-      <div class="client-stats">
-        <div class="stat">
-          <div class="stat-value">3</div>
-          <div class="stat-label">Services</div>
+        <div class="client-stats">
+          <div class="stat">
+            <div class="stat-value">1</div>
+            <div class="stat-label">Services</div>
+          </div>
+          <div class="stat">
+            <div class="stat-value">7</div>
+            <div class="stat-label">Active Tasks</div>
+          </div>
         </div>
-        <div class="stat">
-          <div class="stat-value">14</div>
-          <div class="stat-label">Active Tasks</div>
+        <div class="client-status status-paused">
+          <div class="status-dot"></div>
+          Paused
         </div>
-      </div>
-      <div class="client-status status-active">
-        <div class="status-dot"></div>
-        Active
-      </div>
-    </a>
+        <div class="card-actions">
+          <button class="archive-btn" onclick="event.preventDefault(); event.stopPropagation();">📦 Archive</button>
+        </div>
+      </a>
 
-    <a href="02-services.html" class="client-card">
-      <div class="client-top">
-        <div class="client-avatar" style="background: linear-gradient(135deg, #af52de, #c77dea);">LX</div>
-        <div>
-          <div class="client-name">Luxe Interiors</div>
-          <div class="client-company">Interior Design · Miami</div>
+      <a href="02-services.html" class="client-card">
+        <div class="client-top">
+          <div class="client-avatar" style="background: linear-gradient(135deg, #34c759, #5dd87a);">SP</div>
+          <div>
+            <div class="client-name">SpringBoard Health</div>
+            <div class="client-company">Healthcare · Chicago</div>
+          </div>
         </div>
-      </div>
-      <div class="client-stats">
-        <div class="stat">
-          <div class="stat-value">2</div>
-          <div class="stat-label">Services</div>
+        <div class="client-stats">
+          <div class="stat">
+            <div class="stat-value">3</div>
+            <div class="stat-label">Services</div>
+          </div>
+          <div class="stat">
+            <div class="stat-value">14</div>
+            <div class="stat-label">Active Tasks</div>
+          </div>
         </div>
-        <div class="stat">
-          <div class="stat-value">9</div>
-          <div class="stat-label">Active Tasks</div>
+        <div class="client-status status-active">
+          <div class="status-dot"></div>
+          Active
         </div>
-      </div>
-      <div class="client-status status-active">
-        <div class="status-dot"></div>
-        Active
-      </div>
-    </a>
+        <div class="card-actions">
+          <button class="archive-btn" onclick="event.preventDefault(); event.stopPropagation();">📦 Archive</button>
+        </div>
+      </a>
 
+      <a href="02-services.html" class="client-card">
+        <div class="client-top">
+          <div class="client-avatar" style="background: linear-gradient(135deg, #af52de, #c77dea);">LX</div>
+          <div>
+            <div class="client-name">Luxe Interiors</div>
+            <div class="client-company">Interior Design · Miami</div>
+          </div>
+        </div>
+        <div class="client-stats">
+          <div class="stat">
+            <div class="stat-value">2</div>
+            <div class="stat-label">Services</div>
+          </div>
+          <div class="stat">
+            <div class="stat-value">9</div>
+            <div class="stat-label">Active Tasks</div>
+          </div>
+        </div>
+        <div class="client-status status-active">
+          <div class="status-dot"></div>
+          Active
+        </div>
+        <div class="card-actions">
+          <button class="archive-btn" onclick="event.preventDefault(); event.stopPropagation();">📦 Archive</button>
+        </div>
+      </a>
+
+    </div>
+  </div>
+
+  <!-- ARCHIVED CLIENTS TAB -->
+  <div class="tab-content" id="tab-archived">
+    <div class="clients-grid">
+
+      <div class="client-card archived">
+        <div class="client-top">
+          <div class="client-avatar" style="background: linear-gradient(135deg, #8e8e93, #aeaeb2);">ZP</div>
+          <div>
+            <div class="client-name">Zenith Properties</div>
+            <div class="client-company">Real Estate · Denver</div>
+          </div>
+        </div>
+        <div class="client-stats">
+          <div class="stat">
+            <div class="stat-value">2</div>
+            <div class="stat-label">Services</div>
+          </div>
+          <div class="stat">
+            <div class="stat-value">0</div>
+            <div class="stat-label">Active Tasks</div>
+          </div>
+        </div>
+        <div class="client-status status-archived">
+          <div class="status-dot"></div>
+          Archived · Dec 2025
+        </div>
+        <div class="card-actions" style="opacity: 1;">
+          <button class="restore-btn" onclick="event.preventDefault(); event.stopPropagation();">↩ Restore</button>
+        </div>
+      </div>
+
+      <div class="client-card archived">
+        <div class="client-top">
+          <div class="client-avatar" style="background: linear-gradient(135deg, #8e8e93, #aeaeb2);">CT</div>
+          <div>
+            <div class="client-name">ClearTrack Logistics</div>
+            <div class="client-company">Logistics · Portland</div>
+          </div>
+        </div>
+        <div class="client-stats">
+          <div class="stat">
+            <div class="stat-value">1</div>
+            <div class="stat-label">Services</div>
+          </div>
+          <div class="stat">
+            <div class="stat-value">0</div>
+            <div class="stat-label">Active Tasks</div>
+          </div>
+        </div>
+        <div class="client-status status-archived">
+          <div class="status-dot"></div>
+          Archived · Oct 2025
+        </div>
+        <div class="card-actions" style="opacity: 1;">
+          <button class="restore-btn" onclick="event.preventDefault(); event.stopPropagation();">↩ Restore</button>
+        </div>
+      </div>
+
+    </div>
   </div>
 
   <div class="nav-hint">
     Click any client to see their services → <a href="02-services.html">Next: Services View</a>
   </div>
 </div>
+
+<script>
+  function switchTab(tab) {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+    document.getElementById('tab-' + tab).classList.add('active');
+    event.target.closest('.tab').classList.add('active');
+  }
+</script>
 
 </body>
 </html>
