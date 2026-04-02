@@ -33,6 +33,25 @@
   .view-btn.on { background: #0071e3; color: white; }
   .view-btn + .view-btn { border-left: 1px solid #d2d2d7; }
 
+  .sort-wrap { position: relative; display: inline-flex; }
+  .sort-drop {
+    display: none; position: absolute; top: 44px; left: 0; z-index: 999;
+    background: white; border-radius: 12px; box-shadow: 0 4px 24px rgba(0,0,0,0.14);
+    border: 1px solid rgba(0,0,0,0.08); padding: 4px; min-width: 220px;
+  }
+  .sort-drop.open { display: block; }
+  .sort-drop-label { font-size: 11px; font-weight: 600; color: #86868b; text-transform: uppercase; letter-spacing: 0.5px; padding: 8px 12px 4px; }
+  .sort-opt {
+    display: flex; align-items: center; gap: 8px;
+    padding: 8px 12px; border-radius: 8px; font-size: 13px; color: #1d1d1f;
+    cursor: pointer; border: none; background: none; width: 100%; text-align: left;
+  }
+  .sort-opt:hover { background: #f5f5f7; }
+  .sort-opt.on { color: #0071e3; font-weight: 600; }
+  .sort-opt .sort-icon { color: #aeaeb2; font-size: 15px; width: 20px; text-align: center; }
+  .sort-opt.on .sort-icon { color: #0071e3; }
+  .sort-sep { border: none; height: 1px; background: #f0f0f2; margin: 4px 0; }
+
   .filter-wrap { position: relative; display: inline-flex; }
   .filter-btn.active { border-color: #0071e3; color: #0071e3; background: #e8f0ff; }
   .filter-drop {
@@ -145,11 +164,28 @@
 
 <div class="page">
   <div class="page-title">Clients</div>
-  <div class="page-subtitle">6 active clients</div>
+  <div class="page-subtitle">6 active · 2 archived · 8 total</div>
 
   <div class="toolbar">
     <input type="text" class="search-box" placeholder="Search clients...">
-    <button class="filter-btn">⇅ Sort</button>
+    <div class="sort-wrap">
+      <button class="filter-btn" id="sortToggle" onclick="toggleSort(event)">⇅ Sort</button>
+      <div class="sort-drop" id="sortDrop">
+        <div class="sort-drop-label">Sort by</div>
+        <button class="sort-opt on" onclick="doSort('default')"><span class="sort-icon">↕</span> Default</button>
+        <button class="sort-opt" onclick="doSort('name-az')"><span class="sort-icon">A↓</span> Name (A–Z)</button>
+        <button class="sort-opt" onclick="doSort('name-za')"><span class="sort-icon">Z↓</span> Name (Z–A)</button>
+        <hr class="sort-sep">
+        <button class="sort-opt" onclick="doSort('tasks-desc')"><span class="sort-icon">📋</span> Most Tasks</button>
+        <button class="sort-opt" onclick="doSort('tasks-asc')"><span class="sort-icon">📋</span> Least Tasks</button>
+        <button class="sort-opt" onclick="doSort('services-desc')"><span class="sort-icon">📦</span> Most Services</button>
+        <button class="sort-opt" onclick="doSort('services-asc')"><span class="sort-icon">📦</span> Least Services</button>
+        <hr class="sort-sep">
+        <div class="sort-drop-label">Revenue</div>
+        <button class="sort-opt" onclick="doSort('revenue-desc')"><span class="sort-icon">💰</span> Highest Paying</button>
+        <button class="sort-opt" onclick="doSort('revenue-asc')"><span class="sort-icon">💰</span> Lowest Paying</button>
+      </div>
+    </div>
     <div class="filter-wrap">
       <button class="filter-btn" id="filterToggle" onclick="toggleFilter(event)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>Filter</button>
       <div class="filter-drop" id="filterDrop">
@@ -183,7 +219,7 @@
   <div class="tp on" id="tp-active">
     <div class="grid">
 
-      <div class="card" data-s="web,mobile,seo,cloud" onclick="location.href='02-services.html'">
+      <div class="card" data-s="web,mobile,seo,cloud" data-name="Acme Corporation" data-tasks="23" data-services="4" data-revenue="48500" data-order="0" onclick="location.href='02-services.html'">
         <div class="card-head">
           <div class="card-av" style="background:linear-gradient(135deg,#0071e3,#40a0ff)">AC</div>
           <div class="card-info"><div class="card-name">Acme Corporation</div><div class="card-sub">Technology · San Francisco</div></div>
@@ -209,7 +245,7 @@
         </div>
       </div>
 
-      <div class="card" data-s="design,branding" onclick="location.href='02-services.html'">
+      <div class="card" data-s="design,branding" data-name="GreenLeaf Studios" data-tasks="11" data-services="2" data-revenue="22000" data-order="1" onclick="location.href='02-services.html'">
         <div class="card-head">
           <div class="card-av" style="background:linear-gradient(135deg,#ff6b6b,#ff8e8e)">GL</div>
           <div class="card-info"><div class="card-name">GreenLeaf Studios</div><div class="card-sub">Design Agency · Austin</div></div>
@@ -235,7 +271,7 @@
         </div>
       </div>
 
-      <div class="card" data-s="web,seo,content" onclick="location.href='02-services.html'">
+      <div class="card" data-s="web,seo,content" data-name="Nova Ventures" data-tasks="18" data-services="3" data-revenue="36000" data-order="2" onclick="location.href='02-services.html'">
         <div class="card-head">
           <div class="card-av" style="background:linear-gradient(135deg,#5856d6,#7a79e0)">NV</div>
           <div class="card-info"><div class="card-name">Nova Ventures</div><div class="card-sub">Finance · New York</div></div>
@@ -261,7 +297,7 @@
         </div>
       </div>
 
-      <div class="card" data-s="web,content" onclick="location.href='02-services.html'">
+      <div class="card" data-s="web,content" data-name="BrightPath Education" data-tasks="7" data-services="1" data-revenue="12500" data-order="3" onclick="location.href='02-services.html'">
         <div class="card-head">
           <div class="card-av" style="background:linear-gradient(135deg,#ff9500,#ffb340)">BR</div>
           <div class="card-info"><div class="card-name">BrightPath Education</div><div class="card-sub">EdTech · Seattle</div></div>
@@ -287,7 +323,7 @@
         </div>
       </div>
 
-      <div class="card" data-s="design,mobile,cloud" onclick="location.href='02-services.html'">
+      <div class="card" data-s="design,mobile,cloud" data-name="SpringBoard Health" data-tasks="14" data-services="3" data-revenue="41000" data-order="4" onclick="location.href='02-services.html'">
         <div class="card-head">
           <div class="card-av" style="background:linear-gradient(135deg,#34c759,#5dd87a)">SP</div>
           <div class="card-info"><div class="card-name">SpringBoard Health</div><div class="card-sub">Healthcare · Chicago</div></div>
@@ -313,7 +349,7 @@
         </div>
       </div>
 
-      <div class="card" data-s="design,branding,social,seo" onclick="location.href='02-services.html'">
+      <div class="card" data-s="design,branding,social,seo" data-name="Luxe Interiors" data-tasks="9" data-services="2" data-revenue="18500" data-order="5" onclick="location.href='02-services.html'">
         <div class="card-head">
           <div class="card-av" style="background:linear-gradient(135deg,#af52de,#c77dea)">LX</div>
           <div class="card-info"><div class="card-name">Luxe Interiors</div><div class="card-sub">Interior Design · Miami</div></div>
@@ -397,6 +433,7 @@ function setView(mode, btn) {
 }
 function toggleFilter(e) {
   e.stopPropagation();
+  document.getElementById('sortDrop').classList.remove('open');
   var drop = document.getElementById('filterDrop');
   drop.classList.toggle('open');
 }
@@ -417,6 +454,41 @@ function doFilter(btn, svc) {
     toggle.innerHTML='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>Filter<span class="filter-count">1</span>';
   }
 }
+function toggleSort(e) {
+  e.stopPropagation();
+  document.getElementById('filterDrop').classList.remove('open');
+  document.getElementById('sortDrop').classList.toggle('open');
+}
+function doSort(mode) {
+  var grid = document.querySelector('#tp-active .grid');
+  var cards = Array.from(grid.querySelectorAll('.card'));
+  cards.sort(function(a, b) {
+    switch(mode) {
+      case 'name-az': return a.dataset.name.localeCompare(b.dataset.name);
+      case 'name-za': return b.dataset.name.localeCompare(a.dataset.name);
+      case 'tasks-desc': return parseInt(b.dataset.tasks) - parseInt(a.dataset.tasks);
+      case 'tasks-asc': return parseInt(a.dataset.tasks) - parseInt(b.dataset.tasks);
+      case 'services-desc': return parseInt(b.dataset.services) - parseInt(a.dataset.services);
+      case 'services-asc': return parseInt(a.dataset.services) - parseInt(b.dataset.services);
+      case 'revenue-desc': return parseInt(b.dataset.revenue) - parseInt(a.dataset.revenue);
+      case 'revenue-asc': return parseInt(a.dataset.revenue) - parseInt(b.dataset.revenue);
+      default: return parseInt(a.dataset.order) - parseInt(b.dataset.order);
+    }
+  });
+  cards.forEach(function(c){ grid.appendChild(c); });
+  // Update active state
+  document.querySelectorAll('.sort-opt').forEach(function(o){o.classList.remove('on')});
+  event.target.closest('.sort-opt').classList.add('on');
+  // Update sort button style
+  var toggle = document.getElementById('sortToggle');
+  if(mode==='default'){
+    toggle.classList.remove('active');
+    toggle.innerHTML='⇅ Sort';
+  } else {
+    toggle.classList.add('active');
+    toggle.innerHTML='⇅ Sort<span class="filter-count">1</span>';
+  }
+}
 function openMenu(trigger) {
   var drop = trigger.nextElementSibling;
   var wasOpen = drop.classList.contains('open');
@@ -426,6 +498,7 @@ function openMenu(trigger) {
 document.addEventListener('click', function(){
   document.querySelectorAll('.menu-drop.open').forEach(function(d){d.classList.remove('open')});
   document.getElementById('filterDrop').classList.remove('open');
+  document.getElementById('sortDrop').classList.remove('open');
 });
 </script>
 
