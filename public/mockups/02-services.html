@@ -6,7 +6,7 @@
 <title>Mockup — Client Dashboard & Services</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
-  body { font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', sans-serif; background: #f5f5f7; color: #1d1d1f; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', sans-serif; background: #f5f5f7; color: #1d1d1f; line-height: 1.5; font-size: 14px; }
 
   .header {
     background: rgba(255,255,255,0.72);
@@ -22,9 +22,9 @@
   .header-icon { width: 36px; height: 36px; border-radius: 50%; background: #e8e8ed; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 16px; color: #636366; }
   .avatar { width: 36px; height: 36px; border-radius: 50%; background: linear-gradient(135deg, #0071e3, #40a0ff); color: white; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 600; }
 
-  .page { max-width: 1200px; margin: 0 auto; padding: 32px 24px; }
+  .page { max-width: 1200px; margin: 0 auto; padding: 32px 32px; }
 
-  .breadcrumb { display: flex; align-items: center; gap: 8px; font-size: 14px; color: #86868b; margin-bottom: 20px; }
+  .breadcrumb { display: flex; align-items: center; gap: 8px; font-size: 14px; color: #86868b; margin-bottom: 20px; line-height: 1.5; }
   .breadcrumb a { color: #0071e3; text-decoration: none; font-weight: 500; }
   .breadcrumb a:hover { text-decoration: underline; }
   .breadcrumb .sep { color: #c7c7cc; }
@@ -53,14 +53,14 @@
   .health-yellow { background: #ff9500; }
   .health-red { background: #ff3b30; }
   .client-info { flex: 1; }
-  .client-info h1 { font-size: 24px; font-weight: 700; color: #1d1d1f; display: flex; align-items: center; gap: 10px; }
+  .client-info h1 { font-size: 24px; font-weight: 700; color: #1d1d1f; display: flex; align-items: center; gap: 8px; line-height: 1.2; }
   .health-badge { padding: 4px 12px; border-radius: 6px; font-size: 12px; font-weight: 600; }
   .health-badge-green { background: #e8f8ee; color: #1a8d44; }
   .health-badge-yellow { background: #fff4e5; color: #b35c00; }
   .health-badge-red { background: #ffe5e5; color: #d63030; }
-  .client-info p { font-size: 14px; color: #86868b; margin-top: 4px; }
+  .client-info p { font-size: 14px; color: #86868b; margin-top: 4px; line-height: 1.5; }
   .client-meta { display: flex; gap: 24px; margin-top: 8px; }
-  .client-meta-item { font-size: 13px; color: #636366; display: flex; align-items: center; gap: 4px; }
+  .client-meta-item { font-size: 12px; color: #636366; display: flex; align-items: center; gap: 4px; line-height: 1.4; }
   .header-buttons { display: flex; gap: 8px; flex-shrink: 0; }
   .btn-primary { padding: 10px 20px; background: #0071e3; color: white; border: none; border-radius: 10px; font-size: 14px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: background 0.2s; }
   .btn-primary:hover { background: #0077ed; }
@@ -69,8 +69,8 @@
 
   /* Quick Actions */
   .quick-actions {
-    display: flex; gap: 10px; margin-bottom: 24px;
-    padding: 14px 20px;
+    display: flex; gap: 8px; margin-bottom: 24px;
+    padding: 16px 20px;
     background: white; border-radius: 12px;
     border: 1px solid rgba(0,0,0,0.04); box-shadow: 0 1px 3px rgba(0,0,0,0.04);
   }
@@ -79,7 +79,7 @@
     background: #f5f5f7;
     border: 1px solid #e8e8ed;
     border-radius: 8px;
-    font-size: 13px; font-weight: 500;
+    font-size: 14px; font-weight: 500;
     color: #1d1d1f;
     cursor: pointer;
     display: flex; align-items: center; gap: 6px;
@@ -87,10 +87,10 @@
     text-decoration: none;
   }
   .quick-action:hover { background: #e8e8ed; border-color: #d2d2d7; }
-  .quick-action-icon { font-size: 15px; }
+  .quick-action-icon { font-size: 16px; }
 
   /* Section Title */
-  .section-title { font-size: 18px; font-weight: 600; color: #1d1d1f; margin-bottom: 16px; }
+  .section-title { font-size: 18px; font-weight: 600; color: #1d1d1f; margin-bottom: 16px; line-height: 1.2; }
 
   /* Overview Grid */
   .overview-grid {
@@ -110,35 +110,35 @@
   .overview-card-header {
     display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;
   }
-  .overview-card-title { font-size: 13px; font-weight: 600; color: #86868b; text-transform: uppercase; letter-spacing: 0.5px; }
+  .overview-card-title { font-size: 12px; font-weight: 600; color: #86868b; text-transform: uppercase; letter-spacing: 0.5px; line-height: 1.4; }
   .overview-card-icon { width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 16px; }
   .overview-card-action { font-size: 12px; color: #0071e3; cursor: pointer; font-weight: 500; text-decoration: none; }
   .overview-card-action:hover { text-decoration: underline; }
 
   /* People Card */
-  .people-section { margin-bottom: 14px; }
-  .people-label { font-size: 12px; color: #aeaeb2; margin-bottom: 6px; }
-  .manager-row { display: flex; align-items: center; gap: 10px; }
+  .people-section { margin-bottom: 12px; }
+  .people-label { font-size: 12px; color: #aeaeb2; margin-bottom: 8px; line-height: 1.4; }
+  .manager-row { display: flex; align-items: center; gap: 8px; }
   .manager-avatar { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; color: white; flex-shrink: 0; }
-  .manager-name { font-size: 14px; font-weight: 500; color: #1d1d1f; }
-  .manager-role { font-size: 11px; color: #86868b; }
+  .manager-name { font-size: 14px; font-weight: 500; color: #1d1d1f; line-height: 1.5; }
+  .manager-role { font-size: 11px; color: #86868b; line-height: 1.4; }
   .team-list { display: flex; flex-direction: column; gap: 8px; margin-top: 4px; }
   .team-member-row { display: flex; align-items: center; gap: 8px; }
   .team-sm-avatar { width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 9px; font-weight: 600; color: white; flex-shrink: 0; }
-  .team-member-name { font-size: 13px; color: #1d1d1f; }
+  .team-member-name { font-size: 14px; color: #1d1d1f; line-height: 1.5; }
   .team-member-role-tag { font-size: 10px; color: #86868b; background: #f5f5f7; padding: 2px 6px; border-radius: 4px; }
   .team-contact-icons { display: flex; gap: 4px; margin-left: auto; }
   .team-contact-icon { width: 22px; height: 22px; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 11px; cursor: pointer; background: #f5f5f7; transition: background 0.15s; }
   .team-contact-icon:hover { background: #e8e8ed; }
 
   /* Meetings Card */
-  .meeting-row { display: flex; align-items: center; justify-content: space-between; padding: 7px 0; border-bottom: 1px solid #f5f5f7; }
+  .meeting-row { display: flex; align-items: center; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #f5f5f7; }
   .meeting-row:last-child { border-bottom: none; }
-  .meeting-label { font-size: 13px; color: #86868b; }
-  .meeting-value { font-size: 13px; font-weight: 500; color: #1d1d1f; }
-  .meeting-link { font-size: 13px; font-weight: 500; color: #0071e3; text-decoration: none; cursor: pointer; }
+  .meeting-label { font-size: 12px; color: #86868b; line-height: 1.4; }
+  .meeting-value { font-size: 14px; font-weight: 500; color: #1d1d1f; line-height: 1.5; }
+  .meeting-link { font-size: 14px; font-weight: 500; color: #0071e3; text-decoration: none; cursor: pointer; line-height: 1.5; }
   .meeting-link:hover { text-decoration: underline; }
-  .freq-badge { padding: 3px 10px; border-radius: 6px; font-size: 12px; font-weight: 500; background: #e8f0ff; color: #0055b3; }
+  .freq-badge { padding: 4px 8px; border-radius: 6px; font-size: 12px; font-weight: 500; background: #e8f0ff; color: #0055b3; line-height: 1; }
   .meeting-attendees { display: flex; align-items: center; gap: 0; }
   .meeting-att { width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 8px; font-weight: 600; color: white; border: 2px solid white; margin-left: -4px; }
   .meeting-att:first-child { margin-left: 0; }
@@ -147,7 +147,7 @@
 
   /* Documents Card */
   .doc-checklist { list-style: none; }
-  .doc-item { display: flex; align-items: center; gap: 8px; padding: 5px 0; font-size: 13px; color: #1d1d1f; border-bottom: 1px solid #f5f5f7; }
+  .doc-item { display: flex; align-items: center; gap: 8px; padding: 8px 0; font-size: 14px; color: #1d1d1f; border-bottom: 1px solid #f5f5f7; line-height: 1.5; }
   .doc-item:last-child { border-bottom: none; }
   .doc-check { width: 18px; height: 18px; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 11px; flex-shrink: 0; }
   .doc-done { background: #e8f8ee; color: #1a8d44; }
@@ -159,23 +159,23 @@
   .doc-status-signed { color: #1a8d44; }
   .doc-status-pending { color: #b35c00; }
   .doc-status-not-started { color: #aeaeb2; }
-  .drive-link { display: flex; align-items: center; gap: 8px; padding: 10px 14px; margin-top: 10px; background: #f5f5f7; border-radius: 10px; text-decoration: none; color: #1d1d1f; font-size: 13px; font-weight: 500; transition: background 0.15s; cursor: pointer; }
+  .drive-link { display: flex; align-items: center; gap: 8px; padding: 12px 16px; margin-top: 12px; background: #f5f5f7; border-radius: 10px; text-decoration: none; color: #1d1d1f; font-size: 14px; font-weight: 500; transition: background 0.15s; cursor: pointer; line-height: 1.5; }
   .drive-link:hover { background: #e8e8ed; }
   .doc-actions { display: flex; gap: 6px; margin-top: 8px; }
 
   /* Billing Card */
-  .billing-status-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
-  .billing-badge { padding: 6px 14px; border-radius: 8px; font-size: 13px; font-weight: 600; }
+  .billing-status-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+  .billing-badge { padding: 8px 16px; border-radius: 8px; font-size: 14px; font-weight: 600; line-height: 1; }
   .billing-paid { background: #e8f8ee; color: #1a8d44; }
   .billing-overdue { background: #ffe5e5; color: #d63030; }
   .billing-pending { background: #fff4e5; color: #b35c00; }
-  .billing-amount { font-size: 28px; font-weight: 700; color: #1d1d1f; margin-bottom: 2px; }
-  .billing-invoice-label { font-size: 12px; color: #86868b; margin-bottom: 12px; }
-  .billing-row { display: flex; align-items: center; justify-content: space-between; padding: 5px 0; border-bottom: 1px solid #f5f5f7; }
+  .billing-amount { font-size: 24px; font-weight: 700; color: #1d1d1f; margin-bottom: 4px; line-height: 1.2; }
+  .billing-invoice-label { font-size: 12px; color: #86868b; margin-bottom: 12px; line-height: 1.4; }
+  .billing-row { display: flex; align-items: center; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #f5f5f7; }
   .billing-row:last-child { border-bottom: none; }
-  .billing-label { font-size: 13px; color: #86868b; }
-  .billing-value { font-size: 13px; font-weight: 500; color: #1d1d1f; }
-  .billing-history-title { font-size: 12px; color: #aeaeb2; margin-top: 12px; margin-bottom: 6px; }
+  .billing-label { font-size: 12px; color: #86868b; line-height: 1.4; }
+  .billing-value { font-size: 14px; font-weight: 500; color: #1d1d1f; line-height: 1.5; }
+  .billing-history-title { font-size: 12px; color: #aeaeb2; margin-top: 12px; margin-bottom: 8px; line-height: 1.4; }
   .billing-history-item { display: flex; align-items: center; justify-content: space-between; padding: 4px 0; font-size: 12px; }
   .billing-hist-inv { color: #86868b; }
   .billing-hist-amt { font-weight: 500; color: #1d1d1f; }
@@ -183,11 +183,11 @@
 
   /* Key Contacts Card */
   .contact-list { display: flex; flex-direction: column; gap: 12px; }
-  .contact-row { display: flex; align-items: center; gap: 12px; padding: 10px; background: #fafafa; border-radius: 10px; }
+  .contact-row { display: flex; align-items: center; gap: 12px; padding: 12px; background: #fafafa; border-radius: 10px; }
   .contact-avatar { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 600; color: white; flex-shrink: 0; }
   .contact-info { flex: 1; }
-  .contact-name { font-size: 14px; font-weight: 500; color: #1d1d1f; }
-  .contact-role { font-size: 12px; color: #86868b; }
+  .contact-name { font-size: 14px; font-weight: 500; color: #1d1d1f; line-height: 1.5; }
+  .contact-role { font-size: 12px; color: #86868b; line-height: 1.4; }
   .contact-details { font-size: 11px; color: #aeaeb2; margin-top: 2px; }
   .contact-actions { display: flex; gap: 6px; }
   .contact-action-btn { width: 30px; height: 30px; border-radius: 8px; background: white; border: 1px solid #e8e8ed; display: flex; align-items: center; justify-content: center; font-size: 13px; cursor: pointer; transition: all 0.15s; }
@@ -196,11 +196,12 @@
   /* Contract Card */
   .contract-row { display: flex; align-items: center; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #f5f5f7; }
   .contract-row:last-child { border-bottom: none; }
-  .contract-label { font-size: 13px; color: #86868b; }
-  .contract-value { font-size: 13px; font-weight: 500; color: #1d1d1f; }
-  .contract-warning { display: flex; align-items: center; gap: 8px; padding: 10px 14px; margin-top: 12px; background: #fff4e5; border-radius: 10px; font-size: 13px; color: #b35c00; font-weight: 500; }
-  .contract-ok { display: flex; align-items: center; gap: 8px; padding: 10px 14px; margin-top: 12px; background: #e8f8ee; border-radius: 10px; font-size: 13px; color: #1a8d44; font-weight: 500; }
-  .contract-type-badge { padding: 3px 10px; border-radius: 6px; font-size: 12px; font-weight: 500; background: #f0e8ff; color: #5856d6; }
+  .contract-row:last-child { border-bottom: none; }
+  .contract-label { font-size: 12px; color: #86868b; line-height: 1.4; }
+  .contract-value { font-size: 14px; font-weight: 500; color: #1d1d1f; line-height: 1.5; }
+  .contract-warning { display: flex; align-items: center; gap: 8px; padding: 12px 16px; margin-top: 12px; background: #fff4e5; border-radius: 10px; font-size: 14px; color: #b35c00; font-weight: 500; line-height: 1.5; }
+  .contract-ok { display: flex; align-items: center; gap: 8px; padding: 12px 16px; margin-top: 12px; background: #e8f8ee; border-radius: 10px; font-size: 14px; color: #1a8d44; font-weight: 500; line-height: 1.5; }
+  .contract-type-badge { padding: 4px 8px; border-radius: 6px; font-size: 12px; font-weight: 500; background: #f0e8ff; color: #5856d6; line-height: 1; }
 
   /* Notes Card */
   .notes-fullwidth {
@@ -209,11 +210,11 @@
     margin-bottom: 24px;
   }
   .notes-body { font-size: 14px; color: #1d1d1f; line-height: 1.6; }
-  .note-entry { padding: 10px 0; border-bottom: 1px solid #f5f5f7; }
+  .note-entry { padding: 12px 0; border-bottom: 1px solid #f5f5f7; }
   .note-entry:last-child { border-bottom: none; }
   .note-meta { font-size: 11px; color: #aeaeb2; margin-bottom: 4px; display: flex; align-items: center; gap: 8px; }
-  .note-text { font-size: 13px; color: #1d1d1f; line-height: 1.5; }
-  .note-add { display: flex; align-items: center; gap: 8px; padding: 10px; margin-top: 8px; background: #f5f5f7; border-radius: 8px; cursor: pointer; font-size: 13px; color: #86868b; transition: background 0.15s; }
+  .note-text { font-size: 14px; color: #1d1d1f; line-height: 1.5; }
+  .note-add { display: flex; align-items: center; gap: 8px; padding: 12px; margin-top: 8px; background: #f5f5f7; border-radius: 8px; cursor: pointer; font-size: 14px; color: #86868b; transition: background 0.15s; line-height: 1.5; }
   .note-add:hover { background: #e8e8ed; }
 
   /* Communication Log */
@@ -222,8 +223,8 @@
   .comm-entry:last-child { border-bottom: none; }
   .comm-icon-wrap { width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 15px; flex-shrink: 0; }
   .comm-content { flex: 1; }
-  .comm-title { font-size: 13px; font-weight: 500; color: #1d1d1f; }
-  .comm-desc { font-size: 12px; color: #86868b; margin-top: 2px; }
+  .comm-title { font-size: 14px; font-weight: 500; color: #1d1d1f; line-height: 1.5; }
+  .comm-desc { font-size: 12px; color: #86868b; margin-top: 4px; line-height: 1.4; }
   .comm-time { font-size: 11px; color: #aeaeb2; flex-shrink: 0; }
 
   /* Services Grid */
@@ -240,15 +241,15 @@
   .status-active .status-dot { background: #34c759; }
   .status-review .status-dot { background: #0071e3; }
   .status-paused .status-dot { background: #ff9500; }
-  .service-name { font-size: 17px; font-weight: 600; color: #1d1d1f; margin-bottom: 6px; }
-  .service-desc { font-size: 13px; color: #86868b; line-height: 1.5; margin-bottom: 16px; }
+  .service-name { font-size: 18px; font-weight: 600; color: #1d1d1f; margin-bottom: 8px; line-height: 1.2; }
+  .service-desc { font-size: 14px; color: #86868b; line-height: 1.5; margin-bottom: 16px; }
   .service-progress { margin-bottom: 16px; }
   .progress-header { display: flex; justify-content: space-between; font-size: 12px; color: #86868b; margin-bottom: 6px; }
   .progress-bar { height: 6px; background: #f0f0f2; border-radius: 3px; overflow: hidden; }
   .progress-fill { height: 100%; border-radius: 3px; }
   .service-footer { display: flex; justify-content: space-between; align-items: center; padding-top: 16px; border-top: 1px solid #f0f0f2; }
   .service-stats { display: flex; gap: 16px; }
-  .service-stat { font-size: 13px; color: #636366; display: flex; align-items: center; gap: 4px; }
+  .service-stat { font-size: 14px; color: #636366; display: flex; align-items: center; gap: 4px; line-height: 1.5; }
   .service-stat strong { color: #1d1d1f; font-weight: 600; }
   .service-updated { font-size: 12px; color: #aeaeb2; }
 

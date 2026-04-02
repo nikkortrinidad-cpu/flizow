@@ -294,6 +294,14 @@ git push origin main
 
 ---
 
+## Design Standards
+
+Before creating or modifying any UI layout, mockup, or component, always read and follow the design skill file:
+- **`~/.claude/skills/grids-and-layout-design.md`** — Grid systems, typography, composition (Golden Ratio, Rule of Thirds, Gestalt principles), line length rules (45–70 cpl), spacing, and a pre-flight checklist.
+- **`~/.claude/skills/coding-best-practices.md`** — Code quality, readability, and maintainability standards.
+
+---
+
 ## Known Patterns & Conventions
 
 - All state mutations go through `BoardStore` methods which call `this.save()` (localStorage + Firestore)
