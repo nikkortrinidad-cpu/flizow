@@ -372,65 +372,8 @@
     transition-delay: 0.6s;
   }
 
-  /* --- BLOCK 3 + 4 ROW --- */
-  .lower-grid {
-    display: grid;
-    grid-template-columns: 1fr 1.3fr;
-    gap: 32px;
-  }
-
-  /* --- BLOCK 3: THIS WEEK'S NUMBERS --- */
-  .numbers-card {
-    background: var(--bg-elev);
-    border-radius: 18px;
-    padding: 32px 32px;
-    border: 1px solid var(--hairline-soft);
-    box-shadow: var(--shadow);
-    transition: background 0.3s, border-color 0.3s;
-  }
-  .numbers-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 28px 32px;
-  }
-  .num-item {
-    padding-bottom: 22px;
-    border-bottom: 1px solid var(--hairline-soft);
-  }
-  .num-item:nth-last-child(-n+2) {
-    padding-bottom: 0;
-    border-bottom: none;
-  }
-  .num-label {
-    font-size: 12px; color: var(--text-soft);
-    margin-bottom: 10px; line-height: 1.4;
-    text-transform: uppercase; letter-spacing: 0.05em;
-    font-weight: 500;
-  }
-  .num-value-row {
-    display: flex; align-items: baseline; gap: 10px;
-  }
-  .num-value {
-    font-size: 36px; font-weight: 600; line-height: 1;
-    letter-spacing: -0.025em;
-    color: var(--text);
-    font-feature-settings: "tnum";
-  }
-  .num-delta {
-    font-size: 12px; font-weight: 500;
-    display: inline-flex; align-items: center; gap: 2px;
-    color: var(--text-soft);
-    letter-spacing: -0.005em;
-  }
-  .num-delta.up::before { content: "↑ "; }
-  .num-delta.down::before { content: "↓ "; }
-  .num-context {
-    font-size: 12px; color: var(--text-faint); margin-top: 6px;
-    letter-spacing: -0.005em;
-  }
-
-  /* --- BLOCK 4: WHAT CHANGED (activity feed) --- */
-  .feed-card {
+  /* --- BLOCK 3: THIS WEEK --- */
+  .week-card {
     background: var(--bg-elev);
     border-radius: 18px;
     border: 1px solid var(--hairline-soft);
@@ -438,78 +381,63 @@
     overflow: hidden;
     transition: background 0.3s, border-color 0.3s;
   }
-  .feed-list { padding: 8px 0; }
-  .feed-item {
+  .week-list { padding: 8px 0; }
+  .week-item {
     display: grid;
-    grid-template-columns: 28px 1fr auto;
+    grid-template-columns: 52px 1fr auto;
     gap: 16px;
-    padding: 14px 26px;
-    align-items: flex-start;
+    padding: 16px 28px;
+    align-items: center;
     border-bottom: 1px solid var(--hairline-faint);
     transition: background 0.15s;
   }
-  .feed-item:last-child { border-bottom: none; }
-  .feed-item:hover { background: var(--bg-faint); }
+  .week-item:last-child { border-bottom: none; }
+  .week-item:hover { background: var(--bg-faint); }
 
-  .feed-icon {
-    width: 24px; height: 24px;
-    border-radius: 6px;
-    display: flex; align-items: center; justify-content: center;
+  .week-date {
+    display: flex; flex-direction: column; align-items: center;
     flex-shrink: 0;
-    margin-top: 1px;
-    background: var(--bg-soft);
-    color: var(--text-muted);
   }
-  .feed-icon svg { width: 12px; height: 12px; }
-  .feed-icon.alert {
-    background: var(--accent-soft);
-    color: var(--accent);
+  .week-date-day {
+    font-size: 11px; font-weight: 600; color: var(--text-soft);
+    text-transform: uppercase; letter-spacing: 0.06em;
+    line-height: 1;
   }
-
-  .feed-body { min-width: 0; }
-  .feed-text {
-    font-size: 13px; color: var(--text);
-    line-height: 1.5;
-    max-width: 56ch;
-    letter-spacing: -0.005em;
-  }
-  .feed-text strong { font-weight: 600; }
-  .feed-text a {
+  .week-date-num {
+    font-size: 22px; font-weight: 600; line-height: 1.2;
+    letter-spacing: -0.02em;
     color: var(--text);
-    text-decoration: none;
-    font-weight: 500;
-    border-bottom: 1px solid var(--hairline);
-    transition: border-color 0.15s, color 0.15s;
-  }
-  .feed-text a:hover { color: var(--accent); border-bottom-color: var(--accent); }
-  .feed-meta {
-    font-size: 12px; color: var(--text-soft);
-    margin-top: 4px;
-    letter-spacing: -0.005em;
-  }
-
-  .feed-time {
-    font-size: 12px; color: var(--text-faint);
-    white-space: nowrap;
-    flex-shrink: 0;
-    margin-top: 3px;
-    letter-spacing: -0.005em;
     font-feature-settings: "tnum";
   }
+  .week-date-num.today { color: var(--accent); }
 
-  .feed-footer {
-    padding: 16px 26px;
-    text-align: center;
-    border-top: 1px solid var(--hairline-soft);
-    background: var(--bg-faint);
-  }
-  .feed-footer a {
-    font-size: 13px; font-weight: 500;
-    color: var(--text); text-decoration: none;
+  .week-body { min-width: 0; }
+  .week-title {
+    font-size: 14px; font-weight: 600; color: var(--text);
+    line-height: 1.4;
     letter-spacing: -0.01em;
-    transition: color 0.15s;
+    margin-bottom: 2px;
   }
-  .feed-footer a:hover { color: var(--accent); }
+  .week-meta {
+    font-size: 12px; color: var(--text-soft);
+    letter-spacing: -0.005em;
+    display: flex; align-items: center; gap: 8px;
+  }
+
+  .week-tag {
+    display: inline-flex; align-items: center; gap: 5px;
+    font-size: 11px; font-weight: 600;
+    text-transform: uppercase; letter-spacing: 0.05em;
+    padding: 3px 10px;
+    border-radius: 980px;
+    flex-shrink: 0;
+    background: var(--bg-soft);
+    color: var(--text-soft);
+  }
+  .week-tag.deadline { background: var(--accent-soft); color: var(--accent); }
+  .week-tag.meeting { background: var(--bg-soft); color: var(--text-muted); }
+  .week-tag.milestone { background: var(--bg-soft); color: var(--text-muted); }
+  .week-tag svg { width: 10px; height: 10px; }
 
   /* Hidden attention cards */
   .attn-hidden {
@@ -533,7 +461,7 @@
       gap: 28px;
     }
     .health-divider { display: none; }
-    .lower-grid { grid-template-columns: 1fr; }
+    .week-item { grid-template-columns: 44px 1fr auto; gap: 12px; padding: 14px 20px; }
     .page-title { font-size: 36px; }
   }
 
@@ -572,7 +500,7 @@
 <div class="page">
 
   <div class="page-header">
-    <div class="page-greeting">Saturday, April 11</div>
+    <div class="page-greeting">Monday, April 13</div>
     <div class="page-title">Good morning, Nikko.</div>
     <div class="page-date">Here's what needs you today.</div>
   </div>
@@ -737,146 +665,101 @@
     </div>
   </div>
 
-  <!-- LOWER GRID: BLOCK 3 + BLOCK 4 -->
-  <div class="lower-grid">
+  <!-- BLOCK 3: THIS WEEK -->
+  <div class="block">
+    <div class="block-header">
+      <div class="block-title">This Week</div>
+      <div class="block-sub">Apr 13 – Apr 18</div>
+    </div>
+    <div class="week-card">
+      <div class="week-list">
 
-    <!-- BLOCK 3: THIS WEEK'S NUMBERS -->
-    <div class="block" style="margin-bottom:0">
-      <div class="block-header">
-        <div class="block-title">This Week</div>
-        <div class="block-sub">Apr 5 – Apr 11</div>
-      </div>
-      <div class="numbers-card">
-        <div class="numbers-grid">
-
-          <div class="num-item">
-            <div class="num-label">Tasks completed</div>
-            <div class="num-value-row">
-              <div class="num-value">47</div>
-              <div class="num-delta up">12%</div>
-            </div>
-            <div class="num-context">vs last week</div>
+        <div class="week-item">
+          <div class="week-date">
+            <div class="week-date-day">Sun</div>
+            <div class="week-date-num today">13</div>
           </div>
-
-          <div class="num-item">
-            <div class="num-label">New tasks added</div>
-            <div class="num-value-row">
-              <div class="num-value">31</div>
-              <div class="num-delta up">4</div>
-            </div>
-            <div class="num-context">from 4 clients</div>
+          <div class="week-body">
+            <div class="week-title">Bloom Retail monthly reporting deck due</div>
+            <div class="week-meta">Assigned to Elena Park · Client meeting tomorrow 9am</div>
           </div>
-
-          <div class="num-item">
-            <div class="num-label">Hours logged</div>
-            <div class="num-value-row">
-              <div class="num-value">186</div>
-              <div class="num-delta">— flat</div>
-            </div>
-            <div class="num-context">across 9 team members</div>
-          </div>
-
-          <div class="num-item">
-            <div class="num-label">Blockers opened</div>
-            <div class="num-value-row">
-              <div class="num-value">3</div>
-              <div class="num-delta down">2</div>
-            </div>
-            <div class="num-context">1 resolved, 2 active</div>
-          </div>
-
+          <span class="week-tag deadline"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>Deadline</span>
         </div>
+
+        <div class="week-item">
+          <div class="week-date">
+            <div class="week-date-day">Mon</div>
+            <div class="week-date-num">14</div>
+          </div>
+          <div class="week-body">
+            <div class="week-title">TechStart SEO audit final delivery</div>
+            <div class="week-meta">Marcus Reyes · Running 2 days behind — may need support</div>
+          </div>
+          <span class="week-tag deadline"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>Deadline</span>
+        </div>
+
+        <div class="week-item">
+          <div class="week-date">
+            <div class="week-date-day">Tue</div>
+            <div class="week-date-num">15</div>
+          </div>
+          <div class="week-body">
+            <div class="week-title">Harbor Financial kickoff meeting</div>
+            <div class="week-meta">10:00 AM · New client onboarding · Checklist sign-off required first</div>
+          </div>
+          <span class="week-tag meeting"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Meeting</span>
+        </div>
+
+        <div class="week-item">
+          <div class="week-date">
+            <div class="week-date-day">Wed</div>
+            <div class="week-date-num">16</div>
+          </div>
+          <div class="week-body">
+            <div class="week-title">Northstar Logistics scope change decision</div>
+            <div class="week-meta">Client approved budget increase — your sign-off needed by EOD</div>
+          </div>
+          <span class="week-tag deadline"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>Deadline</span>
+        </div>
+
+        <div class="week-item">
+          <div class="week-date">
+            <div class="week-date-day">Thu</div>
+            <div class="week-date-num">17</div>
+          </div>
+          <div class="week-body">
+            <div class="week-title">Acme Corporation design review — stakeholder walkthrough</div>
+            <div class="week-meta">2:00 PM · Sarah Chen presenting wireframes v3</div>
+          </div>
+          <span class="week-tag meeting"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Meeting</span>
+        </div>
+
+        <div class="week-item">
+          <div class="week-date">
+            <div class="week-date-day">Fri</div>
+            <div class="week-date-num">18</div>
+          </div>
+          <div class="week-body">
+            <div class="week-title">Acme Corporation website launch target</div>
+            <div class="week-meta">At risk — still waiting on client feedback since April 8</div>
+          </div>
+          <span class="week-tag milestone"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>Milestone</span>
+        </div>
+
+        <div class="week-item">
+          <div class="week-date">
+            <div class="week-date-day">Fri</div>
+            <div class="week-date-num">18</div>
+          </div>
+          <div class="week-body">
+            <div class="week-title">Bloom Retail paid ads — first-week performance report</div>
+            <div class="week-meta">SEM team · Campaign launched this week</div>
+          </div>
+          <span class="week-tag milestone"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>Milestone</span>
+        </div>
+
       </div>
     </div>
-
-    <!-- BLOCK 4: WHAT CHANGED -->
-    <div class="block" style="margin-bottom:0">
-      <div class="block-header">
-        <div class="block-title">What Changed</div>
-        <a href="#" class="block-link">Full activity →</a>
-      </div>
-      <div class="feed-card">
-        <div class="feed-list">
-
-          <div class="feed-item">
-            <div class="feed-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>
-            <div class="feed-body">
-              <div class="feed-text"><strong>Sarah Chen</strong> completed <a href="#">Homepage wireframes v3</a> for <strong>Acme Corporation</strong></div>
-              <div class="feed-meta">Milestone reached · Design phase 80% complete</div>
-            </div>
-            <div class="feed-time">14m</div>
-          </div>
-
-          <div class="feed-item">
-            <div class="feed-icon alert"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></div>
-            <div class="feed-body">
-              <div class="feed-text"><strong>New blocker</strong> opened on <a href="#">API integration</a> by <strong>Marcus Reyes</strong></div>
-              <div class="feed-meta">TechStart Inc. · Needs senior eng review</div>
-            </div>
-            <div class="feed-time">1h</div>
-          </div>
-
-          <div class="feed-item">
-            <div class="feed-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
-            <div class="feed-body">
-              <div class="feed-text"><strong>Northstar Logistics</strong> responded on <a href="#">Scope change thread</a> — approved budget increase</div>
-              <div class="feed-meta">Awaiting your final sign-off</div>
-            </div>
-            <div class="feed-time">2h</div>
-          </div>
-
-          <div class="feed-item">
-            <div class="feed-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div>
-            <div class="feed-body">
-              <div class="feed-text"><strong>Elena Park</strong> mentioned you on <a href="#">Bloom Retail Q2 plan</a></div>
-              <div class="feed-meta">"Nikko — can we push the launch by a week?"</div>
-            </div>
-            <div class="feed-time">3h</div>
-          </div>
-
-          <div class="feed-item">
-            <div class="feed-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></div>
-            <div class="feed-body">
-              <div class="feed-text"><strong>8 new tasks</strong> added to <a href="#">Harbor Financial</a> onboarding</div>
-              <div class="feed-meta">Contract kickoff · Project Management team</div>
-            </div>
-            <div class="feed-time">5h</div>
-          </div>
-
-          <div class="feed-item">
-            <div class="feed-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>
-            <div class="feed-body">
-              <div class="feed-text"><strong>Paid ads launched</strong> for <a href="#">Bloom Retail spring campaign</a></div>
-              <div class="feed-meta">SEM team · First-week performance report Friday</div>
-            </div>
-            <div class="feed-time">8h</div>
-          </div>
-
-          <div class="feed-item">
-            <div class="feed-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div>
-            <div class="feed-body">
-              <div class="feed-text"><strong>Kickoff meeting</strong> scheduled with <a href="#">Mountain View Dental</a></div>
-              <div class="feed-meta">Tuesday 10:00 AM · New client onboarding</div>
-            </div>
-            <div class="feed-time">Yesterday</div>
-          </div>
-
-          <div class="feed-item">
-            <div class="feed-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div>
-            <div class="feed-body">
-              <div class="feed-text"><strong>Content calendar approved</strong> by <a href="#">Summit Outdoor Gear</a></div>
-              <div class="feed-meta">May publishing schedule locked in</div>
-            </div>
-            <div class="feed-time">Yesterday</div>
-          </div>
-
-        </div>
-        <div class="feed-footer">
-          <a href="#">See all activity from this week →</a>
-        </div>
-      </div>
-    </div>
-
   </div>
 
 </div>
