@@ -372,72 +372,165 @@
     transition-delay: 0.6s;
   }
 
-  /* --- BLOCK 3: THIS WEEK --- */
-  .week-card {
+  /* --- BLOCK 3: THIS WEEK (5-column board) --- */
+  .week-board {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 12px;
+  }
+
+  .week-col {
     background: var(--bg-elev);
-    border-radius: 18px;
+    border-radius: 16px;
     border: 1px solid var(--hairline-soft);
     box-shadow: var(--shadow);
+    display: flex;
+    flex-direction: column;
+    min-height: 220px;
+    transition: background 0.3s, border-color 0.3s, opacity 0.3s;
+    position: relative;
     overflow: hidden;
-    transition: background 0.3s, border-color 0.3s;
   }
-  .week-list { padding: 8px 0; }
-  .week-item {
-    display: grid;
-    grid-template-columns: 52px 1fr auto;
-    gap: 16px;
-    padding: 16px 28px;
-    align-items: center;
-    border-bottom: 1px solid var(--hairline-faint);
-    transition: background 0.15s;
-  }
-  .week-item:last-child { border-bottom: none; }
-  .week-item:hover { background: var(--bg-faint); }
 
-  .week-date {
-    display: flex; flex-direction: column; align-items: center;
-    flex-shrink: 0;
+  /* Today highlight */
+  .week-col.is-today {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 1px var(--accent), var(--shadow);
   }
-  .week-date-day {
+  .week-col.is-today .week-col-header {
+    background: var(--accent-soft);
+  }
+  .week-col.is-today .week-col-num {
+    color: var(--accent);
+  }
+  .week-col.is-today::before {
+    content: "";
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: var(--accent);
+    border-radius: 16px 16px 0 0;
+    z-index: 2;
+  }
+
+  /* Past days grayed */
+  .week-col.is-past {
+    opacity: 0.45;
+  }
+  .week-col.is-past:hover {
+    opacity: 0.7;
+  }
+
+  /* Column header */
+  .week-col-header {
+    padding: 16px 16px 12px;
+    text-align: center;
+    border-bottom: 1px solid var(--hairline-soft);
+    transition: background 0.3s;
+  }
+  .week-col-day {
     font-size: 11px; font-weight: 600; color: var(--text-soft);
     text-transform: uppercase; letter-spacing: 0.06em;
-    line-height: 1;
+    line-height: 1; margin-bottom: 4px;
   }
-  .week-date-num {
-    font-size: 22px; font-weight: 600; line-height: 1.2;
+  .week-col-num {
+    font-size: 26px; font-weight: 600; line-height: 1.1;
     letter-spacing: -0.02em;
     color: var(--text);
     font-feature-settings: "tnum";
   }
-  .week-date-num.today { color: var(--accent); }
 
-  .week-body { min-width: 0; }
-  .week-title {
-    font-size: 14px; font-weight: 600; color: var(--text);
-    line-height: 1.4;
-    letter-spacing: -0.01em;
-    margin-bottom: 2px;
+  /* Task cards inside columns */
+  .week-col-body {
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    flex: 1;
   }
-  .week-meta {
-    font-size: 12px; color: var(--text-soft);
-    letter-spacing: -0.005em;
-    display: flex; align-items: center; gap: 8px;
-  }
-
-  .week-tag {
-    display: inline-flex; align-items: center; gap: 5px;
-    font-size: 11px; font-weight: 600;
-    text-transform: uppercase; letter-spacing: 0.05em;
-    padding: 3px 10px;
-    border-radius: 980px;
-    flex-shrink: 0;
+  .week-task {
     background: var(--bg-soft);
+    border-radius: 10px;
+    padding: 12px 14px;
+    cursor: pointer;
+    transition: background 0.15s, box-shadow 0.15s;
+    position: relative;
+  }
+  .week-task:hover {
+    background: var(--bg-faint);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  }
+  .week-task-title {
+    font-size: 13px; font-weight: 600; color: var(--text);
+    line-height: 1.4; letter-spacing: -0.01em;
+    margin-bottom: 6px;
+  }
+  .week-task-meta {
+    font-size: 11px; color: var(--text-soft);
+    letter-spacing: -0.005em;
+    line-height: 1.4;
+  }
+  .week-task-tag {
+    display: inline-flex; align-items: center; gap: 4px;
+    font-size: 10px; font-weight: 600;
+    text-transform: uppercase; letter-spacing: 0.05em;
+    padding: 2px 8px;
+    border-radius: 980px;
+    margin-top: 8px;
+    background: var(--bg-elev);
     color: var(--text-soft);
   }
-  .week-tag.deadline { background: var(--accent-soft); color: var(--accent); }
-  .week-tag.meeting { background: var(--bg-soft); color: var(--text-muted); }
-  .week-tag.milestone { background: var(--bg-soft); color: var(--text-muted); }
-  .week-tag svg { width: 10px; height: 10px; }
+  .week-task-tag.deadline { background: var(--accent-soft); color: var(--accent); }
+  .week-task-tag.meeting { color: var(--text-muted); }
+  .week-task-tag.milestone { color: var(--text-muted); }
+  .week-task-tag svg { width: 9px; height: 9px; }
+
+  /* Carried-over task styling */
+  .week-task.carried {
+    border-left: 3px solid var(--accent);
+    padding-left: 11px;
+  }
+  .week-task .carried-badge {
+    display: inline-flex; align-items: center; gap: 4px;
+    font-size: 10px; font-weight: 600;
+    color: var(--accent);
+    letter-spacing: 0.02em;
+    margin-bottom: 4px;
+  }
+  .week-task .carried-badge svg { width: 10px; height: 10px; }
+
+  /* Empty column state */
+  .week-col-empty {
+    display: flex; align-items: center; justify-content: center;
+    flex: 1;
+    font-size: 12px; color: var(--text-faint);
+    letter-spacing: -0.005em;
+    padding: 20px;
+  }
+
+  /* Demo day switcher */
+  .week-demo {
+    display: flex; align-items: center; gap: 10px;
+    margin-top: 14px;
+  }
+  .week-demo-label {
+    font-size: 12px; color: var(--text-faint); letter-spacing: -0.005em;
+  }
+  .week-demo-btns { display: flex; gap: 4px; }
+  .week-demo-btn {
+    padding: 4px 12px; border-radius: 980px;
+    font-size: 11px; font-weight: 600;
+    text-transform: uppercase; letter-spacing: 0.04em;
+    border: 1px solid var(--hairline);
+    background: var(--btn-bg);
+    color: var(--text-soft); cursor: pointer;
+    transition: all 0.15s;
+  }
+  .week-demo-btn:hover { background: var(--btn-bg-hover); color: var(--text); }
+  .week-demo-btn.active {
+    background: var(--text); color: var(--bg);
+    border-color: var(--text);
+  }
 
   /* Hidden attention cards */
   .attn-hidden {
@@ -461,7 +554,8 @@
       gap: 28px;
     }
     .health-divider { display: none; }
-    .week-item { grid-template-columns: 44px 1fr auto; gap: 12px; padding: 14px 20px; }
+    .week-board { grid-template-columns: 1fr 1fr; }
+    .week-col { min-height: 180px; }
     .page-title { font-size: 36px; }
   }
 
@@ -665,99 +759,111 @@
     </div>
   </div>
 
-  <!-- BLOCK 3: THIS WEEK -->
+  <!-- BLOCK 3: THIS WEEK (5-column board) -->
   <div class="block">
     <div class="block-header">
       <div class="block-title">This Week</div>
-      <div class="block-sub">Apr 13 – Apr 18</div>
+      <div class="block-sub">Apr 14 – Apr 18</div>
     </div>
-    <div class="week-card">
-      <div class="week-list">
+    <div class="week-board" id="weekBoard">
 
-        <div class="week-item">
-          <div class="week-date">
-            <div class="week-date-day">Sun</div>
-            <div class="week-date-num today">13</div>
-          </div>
-          <div class="week-body">
-            <div class="week-title">Bloom Retail monthly reporting deck due</div>
-            <div class="week-meta">Assigned to Elena Park · Client meeting tomorrow 9am</div>
-          </div>
-          <span class="week-tag deadline"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>Deadline</span>
+      <!-- MON 14 -->
+      <div class="week-col" data-day="mon" data-date="14">
+        <div class="week-col-header">
+          <div class="week-col-day">Mon</div>
+          <div class="week-col-num">14</div>
         </div>
-
-        <div class="week-item">
-          <div class="week-date">
-            <div class="week-date-day">Mon</div>
-            <div class="week-date-num">14</div>
+        <div class="week-col-body">
+          <div class="week-task" data-id="seo-audit" data-done="false">
+            <div class="week-task-title">TechStart SEO audit final delivery</div>
+            <div class="week-task-meta">Marcus Reyes · Running 2 days behind</div>
+            <span class="week-task-tag deadline"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>Deadline</span>
           </div>
-          <div class="week-body">
-            <div class="week-title">TechStart SEO audit final delivery</div>
-            <div class="week-meta">Marcus Reyes · Running 2 days behind — may need support</div>
+          <div class="week-task" data-id="bloom-deck" data-done="false">
+            <div class="week-task-title">Bloom Retail reporting deck due</div>
+            <div class="week-task-meta">Elena Park · Client meeting at 9am</div>
+            <span class="week-task-tag deadline"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>Deadline</span>
           </div>
-          <span class="week-tag deadline"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>Deadline</span>
         </div>
+      </div>
 
-        <div class="week-item">
-          <div class="week-date">
-            <div class="week-date-day">Tue</div>
-            <div class="week-date-num">15</div>
-          </div>
-          <div class="week-body">
-            <div class="week-title">Harbor Financial kickoff meeting</div>
-            <div class="week-meta">10:00 AM · New client onboarding · Checklist sign-off required first</div>
-          </div>
-          <span class="week-tag meeting"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Meeting</span>
+      <!-- TUE 15 -->
+      <div class="week-col" data-day="tue" data-date="15">
+        <div class="week-col-header">
+          <div class="week-col-day">Tue</div>
+          <div class="week-col-num">15</div>
         </div>
-
-        <div class="week-item">
-          <div class="week-date">
-            <div class="week-date-day">Wed</div>
-            <div class="week-date-num">16</div>
+        <div class="week-col-body">
+          <div class="week-task" data-id="harbor-kickoff" data-done="true">
+            <div class="week-task-title">Harbor Financial kickoff meeting</div>
+            <div class="week-task-meta">10:00 AM · New client onboarding</div>
+            <span class="week-task-tag meeting"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Meeting</span>
           </div>
-          <div class="week-body">
-            <div class="week-title">Northstar Logistics scope change decision</div>
-            <div class="week-meta">Client approved budget increase — your sign-off needed by EOD</div>
-          </div>
-          <span class="week-tag deadline"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>Deadline</span>
         </div>
+      </div>
 
-        <div class="week-item">
-          <div class="week-date">
-            <div class="week-date-day">Thu</div>
-            <div class="week-date-num">17</div>
-          </div>
-          <div class="week-body">
-            <div class="week-title">Acme Corporation design review — stakeholder walkthrough</div>
-            <div class="week-meta">2:00 PM · Sarah Chen presenting wireframes v3</div>
-          </div>
-          <span class="week-tag meeting"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Meeting</span>
+      <!-- WED 16 -->
+      <div class="week-col" data-day="wed" data-date="16">
+        <div class="week-col-header">
+          <div class="week-col-day">Wed</div>
+          <div class="week-col-num">16</div>
         </div>
-
-        <div class="week-item">
-          <div class="week-date">
-            <div class="week-date-day">Fri</div>
-            <div class="week-date-num">18</div>
+        <div class="week-col-body">
+          <div class="week-task" data-id="northstar-scope" data-done="false">
+            <div class="week-task-title">Northstar scope change decision</div>
+            <div class="week-task-meta">Your sign-off needed by EOD</div>
+            <span class="week-task-tag deadline"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>Deadline</span>
           </div>
-          <div class="week-body">
-            <div class="week-title">Acme Corporation website launch target</div>
-            <div class="week-meta">At risk — still waiting on client feedback since April 8</div>
-          </div>
-          <span class="week-tag milestone"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>Milestone</span>
         </div>
+      </div>
 
-        <div class="week-item">
-          <div class="week-date">
-            <div class="week-date-day">Fri</div>
-            <div class="week-date-num">18</div>
-          </div>
-          <div class="week-body">
-            <div class="week-title">Bloom Retail paid ads — first-week performance report</div>
-            <div class="week-meta">SEM team · Campaign launched this week</div>
-          </div>
-          <span class="week-tag milestone"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>Milestone</span>
+      <!-- THU 17 -->
+      <div class="week-col" data-day="thu" data-date="17">
+        <div class="week-col-header">
+          <div class="week-col-day">Thu</div>
+          <div class="week-col-num">17</div>
         </div>
+        <div class="week-col-body">
+          <div class="week-task" data-id="acme-review" data-done="false">
+            <div class="week-task-title">Acme design review — stakeholder walkthrough</div>
+            <div class="week-task-meta">2:00 PM · Sarah Chen presenting</div>
+            <span class="week-task-tag meeting"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Meeting</span>
+          </div>
+        </div>
+      </div>
 
+      <!-- FRI 18 -->
+      <div class="week-col" data-day="fri" data-date="18">
+        <div class="week-col-header">
+          <div class="week-col-day">Fri</div>
+          <div class="week-col-num">18</div>
+        </div>
+        <div class="week-col-body">
+          <div class="week-task" data-id="acme-launch" data-done="false">
+            <div class="week-task-title">Acme website launch target</div>
+            <div class="week-task-meta">At risk — waiting on client feedback</div>
+            <span class="week-task-tag milestone"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>Milestone</span>
+          </div>
+          <div class="week-task" data-id="bloom-ads" data-done="false">
+            <div class="week-task-title">Bloom Retail paid ads — performance report</div>
+            <div class="week-task-meta">SEM team · First-week results</div>
+            <span class="week-task-tag milestone"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>Milestone</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Day switcher for demo -->
+    <div class="week-demo">
+      <span class="week-demo-label">Simulate day:</span>
+      <div class="week-demo-btns">
+        <button class="week-demo-btn" data-sim="sun" onclick="simDay('sun')">Sun</button>
+        <button class="week-demo-btn" data-sim="mon" onclick="simDay('mon')">Mon</button>
+        <button class="week-demo-btn" data-sim="tue" onclick="simDay('tue')">Tue</button>
+        <button class="week-demo-btn active" data-sim="wed" onclick="simDay('wed')">Wed</button>
+        <button class="week-demo-btn" data-sim="thu" onclick="simDay('thu')">Thu</button>
+        <button class="week-demo-btn" data-sim="fri" onclick="simDay('fri')">Fri</button>
       </div>
     </div>
   </div>
@@ -782,6 +888,93 @@ function toggleAttn(e) {
     link.textContent = 'View all 6 →';
   }
 }
+
+/* ── Week board: day progression logic ── */
+var DAY_ORDER = ['mon', 'tue', 'wed', 'thu', 'fri'];
+var carriedSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 17 20 12 15 7"/><path d="M4 18v-1a5 5 0 0 1 5-5h11"/></svg>';
+
+/* Store the original task HTML keyed by data-id so we can rebuild */
+var originalTasks = {};
+(function() {
+  document.querySelectorAll('.week-task').forEach(function(t) {
+    originalTasks[t.dataset.id] = {
+      html: t.innerHTML,
+      done: t.dataset.done === 'true',
+      origDay: t.closest('.week-col').dataset.day
+    };
+  });
+})();
+
+function simDay(activeDay) {
+  /* Update demo buttons */
+  document.querySelectorAll('.week-demo-btn').forEach(function(b) {
+    b.classList.toggle('active', b.dataset.sim === activeDay);
+  });
+
+  var activeIdx = DAY_ORDER.indexOf(activeDay); /* -1 if sun */
+
+  /* Reset all columns to their original tasks first */
+  var cols = document.querySelectorAll('.week-col');
+  cols.forEach(function(col) {
+    col.classList.remove('is-today', 'is-past');
+    var body = col.querySelector('.week-col-body');
+    /* Clear carried tasks */
+    body.querySelectorAll('.week-task.carried').forEach(function(t) { t.remove(); });
+  });
+
+  /* Restore original tasks to their original columns */
+  cols.forEach(function(col) {
+    var body = col.querySelector('.week-col-body');
+    body.querySelectorAll('.week-task:not(.carried)').forEach(function(t) {
+      var orig = originalTasks[t.dataset.id];
+      if (orig) {
+        t.innerHTML = orig.html;
+        t.classList.remove('carried');
+      }
+    });
+  });
+
+  /* Apply today / past states */
+  cols.forEach(function(col, i) {
+    var dayName = col.dataset.day;
+    var dayIdx = DAY_ORDER.indexOf(dayName);
+
+    if (dayIdx === activeIdx) {
+      col.classList.add('is-today');
+    } else if (activeIdx >= 0 && dayIdx < activeIdx) {
+      col.classList.add('is-past');
+    }
+  });
+
+  /* Move unfinished tasks from past days to today's column */
+  if (activeIdx >= 0) {
+    var todayCol = document.querySelector('.week-col[data-day="' + activeDay + '"]');
+    var todayBody = todayCol.querySelector('.week-col-body');
+
+    cols.forEach(function(col) {
+      var dayIdx = DAY_ORDER.indexOf(col.dataset.day);
+      if (dayIdx >= activeIdx) return; /* only past columns */
+
+      col.querySelectorAll('.week-task').forEach(function(task) {
+        var info = originalTasks[task.dataset.id];
+        if (info && !info.done) {
+          /* Create a carried-over clone in today's column */
+          var clone = document.createElement('div');
+          clone.className = 'week-task carried';
+          clone.dataset.id = task.dataset.id + '-carried';
+          var origDayLabel = info.origDay.charAt(0).toUpperCase() + info.origDay.slice(1);
+          clone.innerHTML =
+            '<div class="carried-badge">' + carriedSvg + 'Carried from ' + origDayLabel + '</div>' +
+            info.html;
+          todayBody.insertBefore(clone, todayBody.firstChild);
+        }
+      });
+    });
+  }
+}
+
+/* Initialize at Wed to show the feature */
+simDay('wed');
 </script>
 
 </body>
