@@ -332,6 +332,42 @@
   }
   .attn-btn.primary:hover { opacity: 0.9; }
 
+  /* Tooltip */
+  .attn-btn {
+    position: relative;
+  }
+  .attn-btn .tooltip {
+    position: absolute;
+    bottom: calc(100% + 10px);
+    right: 0;
+    background: var(--text);
+    color: var(--bg);
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: -0.005em;
+    line-height: 1.4;
+    padding: 8px 14px;
+    border-radius: 10px;
+    width: 210px;
+    text-align: center;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.15s ease;
+    z-index: 10;
+  }
+  .attn-btn .tooltip::after {
+    content: "";
+    position: absolute;
+    top: 100%;
+    right: 24px;
+    border: 5px solid transparent;
+    border-top-color: var(--text);
+  }
+  .attn-btn:hover .tooltip {
+    opacity: 1;
+    transition-delay: 0.6s;
+  }
+
   /* --- BLOCK 3 + 4 ROW --- */
   .lower-grid {
     display: grid;
@@ -609,8 +645,8 @@
           <div class="attn-desc">Sarah Chen sent design review files April 8. No response. Launch date April 18 at risk.</div>
         </div>
         <div class="attn-actions">
-          <button class="attn-btn">Delegate</button>
-          <button class="attn-btn primary">Review</button>
+          <button class="attn-btn" onclick="event.stopPropagation()">Delegate<span class="tooltip">Assign this to a team member who can follow up</span></button>
+          <button class="attn-btn primary" onclick="event.stopPropagation()">Review<span class="tooltip">Open this item and take action now</span></button>
         </div>
       </div>
 
@@ -625,8 +661,8 @@
           <div class="attn-desc">Marcus flagged capacity issue yesterday. May need to pull in help or extend timeline.</div>
         </div>
         <div class="attn-actions">
-          <button class="attn-btn">Delegate</button>
-          <button class="attn-btn primary">Review</button>
+          <button class="attn-btn" onclick="event.stopPropagation()">Delegate<span class="tooltip">Assign this to a team member who can follow up</span></button>
+          <button class="attn-btn primary" onclick="event.stopPropagation()">Review<span class="tooltip">Open this item and take action now</span></button>
         </div>
       </div>
 
@@ -641,8 +677,8 @@
           <div class="attn-desc">Assigned to Elena. Last seen yesterday afternoon. No draft in shared folder yet.</div>
         </div>
         <div class="attn-actions">
-          <button class="attn-btn">Delegate</button>
-          <button class="attn-btn primary">Review</button>
+          <button class="attn-btn" onclick="event.stopPropagation()">Delegate<span class="tooltip">Assign this to a team member who can follow up</span></button>
+          <button class="attn-btn primary" onclick="event.stopPropagation()">Review<span class="tooltip">Open this item and take action now</span></button>
         </div>
       </div>
 
@@ -657,8 +693,8 @@
           <div class="attn-desc">Client added a mobile app module. +40 hours estimated. Team paused pending sign-off.</div>
         </div>
         <div class="attn-actions">
-          <button class="attn-btn">Delegate</button>
-          <button class="attn-btn primary">Review</button>
+          <button class="attn-btn" onclick="event.stopPropagation()">Delegate<span class="tooltip">Assign this to a team member who can follow up</span></button>
+          <button class="attn-btn primary" onclick="event.stopPropagation()">Review<span class="tooltip">Open this item and take action now</span></button>
         </div>
       </div>
 
@@ -673,8 +709,8 @@
           <div class="attn-desc">Dev team can't proceed until third-party API keys are provisioned. Client IT hasn't responded.</div>
         </div>
         <div class="attn-actions">
-          <button class="attn-btn">Delegate</button>
-          <button class="attn-btn primary">Review</button>
+          <button class="attn-btn" onclick="event.stopPropagation()">Delegate<span class="tooltip">Assign this to a team member who can follow up</span></button>
+          <button class="attn-btn primary" onclick="event.stopPropagation()">Review<span class="tooltip">Open this item and take action now</span></button>
         </div>
       </div>
 
@@ -689,8 +725,8 @@
           <div class="attn-desc">8 onboarding tasks created. Contract signed. Kickoff scheduled Tuesday 10am — checklist must be reviewed first.</div>
         </div>
         <div class="attn-actions">
-          <button class="attn-btn">Delegate</button>
-          <button class="attn-btn primary">Review</button>
+          <button class="attn-btn" onclick="event.stopPropagation()">Delegate<span class="tooltip">Assign this to a team member who can follow up</span></button>
+          <button class="attn-btn primary" onclick="event.stopPropagation()">Review<span class="tooltip">Open this item and take action now</span></button>
         </div>
       </div>
 
