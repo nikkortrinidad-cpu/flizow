@@ -864,6 +864,48 @@
   .wl-sc-dot.quarter { background: #f59e0b; }
   .wl-sc-dot.quick { background: var(--text-faint); }
 
+  /* Generic tooltip */
+  [data-tip] {
+    position: relative;
+  }
+  [data-tip]::after {
+    content: attr(data-tip);
+    position: absolute;
+    bottom: calc(100% + 8px);
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--text);
+    color: var(--bg);
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: -0.005em;
+    padding: 5px 10px;
+    border-radius: 7px;
+    white-space: nowrap;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.15s ease;
+    z-index: 100;
+  }
+  [data-tip]::before {
+    content: "";
+    position: absolute;
+    bottom: calc(100% + 3px);
+    left: 50%;
+    transform: translateX(-50%);
+    border: 5px solid transparent;
+    border-top-color: var(--text);
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.15s ease;
+    z-index: 100;
+  }
+  [data-tip]:hover::after,
+  [data-tip]:hover::before {
+    opacity: 1;
+    transition-delay: 0.4s;
+  }
+
   /* Reduced motion */
   @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after {
@@ -905,15 +947,15 @@
       <span class="cmdk-label">Search clients, tasks, people…</span>
       <span class="cmdk-kbd">⌘K</span>
     </button>
-    <button class="header-icon" aria-label="Notifications">
+    <button class="header-icon" aria-label="Notifications" data-tip="Notifications">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
       <span class="notif-dot"></span>
     </button>
-    <button class="theme-toggle" aria-label="Toggle dark mode" onclick="toggleTheme()">
+    <button class="theme-toggle" aria-label="Toggle dark mode" onclick="toggleTheme()" data-tip="Toggle dark mode">
       <svg class="icon-moon" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
       <svg class="icon-sun" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>
     </button>
-    <button class="avatar" aria-label="Account menu">NT</button>
+    <button class="avatar" aria-label="Account menu" data-tip="Account menu">NT</button>
   </div>
 </header>
 
@@ -933,7 +975,7 @@
     </div>
     <div class="health-strip">
       <div class="health-cell">
-        <div class="health-icon alert">
+        <div class="health-icon alert" data-tip="Overdue or blocked — needs action now">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg>
         </div>
         <div>
@@ -944,7 +986,7 @@
       </div>
       <div class="health-divider"></div>
       <div class="health-cell">
-        <div class="health-icon">
+        <div class="health-icon" data-tip="Behind schedule or approaching deadline">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
         </div>
         <div>
@@ -955,7 +997,7 @@
       </div>
       <div class="health-divider"></div>
       <div class="health-cell">
-        <div class="health-icon">
+        <div class="health-icon" data-tip="Delivering on time, no blockers">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
         </div>
         <div>
@@ -966,7 +1008,7 @@
       </div>
       <div class="health-divider"></div>
       <div class="health-cell">
-        <div class="health-icon">
+        <div class="health-icon" data-tip="% of tasks delivered by their due date">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
         </div>
         <div>
@@ -989,7 +1031,7 @@
       <div class="attn-card critical">
         <div class="attn-content">
           <div class="attn-row1">
-            <span class="attn-severity critical"><span class="dot"></span>On Fire</span>
+            <span class="attn-severity critical" data-tip="Overdue or blocked — immediate action required"><span class="dot"></span>On Fire</span>
             <span class="attn-client">Acme Corporation</span>
             <span class="attn-age">3 days overdue</span>
           </div>
@@ -1005,7 +1047,7 @@
       <div class="attn-card warn">
         <div class="attn-content">
           <div class="attn-row1">
-            <span class="attn-severity warning"><span class="dot"></span>At Risk</span>
+            <span class="attn-severity warning" data-tip="Behind schedule or at risk of missing deadline"><span class="dot"></span>At Risk</span>
             <span class="attn-client">Bloom Retail</span>
             <span class="attn-age">5 hours left</span>
           </div>
@@ -1021,7 +1063,7 @@
       <div class="attn-card warn">
         <div class="attn-content">
           <div class="attn-row1">
-            <span class="attn-severity warning"><span class="dot"></span>At Risk</span>
+            <span class="attn-severity warning" data-tip="Behind schedule or at risk of missing deadline"><span class="dot"></span>At Risk</span>
             <span class="attn-client">TechStart Inc.</span>
             <span class="attn-age">Due Monday</span>
           </div>
@@ -1037,7 +1079,7 @@
       <div class="attn-card attn-hidden">
         <div class="attn-content">
           <div class="attn-row1">
-            <span class="attn-severity info"><span class="dot"></span>Decision</span>
+            <span class="attn-severity info" data-tip="Waiting on your approval to proceed"><span class="dot"></span>Decision</span>
             <span class="attn-client">Northstar Logistics</span>
             <span class="attn-age">Waiting 2 days</span>
           </div>
@@ -1053,7 +1095,7 @@
       <div class="attn-card attn-hidden warn">
         <div class="attn-content">
           <div class="attn-row1">
-            <span class="attn-severity warning"><span class="dot"></span>At Risk</span>
+            <span class="attn-severity warning" data-tip="Behind schedule or at risk of missing deadline"><span class="dot"></span>At Risk</span>
             <span class="attn-client">Nova Ventures</span>
             <span class="attn-age">Since yesterday</span>
           </div>
@@ -1069,7 +1111,7 @@
       <div class="attn-card attn-hidden">
         <div class="attn-content">
           <div class="attn-row1">
-            <span class="attn-severity info"><span class="dot"></span>Onboarding</span>
+            <span class="attn-severity info" data-tip="New client setup in progress"><span class="dot"></span>Onboarding</span>
             <span class="attn-client">Harbor Financial</span>
             <span class="attn-age">Added 5h ago</span>
           </div>
@@ -1110,12 +1152,12 @@
           <div class="week-task" data-id="seo-audit" data-done="false">
             <div class="week-task-title">TechStart SEO audit final delivery</div>
             <div class="week-task-meta">Marcus Reyes · Running 2 days behind</div>
-            <span class="week-task-tag deadline"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>Deadline</span>
+            <span class="week-task-tag deadline" data-tip="Deliverable due on this day"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>Deadline</span>
           </div>
           <div class="week-task" data-id="bloom-deck" data-done="false">
             <div class="week-task-title">Bloom Retail reporting deck due</div>
             <div class="week-task-meta">Elena Park · Client meeting at 9am</div>
-            <span class="week-task-tag deadline"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>Deadline</span>
+            <span class="week-task-tag deadline" data-tip="Deliverable due on this day"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>Deadline</span>
           </div>
         </div>
       </div>
@@ -1130,7 +1172,7 @@
           <div class="week-task" data-id="harbor-kickoff" data-done="true">
             <div class="week-task-title">Harbor Financial kickoff meeting</div>
             <div class="week-task-meta">10:00 AM · New client onboarding</div>
-            <span class="week-task-tag meeting"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Meeting</span>
+            <span class="week-task-tag meeting" data-tip="Scheduled meeting or call"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Meeting</span>
           </div>
         </div>
       </div>
@@ -1145,32 +1187,32 @@
           <div class="week-task" data-id="northstar-scope" data-done="false">
             <div class="week-task-title">Northstar scope change decision</div>
             <div class="week-task-meta">Your sign-off needed by EOD</div>
-            <span class="week-task-tag deadline"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>Deadline</span>
+            <span class="week-task-tag deadline" data-tip="Deliverable due on this day"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>Deadline</span>
           </div>
           <div class="week-task" data-id="nova-api" data-done="false">
             <div class="week-task-title">Nova Ventures API credentials follow-up</div>
             <div class="week-task-meta">Client IT still hasn't responded</div>
-            <span class="week-task-tag deadline"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>Deadline</span>
+            <span class="week-task-tag deadline" data-tip="Deliverable due on this day"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>Deadline</span>
           </div>
           <div class="week-task" data-id="acme-wireframes" data-done="false">
             <div class="week-task-title">Acme wireframes v3 internal review</div>
             <div class="week-task-meta">Sarah Chen · Prep before Thu stakeholder call</div>
-            <span class="week-task-tag meeting"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Meeting</span>
+            <span class="week-task-tag meeting" data-tip="Scheduled meeting or call"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Meeting</span>
           </div>
           <div class="week-task" data-id="bloom-q2" data-done="false">
             <div class="week-task-title">Bloom Retail Q2 plan — team alignment</div>
             <div class="week-task-meta">11:00 AM · Elena Park presenting draft</div>
-            <span class="week-task-tag meeting"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Meeting</span>
+            <span class="week-task-tag meeting" data-tip="Scheduled meeting or call"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Meeting</span>
           </div>
           <div class="week-task" data-id="summit-calendar" data-done="false">
             <div class="week-task-title">Summit Outdoor content calendar sign-off</div>
             <div class="week-task-meta">May publishing schedule needs approval</div>
-            <span class="week-task-tag deadline"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>Deadline</span>
+            <span class="week-task-tag deadline" data-tip="Deliverable due on this day"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>Deadline</span>
           </div>
           <div class="week-task" data-id="mountain-sow" data-done="false">
             <div class="week-task-title">Mountain View Dental SOW draft review</div>
             <div class="week-task-meta">New client · Contract terms need your input</div>
-            <span class="week-task-tag deadline"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>Deadline</span>
+            <span class="week-task-tag deadline" data-tip="Deliverable due on this day"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>Deadline</span>
           </div>
         </div>
       </div>
@@ -1185,7 +1227,7 @@
           <div class="week-task" data-id="acme-review" data-done="false">
             <div class="week-task-title">Acme design review — stakeholder walkthrough</div>
             <div class="week-task-meta">2:00 PM · Sarah Chen presenting</div>
-            <span class="week-task-tag meeting"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Meeting</span>
+            <span class="week-task-tag meeting" data-tip="Scheduled meeting or call"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Meeting</span>
           </div>
         </div>
       </div>
@@ -1200,12 +1242,12 @@
           <div class="week-task" data-id="acme-launch" data-done="false">
             <div class="week-task-title">Acme website launch target</div>
             <div class="week-task-meta">At risk — waiting on client feedback</div>
-            <span class="week-task-tag milestone"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>Milestone</span>
+            <span class="week-task-tag milestone" data-tip="Key project milestone or launch"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>Milestone</span>
           </div>
           <div class="week-task" data-id="bloom-ads" data-done="false">
             <div class="week-task-title">Bloom Retail paid ads — performance report</div>
             <div class="week-task-meta">SEM team · First-week results</div>
-            <span class="week-task-tag milestone"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>Milestone</span>
+            <span class="week-task-tag milestone" data-tip="Key project milestone or launch"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>Milestone</span>
           </div>
         </div>
       </div>
@@ -1222,7 +1264,7 @@
           <div class="week-task" data-id="nw-bloom-retro" data-done="false">
             <div class="week-task-title">Bloom Retail campaign retro</div>
             <div class="week-task-meta">10:00 AM · Full team debrief</div>
-            <span class="week-task-tag meeting"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Meeting</span>
+            <span class="week-task-tag meeting" data-tip="Scheduled meeting or call"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Meeting</span>
           </div>
         </div>
       </div>
@@ -1237,12 +1279,12 @@
           <div class="week-task" data-id="nw-harbor-checkin" data-done="false">
             <div class="week-task-title">Harbor Financial 1-week check-in</div>
             <div class="week-task-meta">2:00 PM · Post-kickoff progress review</div>
-            <span class="week-task-tag meeting"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Meeting</span>
+            <span class="week-task-tag meeting" data-tip="Scheduled meeting or call"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Meeting</span>
           </div>
           <div class="week-task" data-id="nw-summit-publish" data-done="false">
             <div class="week-task-title">Summit Outdoor May content goes live</div>
             <div class="week-task-meta">First batch of scheduled posts</div>
-            <span class="week-task-tag milestone"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>Milestone</span>
+            <span class="week-task-tag milestone" data-tip="Key project milestone or launch"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>Milestone</span>
           </div>
         </div>
       </div>
@@ -1257,7 +1299,7 @@
           <div class="week-task" data-id="nw-acme-revisions" data-done="false">
             <div class="week-task-title">Acme design revisions due</div>
             <div class="week-task-meta">Sarah Chen · Based on Thu feedback</div>
-            <span class="week-task-tag deadline"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>Deadline</span>
+            <span class="week-task-tag deadline" data-tip="Deliverable due on this day"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>Deadline</span>
           </div>
         </div>
       </div>
@@ -1272,7 +1314,7 @@
           <div class="week-task" data-id="nw-mountain-kickoff" data-done="false">
             <div class="week-task-title">Mountain View Dental project kickoff</div>
             <div class="week-task-meta">11:00 AM · New client onboarding</div>
-            <span class="week-task-tag meeting"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Meeting</span>
+            <span class="week-task-tag meeting" data-tip="Scheduled meeting or call"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Meeting</span>
           </div>
         </div>
       </div>
@@ -1287,7 +1329,7 @@
           <div class="week-task" data-id="nw-northstar-delivery" data-done="false">
             <div class="week-task-title">Northstar mobile module spec delivery</div>
             <div class="week-task-meta">End of sprint 1 · Scope approved this week</div>
-            <span class="week-task-tag deadline"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>Deadline</span>
+            <span class="week-task-tag deadline" data-tip="Deliverable due on this day"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>Deadline</span>
           </div>
         </div>
       </div>
@@ -1541,8 +1583,9 @@ function fdeStatus(fde) {
     var card = document.createElement('div');
     card.className = 'wl-card';
     card.onclick = function() { openWlPanel(i); };
+    var statusTip = { light: 'Healthy', steady: 'Healthy', heavy: 'Watch — approaching capacity', over: 'Overloaded — redistribute work' };
     card.innerHTML =
-      '<div class="wl-bar-ring">' +
+      '<div class="wl-bar-ring" data-tip="' + label + ' of ' + CAPACITY + ' Full Day Equivalents — ' + statusTip[status] + '">' +
         '<svg viewBox="0 0 52 52"><circle class="ring-bg" cx="26" cy="26" r="21"/>' +
         '<circle class="ring-fill ' + status + '" cx="26" cy="26" r="21" stroke-dasharray="' + CIRC.toFixed(1) + '" stroke-dashoffset="' + offset.toFixed(1) + '"/></svg>' +
         '<div class="wl-ring-label">' + label + '/' + CAPACITY + '</div>' +
