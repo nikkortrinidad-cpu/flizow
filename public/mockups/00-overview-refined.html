@@ -127,10 +127,12 @@
   .header-icon {
     width: 36px; height: 36px; border-radius: 50%;
     background: var(--bg-soft);
+    border: none;
     display: flex; align-items: center; justify-content: center;
     cursor: pointer; font-size: 14px; color: var(--text-muted);
     position: relative;
     transition: background 0.15s;
+    padding: 0;
   }
   .header-icon:hover { background: var(--hairline); }
   .header-icon .notif-dot {
@@ -142,10 +144,15 @@
     width: 36px; height: 36px; border-radius: 50%;
     background: var(--avatar-bg);
     color: var(--avatar-fg);
+    border: none;
     display: flex; align-items: center; justify-content: center;
     font-size: 13px; font-weight: 600;
     letter-spacing: -0.01em;
+    cursor: pointer;
+    transition: opacity 0.15s;
+    padding: 0;
   }
+  .avatar:hover { opacity: 0.85; }
 
   /* Theme toggle */
   .theme-toggle {
@@ -163,19 +170,51 @@
   :root[data-theme="dark"] .theme-toggle .icon-sun { display: block; }
 
   /* --- PAGE LAYOUT --- */
-  .page { max-width: 1200px; margin: 0 auto; padding: 56px 32px 96px; }
+  .page { max-width: 1200px; margin: 0 auto; padding: 36px 32px 96px; }
 
-  .page-header { margin-bottom: 56px; }
+  .page-header { margin-bottom: 40px; }
   .page-greeting {
     font-size: 13px; font-weight: 500; color: var(--text-soft);
-    text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 10px;
+    text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px;
   }
   .page-title {
-    font-size: 44px; font-weight: 600; line-height: 1.1;
-    margin-bottom: 8px; letter-spacing: -0.022em;
+    font-size: 34px; font-weight: 600; line-height: 1.15;
+    margin-bottom: 6px; letter-spacing: -0.022em;
     color: var(--text);
   }
-  .page-date { font-size: 17px; color: var(--text-soft); letter-spacing: -0.01em; }
+  .page-date { font-size: 15px; color: var(--text-soft); letter-spacing: -0.01em; }
+
+  /* --- BACK TO TOP --- */
+  .back-to-top {
+    position: fixed;
+    bottom: 32px;
+    right: 32px;
+    width: 44px; height: 44px;
+    border-radius: 50%;
+    background: var(--bg-elev);
+    border: 1px solid var(--hairline);
+    box-shadow: 0 2px 12px rgba(0,0,0,0.1);
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    color: var(--text-muted);
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(8px);
+    transition: opacity 0.25s ease, transform 0.25s ease, background 0.15s, color 0.15s;
+    z-index: 90;
+  }
+  .back-to-top.visible {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateY(0);
+  }
+  .back-to-top:hover {
+    background: var(--text);
+    color: var(--bg);
+    border-color: var(--text);
+  }
+  .back-to-top:active { transform: scale(0.93); }
+  .back-to-top svg { width: 18px; height: 18px; }
 
   /* --- BLOCK COMMON --- */
   .block { margin-bottom: 48px; }
@@ -330,11 +369,13 @@
     transition: all 0.15s;
   }
   .attn-btn:hover { background: var(--btn-bg-hover); border-color: var(--text-faint); }
+  .attn-btn:active { transform: scale(0.96); }
   .attn-btn.primary {
     background: var(--text); border-color: var(--text); color: var(--bg);
     font-weight: 500;
   }
   .attn-btn.primary:hover { opacity: 0.9; }
+  .attn-btn.primary:active { transform: scale(0.96); opacity: 0.85; }
 
   /* Tooltip */
   .attn-btn {
@@ -447,7 +488,15 @@
     flex-direction: column;
     gap: 8px;
     flex: 1;
+    max-height: 420px;
+    overflow-y: auto;
   }
+  .week-col-body::-webkit-scrollbar { width: 4px; }
+  .week-col-body::-webkit-scrollbar-thumb {
+    background: var(--hairline);
+    border-radius: 4px;
+  }
+  .week-col-body::-webkit-scrollbar-thumb:hover { background: var(--text-faint); }
   .week-task {
     background: var(--bg-soft);
     border-radius: 10px;
@@ -509,19 +558,38 @@
   }
 
 
-  /* Hidden attention cards */
+  /* Hidden attention cards — animatable without display:none */
   .attn-hidden {
-    display: none;
+    grid-template-columns: 1fr auto;
+    gap: 20px;
     opacity: 0;
     max-height: 0;
     overflow: hidden;
-    transition: opacity 0.3s ease, max-height 0.4s ease;
+    padding-top: 0; padding-bottom: 0;
+    margin-top: -12px;
+    border-color: transparent;
+    box-shadow: none;
+    transition: opacity 0.3s ease, max-height 0.4s ease, padding 0.3s ease, margin 0.3s ease;
+    pointer-events: none;
   }
   .attention-list.expanded .attn-hidden {
-    display: grid;
     opacity: 1;
-    max-height: 200px;
+    max-height: 220px;
+    padding-top: 22px; padding-bottom: 22px;
+    margin-top: 0;
+    border-color: var(--hairline-soft);
+    box-shadow: var(--shadow);
     overflow: visible;
+    pointer-events: auto;
+  }
+
+  /* Reduced motion */
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      transition-duration: 0.01ms !important;
+      animation-duration: 0.01ms !important;
+    }
+    .back-to-top { transition: none; }
   }
 
   /* Responsive */
@@ -533,14 +601,14 @@
     .health-divider { display: none; }
     .week-board { grid-template-columns: 1fr 1fr; }
     .week-col { min-height: 180px; }
-    .page-title { font-size: 36px; }
+    .page-title { font-size: 28px; }
   }
 
 </style>
 </head>
 <body>
 
-<div class="header">
+<header class="header">
   <div class="header-left">
     <div class="header-logo">ProjectFlow</div>
     <nav class="header-nav">
@@ -556,19 +624,19 @@
       <span class="cmdk-label">Search clients, tasks, people…</span>
       <span class="cmdk-kbd">⌘K</span>
     </button>
-    <div class="header-icon">
+    <button class="header-icon" aria-label="Notifications">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
       <span class="notif-dot"></span>
-    </div>
+    </button>
     <button class="theme-toggle" aria-label="Toggle dark mode" onclick="toggleTheme()">
       <svg class="icon-moon" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
       <svg class="icon-sun" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>
     </button>
-    <div class="avatar">NT</div>
+    <button class="avatar" aria-label="Account menu">NT</button>
   </div>
-</div>
+</header>
 
-<div class="page">
+<main class="page">
 
   <div class="page-header">
     <div class="page-greeting" id="pageGreeting"></div>
@@ -633,7 +701,7 @@
   <div class="block">
     <div class="block-header">
       <div class="block-title">Needs Your Attention</div>
-      <a href="#" class="block-link" id="attnToggle" onclick="toggleAttn(event)">View all 6 →</a>
+      <a href="#" class="block-link" id="attnToggle" aria-expanded="false" onclick="toggleAttn(event)">View all 6 →</a>
     </div>
     <div class="attention-list">
 
@@ -858,7 +926,12 @@
 
   </div>
 
-</div>
+</main>
+
+<!-- Back to top button -->
+<button class="back-to-top" id="backToTop" aria-label="Back to top" onclick="window.scrollTo({top:0,behavior:'smooth'})">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg>
+</button>
 
 <script>
 function toggleTheme() {
@@ -872,12 +945,23 @@ function toggleAttn(e) {
   var list = document.querySelector('.attention-list');
   var link = document.getElementById('attnToggle');
   list.classList.toggle('expanded');
-  if (list.classList.contains('expanded')) {
-    link.textContent = 'Show less ←';
-  } else {
-    link.textContent = 'View all 6 →';
-  }
+  var isOpen = list.classList.contains('expanded');
+  link.textContent = isOpen ? 'Show less' : 'View all 6 →';
+  link.setAttribute('aria-expanded', isOpen);
 }
+
+/* ── Back to top: show after scrolling past the fold ── */
+(function() {
+  var btn = document.getElementById('backToTop');
+  var threshold = 400;
+  window.addEventListener('scroll', function() {
+    if (window.scrollY > threshold) {
+      btn.classList.add('visible');
+    } else {
+      btn.classList.remove('visible');
+    }
+  }, { passive: true });
+})();
 
 /* ── Dynamic greeting based on local time ── */
 (function() {
