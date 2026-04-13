@@ -313,18 +313,31 @@
     box-shadow: 0 12px 40px rgba(0,0,0,0.5);
   }
 
-  /* Drop placeholder */
-  .block-drop-indicator {
-    height: 4px;
-    border-radius: 2px;
-    background: var(--accent);
-    margin: -2px 0;
-    opacity: 0;
-    transition: opacity 0.15s ease;
-    pointer-events: none;
+  /* Drop target highlight */
+  .block.drop-above,
+  .block.drop-below {
+    position: relative;
   }
-  .block-drop-indicator.visible {
-    opacity: 1;
+  .block.drop-above::before,
+  .block.drop-below::after {
+    content: "";
+    position: absolute;
+    left: 0; right: 0;
+    height: 3px;
+    border-radius: 2px;
+    background: var(--highlight);
+    pointer-events: none;
+    animation: dropPulse 1s ease infinite;
+  }
+  .block.drop-above::before {
+    top: -8px;
+  }
+  .block.drop-below::after {
+    bottom: -8px;
+  }
+  @keyframes dropPulse {
+    0%, 100% { opacity: 0.6; }
+    50% { opacity: 1; }
   }
 
   /* Animate reorder */
@@ -1799,10 +1812,11 @@ document.addEventListener('keydown', function(e) {
   var dropTarget = null;
   var dropPos = null; /* 'before' or 'after' */
 
-  /* Create indicator element */
-  indicator = document.createElement('div');
-  indicator.className = 'block-drop-indicator';
-  page.appendChild(indicator);
+  function clearDropClasses() {
+    page.querySelectorAll('.block.drop-above, .block.drop-below').forEach(function(b) {
+      b.classList.remove('drop-above', 'drop-below');
+    });
+  }
 
   function getBlockMidpoints() {
     return Array.from(page.querySelectorAll('.block[data-block-id]')).filter(function(b) {
@@ -1878,20 +1892,11 @@ document.addEventListener('keydown', function(e) {
       }
     });
 
+    clearDropClasses();
     if (closest) {
       dropTarget = closest;
       dropPos = pos;
-      var targetRect = closest.getBoundingClientRect();
-      var pageRect = page.getBoundingClientRect();
-      indicator.classList.add('visible');
-      indicator.style.position = 'absolute';
-      indicator.style.left = '0';
-      indicator.style.right = '0';
-      if (pos === 'before') {
-        indicator.style.top = (targetRect.top - pageRect.top - 2) + 'px';
-      } else {
-        indicator.style.top = (targetRect.bottom - pageRect.top - 2) + 'px';
-      }
+      closest.classList.add(pos === 'before' ? 'drop-above' : 'drop-below');
     }
 
     /* Auto-scroll near edges */
@@ -1906,7 +1911,7 @@ document.addEventListener('keydown', function(e) {
     document.removeEventListener('pointermove', onPointerMove);
     document.removeEventListener('pointerup', onPointerUp);
 
-    indicator.classList.remove('visible');
+    clearDropClasses();
 
     if (dragClone) {
       document.body.removeChild(dragClone);
