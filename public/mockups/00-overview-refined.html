@@ -565,8 +565,12 @@
   }
   .dp-combo-item:first-child { border-radius: 10px 10px 0 0; }
   .dp-combo-item:last-child { border-radius: 0 0 10px 10px; }
-  .dp-combo-item:hover { background: var(--highlight-soft); color: var(--highlight); }
-  .dp-combo-item.selected { background: var(--highlight-soft); color: var(--highlight); }
+  .dp-combo-item:hover { background: var(--highlight); color: #fff; }
+  .dp-combo-item:hover .dp-combo-avatar { background: #fff; color: var(--highlight); }
+  .dp-combo-item:hover .dp-combo-role { color: rgba(255,255,255,0.7); }
+  .dp-combo-item.selected { background: var(--highlight); color: #fff; }
+  .dp-combo-item.selected .dp-combo-avatar { background: #fff; color: var(--highlight); }
+  .dp-combo-item.selected .dp-combo-role { color: rgba(255,255,255,0.7); }
   .dp-combo-avatar {
     width: 24px; height: 24px; border-radius: 50%;
     background: var(--avatar-bg); color: var(--avatar-fg);
