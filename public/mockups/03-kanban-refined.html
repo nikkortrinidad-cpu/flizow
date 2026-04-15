@@ -2086,6 +2086,307 @@
   }
   .members-toggle.on { background: #0a84ff; }
   .members-toggle.on::after { transform: translateX(16px); }
+
+  /* ============================================================
+     Analytics modal
+     ============================================================ */
+  .analytics-modal {
+    width: 880px;
+    max-width: 100%;
+    max-height: 86vh;
+    background: var(--bg-elev);
+    border: 1px solid var(--hairline);
+    border-radius: 16px;
+    box-shadow: 0 24px 80px rgba(0,0,0,0.5);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    animation: settingsPopIn 0.2s cubic-bezier(0.2, 0.9, 0.3, 1.2);
+  }
+
+  .analytics-header {
+    padding: 22px 28px 18px;
+    border-bottom: 1px solid var(--hairline-soft);
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    position: relative;
+  }
+  .analytics-header-text { flex: 1; min-width: 0; }
+  .analytics-header h2 {
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0 0 2px;
+    letter-spacing: -0.01em;
+  }
+  .analytics-header p {
+    font-size: 13px;
+    color: var(--text-muted);
+    margin: 0;
+  }
+
+  .analytics-range {
+    display: inline-flex;
+    background: var(--bg-soft);
+    border: 1px solid var(--hairline);
+    border-radius: 8px;
+    padding: 2px;
+    gap: 2px;
+    flex-shrink: 0;
+    margin-right: 40px;
+  }
+  .analytics-range-btn {
+    padding: 5px 12px;
+    border: none;
+    background: transparent;
+    border-radius: 6px;
+    color: var(--text-muted);
+    font-family: inherit;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.12s, color 0.12s;
+  }
+  .analytics-range-btn.active {
+    background: var(--bg);
+    color: var(--text-primary);
+    box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+  }
+
+  .analytics-close {
+    position: absolute;
+    top: 14px; right: 14px;
+    width: 30px; height: 30px;
+    border-radius: 50%;
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.12s, color 0.12s;
+    font-family: inherit;
+    z-index: 2;
+  }
+  .analytics-close:hover {
+    background: var(--bg-soft);
+    color: var(--text-primary);
+  }
+  .analytics-close svg { width: 16px; height: 16px; }
+
+  .analytics-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px 28px 24px;
+  }
+
+  /* Plain-English summary */
+  .analytics-summary {
+    padding: 14px 16px;
+    background: var(--bg-soft);
+    border: 1px solid var(--hairline-soft);
+    border-radius: 10px;
+    font-size: 14px;
+    line-height: 1.55;
+    color: var(--text-primary);
+    margin-bottom: 18px;
+    display: flex;
+    gap: 12px;
+  }
+  .analytics-summary-icon {
+    width: 28px; height: 28px;
+    flex-shrink: 0;
+    background: rgba(10,132,255,0.14);
+    color: #0a84ff;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .analytics-summary-icon svg { width: 15px; height: 15px; }
+  .analytics-summary-text { flex: 1; }
+  .analytics-summary-text strong { font-weight: 600; }
+
+  /* Metrics row — 4 hero tiles */
+  .analytics-metrics {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-bottom: 24px;
+  }
+  .metric-tile {
+    padding: 14px 16px;
+    background: var(--bg-soft);
+    border: 1px solid var(--hairline-soft);
+    border-radius: 10px;
+  }
+  .metric-label {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-faint);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 6px;
+  }
+  .metric-value {
+    font-size: 28px;
+    font-weight: 600;
+    color: var(--text-primary);
+    letter-spacing: -0.02em;
+    line-height: 1.1;
+  }
+  .metric-unit {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-muted);
+    margin-left: 4px;
+  }
+  .metric-value.danger { color: #ff453a; }
+
+  /* Sections */
+  .analytics-section { margin-bottom: 22px; }
+  .analytics-section-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin: 0 0 10px;
+  }
+  .analytics-section-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0;
+    letter-spacing: -0.005em;
+  }
+  .analytics-section-sub {
+    font-size: 12px;
+    color: var(--text-muted);
+  }
+
+  /* Blocked banner above cumulative flow chart */
+  .analytics-blocked-banner {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    background: rgba(255,69,58,0.08);
+    border: 1px solid rgba(255,69,58,0.25);
+    border-radius: 8px;
+    margin-bottom: 12px;
+    font-size: 13px;
+    color: var(--text-primary);
+  }
+  .analytics-blocked-banner-dot {
+    width: 8px; height: 8px;
+    background: #ff453a;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .analytics-blocked-banner-text { flex: 1; }
+  .analytics-blocked-banner-text strong { color: #ff453a; font-weight: 600; }
+  .analytics-blocked-banner-link {
+    font-size: 12px;
+    font-weight: 500;
+    color: #0a84ff;
+    text-decoration: none;
+    cursor: pointer;
+  }
+  .analytics-blocked-banner-link:hover { text-decoration: underline; }
+
+  /* Cumulative flow chart */
+  .cumflow-wrap {
+    padding: 16px;
+    background: var(--bg-soft);
+    border: 1px solid var(--hairline-soft);
+    border-radius: 10px;
+  }
+  .cumflow-svg {
+    width: 100%;
+    height: 220px;
+    display: block;
+  }
+  .cumflow-legend {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+    padding-top: 12px;
+    border-top: 1px solid var(--hairline-soft);
+    margin-top: 12px;
+    font-size: 12px;
+  }
+  .cumflow-legend-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--text-muted);
+  }
+  .cumflow-legend-dot {
+    width: 10px; height: 10px;
+    border-radius: 2px;
+  }
+  .cumflow-axis-label {
+    font-size: 10px;
+    fill: var(--text-faint);
+    font-family: inherit;
+  }
+  .cumflow-gridline { stroke: var(--hairline-soft); stroke-width: 0.5; }
+
+  /* Workload by assignee */
+  .workload-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 16px;
+    background: var(--bg-soft);
+    border: 1px solid var(--hairline-soft);
+    border-radius: 10px;
+  }
+  .workload-row {
+    display: grid;
+    grid-template-columns: 28px 140px 1fr 34px;
+    align-items: center;
+    gap: 12px;
+  }
+  .workload-avatar {
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: 600;
+    color: #fff;
+    letter-spacing: 0.02em;
+  }
+  .workload-name {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-primary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .workload-bar {
+    height: 14px;
+    background: var(--hairline-soft);
+    border-radius: 4px;
+    overflow: hidden;
+    width: 100%;
+  }
+  .workload-bar-inner {
+    height: 100%;
+    display: flex;
+  }
+  .workload-bar-seg { height: 100%; }
+  .workload-count {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-primary);
+    font-variant-numeric: tabular-nums;
+    text-align: right;
+  }
 </style>
 </head>
 <body>
@@ -2157,7 +2458,7 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
       Members
     </button>
-    <button class="btn-sm">
+    <button class="btn-sm" onclick="openAnalytics()">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
       Analytics
     </button>
@@ -2682,6 +2983,183 @@
           </div>
         </div>
       </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     Analytics Modal
+     ═══════════════════════════════════════════════════════════ -->
+<div class="settings-backdrop" id="analyticsModal" role="dialog" aria-modal="true" aria-label="Analytics">
+  <div class="analytics-modal" onclick="event.stopPropagation()">
+
+    <header class="analytics-header">
+      <div class="analytics-header-text">
+        <h2>Analytics</h2>
+        <p>Website Redesign · Last 30 days</p>
+      </div>
+      <div class="analytics-range" role="tablist" aria-label="Date range">
+        <button class="analytics-range-btn" data-range="7">7 days</button>
+        <button class="analytics-range-btn active" data-range="30">30 days</button>
+        <button class="analytics-range-btn" data-range="90">90 days</button>
+      </div>
+      <button class="analytics-close" onclick="closeAnalytics()" aria-label="Close">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </header>
+
+    <div class="analytics-body">
+
+      <!-- Plain-English summary -->
+      <div class="analytics-summary">
+        <div class="analytics-summary-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg>
+        </div>
+        <div class="analytics-summary-text">
+          You completed <strong>48 cards</strong> in the last 30 days at a <strong>6.3 day</strong> average cycle time. Throughput is <strong>up 12%</strong> from the prior period, though <strong>2 cards have been blocked 3+ days</strong> and need attention.
+        </div>
+      </div>
+
+      <!-- Hero metrics -->
+      <div class="analytics-metrics">
+        <div class="metric-tile">
+          <div class="metric-label">Throughput</div>
+          <div class="metric-value">12<span class="metric-unit">/ wk</span></div>
+        </div>
+        <div class="metric-tile">
+          <div class="metric-label">Avg Cycle Time</div>
+          <div class="metric-value">6.3<span class="metric-unit">days</span></div>
+        </div>
+        <div class="metric-tile">
+          <div class="metric-label">Completed</div>
+          <div class="metric-value">48</div>
+        </div>
+        <div class="metric-tile">
+          <div class="metric-label">Overdue</div>
+          <div class="metric-value danger">3</div>
+        </div>
+      </div>
+
+      <!-- Cumulative flow -->
+      <div class="analytics-section">
+        <div class="analytics-section-head">
+          <h3 class="analytics-section-title">Cumulative Flow</h3>
+          <span class="analytics-section-sub">Cards by status, day by day</span>
+        </div>
+
+        <div class="analytics-blocked-banner">
+          <span class="analytics-blocked-banner-dot"></span>
+          <div class="analytics-blocked-banner-text">
+            <strong>2 cards</strong> have been blocked for 3+ days. Oldest: <em>Set up staging environment</em> (3d).
+          </div>
+          <a class="analytics-blocked-banner-link">View blocked →</a>
+        </div>
+
+        <div class="cumflow-wrap">
+          <svg class="cumflow-svg" viewBox="0 0 820 240" preserveAspectRatio="none" id="cumflowSvg" aria-label="Cumulative flow diagram"></svg>
+          <div class="cumflow-legend">
+            <span class="cumflow-legend-item"><span class="cumflow-legend-dot" style="background:#0a84ff"></span>To Do</span>
+            <span class="cumflow-legend-item"><span class="cumflow-legend-dot" style="background:#ff9f0a"></span>In Progress</span>
+            <span class="cumflow-legend-item"><span class="cumflow-legend-dot" style="background:#ff453a"></span>Blocked</span>
+            <span class="cumflow-legend-item"><span class="cumflow-legend-dot" style="background:#bf5af2"></span>Needs Review</span>
+            <span class="cumflow-legend-item"><span class="cumflow-legend-dot" style="background:#30d158"></span>Done</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Workload by assignee -->
+      <div class="analytics-section">
+        <div class="analytics-section-head">
+          <h3 class="analytics-section-title">Workload by Assignee</h3>
+          <span class="analytics-section-sub">Last 30 days · segments by status</span>
+        </div>
+
+        <div class="workload-list">
+
+          <div class="workload-row">
+            <div class="workload-avatar avatar-color-2">JC</div>
+            <div class="workload-name">Joshua Castilla</div>
+            <div class="workload-bar">
+              <div class="workload-bar-inner" style="width:100%">
+                <div class="workload-bar-seg" style="width:11.11%;background:#0a84ff" title="1 To Do"></div>
+                <div class="workload-bar-seg" style="width:22.22%;background:#ff9f0a" title="2 In Progress"></div>
+                <div class="workload-bar-seg" style="width:11.11%;background:#bf5af2" title="1 Needs Review"></div>
+                <div class="workload-bar-seg" style="width:55.56%;background:#30d158" title="5 Done"></div>
+              </div>
+            </div>
+            <div class="workload-count">9</div>
+          </div>
+
+          <div class="workload-row">
+            <div class="workload-avatar avatar-color-4">CP</div>
+            <div class="workload-name">Catherine Pequino</div>
+            <div class="workload-bar">
+              <div class="workload-bar-inner" style="width:88.89%">
+                <div class="workload-bar-seg" style="width:25%;background:#ff9f0a" title="2 In Progress"></div>
+                <div class="workload-bar-seg" style="width:25%;background:#bf5af2" title="2 Needs Review"></div>
+                <div class="workload-bar-seg" style="width:50%;background:#30d158" title="4 Done"></div>
+              </div>
+            </div>
+            <div class="workload-count">8</div>
+          </div>
+
+          <div class="workload-row">
+            <div class="workload-avatar avatar-color-1">NT</div>
+            <div class="workload-name">Nikko Trinidad</div>
+            <div class="workload-bar">
+              <div class="workload-bar-inner" style="width:77.78%">
+                <div class="workload-bar-seg" style="width:28.57%;background:#0a84ff" title="2 To Do"></div>
+                <div class="workload-bar-seg" style="width:14.29%;background:#ff9f0a" title="1 In Progress"></div>
+                <div class="workload-bar-seg" style="width:14.29%;background:#ff453a" title="1 Blocked"></div>
+                <div class="workload-bar-seg" style="width:42.86%;background:#30d158" title="3 Done"></div>
+              </div>
+            </div>
+            <div class="workload-count">7</div>
+          </div>
+
+          <div class="workload-row">
+            <div class="workload-avatar avatar-color-3">SC</div>
+            <div class="workload-name">Sarah Chen</div>
+            <div class="workload-bar">
+              <div class="workload-bar-inner" style="width:66.67%">
+                <div class="workload-bar-seg" style="width:16.67%;background:#0a84ff" title="1 To Do"></div>
+                <div class="workload-bar-seg" style="width:16.67%;background:#ff9f0a" title="1 In Progress"></div>
+                <div class="workload-bar-seg" style="width:16.67%;background:#bf5af2" title="1 Needs Review"></div>
+                <div class="workload-bar-seg" style="width:50%;background:#30d158" title="3 Done"></div>
+              </div>
+            </div>
+            <div class="workload-count">6</div>
+          </div>
+
+          <div class="workload-row">
+            <div class="workload-avatar avatar-color-6">AS</div>
+            <div class="workload-name">Alex Santos</div>
+            <div class="workload-bar">
+              <div class="workload-bar-inner" style="width:55.56%">
+                <div class="workload-bar-seg" style="width:20%;background:#ff9f0a" title="1 In Progress"></div>
+                <div class="workload-bar-seg" style="width:40%;background:#ff453a" title="2 Blocked"></div>
+                <div class="workload-bar-seg" style="width:40%;background:#30d158" title="2 Done"></div>
+              </div>
+            </div>
+            <div class="workload-count">5</div>
+          </div>
+
+          <div class="workload-row">
+            <div class="workload-avatar avatar-color-5">MA</div>
+            <div class="workload-name">Mark Ashlee</div>
+            <div class="workload-bar">
+              <div class="workload-bar-inner" style="width:44.44%">
+                <div class="workload-bar-seg" style="width:25%;background:#ff9f0a" title="1 In Progress"></div>
+                <div class="workload-bar-seg" style="width:75%;background:#30d158" title="3 Done"></div>
+              </div>
+            </div>
+            <div class="workload-count">4</div>
+          </div>
+
+        </div>
+      </div>
+
     </div>
 
   </div>
@@ -3484,6 +3962,112 @@ function closeMembers(){
     if(e.key === 'Escape'){
       var m = document.getElementById('membersModal');
       if(m && m.classList.contains('open')) closeMembers();
+    }
+  });
+})();
+
+/* Analytics modal */
+function openAnalytics(){
+  var m = document.getElementById('analyticsModal');
+  if(m){
+    m.classList.add('open');
+    renderCumFlow();
+  }
+}
+function closeAnalytics(){
+  var m = document.getElementById('analyticsModal');
+  if(m) m.classList.remove('open');
+}
+function renderCumFlow(){
+  var svg = document.getElementById('cumflowSvg');
+  if(!svg) return;
+  // [todo, inProg, blocked, review, done] — 11 snapshots across the last 30 days
+  var data = [
+    [18, 3, 0, 1,  0],
+    [17, 3, 0, 1,  1],
+    [16, 3, 0, 2,  3],
+    [15, 4, 0, 1,  6],
+    [14, 4, 1, 2, 10],
+    [14, 4, 1, 1, 14],
+    [13, 5, 1, 2, 19],
+    [13, 4, 2, 1, 24],
+    [12, 4, 2, 2, 29],
+    [ 9, 4, 2, 2, 35],
+    [ 2, 4, 2, 1, 48]
+  ];
+  var padL = 32, padR = 12, padT = 10, padB = 22;
+  var W = 820, H = 240;
+  var plotW = W - padL - padR;
+  var plotH = H - padT - padB;
+  var N = data.length;
+  var xStep = plotW / (N - 1);
+  var totals = data.map(function(d){ return d.reduce(function(a,b){return a+b;}, 0); });
+  var maxTotal = Math.max.apply(null, totals);
+  // round max up to nearest 10 for a clean axis
+  var axisMax = Math.ceil(maxTotal / 10) * 10;
+  var yScale = plotH / axisMax;
+
+  // stack order from bottom (Done) up to (To Do)
+  var order = [4, 3, 2, 1, 0];
+  var colors = ['#30d158', '#bf5af2', '#ff453a', '#ff9f0a', '#0a84ff'];
+  var opacity = 0.85;
+
+  var markup = '';
+  // horizontal gridlines + y-axis labels every axisMax/4
+  var tickCount = 4;
+  for(var t = 0; t <= tickCount; t++){
+    var v = Math.round(axisMax * t / tickCount);
+    var y = padT + plotH - v * yScale;
+    markup += '<line class="cumflow-gridline" x1="' + padL + '" x2="' + (W - padR) + '" y1="' + y + '" y2="' + y + '"/>';
+    markup += '<text class="cumflow-axis-label" x="' + (padL - 6) + '" y="' + (y + 3) + '" text-anchor="end">' + v + '</text>';
+  }
+
+  // stacked bands
+  var cum = new Array(N).fill(0);
+  var prevTop = new Array(N).fill(padT + plotH);
+  for(var s = 0; s < 5; s++){
+    var idx = order[s];
+    var topY = [];
+    for(var i = 0; i < N; i++){
+      cum[i] += data[i][idx];
+      topY.push(padT + plotH - cum[i] * yScale);
+    }
+    var d = 'M ' + padL + ',' + topY[0];
+    for(var i = 1; i < N; i++){ d += ' L ' + (padL + i * xStep) + ',' + topY[i]; }
+    d += ' L ' + (padL + (N - 1) * xStep) + ',' + prevTop[N - 1];
+    for(var i = N - 2; i >= 0; i--){ d += ' L ' + (padL + i * xStep) + ',' + prevTop[i]; }
+    d += ' Z';
+    markup += '<path d="' + d + '" fill="' + colors[s] + '" fill-opacity="' + opacity + '" stroke="' + colors[s] + '" stroke-width="0.6" stroke-opacity="0.9"/>';
+    prevTop = topY.slice();
+  }
+
+  // x-axis labels (day ticks)
+  var xLabels = ['30d ago', '24d', '18d', '12d', '6d', 'Today'];
+  var xPositions = [0, 0.2, 0.4, 0.6, 0.8, 1.0];
+  for(var j = 0; j < xLabels.length; j++){
+    var lx = padL + xPositions[j] * plotW;
+    markup += '<text class="cumflow-axis-label" x="' + lx + '" y="' + (H - 6) + '" text-anchor="' + (j === 0 ? 'start' : j === xLabels.length - 1 ? 'end' : 'middle') + '">' + xLabels[j] + '</text>';
+  }
+
+  svg.innerHTML = markup;
+}
+(function(){
+  var backdrop = document.getElementById('analyticsModal');
+  if(backdrop){
+    backdrop.addEventListener('click', function(e){
+      if(e.target === backdrop) closeAnalytics();
+    });
+    backdrop.querySelectorAll('.analytics-range-btn').forEach(function(b){
+      b.addEventListener('click', function(){
+        backdrop.querySelectorAll('.analytics-range-btn').forEach(function(x){ x.classList.remove('active'); });
+        b.classList.add('active');
+      });
+    });
+  }
+  document.addEventListener('keydown', function(e){
+    if(e.key === 'Escape'){
+      var m = document.getElementById('analyticsModal');
+      if(m && m.classList.contains('open')) closeAnalytics();
     }
   });
 })();
