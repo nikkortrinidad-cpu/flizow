@@ -661,36 +661,33 @@
   .card-modal-title:hover { border-color: var(--hairline-soft); }
   .card-modal-title:focus { border-color: var(--text-faint); background: var(--bg-faint); }
 
-  /* metadata table */
+  /* metadata: borderless 2-col grid, label stacked above value */
   .meta-table {
     display: grid;
-    grid-template-columns: auto 1fr;
-    border: 1px solid var(--hairline);
-    border-radius: 14px;
-    overflow: hidden;
+    grid-template-columns: 1fr 1fr;
+    column-gap: 32px;
+    row-gap: 18px;
+    padding: 2px 2px 4px;
   }
   .meta-row {
-    display: flex; align-items: center; gap: 18px;
-    padding: 14px 18px;
-    border-bottom: 1px solid var(--hairline-soft);
-    min-height: 52px;
+    display: flex; flex-direction: column;
+    gap: 7px;
+    min-width: 0;
   }
-  .meta-row:nth-last-child(-n+2) { border-bottom: none; }
-  .meta-row:nth-child(2n) { border-left: 1px solid var(--hairline-soft); }
   .meta-label {
-    display: inline-flex; align-items: center; gap: 8px;
-    width: 92px; flex-shrink: 0;
+    display: inline-flex; align-items: center; gap: 6px;
     font-size: 11px; font-weight: 600;
     color: var(--text-soft);
     text-transform: uppercase;
     letter-spacing: 0.06em;
   }
-  .meta-label svg { width: 13px; height: 13px; opacity: 0.7; }
+  .meta-label svg { width: 12px; height: 12px; opacity: 0.7; }
   .meta-value {
-    flex: 1; min-width: 0;
+    min-width: 0;
     font-size: 13px; color: var(--text);
-    letter-spacing: -0.01em;
+    letter-spacing: -0.005em;
     display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+    min-height: 26px;
   }
   .meta-value.empty { color: var(--text-faint); }
   .status-dot {
@@ -744,17 +741,24 @@
 
   .label-pill {
     display: inline-block;
-    padding: 3px 9px;
-    border-radius: 980px;
+    padding: 2px 8px;
+    border-radius: 5px;
     font-size: 11px; font-weight: 500;
-    color: white;
+    background: var(--bg-soft);
+    color: var(--text-soft);
     letter-spacing: -0.005em;
+    line-height: 1.5;
   }
-  .label-design { background: #ff2d55; }
-  .label-feature { background: #0a84ff; }
-  .label-bug { background: #ff453a; }
-  .label-content { background: #bf5af2; }
-  .label-dev { background: #30d158; color: #003311; }
+  .label-design { color: #ff7a99; }
+  .label-feature { color: #64a7ff; }
+  .label-bug { color: #ff7a73; }
+  .label-content { color: #d291ff; }
+  .label-dev { color: #7aeba2; }
+  :root:not([data-theme="dark"]) .label-design { color: #c81e46; }
+  :root:not([data-theme="dark"]) .label-feature { color: #0058c9; }
+  :root:not([data-theme="dark"]) .label-bug { color: #c92b1f; }
+  :root:not([data-theme="dark"]) .label-content { color: #8e2bc4; }
+  :root:not([data-theme="dark"]) .label-dev { color: #1d8f3e; }
 
   .meta-date {
     font-size: 13px; color: var(--text);
@@ -802,36 +806,40 @@
     font-size: 11px; font-weight: 600;
     color: var(--text-soft);
     text-transform: uppercase;
-    letter-spacing: 0.08em;
-    margin-bottom: 10px;
+    letter-spacing: 0.06em;
+    margin-bottom: 12px;
     display: flex; align-items: center; justify-content: space-between;
   }
 
+  /* description: flows as text, no form-input chrome */
   .description-box {
-    background: var(--bg-faint);
-    border: 1px solid var(--hairline-soft);
-    border-radius: 12px;
-    padding: 16px 18px;
+    background: transparent;
+    border: none;
+    border-radius: 8px;
+    padding: 8px 10px;
+    margin-left: -10px;
     font-size: 14px;
     color: var(--text);
-    line-height: 1.6;
+    line-height: 1.58;
     letter-spacing: -0.005em;
-    min-height: 90px;
+    min-height: 60px;
     cursor: text;
+    transition: background 0.15s ease;
+  }
+  .description-box:hover { background: var(--bg-faint); }
+  .description-box:focus {
+    outline: none;
+    background: var(--bg-faint);
+    box-shadow: inset 0 0 0 1px var(--hairline);
   }
 
-  /* progress + checklist */
-  .progress-section { display: flex; flex-direction: column; gap: 10px; }
-  .progress-header { display: flex; justify-content: space-between; align-items: baseline; }
-  .progress-pct {
-    font-size: 13px; font-weight: 600; color: var(--text);
-    font-feature-settings: "tnum";
-  }
+  /* thin progress bar that lives in the checklist section header */
   .progress-bar {
-    height: 6px;
+    height: 3px;
     background: var(--bg-soft);
     border-radius: 980px;
     overflow: hidden;
+    margin: -4px 0 14px;
   }
   .progress-fill {
     height: 100%;
@@ -839,21 +847,29 @@
     border-radius: 980px;
     transition: width 0.3s ease;
   }
+  .progress-pct {
+    font-size: 11px; font-weight: 600;
+    color: var(--text-soft);
+    font-feature-settings: "tnum";
+    letter-spacing: 0.02em;
+  }
 
+  /* checklist: flush list, no outer box, no internal dividers */
   .checklist {
-    border: 1px solid var(--hairline);
-    border-radius: 14px;
-    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    margin-left: -10px;
   }
   .checklist-row {
-    display: flex; align-items: center; gap: 14px;
-    padding: 12px 16px;
-    border-bottom: 1px solid var(--hairline-soft);
+    display: flex; align-items: center; gap: 12px;
+    padding: 8px 10px;
+    border-radius: 8px;
     font-size: 13px;
+    letter-spacing: -0.005em;
     transition: background 0.15s;
   }
-  .checklist-row:last-child { border-bottom: none; }
-  .checklist-row:hover { background: var(--bg-soft); }
+  .checklist-row:hover { background: var(--bg-faint); }
   .checklist-checkbox {
     width: 18px; height: 18px;
     border-radius: 6px;
@@ -892,14 +908,18 @@
     color: var(--text-faint);
   }
   .checklist-add-row {
-    display: flex; align-items: center; gap: 14px;
-    padding: 12px 16px;
-    font-size: 13px; color: var(--text-soft);
+    display: flex; align-items: center; gap: 12px;
+    padding: 8px 10px;
+    margin-top: 2px;
+    font-size: 13px; color: var(--text-faint);
     cursor: pointer;
-    border-top: 1px solid var(--hairline-soft);
-    background: var(--bg-faint);
+    border: none;
+    background: transparent;
+    border-radius: 8px;
+    letter-spacing: -0.005em;
+    transition: background 0.15s, color 0.15s;
   }
-  .checklist-add-row:hover { color: var(--text); }
+  .checklist-add-row:hover { color: var(--text); background: var(--bg-faint); }
 
   /* SIDEBAR */
   .card-modal-sidebar {
@@ -1559,16 +1579,9 @@
           <div class="description-box">Redesign the hero section of the homepage for Acme Corporation's website redesign project. Update heading hierarchy, color scheme, and call-to-action buttons to match new branding guidelines. Coordinate with the design team on motion choices and confirm with the client before merging.</div>
         </div>
 
-        <div class="progress-section">
-          <div class="progress-header">
-            <span class="section-label" style="margin-bottom:0;">Progress</span>
-            <span class="progress-pct">2 of 5 · 40%</span>
-          </div>
-          <div class="progress-bar"><div class="progress-fill" style="width:40%"></div></div>
-        </div>
-
         <div>
-          <div class="section-label"><span>Checklist</span><span class="progress-pct" style="font-size:11px; color: var(--text-soft);">2/5 done</span></div>
+          <div class="section-label"><span>Checklist</span><span class="progress-pct">2 of 5 · 40%</span></div>
+          <div class="progress-bar"><div class="progress-fill" style="width:40%"></div></div>
           <div class="checklist">
             <div class="checklist-row">
               <button class="checklist-checkbox" onclick="toggleChecklistItem(this)" aria-label="Toggle">
@@ -1973,22 +1986,21 @@ function toggleChecklistItem(btn){
 }
 function recalcChecklistProgress(){
   var boxes = document.querySelectorAll('.checklist .checklist-checkbox');
-  var progressSection = document.querySelector('.progress-section');
+  var bar = document.querySelector('.progress-bar');
+  var counter = document.querySelector('.section-label .progress-pct');
   if(!boxes.length){
-    if(progressSection) progressSection.style.display = 'none';
+    if(bar) bar.style.display = 'none';
+    if(counter) counter.textContent = '';
     return;
   }
   var done = 0;
   boxes.forEach(function(b){ if(b.classList.contains('checked')) done++; });
   var total = boxes.length;
   var pct = Math.round(done / total * 100);
-  if(progressSection) progressSection.style.display = done > 0 ? 'flex' : 'none';
+  if(bar) bar.style.display = done > 0 ? 'block' : 'none';
   var fill = document.querySelector('.progress-fill');
   if(fill) fill.style.width = pct + '%';
-  var pcts = document.querySelectorAll('.progress-pct');
-  if(pcts[0]) pcts[0].textContent = done + ' of ' + total + ' · ' + pct + '%';
-  var counter = document.querySelectorAll('.section-label .progress-pct');
-  if(counter[0]) counter[0].textContent = done + '/' + total + ' done';
+  if(counter) counter.textContent = done + ' of ' + total + ' · ' + pct + '%';
 }
 function updateSendState(){
   var input = document.getElementById('commentInput');
