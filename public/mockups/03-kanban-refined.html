@@ -428,7 +428,9 @@
   /* Add card button */
   .add-card-btn {
     padding: 12px;
-    margin: 0 14px 14px;
+    margin: 0;
+    flex-shrink: 0;
+    align-self: stretch;
     border: 1px dashed var(--hairline);
     border-radius: 12px;
     background: transparent;
@@ -502,7 +504,7 @@
   }
   .add-column-form.active { display: flex; }
   .add-card-form {
-    margin: 0 14px 14px;
+    margin: 0;
     padding: 12px;
     background: var(--bg-elev);
     border: 1px solid var(--hairline);
@@ -1402,8 +1404,8 @@
           <div class="card-assignee">AS</div>
         </div>
       </div>
+      <button class="add-card-btn" onclick="addCardStart(this)">＋ Add Card</button>
     </div>
-    <button class="add-card-btn" onclick="addCardStart(this)">＋ Add Card</button>
   </div>
 
   <!-- In Progress Column -->
@@ -1460,8 +1462,8 @@
           <div class="card-assignee">AS</div>
         </div>
       </div>
+      <button class="add-card-btn" onclick="addCardStart(this)">＋ Add Card</button>
     </div>
-    <button class="add-card-btn" onclick="addCardStart(this)">＋ Add Card</button>
   </div>
 
   <!-- In Review Column -->
@@ -1491,8 +1493,8 @@
           <div class="card-assignee">NT</div>
         </div>
       </div>
+      <button class="add-card-btn" onclick="addCardStart(this)">＋ Add Card</button>
     </div>
-    <button class="add-card-btn" onclick="addCardStart(this)">＋ Add Card</button>
   </div>
 
   <!-- Done Column -->
@@ -1519,8 +1521,8 @@
           <div class="card-assignee">JK</div>
         </div>
       </div>
+      <button class="add-card-btn" onclick="addCardStart(this)">＋ Add Card</button>
     </div>
-    <button class="add-card-btn" onclick="addCardStart(this)">＋ Add Card</button>
   </div>
 
   <!-- Add Column -->
@@ -1926,8 +1928,9 @@ function addColumnCommit(){
       '</div>' +
       '<div class="column-menu">⋯</div>' +
     '</div>' +
-    '<div class="column-cards"></div>' +
-    '<button class="add-card-btn" onclick="addCardStart(this)">＋ Add Card</button>';
+    '<div class="column-cards">' +
+      '<button class="add-card-btn" onclick="addCardStart(this)">＋ Add Card</button>' +
+    '</div>';
   board.insertBefore(col, addBtn);
   input.value = '';
   input.focus();
@@ -1978,7 +1981,9 @@ function addCardCommit(form){
       '</div>' +
       '<div class="card-assignee">NT</div>' +
     '</div>';
-  cards.appendChild(card);
+  var addBtn = cards.querySelector('.add-card-btn');
+  var addForm = cards.querySelector('.add-card-form');
+  cards.insertBefore(card, addForm || addBtn);
   cards.scrollTop = cards.scrollHeight;
   var countEl = col.querySelector('.column-count');
   countEl.textContent = cards.children.length;
