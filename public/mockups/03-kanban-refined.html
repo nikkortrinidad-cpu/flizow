@@ -4180,7 +4180,7 @@ document.addEventListener('click', function(e){
   if(e.target.closest('.meta-dropdown')) return;
   if(e.target.closest('.meta-edit')) return;
   closeMetaDropdowns();
-});
+}, true);
 document.addEventListener('keydown', function(e){
   if(e.key === 'Escape') closeMetaDropdowns();
 });
