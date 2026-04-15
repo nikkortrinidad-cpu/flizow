@@ -722,9 +722,13 @@
     background: var(--bg-elev);
     border: 1px solid var(--hairline);
     border-radius: 20px;
-    display: flex;
+    display: flex; flex-direction: column;
     overflow: hidden;
     box-shadow: 0 24px 80px rgba(0,0,0,0.5);
+  }
+  .card-modal-body-row {
+    flex: 1; min-height: 0;
+    display: flex;
   }
   .card-modal-main {
     flex: 1; min-width: 0;
@@ -733,7 +737,7 @@
   }
   .card-titlebar {
     display: flex; align-items: center; justify-content: flex-end;
-    padding: 8px 12px 8px 22px;
+    padding: 8px 12px;
     border-bottom: 1px solid var(--hairline-soft);
     flex-shrink: 0;
   }
@@ -1083,27 +1087,11 @@
   }
   .sidebar-tabs {
     display: flex;
-    align-items: center;
-    padding: 10px 8px 0 14px;
+    padding: 24px 14px 0;
     gap: 4px;
     border-bottom: 1px solid var(--hairline-soft);
     flex-shrink: 0;
   }
-  .modal-close {
-    margin-left: auto;
-    margin-bottom: 7px;
-    width: 32px; height: 32px;
-    display: inline-flex; align-items: center; justify-content: center;
-    background: transparent;
-    border: none;
-    border-radius: 8px;
-    color: var(--text-muted);
-    cursor: pointer;
-    transition: background 0.15s, color 0.15s;
-    flex-shrink: 0;
-  }
-  .modal-close:hover { background: var(--hover-tint); color: var(--text); }
-  .modal-close svg { width: 16px; height: 16px; }
   .sidebar-tab {
     padding: 9px 14px;
     font-size: 13px; font-weight: 500;
@@ -3067,38 +3055,45 @@
 <div class="card-modal-overlay" id="cardModalOverlay" onclick="closeCardPanel(event)">
   <div class="card-modal" onclick="event.stopPropagation()">
 
-    <!-- LEFT: main content -->
-    <div class="card-modal-main">
-      <div class="card-titlebar">
-        <div class="titlebar-actions">
-          <button class="tb-btn" aria-label="Share" data-tip="Share card" data-tip-pos="below">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
-          </button>
-          <button class="tb-btn" onclick="toggleTbMenu(event)" aria-label="More" data-tip="More actions" data-tip-pos="below">
-            <svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>
-          </button>
-          <div class="tb-menu" id="tbMenu" onclick="event.stopPropagation()">
-            <div class="tb-menu-item" onclick="tbDuplicateCard()">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-              Duplicate card
-            </div>
-            <div class="tb-menu-item" onclick="tbCopyCardLink()">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
-              Copy link
-            </div>
-            <div class="tb-menu-divider"></div>
-            <div class="tb-menu-item" onclick="tbArchiveCard()">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ff9f0a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/></svg>
-              Archive card
-            </div>
-            <div class="tb-menu-item danger" onclick="tbDeleteCard()">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>
-              Delete card
-            </div>
+    <!-- FULL-WIDTH TITLEBAR -->
+    <div class="card-titlebar">
+      <div class="titlebar-actions">
+        <button class="tb-btn" aria-label="Share" data-tip="Share card" data-tip-pos="below">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
+        </button>
+        <button class="tb-btn" onclick="toggleTbMenu(event)" aria-label="More" data-tip="More actions" data-tip-pos="below">
+          <svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>
+        </button>
+        <div class="tb-menu" id="tbMenu" onclick="event.stopPropagation()">
+          <div class="tb-menu-item" onclick="tbDuplicateCard()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+            Duplicate card
+          </div>
+          <div class="tb-menu-item" onclick="tbCopyCardLink()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+            Copy link
+          </div>
+          <div class="tb-menu-divider"></div>
+          <div class="tb-menu-item" onclick="tbArchiveCard()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ff9f0a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/></svg>
+            Archive card
+          </div>
+          <div class="tb-menu-item danger" onclick="tbDeleteCard()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>
+            Delete card
           </div>
         </div>
+        <span class="tb-sep" aria-hidden="true"></span>
+        <button class="tb-btn tb-close" onclick="closeCardPanel()" aria-label="Close" data-tip="Close (Esc)" data-tip-pos="below">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
       </div>
+    </div>
 
+    <div class="card-modal-body-row">
+
+    <!-- LEFT: main content -->
+    <div class="card-modal-main">
       <div class="card-modal-body">
         <input type="text" class="card-modal-title" value="Update homepage hero section design">
 
@@ -3217,9 +3212,6 @@
         </button>
         <button class="sidebar-tab" data-tab="activity" onclick="switchSidebarTab('activity')">
           Activity Log <span class="tab-count">4</span>
-        </button>
-        <button class="modal-close" onclick="closeCardPanel()" aria-label="Close" data-tip="Close (Esc)" data-tip-pos="below">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
         </button>
       </div>
 
@@ -3382,6 +3374,8 @@
         </div>
       </div>
     </div>
+
+    </div><!-- /.card-modal-body-row -->
 
   </div>
 </div>
