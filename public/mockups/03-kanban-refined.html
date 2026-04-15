@@ -2539,6 +2539,96 @@
     opacity: 0.4;
     cursor: not-allowed;
   }
+
+  /* missing from legacy rules */
+  .dot-blocked { background: #ff453a; }
+
+  /* ───── Meta editors ───── */
+  .meta-edit {
+    cursor: pointer;
+    border-radius: 6px;
+    padding: 4px 8px;
+    margin: -4px -8px;
+    transition: background 0.12s ease;
+    position: relative;
+  }
+  .meta-edit:hover { background: var(--bg-faint); }
+  .meta-edit:focus-visible {
+    outline: none;
+    background: var(--bg-faint);
+    box-shadow: inset 0 0 0 1px var(--hairline);
+  }
+  .meta-dropdown {
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    min-width: 180px;
+    background: var(--bg-elevated, #1e1e22);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    box-shadow: 0 12px 28px rgba(0,0,0,0.35);
+    padding: 4px;
+    z-index: 50;
+    display: none;
+  }
+  .meta-dropdown.open { display: block; }
+  .meta-dropdown-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 10px;
+    border-radius: 6px;
+    font-size: 13px;
+    color: var(--text-primary);
+    cursor: pointer;
+  }
+  .meta-dropdown-item:hover {
+    background: color-mix(in srgb, var(--accent) 12%, transparent);
+  }
+  .meta-dropdown-item.current {
+    color: var(--accent);
+    font-weight: 600;
+  }
+  .meta-dropdown-item .check {
+    margin-left: auto;
+    opacity: 0;
+  }
+  .meta-dropdown-item.current .check { opacity: 1; }
+
+  /* description click-to-edit */
+  .description-box.is-placeholder { color: var(--text-faint); font-style: italic; }
+  .description-box[contenteditable="true"] {
+    background: var(--bg-faint);
+    box-shadow: inset 0 0 0 1px var(--hairline);
+    outline: none;
+    font-style: normal;
+    color: var(--text);
+  }
+  .description-actions {
+    display: flex;
+    gap: 6px;
+    margin-top: 6px;
+    justify-content: flex-end;
+  }
+  .description-actions button {
+    font-size: 12px;
+    padding: 6px 12px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text-primary);
+    cursor: pointer;
+  }
+  .description-actions .desc-save {
+    background: var(--accent);
+    color: #fff;
+    font-weight: 600;
+    border-color: transparent;
+  }
+  .description-actions .desc-save:hover { filter: brightness(1.08); }
+  .description-actions .desc-cancel:hover {
+    background: color-mix(in srgb, var(--text-primary) 6%, transparent);
+  }
 </style>
 </head>
 <body>
@@ -2865,7 +2955,7 @@
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
               Status
             </div>
-            <div class="meta-value"><span class="status-dot dot-progress"></span>In Progress</div>
+            <div class="meta-value meta-edit" id="metaStatus" tabindex="0" role="button" aria-label="Change status" onclick="openStatusDropdown(event)"><span class="status-dot dot-progress" id="statusDot"></span><span id="statusLabel">In Progress</span></div>
           </div>
           <div class="meta-row">
             <div class="meta-label">
@@ -2883,21 +2973,21 @@
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
               Start Date
             </div>
-            <div class="meta-value"><input type="date" class="meta-date" value="2026-03-01"></div>
+            <div class="meta-value"><input type="date" class="meta-date" id="startDateInput" value="2026-03-01"></div>
           </div>
           <div class="meta-row">
             <div class="meta-label">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>
               Priority
             </div>
-            <div class="meta-value"><span class="status-dot dot-high"></span>High</div>
+            <div class="meta-value meta-edit" id="metaPriority" tabindex="0" role="button" aria-label="Change priority" onclick="openPriorityDropdown(event)"><span class="status-dot dot-high" id="priorityDot"></span><span id="priorityLabel">High</span></div>
           </div>
           <div class="meta-row">
             <div class="meta-label">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
               Due Date
             </div>
-            <div class="meta-value"><input type="date" class="meta-date" value="2026-03-15"></div>
+            <div class="meta-value"><input type="date" class="meta-date" id="dueDateInput" value="2026-03-15"></div>
           </div>
           <div class="meta-row">
             <div class="meta-label">
@@ -2914,7 +3004,7 @@
 
         <div>
           <div class="section-label"><span>Description</span></div>
-          <div class="description-box">Redesign the hero section of the homepage for Acme Corporation's website redesign project. Update heading hierarchy, color scheme, and call-to-action buttons to match new branding guidelines. Coordinate with the design team on motion choices and confirm with the client before merging.</div>
+          <div class="description-box" id="descriptionBox" tabindex="0" role="textbox" aria-label="Description" onclick="startDescriptionEdit()">Redesign the hero section of the homepage for Acme Corporation's website redesign project. Update heading hierarchy, color scheme, and call-to-action buttons to match new branding guidelines. Coordinate with the design team on motion choices and confirm with the client before merging.</div>
         </div>
 
         <div>
@@ -3793,20 +3883,246 @@ if(_addColumnInput){
 
 /* ---------- Card Detail Panel ---------- */
 var _currentCard = null;
+
+var STATUS_OPTIONS = [
+  { key: 'todo',     label: 'To Do',        dotClass: 'dot-todo' },
+  { key: 'progress', label: 'In Progress',  dotClass: 'dot-progress' },
+  { key: 'blocked',  label: 'Blocked',      dotClass: 'dot-blocked' },
+  { key: 'review',   label: 'Needs Review', dotClass: 'dot-review' },
+  { key: 'done',     label: 'Done',         dotClass: 'dot-done' }
+];
+var PRIORITY_OPTIONS = [
+  { key: 'urgent', label: 'Urgent', dotClass: 'dot-urgent' },
+  { key: 'high',   label: 'High',   dotClass: 'dot-high' },
+  { key: 'medium', label: 'Medium', dotClass: 'dot-medium' },
+  { key: 'low',    label: 'Low',    dotClass: 'dot-low' }
+];
+
 function openCardPanel(cardEl){
   _currentCard = cardEl || null;
+  var modal = document.getElementById('cardModalOverlay');
   if(cardEl){
+    var ds = cardEl.dataset;
+    // Title
     var titleEl = cardEl.querySelector('.card-title');
-    if(titleEl){
-      var modalTitle = document.querySelector('.card-modal-title');
-      if(modalTitle) modalTitle.value = titleEl.textContent.trim();
+    var modalTitle = document.querySelector('.card-modal-title');
+    if(modalTitle) modalTitle.value = (titleEl ? titleEl.textContent.trim() : '');
+    // Description — show per-card saved value, or the placeholder
+    var desc = document.getElementById('descriptionBox');
+    if(desc){
+      if(typeof ds.description === 'string'){
+        desc.textContent = ds.description;
+        desc.classList.remove('is-placeholder');
+      } else {
+        desc.textContent = 'No description yet. Click to add one.';
+        desc.classList.add('is-placeholder');
+      }
+      desc.removeAttribute('contenteditable');
+      var existingActions = desc.nextElementSibling;
+      if(existingActions && existingActions.classList && existingActions.classList.contains('description-actions')){
+        existingActions.remove();
+      }
     }
+    // Status (derived from the card's column)
+    var col = cardEl.closest('.column');
+    var statusKey = col ? (col.dataset.dot || 'todo') : 'todo';
+    setStatusDisplay(statusKey);
+    // Priority
+    var priorityKey = ds.priority || cardEl.getAttribute('data-priority') || 'medium';
+    setPriorityDisplay(priorityKey);
+    // Dates
+    var startEl = document.getElementById('startDateInput');
+    var dueEl = document.getElementById('dueDateInput');
+    if(startEl) startEl.value = ds.startDate || startEl.defaultValue || startEl.value;
+    if(dueEl) dueEl.value = ds.dueDate || dueEl.defaultValue || dueEl.value;
   }
-  document.getElementById('cardModalOverlay').classList.add('open');
+  modal.classList.add('open');
   document.body.style.overflow = 'hidden';
   recalcChecklistProgress();
   updateSendState();
 }
+
+function setStatusDisplay(key){
+  var opt = STATUS_OPTIONS.find(function(o){ return o.key === key; }) || STATUS_OPTIONS[0];
+  var dot = document.getElementById('statusDot');
+  var label = document.getElementById('statusLabel');
+  if(dot){
+    dot.className = 'status-dot ' + opt.dotClass;
+  }
+  if(label) label.textContent = opt.label;
+}
+function setPriorityDisplay(key){
+  var opt = PRIORITY_OPTIONS.find(function(o){ return o.key === key; }) || PRIORITY_OPTIONS[2];
+  var dot = document.getElementById('priorityDot');
+  var label = document.getElementById('priorityLabel');
+  if(dot) dot.className = 'status-dot ' + opt.dotClass;
+  if(label) label.textContent = opt.label;
+}
+
+/* ───── Title sync ───── */
+(function(){
+  var input = document.querySelector('.card-modal-title');
+  if(!input) return;
+  input.addEventListener('input', function(){
+    if(!_currentCard) return;
+    var titleEl = _currentCard.querySelector('.card-title');
+    if(titleEl) titleEl.textContent = input.value;
+  });
+})();
+
+/* ───── Description edit ───── */
+function startDescriptionEdit(){
+  var desc = document.getElementById('descriptionBox');
+  if(!desc || desc.getAttribute('contenteditable') === 'true') return;
+  var wasPlaceholder = desc.classList.contains('is-placeholder');
+  var original = wasPlaceholder ? '' : desc.textContent;
+  if(wasPlaceholder){
+    desc.textContent = '';
+    desc.classList.remove('is-placeholder');
+  }
+  desc.setAttribute('contenteditable', 'true');
+  desc.focus();
+  // move caret to end
+  var range = document.createRange();
+  range.selectNodeContents(desc);
+  range.collapse(false);
+  var sel = window.getSelection();
+  sel.removeAllRanges();
+  sel.addRange(range);
+
+  var actions = document.createElement('div');
+  actions.className = 'description-actions';
+  actions.innerHTML =
+    '<button type="button" class="desc-cancel">Cancel</button>' +
+    '<button type="button" class="desc-save">Save</button>';
+  desc.parentNode.insertBefore(actions, desc.nextSibling);
+
+  function finish(save){
+    desc.removeAttribute('contenteditable');
+    if(!save){
+      if(wasPlaceholder){
+        desc.textContent = 'No description yet. Click to add one.';
+        desc.classList.add('is-placeholder');
+      } else {
+        desc.textContent = original;
+      }
+    } else {
+      var v = desc.textContent.trim();
+      if(v === ''){
+        desc.textContent = 'No description yet. Click to add one.';
+        desc.classList.add('is-placeholder');
+        if(_currentCard) delete _currentCard.dataset.description;
+      } else if(_currentCard){
+        _currentCard.dataset.description = desc.textContent;
+      }
+    }
+    if(actions.parentNode) actions.remove();
+    desc.removeEventListener('keydown', onKey);
+  }
+  function onKey(e){
+    if(e.key === 'Escape'){ e.preventDefault(); finish(false); }
+    else if(e.key === 'Enter' && (e.metaKey || e.ctrlKey)){ e.preventDefault(); finish(true); }
+  }
+  desc.addEventListener('keydown', onKey);
+  actions.querySelector('.desc-save').addEventListener('click', function(){ finish(true); });
+  actions.querySelector('.desc-cancel').addEventListener('click', function(){ finish(false); });
+}
+
+/* ───── Status dropdown ───── */
+function openStatusDropdown(e){
+  e.stopPropagation();
+  var anchor = document.getElementById('metaStatus');
+  closeMetaDropdowns();
+  var currentKey = (_currentCard && _currentCard.closest('.column') && _currentCard.closest('.column').dataset.dot) || 'todo';
+  var dd = buildMetaDropdown(STATUS_OPTIONS, currentKey, function(opt){
+    applyStatusChange(opt.key);
+    closeMetaDropdowns();
+  });
+  anchor.appendChild(dd);
+  dd.classList.add('open');
+}
+function applyStatusChange(key){
+  if(!_currentCard) { setStatusDisplay(key); return; }
+  var targetCol = document.querySelector('.column[data-dot="' + key + '"]');
+  if(targetCol && !targetCol.contains(_currentCard)){
+    var srcCol = _currentCard.closest('.column');
+    var cards = targetCol.querySelector('.column-cards');
+    var anchor = cards.querySelector('.add-card-form') || cards.querySelector('.add-card-btn');
+    if(anchor) cards.insertBefore(_currentCard, anchor);
+    else cards.appendChild(_currentCard);
+    [srcCol, targetCol].forEach(function(col){
+      if(!col) return;
+      var countEl = col.querySelector('.column-count');
+      var n = col.querySelectorAll('.column-cards > .card').length;
+      if(countEl) countEl.textContent = n;
+    });
+  }
+  setStatusDisplay(key);
+}
+
+/* ───── Priority dropdown ───── */
+function openPriorityDropdown(e){
+  e.stopPropagation();
+  var anchor = document.getElementById('metaPriority');
+  closeMetaDropdowns();
+  var currentKey = (_currentCard && (_currentCard.dataset.priority || _currentCard.getAttribute('data-priority'))) || 'medium';
+  var dd = buildMetaDropdown(PRIORITY_OPTIONS, currentKey, function(opt){
+    applyPriorityChange(opt.key);
+    closeMetaDropdowns();
+  });
+  anchor.appendChild(dd);
+  dd.classList.add('open');
+}
+function applyPriorityChange(key){
+  if(_currentCard){
+    _currentCard.setAttribute('data-priority', key);
+    _currentCard.dataset.priority = key;
+  }
+  setPriorityDisplay(key);
+}
+
+function buildMetaDropdown(options, currentKey, onPick){
+  var dd = document.createElement('div');
+  dd.className = 'meta-dropdown';
+  options.forEach(function(opt){
+    var row = document.createElement('div');
+    row.className = 'meta-dropdown-item' + (opt.key === currentKey ? ' current' : '');
+    row.innerHTML =
+      '<span class="status-dot ' + opt.dotClass + '"></span>' +
+      '<span>' + opt.label + '</span>' +
+      '<svg class="check" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+    row.addEventListener('click', function(e){ e.stopPropagation(); onPick(opt); });
+    dd.appendChild(row);
+  });
+  return dd;
+}
+function closeMetaDropdowns(){
+  document.querySelectorAll('.meta-dropdown').forEach(function(d){ d.remove(); });
+}
+document.addEventListener('click', function(e){
+  if(e.target.closest('.meta-dropdown')) return;
+  if(e.target.closest('.meta-edit')) return;
+  closeMetaDropdowns();
+});
+document.addEventListener('keydown', function(e){
+  if(e.key === 'Escape') closeMetaDropdowns();
+});
+
+/* ───── Dates ───── */
+(function(){
+  var start = document.getElementById('startDateInput');
+  var due = document.getElementById('dueDateInput');
+  if(start){
+    start.addEventListener('change', function(){
+      if(_currentCard) _currentCard.dataset.startDate = start.value;
+    });
+  }
+  if(due){
+    due.addEventListener('change', function(){
+      if(_currentCard) _currentCard.dataset.dueDate = due.value;
+    });
+  }
+})();
 function closeCardPanel(e){
   if(e && e.target && e.target.closest('.card-modal')) return;
   document.getElementById('cardModalOverlay').classList.remove('open');
