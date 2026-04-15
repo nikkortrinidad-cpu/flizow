@@ -2401,6 +2401,78 @@
     font-variant-numeric: tabular-nums;
     text-align: right;
   }
+
+  /* ───── Drag & drop ───── */
+  .card { cursor: grab; }
+  .card.dragging {
+    opacity: 0.4;
+    cursor: grabbing;
+  }
+  .column-cards.drag-over {
+    background: color-mix(in srgb, var(--accent) 8%, transparent);
+    border-radius: 10px;
+    outline: 2px dashed color-mix(in srgb, var(--accent) 55%, transparent);
+    outline-offset: -2px;
+  }
+  .card-drop-indicator {
+    height: 2px;
+    background: var(--accent);
+    border-radius: 2px;
+    margin: 4px 0;
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 25%, transparent);
+  }
+
+  /* ───── Toast ───── */
+  .toast-container {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    z-index: 9999;
+    pointer-events: none;
+  }
+  .toast {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 14px 10px 16px;
+    background: var(--bg-elevated, #1e1e22);
+    color: var(--text-primary);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    font-size: 13px;
+    line-height: 1.3;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.35);
+    pointer-events: auto;
+    animation: toast-in 180ms cubic-bezier(0.2, 0.8, 0.2, 1);
+    max-width: 420px;
+  }
+  .toast.leaving { animation: toast-out 160ms ease-in forwards; }
+  .toast-message { flex: 1; }
+  .toast-action {
+    background: transparent;
+    border: none;
+    color: var(--accent);
+    font-weight: 600;
+    font-size: 13px;
+    cursor: pointer;
+    padding: 2px 4px;
+  }
+  .toast-action:hover { text-decoration: underline; }
+  @keyframes toast-in {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes toast-out {
+    to { opacity: 0; transform: translateY(8px); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .toast { animation: none; }
+    .toast.leaving { animation: none; opacity: 0; }
+  }
 </style>
 </head>
 <body>
@@ -2693,20 +2765,20 @@
             <svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>
           </button>
           <div class="tb-menu" id="tbMenu" onclick="event.stopPropagation()">
-            <div class="tb-menu-item">
+            <div class="tb-menu-item" onclick="tbDuplicateCard()">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
               Duplicate card
             </div>
-            <div class="tb-menu-item">
+            <div class="tb-menu-item" onclick="tbCopyCardLink()">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
               Copy link
             </div>
             <div class="tb-menu-divider"></div>
-            <div class="tb-menu-item">
+            <div class="tb-menu-item" onclick="tbArchiveCard()">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ff9f0a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/></svg>
               Archive card
             </div>
-            <div class="tb-menu-item danger">
+            <div class="tb-menu-item danger" onclick="tbDeleteCard()">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>
               Delete card
             </div>
@@ -3654,7 +3726,9 @@ if(_addColumnInput){
 }
 
 /* ---------- Card Detail Panel ---------- */
+var _currentCard = null;
 function openCardPanel(cardEl){
+  _currentCard = cardEl || null;
   if(cardEl){
     var titleEl = cardEl.querySelector('.card-title');
     if(titleEl){
@@ -3884,9 +3958,262 @@ function updateSendState(){
 function sendComment(){
   var input = document.getElementById('commentInput');
   if(!input || !input.value.trim()) return;
+  var text = input.value.trim();
+  var content = document.querySelector('.sidebar-content[data-tab="comments"]');
+  if(content){
+    var now = new Date();
+    var stamp = now.toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+    var node = document.createElement('div');
+    node.className = 'comment';
+    node.innerHTML =
+      '<div class="comment-avatar">NT</div>' +
+      '<div class="comment-body">' +
+        '<div class="comment-bubble you">' +
+          '<div class="comment-author">Nikko Trinidad <span class="you-badge">You</span></div>' +
+          '<div class="comment-text">' + escapeHtml(text).replace(/\n/g, '<br>') + '</div>' +
+        '</div>' +
+        '<div class="comment-meta"><span>' + stamp + '</span><button>Reply</button></div>' +
+      '</div>';
+    // append before the comment-input-wrap if it's inside, else at the end
+    var inputWrap = content.querySelector('.comment-input-wrap');
+    if(inputWrap) content.insertBefore(node, inputWrap);
+    else content.appendChild(node);
+    // bump comments tab count
+    var tabCount = document.querySelector('.sidebar-tab[data-tab="comments"] .tab-count');
+    if(tabCount){
+      var n = parseInt(tabCount.textContent, 10);
+      if(!isNaN(n)) tabCount.textContent = (n + 1);
+    }
+    // scroll the new comment into view
+    node.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
   input.value = '';
   updateSendState();
 }
+
+/* ───── Toast ───── */
+function showToast(message, opts){
+  opts = opts || {};
+  var container = document.getElementById('toastContainer');
+  if(!container){
+    container = document.createElement('div');
+    container.id = 'toastContainer';
+    container.className = 'toast-container';
+    container.setAttribute('role', 'status');
+    container.setAttribute('aria-live', 'polite');
+    document.body.appendChild(container);
+  }
+  var toast = document.createElement('div');
+  toast.className = 'toast';
+  var msg = document.createElement('span');
+  msg.className = 'toast-message';
+  msg.textContent = message;
+  toast.appendChild(msg);
+  if(opts.action && typeof opts.onAction === 'function'){
+    var btn = document.createElement('button');
+    btn.className = 'toast-action';
+    btn.type = 'button';
+    btn.textContent = opts.action;
+    btn.addEventListener('click', function(){
+      opts.onAction();
+      dismiss();
+    });
+    toast.appendChild(btn);
+  }
+  container.appendChild(toast);
+  var timer = setTimeout(dismiss, opts.duration || 5000);
+  function dismiss(){
+    clearTimeout(timer);
+    toast.classList.add('leaving');
+    setTimeout(function(){ if(toast.parentNode) toast.remove(); }, 180);
+  }
+  return dismiss;
+}
+
+/* ───── Card toolbar actions ───── */
+function tbCloseMenu(){
+  var menu = document.getElementById('tbMenu');
+  if(menu) menu.classList.remove('open');
+}
+function tbDuplicateCard(){
+  tbCloseMenu();
+  if(!_currentCard) return;
+  var src = _currentCard;
+  var clone = src.cloneNode(true);
+  var titleEl = clone.querySelector('.card-title');
+  if(titleEl) titleEl.textContent = titleEl.textContent + ' (copy)';
+  src.parentNode.insertBefore(clone, src.nextSibling);
+  var col = src.closest('.column');
+  if(col){
+    var countEl = col.querySelector('.column-count');
+    var cards = col.querySelectorAll('.column-cards > .card').length;
+    if(countEl) countEl.textContent = cards;
+  }
+  showToast('Card duplicated');
+}
+function tbCopyCardLink(){
+  tbCloseMenu();
+  if(!_currentCard) return;
+  if(!_currentCard.dataset.cardId){
+    _currentCard.dataset.cardId = 'c-' + Math.random().toString(36).slice(2, 9);
+  }
+  var link = location.origin + location.pathname + '#card-' + _currentCard.dataset.cardId;
+  var done = function(){ showToast('Link copied to clipboard'); };
+  var fallback = function(){
+    try {
+      var ta = document.createElement('textarea');
+      ta.value = link;
+      ta.setAttribute('readonly', '');
+      ta.style.position = 'fixed'; ta.style.top = '-1000px';
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      ta.remove();
+      done();
+    } catch(err){
+      showToast('Unable to copy link');
+    }
+  };
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(link).then(done).catch(fallback);
+  } else {
+    fallback();
+  }
+}
+function _removeCurrentCardWithUndo(label){
+  if(!_currentCard) return;
+  var card = _currentCard;
+  var parent = card.parentNode;
+  var next = card.nextSibling;
+  var col = card.closest('.column');
+  card.remove();
+  if(col){
+    var countEl = col.querySelector('.column-count');
+    var n = col.querySelectorAll('.column-cards > .card').length;
+    if(countEl) countEl.textContent = n;
+  }
+  _currentCard = null;
+  closeCardPanel();
+  showToast(label, {
+    action: 'Undo',
+    onAction: function(){
+      if(next && next.parentNode === parent) parent.insertBefore(card, next);
+      else parent.appendChild(card);
+      if(col){
+        var countEl2 = col.querySelector('.column-count');
+        var n2 = col.querySelectorAll('.column-cards > .card').length;
+        if(countEl2) countEl2.textContent = n2;
+      }
+    }
+  });
+}
+function tbArchiveCard(){
+  tbCloseMenu();
+  _removeCurrentCardWithUndo('Card archived');
+}
+function tbDeleteCard(){
+  tbCloseMenu();
+  _removeCurrentCardWithUndo('Card deleted');
+}
+
+/* ───── Drag & drop ───── */
+(function(){
+  var board = document.querySelector('.board');
+  if(!board) return;
+
+  // mark all existing and future cards as draggable
+  function markDraggable(root){
+    (root || board).querySelectorAll('.card').forEach(function(c){
+      if(!c.hasAttribute('draggable')) c.setAttribute('draggable', 'true');
+    });
+  }
+  markDraggable();
+  // observe the board for added cards (via addCardCommit, duplicate, etc.)
+  var mo = new MutationObserver(function(muts){
+    muts.forEach(function(m){
+      m.addedNodes.forEach(function(n){
+        if(n.nodeType !== 1) return;
+        if(n.classList && n.classList.contains('card')){
+          if(!n.hasAttribute('draggable')) n.setAttribute('draggable', 'true');
+        } else {
+          markDraggable(n);
+        }
+      });
+    });
+  });
+  mo.observe(board, { childList: true, subtree: true });
+
+  var dragged = null;
+  var lastOver = null;
+
+  board.addEventListener('dragstart', function(e){
+    var card = e.target.closest && e.target.closest('.card');
+    if(!card) return;
+    dragged = card;
+    card.classList.add('dragging');
+    e.dataTransfer.effectAllowed = 'move';
+    try { e.dataTransfer.setData('text/plain', 'card'); } catch(_){}
+  });
+
+  board.addEventListener('dragend', function(){
+    if(dragged) dragged.classList.remove('dragging');
+    dragged = null;
+    if(lastOver){ lastOver.classList.remove('drag-over'); lastOver = null; }
+  });
+
+  board.addEventListener('dragover', function(e){
+    if(!dragged) return;
+    var cards = e.target.closest && e.target.closest('.column-cards');
+    if(!cards) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    if(lastOver && lastOver !== cards) lastOver.classList.remove('drag-over');
+    cards.classList.add('drag-over');
+    lastOver = cards;
+  });
+
+  board.addEventListener('dragleave', function(e){
+    var cards = e.target.closest && e.target.closest('.column-cards');
+    if(cards && !cards.contains(e.relatedTarget)){
+      cards.classList.remove('drag-over');
+      if(lastOver === cards) lastOver = null;
+    }
+  });
+
+  board.addEventListener('drop', function(e){
+    if(!dragged) return;
+    var cards = e.target.closest && e.target.closest('.column-cards');
+    if(!cards) return;
+    e.preventDefault();
+    var srcCol = dragged.closest('.column');
+    // pick insertion point: before the card under the cursor, or before the add-card controls
+    var overCard = null;
+    var x = e.clientX, y = e.clientY;
+    var allCards = cards.querySelectorAll(':scope > .card');
+    for(var i = 0; i < allCards.length; i++){
+      var c = allCards[i];
+      if(c === dragged) continue;
+      var r = c.getBoundingClientRect();
+      if(y < r.top + r.height / 2){ overCard = c; break; }
+    }
+    if(overCard){
+      cards.insertBefore(dragged, overCard);
+    } else {
+      var anchor = cards.querySelector('.add-card-form') || cards.querySelector('.add-card-btn');
+      if(anchor) cards.insertBefore(dragged, anchor);
+      else cards.appendChild(dragged);
+    }
+    cards.classList.remove('drag-over');
+    lastOver = null;
+    // refresh counts on source and target columns
+    [srcCol, cards.closest('.column')].forEach(function(col){
+      if(!col) return;
+      var countEl = col.querySelector('.column-count');
+      var n = col.querySelectorAll('.column-cards > .card').length;
+      if(countEl) countEl.textContent = n;
+    });
+  });
+})();
 
 /* card click → open panel (event delegation, ignores clicks inside add forms) */
 document.querySelector('.board').addEventListener('click', function(e){
