@@ -1075,28 +1075,74 @@
     transition: transform 0.15s;
   }
   .replies-toggle.expanded .chev { transform: rotate(90deg); }
+  /* ── replies: avatar-to-avatar connector (thread + elbow) ── */
   .replies {
     display: none;
+    position: relative;
     margin-top: 10px;
-    padding-left: 22px;
-    border-left: 1px solid var(--hairline-soft);
-    margin-left: 14px;
+    margin-left: -26px;   /* pulls thread line to parent avatar center (body=+42, parent-avatar-center=+16 → -26) */
+    padding-left: 30px;   /* reply content indent, past the elbow */
+    --thread: rgba(255,255,255,0.32);
   }
   .replies.open { display: block; }
-  .replies .comment {
+  .replies > .comment {
+    position: relative;
     margin-bottom: 14px;
   }
-  .replies .comment:last-child { margin-bottom: 0; }
+  .replies > .comment:last-child { margin-bottom: 0; }
   .replies .comment-avatar {
     width: 26px; height: 26px;
     font-size: 10px;
   }
   .replies .comment-bubble { border-radius: 12px; padding: 8px 12px; }
+
+  /* elbow: vertical-down then curves into avatar center */
+  .replies > .comment::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -30px;
+    width: 30px;
+    height: 13px; /* reply avatar center */
+    border-left: 2px solid var(--thread);
+    border-bottom: 2px solid var(--thread);
+    border-bottom-left-radius: 12px;
+    pointer-events: none;
+  }
+  /* first reply extends the line up to meet the parent avatar's bottom
+     (gap from parent-avatar-bottom to first-reply-avatar-center ≈ 121px) */
+  .replies > .comment:first-child::before {
+    top: -108px;
+    height: 121px;
+  }
+  /* continuation between siblings: extends from avatar center of this reply
+     down through its margin-bottom to meet the next reply's elbow top */
+  .replies > .comment:not(:last-child)::after {
+    content: '';
+    position: absolute;
+    left: -30px;
+    top: 13px;
+    bottom: -14px;
+    width: 2px;
+    background: var(--thread);
+    pointer-events: none;
+  }
+
+  /* nested replies: same pattern, shifted to parent-reply avatar center */
   .replies .replies {
     margin-top: 8px;
-    padding-left: 18px;
-    margin-left: 12px;
+    margin-left: -23px;  /* pull left: nested-reply body starts at +36, nested-reply-avatar center at +13 → -23 */
+    padding-left: 27px;
   }
+  .replies .replies > .comment::before {
+    left: -27px;
+    width: 27px;
+  }
+  .replies .replies > .comment:not(:last-child)::after {
+    left: -27px;
+  }
+  /* light-mode thread color */
+  :root[data-theme="light"] .replies { --thread: rgba(0,0,0,0.22); }
 
   /* activity log */
   .activity-list { display: flex; flex-direction: column; gap: 16px; }
