@@ -1933,7 +1933,8 @@ function addColumnCommit(){
     '</div>';
   board.insertBefore(col, addBtn);
   input.value = '';
-  input.focus();
+  document.getElementById('addColumnForm').classList.remove('active');
+  document.getElementById('addColumnBtn').classList.remove('hidden');
 }
 
 function addCardStart(btn){
