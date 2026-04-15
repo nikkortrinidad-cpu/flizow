@@ -29,7 +29,11 @@
     --kbd-border: #d2d2d7;
     --nav-bg: rgba(255,255,255,0.72);
     --btn-bg: #ffffff;
-    --btn-bg-hover: #f5f5f7;
+    --btn-bg-hover: rgba(0,122,255,0.08);
+    --hover-tint: rgba(0,122,255,0.08);
+    --hover-tint-strong: rgba(0,122,255,0.14);
+    --hover-blue: #007AFF;
+    --hover-blue-dark: #0066D6;
     --tag-bg: rgba(0,0,0,0.04);
     --tag-text: #636366;
   }
@@ -56,7 +60,11 @@
     --kbd-border: rgba(255,255,255,0.15);
     --nav-bg: rgba(0,0,0,0.72);
     --btn-bg: #1c1c1e;
-    --btn-bg-hover: #2c2c2e;
+    --btn-bg-hover: rgba(10,132,255,0.18);
+    --hover-tint: rgba(10,132,255,0.16);
+    --hover-tint-strong: rgba(10,132,255,0.24);
+    --hover-blue: #0A84FF;
+    --hover-blue-dark: #0071E3;
     --tag-bg: rgba(255,255,255,0.06);
     --tag-text: #aeaeb2;
   }
@@ -126,7 +134,7 @@
     position: relative;
     transition: background 0.15s;
   }
-  .header-icon:hover { background: var(--hairline); }
+  .header-icon:hover { background: var(--hover-tint); color: var(--hover-blue); }
   .header-icon .notif-dot {
     position: absolute; top: 6px; right: 6px;
     width: 8px; height: 8px; border-radius: 50%;
@@ -147,7 +155,7 @@
     transition: background 0.15s, color 0.15s;
     padding: 0;
   }
-  .theme-toggle:hover { background: var(--hairline); color: var(--text); }
+  .theme-toggle:hover { background: var(--hover-tint); color: var(--hover-blue); }
   .theme-toggle .icon-sun { display: none; }
   :root[data-theme="dark"] .theme-toggle .icon-moon { display: none; }
   :root[data-theme="dark"] .theme-toggle .icon-sun { display: block; }
@@ -203,7 +211,7 @@
     display: flex; align-items: center; gap: 14px;
     padding: 12px 22px; cursor: pointer;
   }
-  .cmdk-item:hover, .cmdk-item.active { background: var(--bg-soft); }
+  .cmdk-item:hover, .cmdk-item.active { background: var(--hover-tint); color: var(--hover-blue); }
   .cmdk-icon {
     width: 28px; height: 28px; border-radius: 8px;
     background: var(--bg-soft);
@@ -261,7 +269,7 @@
     letter-spacing: -0.01em;
     transition: all 0.15s;
   }
-  .btn-sm:hover { background: var(--btn-bg-hover); border-color: var(--text-faint); }
+  .btn-sm:hover { background: var(--hover-tint); border-color: var(--hover-blue); color: var(--hover-blue); }
   .btn-sm svg { width: 14px; height: 14px; }
 
   /* KANBAN BOARD */
@@ -330,7 +338,7 @@
     padding: 0;
   }
   .column-menu:hover,
-  .column-menu.open { background: var(--hairline); color: var(--text-muted); }
+  .column-menu.open { background: var(--hover-tint); color: var(--hover-blue); }
   .col-menu {
     display: none;
     position: absolute;
@@ -355,10 +363,11 @@
     white-space: nowrap;
     transition: background 0.12s;
   }
-  .col-menu-item:hover { background: var(--bg-soft); }
+  .col-menu-item:hover { background: var(--hover-tint); color: var(--hover-blue); }
   .col-menu-item svg { width: 14px; height: 14px; flex-shrink: 0; }
   .col-menu-item.warn svg { stroke: #ff9f0a; }
   .col-menu-item.danger { color: var(--accent); }
+  .col-menu-item.danger:hover { background: var(--accent-soft); color: var(--accent); }
   .col-menu-divider { height: 1px; background: var(--hairline-soft); margin: 4px 0; }
 
   /* collapsed column: the whole strip is the expand trigger */
@@ -561,9 +570,9 @@
     transition: all 0.15s;
   }
   .add-card-btn:hover {
-    border-color: var(--text);
-    color: var(--text);
-    background: var(--bg-faint);
+    border-color: var(--hover-blue);
+    color: var(--hover-blue);
+    background: var(--hover-tint);
   }
 
   /* Add column */
@@ -584,8 +593,9 @@
     align-self: stretch;
   }
   .add-column:hover {
-    border-color: var(--text);
-    color: var(--text);
+    border-color: var(--hover-blue);
+    color: var(--hover-blue);
+    background: var(--hover-tint);
   }
   .add-column.hidden { display: none; }
 
@@ -677,7 +687,7 @@
     letter-spacing: -0.01em;
     transition: background 0.15s, color 0.15s;
   }
-  .btn-ghost:hover { color: var(--text); background: var(--hairline); }
+  .btn-ghost:hover { color: var(--hover-blue); background: var(--hover-tint); }
 
   /* CARD DETAIL MODAL */
   .card-modal-overlay {
@@ -731,7 +741,7 @@
     letter-spacing: -0.01em;
     transition: background 0.15s, color 0.15s;
   }
-  .tb-btn:hover { background: var(--bg-soft); color: var(--text); }
+  .tb-btn:hover { background: var(--hover-tint); color: var(--hover-blue); }
   .tb-btn svg { width: 16px; height: 16px; }
   .tb-menu {
     display: none;
@@ -754,7 +764,7 @@
     cursor: pointer;
     letter-spacing: -0.01em;
   }
-  .tb-menu-item:hover { background: var(--bg-soft); }
+  .tb-menu-item:hover { background: var(--hover-tint); color: var(--hover-blue); }
   .tb-menu-item.danger { color: var(--accent); }
   .tb-menu-divider { height: 1px; background: var(--hairline-soft); margin: 4px 0; }
 
@@ -866,7 +876,7 @@
     font-family: inherit;
     transition: border-color 0.15s, color 0.15s;
   }
-  .assignee-add:hover { border-color: var(--text-faint); color: var(--text); }
+  .assignee-add:hover { border-color: var(--hover-blue); color: var(--hover-blue); background: var(--hover-tint); }
 
   .label-pill {
     display: inline-block;
@@ -1048,7 +1058,7 @@
     letter-spacing: -0.005em;
     transition: background 0.15s, color 0.15s;
   }
-  .checklist-add-row:hover { color: var(--text); background: var(--bg-faint); }
+  .checklist-add-row:hover { color: var(--hover-blue); background: var(--hover-tint); }
 
   /* SIDEBAR */
   .card-modal-sidebar {
@@ -1161,7 +1171,7 @@
     padding: 0;
     letter-spacing: -0.005em;
   }
-  .comment-meta button:hover { color: var(--text); }
+  .comment-meta button:hover { color: var(--hover-blue); }
   .reaction-pill {
     display: inline-flex; align-items: center; gap: 4px;
     padding: 1px 7px;
@@ -1173,7 +1183,7 @@
     border: 1px solid transparent;
     transition: all 0.15s;
   }
-  .reaction-pill:hover { background: var(--hairline); }
+  .reaction-pill:hover { background: var(--hover-tint); border-color: var(--hover-blue); color: var(--hover-blue); }
   .reaction-pill.you {
     background: rgba(10, 132, 255, 0.15);
     color: #0a84ff;
@@ -1358,7 +1368,7 @@
     cursor: pointer;
     transition: background 0.15s, color 0.15s;
   }
-  .toolbar-btn:hover { background: var(--bg-soft); color: var(--text); }
+  .toolbar-btn:hover { background: var(--hover-tint); color: var(--hover-blue); }
   .toolbar-btn svg { width: 14px; height: 14px; }
   .send-group {
     display: inline-flex;
@@ -1369,7 +1379,7 @@
   }
   .send-group.disabled { opacity: 0.4; cursor: not-allowed; background: var(--bg-soft); }
   .send-group.disabled .send-btn, .send-group.disabled .schedule-btn { color: var(--text-faint); }
-  .send-group:hover:not(.disabled) { background: #0077ed; }
+  .send-group:hover:not(.disabled) { background: var(--hover-blue-dark); }
   .send-btn, .schedule-btn {
     background: transparent;
     color: #ffffff;
@@ -1467,8 +1477,8 @@
     transition: background 0.12s, color 0.12s;
   }
   .settings-nav-item:hover {
-    background: var(--hairline-soft);
-    color: var(--text-primary);
+    background: var(--hover-tint);
+    color: var(--hover-blue);
   }
   .settings-nav-item.active {
     background: #0a84ff;
@@ -1502,8 +1512,8 @@
     z-index: 2;
   }
   .settings-close:hover {
-    background: var(--bg-soft);
-    color: var(--text-primary);
+    background: var(--hover-tint);
+    color: var(--hover-blue);
   }
   .settings-close svg { width: 16px; height: 16px; }
 
@@ -1765,9 +1775,9 @@
     transition: background 0.12s, color 0.12s;
     flex-shrink: 0;
   }
-  .settings-row-action:hover { background: var(--hairline); }
-  .settings-row-action.warn:hover { color: #ff9f0a; }
-  .settings-row-action.danger:hover { color: var(--accent); }
+  .settings-row-action:hover { background: var(--hover-tint); color: var(--hover-blue); }
+  .settings-row-action.warn:hover { background: rgba(255,159,10,0.12); color: #ff9f0a; }
+  .settings-row-action.danger:hover { background: var(--accent-soft); color: var(--accent); }
   .settings-row-action svg { width: 14px; height: 14px; }
 
   .settings-add-row {
@@ -1784,9 +1794,9 @@
     transition: background 0.15s, color 0.15s, border-color 0.15s;
   }
   .settings-add-row:hover {
-    background: var(--bg-soft);
-    color: var(--text-primary);
-    border-color: var(--text-faint);
+    background: var(--hover-tint);
+    color: var(--hover-blue);
+    border-color: var(--hover-blue);
   }
 
   /* Labels tab */
@@ -1852,8 +1862,8 @@
     z-index: 2;
   }
   .members-close:hover {
-    background: var(--bg-soft);
-    color: var(--text-primary);
+    background: var(--hover-tint);
+    color: var(--hover-blue);
   }
   .members-close svg { width: 16px; height: 16px; }
 
@@ -1903,7 +1913,7 @@
     cursor: pointer;
     transition: background 0.15s;
   }
-  .members-invite-btn:hover { background: #0a6fcc; }
+  .members-invite-btn:hover { background: var(--hover-blue-dark); }
 
   .members-body {
     flex: 1;
@@ -2016,9 +2026,9 @@
     flex-shrink: 0;
   }
   .members-role-pill:hover {
-    background: var(--bg);
-    color: var(--text-primary);
-    border-color: var(--text-faint);
+    background: var(--hover-tint);
+    color: var(--hover-blue);
+    border-color: var(--hover-blue);
   }
   .members-role-pill svg { width: 10px; height: 10px; opacity: 0.7; }
 
@@ -2036,8 +2046,8 @@
     flex-shrink: 0;
   }
   .members-menu:hover {
-    background: var(--hairline-soft);
-    color: var(--text-primary);
+    background: var(--hover-tint);
+    color: var(--hover-blue);
   }
   .members-menu svg { width: 14px; height: 14px; }
 
@@ -2148,6 +2158,10 @@
     cursor: pointer;
     transition: background 0.12s, color 0.12s;
   }
+  .analytics-range-btn:hover:not(.active) {
+    background: var(--hover-tint);
+    color: var(--hover-blue);
+  }
   .analytics-range-btn.active {
     background: var(--bg);
     color: var(--text-primary);
@@ -2171,8 +2185,8 @@
     z-index: 2;
   }
   .analytics-close:hover {
-    background: var(--bg-soft);
-    color: var(--text-primary);
+    background: var(--hover-tint);
+    color: var(--hover-blue);
   }
   .analytics-close svg { width: 16px; height: 16px; }
 
