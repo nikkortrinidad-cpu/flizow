@@ -4361,7 +4361,7 @@ document.addEventListener('click', function(e){
   if(e.target.closest('.assignee-dropdown')) return;
   if(e.target.closest('#assigneeAddBtn')) return;
   closeAssigneeDropdown();
-});
+}, true);
 document.addEventListener('keydown', function(e){
   if(e.key === 'Escape' && _assigneeDropdownEl) closeAssigneeDropdown();
 });
