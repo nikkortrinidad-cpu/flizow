@@ -1144,6 +1144,14 @@
   .replies .replies > .comment:not(:last-child)::after {
     left: -94px;
   }
+  /* nested first-child does NOT extend the line up — the outer thread already
+     runs continuously through this area, so we only draw the elbow itself.
+     Without this override the nested ::before would stack a duplicate
+     border-left on top of the outer thread and render a visible double line. */
+  .replies .replies > .comment:first-child::before {
+    top: 0;
+    height: 13px;
+  }
   /* light-mode thread color */
   :root[data-theme="light"] .replies { --thread: rgba(0,0,0,0.22); }
 
