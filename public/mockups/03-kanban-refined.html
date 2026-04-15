@@ -298,11 +298,13 @@
   }
   .column[data-dot="todo"]     .column-dot { background: #0a84ff; }
   .column[data-dot="progress"] .column-dot { background: #ff9f0a; }
+  .column[data-dot="blocked"]  .column-dot { background: #ff453a; }
   .column[data-dot="review"]   .column-dot { background: #bf5af2; }
   .column[data-dot="done"]     .column-dot { background: #30d158; }
   /* left-edge status accent — same language as the overdue card border */
   .column[data-dot="todo"]     { box-shadow: inset 2px 0 0 #0a84ff; }
   .column[data-dot="progress"] { box-shadow: inset 2px 0 0 #ff9f0a; }
+  .column[data-dot="blocked"]  { box-shadow: inset 2px 0 0 #ff453a; }
   .column[data-dot="review"]   { box-shadow: inset 2px 0 0 #bf5af2; }
   .column[data-dot="done"]     { box-shadow: inset 2px 0 0 #30d158; }
   .column-title {
@@ -1698,6 +1700,7 @@
   }
   .settings-list-row[data-dot="todo"]     .settings-list-dot { background: #0a84ff; }
   .settings-list-row[data-dot="progress"] .settings-list-dot { background: #ff9f0a; }
+  .settings-list-row[data-dot="blocked"]  .settings-list-dot { background: #ff453a; }
   .settings-list-row[data-dot="review"]   .settings-list-dot { background: #bf5af2; }
   .settings-list-row[data-dot="done"]     .settings-list-dot { background: #30d158; }
   .settings-list-row[data-dot="gray"]     .settings-list-dot { background: var(--text-faint); }
@@ -1840,7 +1843,7 @@
       <div class="cmdk-group">
         <div class="cmdk-group-label">On this board</div>
         <div class="cmdk-item active"><div class="cmdk-icon">T</div><div class="cmdk-item-main"><div class="cmdk-item-title">Implement responsive navigation menu</div><div class="cmdk-item-sub">In Progress · Nikko Trinidad · High priority</div></div><div class="cmdk-item-kbd">↵</div></div>
-        <div class="cmdk-item"><div class="cmdk-icon">T</div><div class="cmdk-item-main"><div class="cmdk-item-title">Homepage layout with CMS integration</div><div class="cmdk-item-sub">In Review · Waiting on client feedback</div></div></div>
+        <div class="cmdk-item"><div class="cmdk-icon">T</div><div class="cmdk-item-main"><div class="cmdk-item-title">Homepage layout with CMS integration</div><div class="cmdk-item-sub">Needs Review · Waiting on client feedback</div></div></div>
       </div>
       <div class="cmdk-group">
         <div class="cmdk-group-label">Clients</div>
@@ -1882,7 +1885,7 @@
       <div class="column-title-group">
         <span class="column-dot"></span>
         <div class="column-title">To Do</div>
-        <div class="column-count">3</div>
+        <div class="column-count">2</div>
       </div>
       <div class="column-menu-wrap"><button class="column-menu" onclick="toggleColMenu(event)" aria-label="List options">⋯</button></div>
     </div>
@@ -1914,19 +1917,6 @@
           <div class="card-assignee">ML</div>
         </div>
       </div>
-      <div class="card">
-        <div class="card-top">
-          <div class="card-labels"><span class="card-label">Dev</span></div>
-          <div class="card-due due-blocked"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>Blocked</div>
-        </div>
-        <div class="card-title">Set up staging environment</div>
-        <div class="card-footer">
-          <div class="card-meta">
-            <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>1</span>
-          </div>
-          <div class="card-assignee">AS</div>
-        </div>
-      </div>
       <button class="add-card-btn" onclick="addCardStart(this)">＋ Add Card</button>
     </div>
   </div>
@@ -1937,7 +1927,7 @@
       <div class="column-title-group">
         <span class="column-dot"></span>
         <div class="column-title">In Progress</div>
-        <div class="column-count">3</div>
+        <div class="column-count">2</div>
       </div>
       <div class="column-menu-wrap"><button class="column-menu" onclick="toggleColMenu(event)" aria-label="List options">⋯</button></div>
     </div>
@@ -1973,6 +1963,21 @@
           <div class="card-assignee">JK</div>
         </div>
       </div>
+      <button class="add-card-btn" onclick="addCardStart(this)">＋ Add Card</button>
+    </div>
+  </div>
+
+  <!-- Blocked Column -->
+  <div class="column" data-dot="blocked">
+    <div class="column-header">
+      <div class="column-title-group">
+        <span class="column-dot"></span>
+        <div class="column-title">Blocked</div>
+        <div class="column-count">2</div>
+      </div>
+      <div class="column-menu-wrap"><button class="column-menu" onclick="toggleColMenu(event)" aria-label="List options">⋯</button></div>
+    </div>
+    <div class="column-cards">
       <div class="card" data-priority="high">
         <div class="card-top">
           <div class="card-labels"><span class="card-label">Bug</span></div>
@@ -1986,16 +1991,29 @@
           <div class="card-assignee">AS</div>
         </div>
       </div>
+      <div class="card">
+        <div class="card-top">
+          <div class="card-labels"><span class="card-label">Dev</span></div>
+          <div class="card-due due-blocked"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>Blocked · 3d</div>
+        </div>
+        <div class="card-title">Set up staging environment</div>
+        <div class="card-footer">
+          <div class="card-meta">
+            <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>1</span>
+          </div>
+          <div class="card-assignee">AS</div>
+        </div>
+      </div>
       <button class="add-card-btn" onclick="addCardStart(this)">＋ Add Card</button>
     </div>
   </div>
 
-  <!-- In Review Column -->
+  <!-- Needs Review Column -->
   <div class="column" data-dot="review">
     <div class="column-header">
       <div class="column-title-group">
         <span class="column-dot"></span>
-        <div class="column-title">In Review</div>
+        <div class="column-title">Needs Review</div>
         <div class="column-count">1</div>
       </div>
       <div class="column-menu-wrap"><button class="column-menu" onclick="toggleColMenu(event)" aria-label="List options">⋯</button></div>
@@ -2502,10 +2520,21 @@
             <button class="settings-row-action warn" title="Archive list"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/></svg></button>
             <button class="settings-row-action danger" title="Delete list"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg></button>
           </div>
+          <div class="settings-list-row" data-dot="blocked">
+            <span class="settings-drag-handle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="5" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="9" cy="19" r="1"/><circle cx="15" cy="5" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="19" r="1"/></svg></span>
+            <span class="settings-list-dot" title="Color: Red"></span>
+            <input class="settings-row-input" type="text" value="Blocked">
+            <div class="settings-wip">
+              <span class="settings-wip-label">WIP</span>
+              <input class="settings-wip-input" type="number" value="2" min="0">
+            </div>
+            <button class="settings-row-action warn" title="Archive list"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/></svg></button>
+            <button class="settings-row-action danger" title="Delete list"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg></button>
+          </div>
           <div class="settings-list-row" data-dot="review">
             <span class="settings-drag-handle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="5" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="9" cy="19" r="1"/><circle cx="15" cy="5" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="19" r="1"/></svg></span>
             <span class="settings-list-dot"></span>
-            <input class="settings-row-input" type="text" value="In Review">
+            <input class="settings-row-input" type="text" value="Needs Review">
             <div class="settings-wip">
               <span class="settings-wip-label">WIP</span>
               <input class="settings-wip-input" type="number" value="2" min="0">
