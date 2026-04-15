@@ -390,6 +390,19 @@
     font-size: 18px;
     font-weight: 600;
     color: var(--text-primary);
+    position: relative;
+  }
+  /* urgency: red badge on count when a card is overdue or blocked */
+  .column.collapsed:has(.due-overdue) .column-count::after,
+  .column.collapsed:has(.due-blocked) .column-count::after {
+    content: '';
+    position: absolute;
+    top: -2px;
+    right: -9px;
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 0 2px var(--bg);
   }
   .column.collapsed .column-title {
     writing-mode: vertical-rl;
@@ -2182,22 +2195,14 @@ function toggleColMenu(e){
   var isOpen = existing.classList.toggle('open');
   btn.classList.toggle('open', isOpen);
 }
-function colAction(e, action){
-  e.stopPropagation();
-  var col = e.currentTarget.closest('.column');
-  var menu = e.currentTarget.closest('.col-menu');
-  var btn = col.querySelector('.column-menu');
-  if(menu) menu.classList.remove('open');
-  if(btn) btn.classList.remove('open');
+function runColAction(col, action){
   switch(action){
     case 'collapse': col.classList.toggle('collapsed'); break;
     case 'duplicate': {
       var clone = col.cloneNode(true);
-      // reset any inline open/hidden state on the clone
       clone.classList.remove('collapsed');
       var titleEl = clone.querySelector('.column-title');
       if(titleEl) titleEl.textContent = titleEl.textContent + ' (copy)';
-      // remove any attached col-menu so it rebuilds fresh
       var m = clone.querySelector('.col-menu'); if(m) m.remove();
       var cm = clone.querySelector('.column-menu'); if(cm) cm.classList.remove('open');
       col.parentNode.insertBefore(clone, col.nextSibling);
@@ -2214,22 +2219,86 @@ function colAction(e, action){
     case 'delete': col.remove(); break;
   }
 }
+function colAction(e, action){
+  e.stopPropagation();
+  var col = e.currentTarget.closest('.column');
+  var menu = e.currentTarget.closest('.col-menu');
+  var btn = col.querySelector('.column-menu');
+  if(menu) menu.classList.remove('open');
+  if(btn) btn.classList.remove('open');
+  runColAction(col, action);
+}
+/* right-click context menu for collapsed columns */
+var _ctxCol = null;
+function openColContextMenu(e, col){
+  closeColContextMenu();
+  _ctxCol = col;
+  var items = COL_MENU_ITEMS.filter(function(it){ return it.action !== 'collapse'; });
+  var html = items.map(function(it){
+    if(it.divider) return '<div class="col-menu-divider"></div>';
+    var cls = 'col-menu-item' + (it.cls ? ' ' + it.cls : '');
+    return '<div class="' + cls + '" onclick="colCtxAction(event, \'' + it.action + '\')">' +
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' + it.icon + '</svg>' +
+      it.label +
+    '</div>';
+  }).join('');
+  var menu = document.createElement('div');
+  menu.id = 'colCtxMenu';
+  menu.className = 'col-menu open';
+  menu.innerHTML = html;
+  menu.style.position = 'fixed';
+  menu.style.zIndex = '100';
+  menu.style.visibility = 'hidden';
+  document.body.appendChild(menu);
+  /* clamp to viewport */
+  var rect = menu.getBoundingClientRect();
+  var left = Math.min(e.clientX, window.innerWidth - rect.width - 8);
+  var top = Math.min(e.clientY, window.innerHeight - rect.height - 8);
+  menu.style.left = Math.max(8, left) + 'px';
+  menu.style.top = Math.max(8, top) + 'px';
+  menu.style.visibility = 'visible';
+}
+function colCtxAction(e, action){
+  e.stopPropagation();
+  var col = _ctxCol;
+  closeColContextMenu();
+  if(col) runColAction(col, action);
+}
+function closeColContextMenu(){
+  var existing = document.getElementById('colCtxMenu');
+  if(existing) existing.remove();
+  _ctxCol = null;
+}
+document.addEventListener('contextmenu', function(e){
+  var col = e.target.closest('.column.collapsed');
+  if(!col) return;
+  e.preventDefault();
+  openColContextMenu(e, col);
+});
 document.addEventListener('click', function(e){
+  // don't expand when the click is inside a menu (incl. floating ctx menu)
+  if(e.target.closest('.col-menu')){ return; }
   // expand a collapsed column on any click within it
   var collapsedCol = e.target.closest('.column.collapsed');
   if(collapsedCol){
+    closeColContextMenu();
     collapsedCol.classList.remove('collapsed');
     return;
   }
-  if(e.target.closest('.col-menu')) return;
   if(e.target.closest('.column-menu')) return;
-  document.querySelectorAll('.col-menu.open').forEach(function(m){ m.classList.remove('open'); });
+  document.querySelectorAll('.col-menu.open').forEach(function(m){
+    if(m.id !== 'colCtxMenu') m.classList.remove('open');
+  });
   document.querySelectorAll('.column-menu.open').forEach(function(b){ b.classList.remove('open'); });
+  closeColContextMenu();
 });
 document.addEventListener('keydown', function(e){
   if(e.key === 'Escape'){
-    document.querySelectorAll('.col-menu.open').forEach(function(m){ m.classList.remove('open'); });
+    document.querySelectorAll('.col-menu.open').forEach(function(m){
+      if(m.id !== 'colCtxMenu') m.classList.remove('open');
+    });
     document.querySelectorAll('.column-menu.open').forEach(function(b){ b.classList.remove('open'); });
+    closeColContextMenu();
   }
 });
 function switchSidebarTab(tab){
