@@ -1227,12 +1227,11 @@
   }
   .replies-toggle.expanded .chev { transform: rotate(90deg); }
   /* ── Comment thread connectors ──
-     Bridge-line + elbow + mask system (matches live site pattern).
-     No JavaScript measurement needed — pure CSS with :has().
-     • Bridge: vertical line on parent comment-body, from avatar bottom
-       to bottom:0, covering all replies.
-     • Elbow: L-shaped curve on each reply connecting bridge to avatar.
-     • Mask: bg-colored rect on last reply hiding excess bridge below.  */
+     DOM-element approach copied from the live React site:
+     • Bridge div: vertical 2px line inside parent .comment-body
+     • Elbow SVG: quadratic bezier curve on each reply
+     • Mask div: bg-colored rect on last reply to hide excess bridge
+     Zero pseudo-elements. Zero JavaScript measurement. */
   .replies {
     display: none;
     position: relative;
@@ -1249,6 +1248,7 @@
   .replies .comment-avatar {
     width: 26px; height: 26px;
     font-size: 10px;
+    position: relative; z-index: 10;  /* above connector lines */
   }
   .replies .comment-bubble { border-radius: 12px; padding: 8px 12px; }
 
@@ -1256,35 +1256,27 @@
   :root               { --thread: rgba(0,0,0,0.22); }
   :root[data-theme="dark"] { --thread: rgba(255,255,255,0.32); }
 
-  /* ── Bridge line: vertical spine from parent avatar through all replies ── */
-  .comment-body:has(> .replies.open)::before {
-    content: '';
+  /* Bridge line: vertical spine inside parent .comment-body */
+  .bridge-line {
     position: absolute;
-    left: -26px;   /* top-level avatar center: 32/2 = 16, minus (32+10) = -26 */
-    top: 32px;     /* below 32px avatar */
-    bottom: 0;
     width: 2px;
     background: var(--thread);
     pointer-events: none;
   }
-  /* Reply-level bridge (26px avatars) */
-  .replies .comment-body:has(> .replies.open)::before {
-    left: -23px;   /* reply avatar center: 26/2 = 13, minus (26+10) = -23 */
-    top: 26px;     /* below 26px avatar */
-  }
-
-  /* ── Elbow: curves from bridge into each reply's avatar ── */
-  .replies > .comment::before {
-    content: '';
+  /* Mask: hides bridge below last reply's elbow */
+  .bridge-mask {
     position: absolute;
-    left: -30px;   /* reaches back to bridge line (= replies padding-left) */
-    top: 0;
-    width: 30px;
-    height: 13px;  /* half of 26px reply avatar */
-    border-left: 2px solid var(--thread);
-    border-bottom: 2px solid var(--thread);
-    border-bottom-left-radius: 12px;
+    width: 2px;
+    background: var(--bg-faint);
     pointer-events: none;
+    z-index: 1;
+  }
+  /* SVG elbow: curves from bridge to reply avatar */
+  .elbow-svg {
+    position: absolute;
+    pointer-events: none;
+    z-index: 2;
+    color: var(--thread);
   }
 
   /* ── Nested replies ── */
@@ -1292,29 +1284,6 @@
     margin-top: 8px;
     margin-left: 28px;
     padding-left: 0;
-  }
-  /* Nested elbow: wider reach from parent-reply bridge to nested avatar
-     Distance = nested margin-left(28) + reply avatar offset(23) = 51 */
-  .replies .replies > .comment::before {
-    left: -51px;
-    width: 51px;
-  }
-
-  /* ── Mask: hides bridge below the last reply's avatar center ── */
-  .replies > .comment:last-child::after {
-    content: '';
-    position: absolute;
-    left: -30px;
-    top: 13px;     /* from avatar center down */
-    bottom: 0;
-    width: 2px;
-    background: var(--bg-faint);
-    pointer-events: none;
-    z-index: 1;
-  }
-  /* Nested mask: covers reply-level bridge at different x */
-  .replies .replies > .comment:last-child::after {
-    left: -51px;
   }
 
   /* activity log */
@@ -3240,6 +3209,8 @@
         <div class="comment">
           <div class="comment-avatar">JC</div>
           <div class="comment-body">
+            <!-- Bridge line: top-level avatar(32) → bottom of replies -->
+            <div class="bridge-line" style="left:-26px;top:32px;bottom:0"></div>
             <div class="comment-bubble">
               <div class="comment-author">Joshua Castilla</div>
               <div class="comment-text">I think we should use a more prominent gradient. The current design feels flat.</div>
@@ -3254,8 +3225,12 @@
             </button>
             <div class="replies open" data-reply-count="3">
               <div class="comment">
+                <!-- SVG elbow: curves from bridge to SC avatar -->
+                <svg class="elbow-svg" style="left:-30px;top:-2px;width:30px;height:16px" fill="none" overflow="visible"><path d="M 1 0 Q 1 15 15 15 L 30 15" stroke="currentColor" stroke-width="2"/></svg>
                 <div class="comment-avatar">SC</div>
                 <div class="comment-body">
+                  <!-- Bridge line: reply avatar(26) → bottom of nested replies -->
+                  <div class="bridge-line" style="left:-23px;top:26px;bottom:0"></div>
                   <div class="comment-bubble you">
                     <div class="comment-author">Sarah Chen <span class="you-badge">You</span></div>
                     <div class="comment-text"><span class="mention">@Joshua</span> Thanks for the feedback! I'll explore gradient options today.</div>
@@ -3270,6 +3245,10 @@
                   </button>
                   <div class="replies open" data-reply-count="1">
                     <div class="comment">
+                      <!-- Mask: last nested reply, hides SC bridge below -->
+                      <div class="bridge-mask" style="left:-51px;top:-2px;bottom:0"></div>
+                      <!-- SVG elbow: from SC bridge to nested JC avatar -->
+                      <svg class="elbow-svg" style="left:-51px;top:-2px;width:51px;height:16px" fill="none" overflow="visible"><path d="M 1 0 Q 1 15 15 15 L 51 15" stroke="currentColor" stroke-width="2"/></svg>
                       <div class="comment-avatar">JC</div>
                       <div class="comment-body">
                         <div class="comment-bubble">
@@ -3287,6 +3266,10 @@
                 </div>
               </div>
               <div class="comment">
+                <!-- Mask: last outer reply, hides JC bridge below -->
+                <div class="bridge-mask" style="left:-30px;top:-2px;bottom:0"></div>
+                <!-- SVG elbow: from JC bridge to NT avatar -->
+                <svg class="elbow-svg" style="left:-30px;top:-2px;width:30px;height:16px" fill="none" overflow="visible"><path d="M 1 0 Q 1 15 15 15 L 30 15" stroke="currentColor" stroke-width="2"/></svg>
                 <div class="comment-avatar">NT</div>
                 <div class="comment-body">
                   <div class="comment-bubble you">
@@ -4935,23 +4918,80 @@ function openReplyComposer(comment){
   ta.focus();
 }
 
+/* ── Connector helpers (matching live site DOM approach) ── */
+function makeElbowSvg(w, ac){
+  // w = elbow width, ac = avatar center (half avatar size)
+  var y = ac + 2;
+  var svg = document.createElementNS('http://www.w3.org/2000/svg','svg');
+  svg.setAttribute('class','elbow-svg');
+  svg.setAttribute('fill','none');
+  svg.setAttribute('overflow','visible');
+  svg.style.cssText = 'left:-'+w+'px;top:-2px;width:'+w+'px;height:'+(ac+3)+'px';
+  var path = document.createElementNS('http://www.w3.org/2000/svg','path');
+  path.setAttribute('d','M 1 0 Q 1 '+y+' '+y+' '+y+' L '+w+' '+y);
+  path.setAttribute('stroke','currentColor');
+  path.setAttribute('stroke-width','2');
+  svg.appendChild(path);
+  return svg;
+}
+function makeBridgeMask(leftPx){
+  var d = document.createElement('div');
+  d.className = 'bridge-mask';
+  d.style.cssText = 'left:-'+leftPx+'px;top:-2px;bottom:0';
+  return d;
+}
+function makeBridgeLine(leftPx, topPx){
+  var d = document.createElement('div');
+  d.className = 'bridge-line';
+  d.style.cssText = 'left:-'+leftPx+'px;top:'+topPx+'px;bottom:0';
+  return d;
+}
+
 function sendReply(parentComment, text){
   text = (text || '').trim();
   if(!text) return;
   var body = parentComment.querySelector(':scope > .comment-body');
   if(!body) return;
+  var isNested = parentComment.closest('.replies') !== null;
   var replies = body.querySelector(':scope > .replies');
+  var isFirstReply = !replies;
   if(!replies){
     replies = document.createElement('div');
     replies.className = 'replies open';
     replies.setAttribute('data-reply-count', '0');
     body.appendChild(replies);
+    /* Add bridge line to parent comment-body */
+    var bLeft = isNested ? 23 : 26;
+    var bTop = isNested ? 26 : 32;
+    body.insertBefore(makeBridgeLine(bLeft, bTop), body.firstChild);
   }
+
+  /* Remove mask from previous last reply */
+  var prevLast = replies.querySelector(':scope > .comment:last-child');
+  if(prevLast){
+    var oldMask = prevLast.querySelector(':scope > .bridge-mask');
+    if(oldMask) oldMask.remove();
+  }
+
+  /* Determine elbow width for this nesting level */
+  var elbowW = 30; /* default for first-level replies */
+  var parentReplies = replies.parentElement && replies.parentElement.closest('.replies');
+  if(parentReplies){
+    /* nested reply: wider elbow reaching back to grandparent bridge */
+    elbowW = 51;
+  }
+
   var now = new Date();
   var stamp = now.toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
   var node = document.createElement('div');
   node.className = 'comment';
-  node.innerHTML =
+
+  /* Add mask (new last reply) + elbow SVG before avatar */
+  node.appendChild(makeBridgeMask(elbowW));
+  node.appendChild(makeElbowSvg(elbowW, 13));
+
+  var inner = document.createElement('div');
+  inner.innerHTML =
     '<div class="comment-avatar">NT</div>' +
     '<div class="comment-body">' +
       '<div class="comment-bubble you">' +
@@ -4960,6 +5000,8 @@ function sendReply(parentComment, text){
       '</div>' +
       '<div class="comment-meta"><span>' + stamp + '</span><button>Reply</button></div>' +
     '</div>';
+  while(inner.firstChild) node.appendChild(inner.firstChild);
+
   replies.appendChild(node);
   replies.classList.add('open');
 
