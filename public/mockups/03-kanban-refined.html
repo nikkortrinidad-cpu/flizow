@@ -1226,12 +1226,15 @@
     transition: transform 0.15s;
   }
   .replies-toggle.expanded .chev { transform: rotate(90deg); }
-  /* ── replies: avatar-to-avatar connector (thread + elbow) ── */
+  /* ── replies: avatar-to-avatar connector (thread + elbow) ──
+     All vertical distances are set via CSS custom properties by
+     updateThreadConnectors() in JS — nothing is hardcoded, so
+     connectors adapt to any content height or nesting depth.   ── */
   .replies {
     display: none;
     position: relative;
     margin-top: 10px;
-    margin-left: -26px;   /* pulls thread line to parent avatar center (body=+42, parent-avatar-center=+16 → -26) */
+    margin-left: -26px;   /* aligns thread line with parent avatar center */
     padding-left: 30px;   /* reply content indent, past the elbow */
     --thread: rgba(255,255,255,0.32);
   }
@@ -1247,58 +1250,56 @@
   }
   .replies .comment-bubble { border-radius: 12px; padding: 8px 12px; }
 
-  /* elbow: vertical-down then curves into avatar center */
+  /* elbow: curves from the vertical thread into the reply avatar center */
   .replies > .comment::before {
     content: '';
     position: absolute;
     top: 0;
     left: -30px;
     width: 30px;
-    height: 13px; /* reply avatar center */
+    height: 13px; /* half of 26px reply avatar */
     border-left: 2px solid var(--thread);
     border-bottom: 2px solid var(--thread);
     border-bottom-left-radius: 12px;
     pointer-events: none;
   }
-  /* first reply extends the line up to meet the parent avatar's bottom
-     (gap from parent-avatar-bottom to first-reply-avatar-center ≈ 121px) */
+  /* first reply: elbow extends UP to meet the parent avatar's bottom —
+     --thread-up is calculated by JS (distance from parent avatar bottom
+     to this reply's avatar center) */
   .replies > .comment:first-child::before {
-    top: -108px;
-    height: 121px;
+    top: calc(-1 * var(--thread-up, 0px));
+    height: calc(var(--thread-up, 0px) + 13px);
   }
-  /* continuation between siblings: extends from avatar center of this reply
-     down through its margin-bottom to meet the next reply's elbow top */
+  /* continuation between siblings: vertical line from this avatar center
+     down through the margin gap to the next reply's elbow top */
   .replies > .comment:not(:last-child)::after {
     content: '';
     position: absolute;
     left: -30px;
     top: 13px;
-    bottom: -14px;
+    bottom: -14px; /* bridges the 14px margin-bottom gap */
     width: 2px;
     background: var(--thread);
     pointer-events: none;
   }
 
-  /* nested replies: reuse the outer thread line — elbow just stretches further
-     to reach the indented nested avatar, so the whole sidebar reads as one
-     continuous thread instead of stacked parallel columns */
+  /* ── nested replies ── */
   .replies .replies {
     margin-top: 8px;
-    margin-left: 28px;  /* shift the nested reply block right to show hierarchy */
+    margin-left: 28px;
     padding-left: 0;
   }
-  /* elbow spans from the outer thread (94px left of the indented nested avatar) */
+  /* nested elbow: stretches from the outer thread to the indented avatar —
+     --elbow-w is calculated by JS */
   .replies .replies > .comment::before {
-    left: -94px;
-    width: 94px;
+    left: calc(-1 * var(--elbow-w, 30px));
+    width: var(--elbow-w, 30px);
   }
   .replies .replies > .comment:not(:last-child)::after {
-    left: -94px;
+    left: calc(-1 * var(--elbow-w, 30px));
   }
-  /* nested first-child does NOT extend the line up — the outer thread already
-     runs continuously through this area, so we only draw the elbow itself.
-     Without this override the nested ::before would stack a duplicate
-     border-left on top of the outer thread and render a visible double line. */
+  /* nested first-child: does NOT extend the line up — the outer thread
+     already covers this vertical span. Only draw the horizontal elbow. */
   .replies .replies > .comment:first-child::before {
     top: 0;
     height: 13px;
@@ -4102,6 +4103,8 @@ function openCardPanel(cardEl){
   document.body.style.overflow = 'hidden';
   recalcChecklistProgress();
   updateSendState();
+  /* recalculate thread connectors after layout settles */
+  requestAnimationFrame(updateThreadConnectors);
 }
 
 function setStatusDisplay(key){
@@ -4657,6 +4660,43 @@ function switchSidebarTab(tab){
     c.classList.toggle('active', c.dataset.tab === tab);
   });
 }
+/* ───── Thread connector calculator ─────
+   Measures actual DOM positions and sets CSS custom properties so
+   connector lines adapt to any content height or nesting depth.
+   Called on card open, reply toggle, and after adding a reply. */
+function updateThreadConnectors(){
+  document.querySelectorAll('.replies.open').forEach(function(repliesEl){
+    var commentBody = repliesEl.closest('.comment-body');
+    if(!commentBody) return;
+    var parentComment = commentBody.parentElement;
+    var parentAvatar = parentComment.querySelector(':scope > .comment-avatar');
+    if(!parentAvatar) return;
+
+    var firstReply = repliesEl.querySelector(':scope > .comment');
+    if(!firstReply) return;
+    var firstReplyAvatar = firstReply.querySelector('.comment-avatar');
+    if(!firstReplyAvatar) return;
+
+    /* --thread-up: distance from parent avatar bottom to first reply avatar center */
+    var parentBottom = parentAvatar.getBoundingClientRect().bottom;
+    var replyCenterY = firstReplyAvatar.getBoundingClientRect().top + firstReplyAvatar.getBoundingClientRect().height / 2;
+    var threadUp = Math.max(0, Math.round(replyCenterY - parentBottom));
+    firstReply.style.setProperty('--thread-up', threadUp + 'px');
+
+    /* --elbow-w for nested replies: distance from outer thread X to nested avatar X */
+    var nestedBlocks = repliesEl.querySelectorAll('.replies.open');
+    nestedBlocks.forEach(function(nested){
+      var outerLeft = repliesEl.getBoundingClientRect().left;
+      nested.querySelectorAll(':scope > .comment').forEach(function(nr){
+        var nAvatar = nr.querySelector('.comment-avatar');
+        if(!nAvatar) return;
+        var elbowW = Math.max(0, Math.round(nAvatar.getBoundingClientRect().left - outerLeft));
+        nr.style.setProperty('--elbow-w', elbowW + 'px');
+      });
+    });
+  });
+}
+
 function toggleReplies(btn){
   btn.classList.toggle('expanded');
   var replies = btn.nextElementSibling;
@@ -4667,6 +4707,8 @@ function toggleReplies(btn){
     var word = (count == 1) ? 'reply' : 'replies';
     textEl.textContent = (btn.classList.contains('expanded') ? 'Hide ' : 'View ') + count + ' ' + word;
   }
+  /* recalculate all connectors after toggle */
+  requestAnimationFrame(updateThreadConnectors);
 }
 function toggleChecklistItem(btn){
   btn.classList.toggle('checked');
@@ -4972,6 +5014,7 @@ function sendReply(parentComment, text){
   }
 
   node.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  requestAnimationFrame(updateThreadConnectors);
 }
 
 /* Reply button click → open composer (event delegation on sidebar) */
