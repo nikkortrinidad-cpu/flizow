@@ -1137,7 +1137,7 @@
     font-size: 11px; font-weight: 700;
     flex-shrink: 0;
   }
-  .comment-body { flex: 1; min-width: 0; }
+  .comment-body { flex: 1; min-width: 0; position: relative; }
   .comment-bubble {
     background: var(--bg-elev);
     border: 1px solid var(--hairline-soft);
@@ -1226,17 +1226,19 @@
     transition: transform 0.15s;
   }
   .replies-toggle.expanded .chev { transform: rotate(90deg); }
-  /* ── replies: avatar-to-avatar connector (thread + elbow) ──
-     All vertical distances are set via CSS custom properties by
-     updateThreadConnectors() in JS — nothing is hardcoded, so
-     connectors adapt to any content height or nesting depth.   ── */
+  /* ── Comment thread connectors ──
+     Bridge-line + elbow + mask system (matches live site pattern).
+     No JavaScript measurement needed — pure CSS with :has().
+     • Bridge: vertical line on parent comment-body, from avatar bottom
+       to bottom:0, covering all replies.
+     • Elbow: L-shaped curve on each reply connecting bridge to avatar.
+     • Mask: bg-colored rect on last reply hiding excess bridge below.  */
   .replies {
     display: none;
     position: relative;
     margin-top: 10px;
     margin-left: -26px;   /* aligns thread line with parent avatar center */
     padding-left: 30px;   /* reply content indent, past the elbow */
-    --thread: rgba(255,255,255,0.32);
   }
   .replies.open { display: block; }
   .replies > .comment {
@@ -1250,62 +1252,70 @@
   }
   .replies .comment-bubble { border-radius: 12px; padding: 8px 12px; }
 
-  /* elbow: curves from the vertical thread into the reply avatar center */
+  /* thread color */
+  :root               { --thread: rgba(0,0,0,0.22); }
+  :root[data-theme="dark"] { --thread: rgba(255,255,255,0.32); }
+
+  /* ── Bridge line: vertical spine from parent avatar through all replies ── */
+  .comment-body:has(> .replies.open)::before {
+    content: '';
+    position: absolute;
+    left: -26px;   /* top-level avatar center: 32/2 = 16, minus (32+10) = -26 */
+    top: 32px;     /* below 32px avatar */
+    bottom: 0;
+    width: 2px;
+    background: var(--thread);
+    pointer-events: none;
+  }
+  /* Reply-level bridge (26px avatars) */
+  .replies .comment-body:has(> .replies.open)::before {
+    left: -23px;   /* reply avatar center: 26/2 = 13, minus (26+10) = -23 */
+    top: 26px;     /* below 26px avatar */
+  }
+
+  /* ── Elbow: curves from bridge into each reply's avatar ── */
   .replies > .comment::before {
     content: '';
     position: absolute;
+    left: -30px;   /* reaches back to bridge line (= replies padding-left) */
     top: 0;
-    left: -30px;
     width: 30px;
-    height: 13px; /* half of 26px reply avatar */
+    height: 13px;  /* half of 26px reply avatar */
     border-left: 2px solid var(--thread);
     border-bottom: 2px solid var(--thread);
     border-bottom-left-radius: 12px;
     pointer-events: none;
   }
-  /* first reply: elbow extends UP to meet the parent avatar's bottom —
-     --thread-up is calculated by JS (distance from parent avatar bottom
-     to this reply's avatar center) */
-  .replies > .comment:first-child::before {
-    top: calc(-1 * var(--thread-up, 0px));
-    height: calc(var(--thread-up, 0px) + 13px);
-  }
-  /* continuation between siblings: vertical line from this avatar center
-     down through the margin gap to the next reply's elbow top */
-  .replies > .comment:not(:last-child)::after {
-    content: '';
-    position: absolute;
-    left: -30px;
-    top: 13px;
-    bottom: -14px; /* bridges the 14px margin-bottom gap */
-    width: 2px;
-    background: var(--thread);
-    pointer-events: none;
-  }
 
-  /* ── nested replies ── */
+  /* ── Nested replies ── */
   .replies .replies {
     margin-top: 8px;
     margin-left: 28px;
     padding-left: 0;
   }
-  /* nested elbow: stretches from the outer thread to the indented avatar —
-     --elbow-w is calculated by JS */
+  /* Nested elbow: wider reach from parent-reply bridge to nested avatar
+     Distance = nested margin-left(28) + reply avatar offset(23) = 51 */
   .replies .replies > .comment::before {
-    left: calc(-1 * var(--elbow-w, 30px));
-    width: var(--elbow-w, 30px);
+    left: -51px;
+    width: 51px;
   }
-  .replies .replies > .comment:not(:last-child)::after {
-    left: calc(-1 * var(--elbow-w, 30px));
+
+  /* ── Mask: hides bridge below the last reply's avatar center ── */
+  .replies > .comment:last-child::after {
+    content: '';
+    position: absolute;
+    left: -30px;
+    top: 13px;     /* from avatar center down */
+    bottom: 0;
+    width: 2px;
+    background: var(--bg-faint);
+    pointer-events: none;
+    z-index: 1;
   }
-  /* nested first-child: does NOT extend the line up — the outer thread
-     already covers this vertical span. Only draw the horizontal elbow. */
-  .replies .replies > .comment:first-child::before {
-    top: 0;
-    height: 13px;
+  /* Nested mask: covers reply-level bridge at different x */
+  .replies .replies > .comment:last-child::after {
+    left: -51px;
   }
-  /* light-mode thread color */
-  :root[data-theme="light"] .replies { --thread: rgba(0,0,0,0.22); }
 
   /* activity log */
   .activity-list { display: flex; flex-direction: column; gap: 16px; }
@@ -4103,8 +4113,6 @@ function openCardPanel(cardEl){
   document.body.style.overflow = 'hidden';
   recalcChecklistProgress();
   updateSendState();
-  /* recalculate thread connectors after layout settles */
-  requestAnimationFrame(updateThreadConnectors);
 }
 
 function setStatusDisplay(key){
@@ -4660,42 +4668,9 @@ function switchSidebarTab(tab){
     c.classList.toggle('active', c.dataset.tab === tab);
   });
 }
-/* ───── Thread connector calculator ─────
-   Measures actual DOM positions and sets CSS custom properties so
-   connector lines adapt to any content height or nesting depth.
-   Called on card open, reply toggle, and after adding a reply. */
-function updateThreadConnectors(){
-  document.querySelectorAll('.replies.open').forEach(function(repliesEl){
-    var commentBody = repliesEl.closest('.comment-body');
-    if(!commentBody) return;
-    var parentComment = commentBody.parentElement;
-    var parentAvatar = parentComment.querySelector(':scope > .comment-avatar');
-    if(!parentAvatar) return;
-
-    var firstReply = repliesEl.querySelector(':scope > .comment');
-    if(!firstReply) return;
-    var firstReplyAvatar = firstReply.querySelector('.comment-avatar');
-    if(!firstReplyAvatar) return;
-
-    /* --thread-up: distance from parent avatar bottom to first reply avatar center */
-    var parentBottom = parentAvatar.getBoundingClientRect().bottom;
-    var replyCenterY = firstReplyAvatar.getBoundingClientRect().top + firstReplyAvatar.getBoundingClientRect().height / 2;
-    var threadUp = Math.max(0, Math.round(replyCenterY - parentBottom));
-    firstReply.style.setProperty('--thread-up', threadUp + 'px');
-
-    /* --elbow-w for nested replies: distance from outer thread X to nested avatar X */
-    var nestedBlocks = repliesEl.querySelectorAll('.replies.open');
-    nestedBlocks.forEach(function(nested){
-      var outerLeft = repliesEl.getBoundingClientRect().left;
-      nested.querySelectorAll(':scope > .comment').forEach(function(nr){
-        var nAvatar = nr.querySelector('.comment-avatar');
-        if(!nAvatar) return;
-        var elbowW = Math.max(0, Math.round(nAvatar.getBoundingClientRect().left - outerLeft));
-        nr.style.setProperty('--elbow-w', elbowW + 'px');
-      });
-    });
-  });
-}
+/* Thread connectors are now pure CSS (bridge + elbow + mask) —
+   no JavaScript measurement needed. See the CSS comment block
+   above .replies for the full explanation. */
 
 function toggleReplies(btn){
   btn.classList.toggle('expanded');
@@ -4707,8 +4682,6 @@ function toggleReplies(btn){
     var word = (count == 1) ? 'reply' : 'replies';
     textEl.textContent = (btn.classList.contains('expanded') ? 'Hide ' : 'View ') + count + ' ' + word;
   }
-  /* recalculate all connectors after toggle */
-  requestAnimationFrame(updateThreadConnectors);
 }
 function toggleChecklistItem(btn){
   btn.classList.toggle('checked');
@@ -5014,7 +4987,6 @@ function sendReply(parentComment, text){
   }
 
   node.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-  requestAnimationFrame(updateThreadConnectors);
 }
 
 /* Reply button click → open composer (event delegation on sidebar) */
