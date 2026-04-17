@@ -6170,8 +6170,25 @@ function toggleReaction(e, pill){
   }
 
   if(count <= 0){
+    var meta = pill.closest('.comment-meta');
     pill.classList.add('leaving');
-    setTimeout(function(){ if(pill.parentNode) pill.parentNode.removeChild(pill); }, 160);
+    setTimeout(function(){
+      if(pill.parentNode) pill.parentNode.removeChild(pill);
+      // If this was the last reaction pill in the meta row, restore
+      // an 'Add reaction' button so the user can still react again.
+      if(meta && !meta.querySelector('.reaction-pill')){
+        if(!meta.querySelector('button.add-reaction-btn') && !_metaHasAddReactionLabel(meta)){
+          var addBtn = document.createElement('button');
+          addBtn.className = 'add-reaction-btn';
+          addBtn.type = 'button';
+          addBtn.textContent = 'Add reaction';
+          // Insert just before the Reply button if present, else at the end
+          var reply = _findReplyButton(meta);
+          if(reply) meta.insertBefore(addBtn, reply);
+          else meta.appendChild(addBtn);
+        }
+      }
+    }, 160);
   } else {
     pill.textContent = emoji + ' ' + count;
     // Replay pop animation
@@ -6180,6 +6197,22 @@ function toggleReaction(e, pill){
     void pill.offsetWidth;
     pill.classList.add('popping');
   }
+}
+
+function _metaHasAddReactionLabel(meta){
+  var btns = meta.querySelectorAll('button');
+  for(var i=0;i<btns.length;i++){
+    if((btns[i].textContent || '').trim() === 'Add reaction') return true;
+  }
+  return false;
+}
+
+function _findReplyButton(meta){
+  var btns = meta.querySelectorAll('button');
+  for(var i=0;i<btns.length;i++){
+    if((btns[i].textContent || '').trim() === 'Reply') return btns[i];
+  }
+  return null;
 }
 
 function handleReactionKey(e){
