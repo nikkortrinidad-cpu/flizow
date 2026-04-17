@@ -5762,6 +5762,70 @@ function updateSendState(){
   group.classList.toggle('disabled', !hasText);
 }
 
+/* ──────────────────────────────────────────────────────────
+   Persistence: user's test comments survive page refreshes
+   ────────────────────────────────────────────────────────── */
+var _TEST_COMMENTS_KEY = 'refined-test-comments';
+function _loadTestComments(){
+  try {
+    var raw = localStorage.getItem(_TEST_COMMENTS_KEY);
+    if(!raw) return [];
+    var arr = JSON.parse(raw);
+    return Array.isArray(arr) ? arr : [];
+  } catch(e){ return []; }
+}
+function _saveTestComments(arr){
+  try { localStorage.setItem(_TEST_COMMENTS_KEY, JSON.stringify(arr)); }
+  catch(e){ /* quota or disabled localStorage — silently ignore */ }
+}
+function _buildSentCommentNode(safeHtml, stamp){
+  var node = document.createElement('div');
+  node.className = 'comment persisted-comment';
+  node.innerHTML =
+    '<div class="comment-avatar">NT</div>' +
+    '<div class="comment-body">' +
+      '<div class="comment-bubble you">' +
+        '<div class="comment-author">Nikko Trinidad <span class="you-badge">You</span></div>' +
+        '<div class="comment-text">' + safeHtml + '</div>' +
+      '</div>' +
+      '<div class="comment-meta"><span>' + escapeHtml(stamp) + '</span><button class="add-reaction-btn" onclick="openReactionPicker(this)">Add reaction</button><button>Reply</button></div>' +
+    '</div>';
+  return node;
+}
+function _restorePersistedComments(){
+  var content = document.querySelector('.sidebar-content[data-tab="comments"]');
+  if(!content) return;
+  var saved = _loadTestComments();
+  if(!saved.length) return;
+  var inputWrap = content.querySelector('.comment-input-wrap');
+  var tabCount = document.querySelector('.sidebar-tab[data-tab="comments"] .tab-count');
+  saved.forEach(function(entry){
+    // Always re-sanitize on load — defends against any tampering with storage
+    var safe = _sanitizeCommentHtml(entry.html || '');
+    if(!safe) return;
+    var node = _buildSentCommentNode(safe, entry.stamp || '');
+    if(inputWrap) content.insertBefore(node, inputWrap);
+    else content.appendChild(node);
+    if(tabCount){
+      var n = parseInt(tabCount.textContent, 10);
+      if(!isNaN(n)) tabCount.textContent = (n + 1);
+    }
+  });
+}
+if(document.readyState === 'loading'){
+  document.addEventListener('DOMContentLoaded', _restorePersistedComments);
+} else {
+  setTimeout(_restorePersistedComments, 0);
+}
+/* Dev helper — type clearTestComments() in the console to wipe them */
+window.clearTestComments = function(){
+  try { localStorage.removeItem(_TEST_COMMENTS_KEY); } catch(e){}
+  document.querySelectorAll('.comment.persisted-comment').forEach(function(n){ n.remove(); });
+  var tabCount = document.querySelector('.sidebar-tab[data-tab="comments"] .tab-count');
+  if(tabCount) tabCount.textContent = document.querySelectorAll('.sidebar-content[data-tab="comments"] > .comment').length;
+  if(typeof showToast === 'function') showToast('Test comments cleared');
+};
+
 function sendComment(){
   var input = document.getElementById('commentInput');
   if(!input) return;
@@ -5769,21 +5833,10 @@ function sendComment(){
   if(!plain) return;
   var safeHtml = _sanitizeCommentHtml(input.innerHTML);
   var content = document.querySelector('.sidebar-content[data-tab="comments"]');
+  var now = new Date();
+  var stamp = now.toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
   if(content){
-    var now = new Date();
-    var stamp = now.toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
-    var node = document.createElement('div');
-    node.className = 'comment';
-    node.innerHTML =
-      '<div class="comment-avatar">NT</div>' +
-      '<div class="comment-body">' +
-        '<div class="comment-bubble you">' +
-          '<div class="comment-author">Nikko Trinidad <span class="you-badge">You</span></div>' +
-          '<div class="comment-text">' + safeHtml + '</div>' +
-        '</div>' +
-        '<div class="comment-meta"><span>' + stamp + '</span><button class="add-reaction-btn" onclick="openReactionPicker(this)">Add reaction</button><button>Reply</button></div>' +
-      '</div>';
-    // append before the comment-input-wrap if it's inside, else at the end
+    var node = _buildSentCommentNode(safeHtml, stamp);
     var inputWrap = content.querySelector('.comment-input-wrap');
     if(inputWrap) content.insertBefore(node, inputWrap);
     else content.appendChild(node);
@@ -5796,6 +5849,11 @@ function sendComment(){
     // scroll the new comment into view
     node.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   }
+  // Persist so it survives a refresh
+  var all = _loadTestComments();
+  all.push({ html: safeHtml, stamp: stamp });
+  _saveTestComments(all);
+
   input.innerHTML = '';
   updateSendState();
 }
