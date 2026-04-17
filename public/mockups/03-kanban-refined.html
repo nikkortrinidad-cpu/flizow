@@ -1589,14 +1589,27 @@
   }
   .reaction-emoji-btn:active,
   .emoji-picker-btn:active { transform: scale(0.96); }
-  /* A subtle heading above the emoji grid — optional */
+  /* Subtle heading above each emoji category */
   .emoji-picker-heading {
     font-size: 10px;
     font-weight: 600;
     color: var(--text-faint);
     text-transform: uppercase;
     letter-spacing: 0.08em;
-    padding: 4px 6px 6px;
+    padding: 8px 6px 6px;
+    position: sticky;
+    top: 0;
+    background: var(--bg-elev);
+    z-index: 1;
+  }
+  .emoji-picker-heading:first-child { padding-top: 2px; }
+  /* Allow the picker to scroll when emoji set is large */
+  .emoji-picker.scrollable {
+    max-height: min(360px, 70vh);
+    overflow-y: auto;
+  }
+  .emoji-picker.scrollable .emoji-picker-grid + .emoji-picker-heading {
+    margin-top: 2px;
   }
   @media (prefers-reduced-motion: reduce) {
     .reaction-picker, .emoji-picker { animation: none; }
@@ -6780,15 +6793,59 @@ document.addEventListener('DOMContentLoaded', function(){
 /* ═══════════════════════════════════════════════════════════
    Comment editor — emoji insert picker (smiley-face button)
    ─────────────────────────────────────────────────────────── */
-var EMOJI_INSERT_SET = [
-  '😊','😂','🤣','😍','😎','🥳',
-  '😅','🤔','😐','😕','😮','😳',
-  '😴','😔','😭','😤','🤯','🤗',
-  '👍','👎','👏','🙌','🙏','💪',
-  '❤️','💙','💚','💛','💜','💔',
-  '💯','🔥','✨','⭐','🌟','⚡',
-  '🎉','🎊','🚀','🎯','🏆','💡'
+var EMOJI_INSERT_CATEGORIES = [
+  { name: 'Smileys & People', items: [
+    '😊','😂','🤣','😍','😎','🥳',
+    '😅','🤔','😐','😕','😮','😳',
+    '😴','😭','😤','🤯','🤗','🙃',
+    '😇','🥰','🤩','😏','😢','🥺',
+    '😬','😌','😪','🤓','🙄','😑'
+  ]},
+  { name: 'Gestures & Body', items: [
+    '👍','👎','👏','🙌','🙏','💪',
+    '👌','✌️','🤞','🤝','👋','🤲'
+  ]},
+  { name: 'Hearts & Love', items: [
+    '❤️','🧡','💛','💚','💙','💜',
+    '🤎','🖤','🤍','💔','💕','💖'
+  ]},
+  { name: 'Animals & Nature', items: [
+    '🐶','🐱','🐭','🐹','🐰','🦊',
+    '🐻','🐼','🐨','🐯','🦁','🐮',
+    '🐷','🐵','🦄','🐝','🌸','🌻'
+  ]},
+  { name: 'Food & Drink', items: [
+    '🍎','🍊','🍌','🍉','🍓','🍍',
+    '🥑','🍅','🌽','🥕','🍕','🍔',
+    '🍟','🌮','🍣','🍜','☕','🍺'
+  ]},
+  { name: 'Activities', items: [
+    '⚽','🏀','🏈','⚾','🎾','🏐',
+    '🎮','🎸','🎨','🎯','🎲','🏆'
+  ]},
+  { name: 'Travel & Places', items: [
+    '🚗','✈️','🚀','🚢','🏠','🏢',
+    '🌆','🌈','🏖️','🏔️','🌋','🗺️'
+  ]},
+  { name: 'Objects', items: [
+    '💻','📱','⌚','📷','🔑','🔒',
+    '🔓','📎','✂️','📌','📍','💡',
+    '🔋','📅','📖','📝','📊','📈'
+  ]},
+  { name: 'Symbols', items: [
+    '💯','🔥','✨','⭐','🌟','⚡',
+    '☀️','🌙','☁️','🎉','🎊','✅',
+    '❌','⚠️','⏰','🔔','📢','➡️'
+  ]}
 ];
+// Flat export (kept for any legacy refs)
+var EMOJI_INSERT_SET = (function(){
+  var out = [];
+  EMOJI_INSERT_CATEGORIES.forEach(function(c){
+    c.items.forEach(function(e){ out.push(e); });
+  });
+  return out;
+})();
 
 var _emojiInsertPickerEl = null;
 var _emojiInsertAnchor = null;
@@ -6807,7 +6864,7 @@ function openEmojiInsertPicker(anchorBtn){
   _emojiInsertSavedRange = _savedRange ? _savedRange.cloneRange() : null;
 
   var picker = document.createElement('div');
-  picker.className = 'emoji-picker open';
+  picker.className = 'emoji-picker open scrollable';
   picker.setAttribute('role', 'menu');
   picker.setAttribute('aria-label', 'Insert emoji');
   picker.style.position = 'fixed';
@@ -6815,29 +6872,31 @@ function openEmojiInsertPicker(anchorBtn){
   picker.style.top = '0px';
   picker.style.left = '-9999px';
 
-  var heading = document.createElement('div');
-  heading.className = 'emoji-picker-heading';
-  heading.textContent = 'Frequently used';
-  picker.appendChild(heading);
+  EMOJI_INSERT_CATEGORIES.forEach(function(cat){
+    var heading = document.createElement('div');
+    heading.className = 'emoji-picker-heading';
+    heading.textContent = cat.name;
+    picker.appendChild(heading);
 
-  var grid = document.createElement('div');
-  grid.className = 'emoji-picker-grid';
-  EMOJI_INSERT_SET.forEach(function(emoji){
-    var b = document.createElement('button');
-    b.type = 'button';
-    b.className = 'emoji-picker-btn';
-    b.setAttribute('role', 'menuitem');
-    b.setAttribute('aria-label', 'Insert ' + emoji);
-    b.textContent = emoji;
-    b.addEventListener('click', function(ev){
-      ev.stopPropagation();
-      ev.preventDefault();
-      insertEmojiIntoEditor(emoji);
-      closeEmojiInsertPicker();
+    var grid = document.createElement('div');
+    grid.className = 'emoji-picker-grid';
+    cat.items.forEach(function(emoji){
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'emoji-picker-btn';
+      b.setAttribute('role', 'menuitem');
+      b.setAttribute('aria-label', 'Insert ' + emoji);
+      b.textContent = emoji;
+      b.addEventListener('click', function(ev){
+        ev.stopPropagation();
+        ev.preventDefault();
+        insertEmojiIntoEditor(emoji);
+        // Keep the picker open so rapid emoji inserts work
+      });
+      grid.appendChild(b);
     });
-    grid.appendChild(b);
+    picker.appendChild(grid);
   });
-  picker.appendChild(grid);
   document.body.appendChild(picker);
 
   _emojiInsertPickerEl = picker;
