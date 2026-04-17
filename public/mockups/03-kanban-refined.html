@@ -1581,7 +1581,9 @@
     background: rgba(0, 0, 0, 0.5);
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
-    z-index: 200;
+    /* Above card modal (1000) and share modal (1100) so it still works
+       when invoked from inside those contexts (e.g. "Manage labels"). */
+    z-index: 1300;
     display: none;
     align-items: center;
     justify-content: center;
@@ -5805,7 +5807,13 @@ document.querySelector('.card-modal').addEventListener('click', function(e){
 /* Escape closes card modal (in addition to existing handlers) */
 document.addEventListener('keydown', function(e){
   if(e.key === 'Escape'){
-    // Share modal takes priority if it's open — it stacks above the card modal.
+    // Any modal stacked above the card modal takes priority.
+    var settings = document.getElementById('settingsModal');
+    if(settings && settings.classList.contains('open')) return;
+    var analytics = document.getElementById('analyticsModal');
+    if(analytics && analytics.classList.contains('open')) return;
+    var members = document.getElementById('membersModal');
+    if(members && members.classList.contains('open')) return;
     var share = document.getElementById('shareOverlay');
     if(share && share.classList.contains('open')) return;
     var modal = document.getElementById('cardModalOverlay');
