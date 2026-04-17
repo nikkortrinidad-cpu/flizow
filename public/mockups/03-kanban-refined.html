@@ -1263,6 +1263,29 @@
     border-color: var(--hover-blue);
     color: var(--hover-blue);
   }
+  .checklist-new-row .checklist-checkbox {
+    opacity: 0.6;
+    pointer-events: none;
+  }
+  .checklist-new-input {
+    flex: 1;
+    min-width: 0;
+    background: var(--bg-faint);
+    border: 1px solid var(--text-faint);
+    border-radius: 6px;
+    color: var(--text);
+    font-family: inherit;
+    font-size: 13px;
+    letter-spacing: -0.01em;
+    padding: 3px 6px;
+    margin: -3px -6px;
+    outline: none;
+    transition: border-color 0.12s;
+  }
+  .checklist-new-input:focus { border-color: var(--hover-blue); }
+  .checklist-new-input::placeholder { color: var(--text-faint); }
+  .checklist-new-row .checklist-assignee { opacity: 0.7; }
+
   .checklist-add-row {
     display: flex; align-items: center; gap: 12px;
     padding: 8px 10px;
@@ -1274,6 +1297,9 @@
     border-radius: 8px;
     letter-spacing: -0.005em;
     transition: background 0.15s, color 0.15s;
+    text-align: left;
+    width: 100%;
+    font-family: inherit;
   }
   .checklist-add-row:hover { color: var(--hover-blue); background: var(--hover-tint); }
 
@@ -3725,7 +3751,16 @@
                 <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
               </span>
             </div>
-            <div class="checklist-add-row">＋ Add Task</div>
+            <div class="checklist-row checklist-new-row" id="checklistNewRow" style="display:none;">
+              <button class="checklist-checkbox" aria-label="New task (not yet saved)" tabindex="-1">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+              </button>
+              <input type="text" class="checklist-new-input" id="checklistNewInput" placeholder="Task description — press Enter to add" aria-label="New task description" autocomplete="off" onkeydown="handleNewTaskInputKey(event)" onblur="handleNewTaskBlur()">
+              <span class="checklist-assignee empty" aria-hidden="true">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+              </span>
+            </div>
+            <button class="checklist-add-row" id="checklistAddBtn" onclick="startAddTask()" aria-label="Add task">＋ Add Task</button>
           </div>
         </div>
 
@@ -6087,6 +6122,89 @@ function handleChecklistTextKey(e){
     el.textContent = el.dataset.orig || '';
     el.blur();              // commit will see the reverted text and keep it
   }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   Checklist — Add Task inline input (Apple Reminders-style)
+   ─────────────────────────────────────────────────────────── */
+function startAddTask(){
+  var btn = document.getElementById('checklistAddBtn');
+  var row = document.getElementById('checklistNewRow');
+  var input = document.getElementById('checklistNewInput');
+  if(!btn || !row || !input) return;
+  btn.style.display = 'none';
+  row.style.display = 'flex';
+  input.value = '';
+  // Suppress blur-based commit for this initial focus transition
+  setTimeout(function(){ input.focus(); }, 0);
+}
+
+function exitAddTask(){
+  var btn = document.getElementById('checklistAddBtn');
+  var row = document.getElementById('checklistNewRow');
+  var input = document.getElementById('checklistNewInput');
+  if(!btn || !row || !input) return;
+  _skipNextNewTaskBlur = true;     // avoid double-commit when blur fires during hide
+  input.value = '';
+  row.style.display = 'none';
+  btn.style.display = 'flex';
+}
+
+var _skipNextNewTaskBlur = false;
+
+function _buildChecklistRow(text){
+  var row = document.createElement('div');
+  row.className = 'checklist-row';
+  row.innerHTML =
+    '<button class="checklist-checkbox" onclick="toggleChecklistItem(this)" aria-label="Toggle">' +
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>' +
+    '</button>' +
+    '<span class="checklist-text" tabindex="0" role="textbox" aria-label="Edit task" onclick="startEditChecklistText(this)" onkeydown="handleChecklistTextKey(event)">' +
+      escapeHtml(text) +
+    '</span>' +
+    '<span class="checklist-assignee empty" data-assignee-id="" role="button" tabindex="0" aria-label="Unassigned. Click to assign." onclick="openChecklistAssigneePicker(event, this)" onkeydown="handleChecklistAssigneeKey(event)">' +
+      '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>' +
+    '</span>';
+  return row;
+}
+
+function _insertNewChecklistRow(text){
+  var row = _buildChecklistRow(text);
+  var anchor = document.getElementById('checklistNewRow');
+  if(anchor && anchor.parentNode){
+    anchor.parentNode.insertBefore(row, anchor);
+  }
+  if(typeof recalcChecklistProgress === 'function') recalcChecklistProgress();
+  return row;
+}
+
+function handleNewTaskInputKey(e){
+  var input = e.currentTarget;
+  if(e.key === 'Enter'){
+    e.preventDefault();
+    var text = (input.value || '').trim();
+    if(text){
+      _insertNewChecklistRow(text);
+      input.value = '';
+      input.focus();               // stay in add mode for rapid entry
+    } else {
+      exitAddTask();               // empty Enter = exit
+    }
+  } else if(e.key === 'Escape'){
+    e.preventDefault();
+    exitAddTask();
+  }
+}
+
+function handleNewTaskBlur(){
+  if(_skipNextNewTaskBlur){ _skipNextNewTaskBlur = false; return; }
+  var input = document.getElementById('checklistNewInput');
+  if(!input) return;
+  var text = (input.value || '').trim();
+  if(text){
+    _insertNewChecklistRow(text);
+  }
+  exitAddTask();
 }
 
 /* ═══════════════════════════════════════════════════════════
