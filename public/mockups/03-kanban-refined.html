@@ -912,11 +912,114 @@
   .label-bug { color: #ff7a73; }
   .label-content { color: #d291ff; }
   .label-dev { color: #7aeba2; }
+  .label-urgent { color: #ffb066; }
   :root:not([data-theme="dark"]) .label-design { color: #c81e46; }
   :root:not([data-theme="dark"]) .label-feature { color: #0058c9; }
   :root:not([data-theme="dark"]) .label-bug { color: #c92b1f; }
   :root:not([data-theme="dark"]) .label-content { color: #8e2bc4; }
   :root:not([data-theme="dark"]) .label-dev { color: #1d8f3e; }
+  :root:not([data-theme="dark"]) .label-urgent { color: #b85a00; }
+
+  /* Labels row — positioning parent for the add dropdown */
+  #metaLabelsRow { position: relative; flex-wrap: wrap; row-gap: 4px; }
+
+  /* New pill entering (added from dropdown) */
+  .meta-value .label-pill.entering {
+    animation: label-pill-in 180ms ease-out;
+  }
+  @keyframes label-pill-in {
+    from { opacity: 0; transform: scale(0.85); }
+    to   { opacity: 1; transform: scale(1); }
+  }
+
+  /* Label dropdown (mirrors assignee-dropdown) */
+  .label-dropdown {
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 0;
+    width: 240px;
+    background: var(--bg-elev);
+    border: 1px solid var(--hairline);
+    border-radius: 12px;
+    box-shadow: 0 12px 28px rgba(0,0,0,0.35);
+    padding: 6px;
+    z-index: 60;
+    display: none;
+    animation: label-menu-in 140ms ease-out;
+  }
+  .label-dropdown.open { display: block; }
+  @keyframes label-menu-in {
+    from { opacity: 0; transform: scale(0.97) translateY(-4px); }
+    to   { opacity: 1; transform: scale(1) translateY(0); }
+  }
+  .label-dropdown-search {
+    width: 100%; box-sizing: border-box;
+    padding: 7px 10px;
+    background: var(--bg-faint);
+    border: 1px solid var(--hairline);
+    border-radius: 8px;
+    color: var(--text); font-size: 13px;
+    font-family: inherit;
+    outline: none;
+    margin-bottom: 4px;
+    letter-spacing: -0.005em;
+  }
+  .label-dropdown-search:focus { border-color: var(--hover-blue); }
+  .label-dropdown-list { max-height: 260px; overflow-y: auto; }
+  .label-option {
+    display: flex; align-items: center; gap: 10px;
+    padding: 6px 8px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.12s;
+  }
+  .label-option:hover { background: var(--hover-tint); }
+  .label-option:focus-visible { background: var(--hover-tint); outline: none; }
+  .label-option .label-pill {
+    flex: 1;
+    min-width: 0;
+    display: inline-block;
+    padding: 2px 8px;
+    animation: none !important;
+  }
+  .label-option-check {
+    width: 14px; height: 14px;
+    color: var(--hover-blue);
+    opacity: 0;
+    flex-shrink: 0;
+  }
+  .label-option.is-selected .label-option-check { opacity: 1; }
+  .label-empty {
+    padding: 14px 10px;
+    text-align: center;
+    color: var(--text-faint);
+    font-size: 12px;
+  }
+  .label-dropdown-footer {
+    margin-top: 4px;
+    padding-top: 4px;
+    border-top: 1px solid var(--hairline-soft);
+  }
+  .label-dropdown-manage {
+    display: flex; align-items: center; gap: 8px;
+    width: 100%;
+    padding: 8px 10px;
+    background: transparent; border: none;
+    font-family: inherit;
+    font-size: 12px; font-weight: 500;
+    color: var(--text-muted);
+    letter-spacing: -0.005em;
+    border-radius: 8px;
+    cursor: pointer;
+    text-align: left;
+    transition: background 0.12s, color 0.12s;
+  }
+  .label-dropdown-manage:hover { background: var(--hover-tint); color: var(--hover-blue); }
+  .label-dropdown-manage svg { width: 12px; height: 12px; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .label-dropdown, .meta-value .label-pill.entering { animation: none; }
+  }
 
   /* Removable label pills (card modal metadata only) */
   .meta-value .label-pill {
@@ -3520,7 +3623,7 @@
             <div class="meta-value" id="metaLabelsRow">
               <span class="label-pill label-design" data-label="Design">Design<button class="label-pill-remove" onclick="removeLabelPill(event)" aria-label="Remove Design label" tabindex="0"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></span>
               <span class="label-pill label-feature" data-label="Feature">Feature<button class="label-pill-remove" onclick="removeLabelPill(event)" aria-label="Remove Feature label" tabindex="0"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></span>
-              <button class="assignee-add" aria-label="Add label" data-tip="Add label" data-tip-pos="below">+</button>
+              <button class="assignee-add" id="labelAddBtn" aria-label="Add label" data-tip="Add label" data-tip-pos="below" onclick="openLabelDropdown(event)">+</button>
             </div>
           </div>
           <!-- Row 3: When? -->
@@ -5884,8 +5987,50 @@ function renderCumFlow(){
 })();
 
 /* ═══════════════════════════════════════════════════════════
-   Removable label pills (card modal metadata)
+   Labels — removable pills + add dropdown (card modal metadata)
    ─────────────────────────────────────────────────────────── */
+var BOARD_LABELS = [
+  { id: 'bug',         name: 'Bug',         cls: 'label-bug' },
+  { id: 'feature',     name: 'Feature',     cls: 'label-feature' },
+  { id: 'improvement', name: 'Improvement', cls: 'label-dev' },
+  { id: 'urgent',      name: 'Urgent',      cls: 'label-urgent' },
+  { id: 'design',      name: 'Design',      cls: 'label-design' },
+  { id: 'research',    name: 'Research',    cls: 'label-content' }
+];
+
+function labelByName(name){
+  for(var i=0;i<BOARD_LABELS.length;i++){
+    if(BOARD_LABELS[i].name.toLowerCase() === String(name||'').toLowerCase()) return BOARD_LABELS[i];
+  }
+  return null;
+}
+
+function getCardLabelPillByName(row, name){
+  if(!row || !name) return null;
+  var pills = row.querySelectorAll('.label-pill[data-label]');
+  for(var i=0;i<pills.length;i++){
+    if(pills[i].dataset.label && pills[i].dataset.label.toLowerCase() === name.toLowerCase()){
+      if(!pills[i].classList.contains('leaving')) return pills[i];
+    }
+  }
+  return null;
+}
+
+function buildLabelPill(label){
+  var span = document.createElement('span');
+  span.className = 'label-pill ' + label.cls;
+  span.dataset.label = label.name;
+  span.textContent = label.name;
+  var btn = document.createElement('button');
+  btn.className = 'label-pill-remove';
+  btn.setAttribute('aria-label', 'Remove ' + label.name + ' label');
+  btn.setAttribute('onclick', 'removeLabelPill(event)');
+  btn.setAttribute('tabindex', '0');
+  btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
+  span.appendChild(btn);
+  return span;
+}
+
 function removeLabelPill(e){
   e.stopPropagation();
   var pill = e.currentTarget.closest('.label-pill');
@@ -5900,6 +6045,7 @@ function removeLabelPill(e){
   var detachTimer = setTimeout(function(){
     if(pill.parentNode) pill.parentNode.removeChild(pill);
     removed = true;
+    if(_labelDropdownEl) refreshLabelDropdown();
   }, 160);
 
   if(typeof showToast === 'function'){
@@ -5910,14 +6056,155 @@ function removeLabelPill(e){
         clearTimeout(detachTimer);
         pill.classList.remove('leaving');
         if(removed){
-          // Re-insert at original position
           if(next && next.parentNode === row) row.insertBefore(pill, next);
-          else row.appendChild(pill);
+          else {
+            // Keep + button at the end if it's there
+            var addBtn = row.querySelector('#labelAddBtn');
+            if(addBtn) row.insertBefore(pill, addBtn);
+            else row.appendChild(pill);
+          }
         }
+        if(_labelDropdownEl) refreshLabelDropdown();
       }
     });
   }
 }
+
+/* ───── Label add dropdown ───── */
+var _labelDropdownEl = null;
+var _labelSearchQuery = '';
+
+function openLabelDropdown(e){
+  e.stopPropagation();
+  if(_labelDropdownEl){ closeLabelDropdown(); return; }
+  if(typeof closeMetaDropdowns === 'function') closeMetaDropdowns();
+  var row = document.getElementById('metaLabelsRow');
+  if(!row) return;
+
+  var dd = document.createElement('div');
+  dd.className = 'label-dropdown open';
+  dd.innerHTML =
+    '<input type="text" class="label-dropdown-search" placeholder="Search labels…" aria-label="Search labels">' +
+    '<div class="label-dropdown-list" role="listbox"></div>' +
+    '<div class="label-dropdown-footer">' +
+      '<button type="button" class="label-dropdown-manage" onclick="manageLabelsFromDropdown()">' +
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>' +
+        'Manage labels' +
+      '</button>' +
+    '</div>';
+  row.appendChild(dd);
+  _labelDropdownEl = dd;
+  _labelSearchQuery = '';
+  refreshLabelDropdown();
+
+  var search = dd.querySelector('.label-dropdown-search');
+  search.addEventListener('input', function(){
+    _labelSearchQuery = this.value.toLowerCase().trim();
+    refreshLabelDropdown();
+  });
+  search.addEventListener('keydown', function(ev){
+    if(ev.key === 'Escape'){ ev.preventDefault(); closeLabelDropdown(); }
+    else if(ev.key === 'Enter'){
+      ev.preventDefault();
+      var first = dd.querySelector('.label-option');
+      if(first) first.click();
+    }
+  });
+  setTimeout(function(){ search.focus(); }, 0);
+}
+
+function refreshLabelDropdown(){
+  if(!_labelDropdownEl) return;
+  var list = _labelDropdownEl.querySelector('.label-dropdown-list');
+  if(!list) return;
+  list.innerHTML = '';
+  var row = document.getElementById('metaLabelsRow');
+  var q = _labelSearchQuery;
+  var shown = 0;
+  BOARD_LABELS.forEach(function(label){
+    if(q && label.name.toLowerCase().indexOf(q) < 0) return;
+    shown++;
+    var active = !!getCardLabelPillByName(row, label.name);
+    var opt = document.createElement('div');
+    opt.className = 'label-option' + (active ? ' is-selected' : '');
+    opt.setAttribute('role', 'option');
+    opt.setAttribute('tabindex', '0');
+    opt.setAttribute('aria-selected', active ? 'true' : 'false');
+    opt.innerHTML =
+      '<span class="label-pill ' + label.cls + '">' + escapeHtml(label.name) + '</span>' +
+      '<svg class="label-option-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+    opt.addEventListener('click', function(ev){
+      ev.stopPropagation();
+      toggleCardLabel(label);
+    });
+    opt.addEventListener('keydown', function(ev){
+      if(ev.key === 'Enter' || ev.key === ' '){
+        ev.preventDefault();
+        toggleCardLabel(label);
+      }
+    });
+    list.appendChild(opt);
+  });
+  if(shown === 0){
+    var empty = document.createElement('div');
+    empty.className = 'label-empty';
+    empty.textContent = q ? ('No labels match "' + q + '"') : 'No labels on this board';
+    list.appendChild(empty);
+  }
+}
+
+function toggleCardLabel(label){
+  var row = document.getElementById('metaLabelsRow');
+  if(!row) return;
+  var existing = getCardLabelPillByName(row, label.name);
+  if(existing){
+    // Silent removal (no toast — user sees the pill disappear; dropdown shows state)
+    existing.classList.add('leaving');
+    setTimeout(function(){
+      if(existing.parentNode) existing.parentNode.removeChild(existing);
+      if(_labelDropdownEl) refreshLabelDropdown();
+    }, 160);
+  } else {
+    var pill = buildLabelPill(label);
+    pill.classList.add('entering');
+    var addBtn = row.querySelector('#labelAddBtn');
+    if(addBtn) row.insertBefore(pill, addBtn);
+    else row.appendChild(pill);
+    setTimeout(function(){ pill.classList.remove('entering'); }, 200);
+  }
+  refreshLabelDropdown();
+}
+
+function closeLabelDropdown(){
+  if(_labelDropdownEl){
+    _labelDropdownEl.remove();
+    _labelDropdownEl = null;
+    _labelSearchQuery = '';
+  }
+}
+
+function manageLabelsFromDropdown(){
+  closeLabelDropdown();
+  if(typeof openSettings === 'function'){
+    openSettings();
+    // Settings modal has a Labels tab — the existing switcher handles activation
+    setTimeout(function(){
+      var tabBtn = document.querySelector('.settings-tab[data-tab="labels"]');
+      if(tabBtn) tabBtn.click();
+    }, 50);
+  }
+}
+
+document.addEventListener('click', function(e){
+  if(!_labelDropdownEl) return;
+  if(e.target.closest('.label-dropdown')) return;
+  if(e.target.closest('#labelAddBtn')) return;
+  closeLabelDropdown();
+}, true);
+
+document.addEventListener('keydown', function(e){
+  if(e.key === 'Escape' && _labelDropdownEl) closeLabelDropdown();
+});
 
 /* ═══════════════════════════════════════════════════════════
    Share Modal — invite, role picker, general access, copy link
