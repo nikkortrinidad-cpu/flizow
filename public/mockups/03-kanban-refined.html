@@ -1863,13 +1863,15 @@
     font-weight: 600;
   }
 
-  /* Attachment chip: real GIF thumbnail */
-  .attachment-thumb.giphy {
+  /* Attachment chip: real GIF or image thumbnail */
+  .attachment-thumb.giphy,
+  .attachment-thumb.image {
     background: var(--bg-soft);
     overflow: hidden;
     padding: 0;
   }
-  .attachment-thumb.giphy img {
+  .attachment-thumb.giphy img,
+  .attachment-thumb.image img {
     width: 100%; height: 100%;
     object-fit: cover;
     display: block;
@@ -4661,7 +4663,8 @@
               <button class="toolbar-btn" id="mentionToggleBtn" title="Mention someone" aria-label="Mention a team member" aria-pressed="false" onclick="openMentionDropdown(this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M16 8v5a3 3 0 0 0 6 0v-1a10 10 0 1 0-3.92 7.94"/></svg></button>
               <button class="toolbar-btn" id="emojiInsertBtn" title="Insert emoji" aria-label="Insert emoji" aria-pressed="false" onclick="openEmojiInsertPicker(this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg></button>
               <button class="toolbar-btn" id="gifToggleBtn" title="Add GIF" aria-label="Add a GIF" aria-pressed="false" onclick="openGifPicker(this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></button>
-              <button class="toolbar-btn" title="Attach"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg></button>
+              <button class="toolbar-btn" id="attachFileBtn" title="Attach file" aria-label="Attach a file" onclick="openFilePicker()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg></button>
+              <input type="file" id="commentFileInput" multiple hidden aria-hidden="true" onchange="handleFileInputChange(event)">
             </div>
             <div class="send-group disabled" id="sendGroup">
               <button class="send-btn" onclick="sendComment()">
@@ -7425,6 +7428,52 @@ function _loadGiphyGifs(container, query){
     });
 }
 
+/* ───── File attachments (paperclip → native file picker) ───── */
+function _humanFileSize(bytes){
+  if(!bytes || bytes < 0) return '0 B';
+  if(bytes < 1024) return bytes + ' B';
+  if(bytes < 1024*1024) return (bytes/1024).toFixed(1).replace(/\.0$/, '') + ' KB';
+  if(bytes < 1024*1024*1024) return (bytes/(1024*1024)).toFixed(1).replace(/\.0$/, '') + ' MB';
+  return (bytes/(1024*1024*1024)).toFixed(2) + ' GB';
+}
+
+function openFilePicker(){
+  var input = document.getElementById('commentFileInput');
+  if(input) input.click();
+}
+
+function handleFileInputChange(e){
+  var files = e.target.files || [];
+  for(var i = 0; i < files.length; i++){
+    attachFile(files[i]);
+  }
+  // Reset so re-selecting the same file fires change again
+  e.target.value = '';
+}
+
+function attachFile(file){
+  if(!file) return;
+  var c = _attachmentsContainer();
+  if(!c) return;
+
+  var isImage = (file.type || '').indexOf('image/') === 0;
+  var payload = {
+    kind: 'file',
+    label: file.name || 'Untitled',
+    sub: _humanFileSize(file.size || 0),
+    isImage: isImage
+  };
+
+  if(isImage && window.URL && URL.createObjectURL){
+    // Blob URL — session-bound, no server round-trip
+    payload.imageUrl = URL.createObjectURL(file);
+  }
+
+  var chip = _buildAttachmentChip(payload);
+  c.appendChild(chip);
+  _updateAttachmentsVisibility();
+}
+
 function attachGiphyGif(gif){
   var c = _attachmentsContainer();
   if(!c || !gif) return;
@@ -7490,14 +7539,26 @@ function _buildAttachmentChip(payload){
     thumb.classList.add('giphy');
     chip.dataset.url = payload.url || '';
     chip.dataset.thumbUrl = payload.thumbUrl || '';
-    var img = document.createElement('img');
-    img.src = payload.thumbUrl || payload.url;
-    img.alt = payload.label || 'GIF';
-    img.loading = 'lazy';
-    thumb.appendChild(img);
+    var gImg = document.createElement('img');
+    gImg.src = payload.thumbUrl || payload.url;
+    gImg.alt = payload.label || 'GIF';
+    gImg.loading = 'lazy';
+    thumb.appendChild(gImg);
   } else {
-    thumb.classList.add('file');
-    thumb.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><polyline points="13 2 13 9 20 9"/></svg>';
+    // File kind
+    if(payload.isImage && payload.imageUrl){
+      thumb.classList.add('image');
+      chip.dataset.imageUrl = payload.imageUrl;
+      chip.dataset.isImage = '1';
+      var fImg = document.createElement('img');
+      fImg.src = payload.imageUrl;
+      fImg.alt = payload.label || 'Image';
+      fImg.loading = 'lazy';
+      thumb.appendChild(fImg);
+    } else {
+      thumb.classList.add('file');
+      thumb.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><polyline points="13 2 13 9 20 9"/></svg>';
+    }
   }
   var label = document.createElement('span');
   label.className = 'attachment-label';
@@ -7573,7 +7634,9 @@ function _serializeAttachments(){
       out.push({
         kind: 'file',
         label: label,
-        sub: subEl ? subEl.textContent : ''
+        sub: subEl ? subEl.textContent : '',
+        isImage: chip.dataset.isImage === '1',
+        imageUrl: chip.dataset.imageUrl || ''
       });
     }
   });
@@ -7598,12 +7661,20 @@ function _renderAttachmentsForComment(attachments){
           '<img src="' + escapeHtml(a.url || a.thumbUrl || '') + '" alt="' + escapeHtml(a.label || 'GIF') + '" loading="lazy">' +
         '</div>';
     } else {
-      html +=
-        '<div class="attachment-chip">' +
-          '<div class="attachment-thumb file"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><polyline points="13 2 13 9 20 9"/></svg></div>' +
-          '<span class="attachment-label">' + escapeHtml(a.label || 'Attachment') + '</span>' +
-          (a.sub ? '<span class="attachment-sub">' + escapeHtml(a.sub) + '</span>' : '') +
-        '</div>';
+      // Image file with a live blob URL → inline preview
+      if(a.isImage && a.imageUrl){
+        html +=
+          '<div class="sent-gif" title="' + escapeHtml(a.label || 'Image') + '">' +
+            '<img src="' + escapeHtml(a.imageUrl) + '" alt="' + escapeHtml(a.label || 'Image') + '" loading="lazy">' +
+          '</div>';
+      } else {
+        html +=
+          '<div class="attachment-chip">' +
+            '<div class="attachment-thumb file"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><polyline points="13 2 13 9 20 9"/></svg></div>' +
+            '<span class="attachment-label">' + escapeHtml(a.label || 'Attachment') + '</span>' +
+            (a.sub ? '<span class="attachment-sub">' + escapeHtml(a.sub) + '</span>' : '') +
+          '</div>';
+      }
     }
   });
   html += '</div>';
