@@ -1617,6 +1617,146 @@
     .reaction-emoji-btn:hover, .reaction-emoji-btn:active,
     .emoji-picker-btn:hover, .emoji-picker-btn:active { transform: none; }
   }
+
+  /* GIF picker — 2 columns of colored preview tiles */
+  .gif-picker {
+    background: var(--bg-elev);
+    border: 1px solid var(--hairline);
+    border-radius: 12px;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.4);
+    padding: 10px;
+    display: none;
+    animation: reaction-picker-in 140ms ease-out;
+    transform-origin: top left;
+    width: 296px;
+  }
+  .gif-picker.open { display: block; }
+  .gif-picker-heading {
+    font-size: 10px; font-weight: 600;
+    color: var(--text-faint);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    padding: 2px 4px 8px;
+  }
+  .gif-picker-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+  .gif-tile {
+    height: 90px;
+    border: none; padding: 0;
+    border-radius: 10px;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center; justify-content: center;
+    gap: 6px;
+    font-family: inherit;
+    color: #ffffff;
+    font-size: 11px; font-weight: 600;
+    letter-spacing: -0.005em;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.18);
+    transition: transform 0.12s, filter 0.12s;
+    outline: none;
+    overflow: hidden;
+  }
+  .gif-tile:hover { transform: translateY(-1px); filter: brightness(1.08); }
+  .gif-tile:active { transform: translateY(0); filter: brightness(0.95); }
+  .gif-tile:focus-visible { box-shadow: 0 0 0 2px var(--hover-blue); }
+  .gif-tile-emoji {
+    font-size: 32px;
+    line-height: 1;
+    filter: drop-shadow(0 1px 3px rgba(0,0,0,0.2));
+  }
+
+  /* Attachment chips below the editor */
+  .comment-attachments {
+    display: none;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 8px;
+  }
+  .comment-attachments.has-items { display: flex; }
+  .attachment-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 4px 4px 6px;
+    background: var(--bg-soft);
+    border: 1px solid var(--hairline);
+    border-radius: 10px;
+    font-size: 11px;
+    color: var(--text);
+    max-width: 180px;
+    animation: chip-in 180ms ease-out;
+  }
+  @keyframes chip-in {
+    from { opacity: 0; transform: scale(0.92); }
+    to   { opacity: 1; transform: scale(1); }
+  }
+  .attachment-chip.leaving { animation: chip-out 140ms ease-in forwards; }
+  @keyframes chip-out {
+    to { opacity: 0; transform: scale(0.85); max-width: 0; padding: 0; margin: 0; border: 0; }
+  }
+  .attachment-thumb {
+    width: 28px; height: 28px;
+    border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px;
+    flex-shrink: 0;
+    color: #fff;
+    text-shadow: 0 1px 1px rgba(0,0,0,0.2);
+  }
+  .attachment-thumb.file {
+    background: var(--bg-soft);
+    color: var(--text-muted);
+    text-shadow: none;
+  }
+  .attachment-thumb.file svg { width: 14px; height: 14px; }
+  .attachment-label {
+    flex: 1; min-width: 0;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    font-weight: 500;
+    letter-spacing: -0.005em;
+  }
+  .attachment-sub {
+    font-size: 10px;
+    color: var(--text-muted);
+    margin-left: 4px;
+    flex-shrink: 0;
+  }
+  .attachment-remove {
+    width: 18px; height: 18px;
+    border: none; background: transparent;
+    border-radius: 50%;
+    color: var(--text-muted);
+    cursor: pointer;
+    display: inline-flex; align-items: center; justify-content: center;
+    padding: 0;
+    flex-shrink: 0;
+    transition: background 0.12s, color 0.12s;
+  }
+  .attachment-remove:hover { background: rgba(0,0,0,0.12); color: var(--text); }
+  :root[data-theme="dark"] .attachment-remove:hover { background: rgba(255,255,255,0.14); }
+  .attachment-remove svg { width: 12px; height: 12px; }
+
+  /* Attachment grid inside a sent comment bubble */
+  .comment-attachments-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 8px;
+  }
+  .comment-attachments-list .attachment-chip {
+    animation: none;
+    padding-right: 8px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .gif-picker, .attachment-chip { animation: none; transition: none; }
+    .gif-tile:hover, .gif-tile:active { transform: none; filter: none; }
+  }
   .replies-toggle {
     display: inline-flex; align-items: center; gap: 6px;
     margin-top: 8px;
@@ -4289,12 +4429,13 @@
           </div>
 
           <div id="commentInput" class="comment-input" contenteditable="true" role="textbox" aria-label="Write a comment" aria-multiline="true" data-placeholder="Write a comment…" oninput="updateSendState()" onkeydown="handleCommentKeyboardShortcut(event)"></div>
+          <div class="comment-attachments" id="commentAttachments" aria-label="Attached items"></div>
           <div class="comment-toolbar">
             <div class="toolbar-group">
               <button class="toolbar-btn" id="formatToggleBtn" title="Format (Aa)" aria-label="Toggle formatting toolbar" aria-pressed="false" onclick="toggleFormatToolbar()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 7 4 4 20 4 20 7"/><line x1="9" y1="20" x2="15" y2="20"/><line x1="12" y1="4" x2="12" y2="20"/></svg></button>
               <button class="toolbar-btn" id="mentionToggleBtn" title="Mention someone" aria-label="Mention a team member" aria-pressed="false" onclick="openMentionDropdown(this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M16 8v5a3 3 0 0 0 6 0v-1a10 10 0 1 0-3.92 7.94"/></svg></button>
               <button class="toolbar-btn" id="emojiInsertBtn" title="Insert emoji" aria-label="Insert emoji" aria-pressed="false" onclick="openEmojiInsertPicker(this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg></button>
-              <button class="toolbar-btn" title="GIF"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></button>
+              <button class="toolbar-btn" id="gifToggleBtn" title="Add GIF" aria-label="Add a GIF" aria-pressed="false" onclick="openGifPicker(this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></button>
               <button class="toolbar-btn" title="Attach"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg></button>
             </div>
             <div class="send-group disabled" id="sendGroup">
@@ -5789,7 +5930,9 @@ function updateSendState(){
   var group = document.getElementById('sendGroup');
   if(!input || !group) return;
   var hasText = !!_getCommentInputText(input);
-  group.classList.toggle('disabled', !hasText);
+  var attachContainer = document.getElementById('commentAttachments');
+  var hasAttachments = !!(attachContainer && attachContainer.querySelectorAll('.attachment-chip:not(.leaving)').length);
+  group.classList.toggle('disabled', !(hasText || hasAttachments));
 }
 
 /* ──────────────────────────────────────────────────────────
@@ -5808,15 +5951,18 @@ function _saveTestComments(arr){
   try { localStorage.setItem(_TEST_COMMENTS_KEY, JSON.stringify(arr)); }
   catch(e){ /* quota or disabled localStorage — silently ignore */ }
 }
-function _buildSentCommentNode(safeHtml, stamp){
+function _buildSentCommentNode(safeHtml, stamp, attachments){
   var node = document.createElement('div');
   node.className = 'comment persisted-comment';
+  var attachmentsHtml = _renderAttachmentsForComment(attachments || []);
+  var textHtml = safeHtml ? '<div class="comment-text">' + safeHtml + '</div>' : '';
   node.innerHTML =
     '<div class="comment-avatar">NT</div>' +
     '<div class="comment-body">' +
       '<div class="comment-bubble you">' +
         '<div class="comment-author">Nikko Trinidad <span class="you-badge">You</span></div>' +
-        '<div class="comment-text">' + safeHtml + '</div>' +
+        textHtml +
+        attachmentsHtml +
       '</div>' +
       '<div class="comment-meta"><span>' + escapeHtml(stamp) + '</span><button class="add-reaction-btn" onclick="openReactionPicker(this)">Add reaction</button><button>Reply</button></div>' +
     '</div>';
@@ -5832,8 +5978,9 @@ function _restorePersistedComments(){
   saved.forEach(function(entry){
     // Always re-sanitize on load — defends against any tampering with storage
     var safe = _sanitizeCommentHtml(entry.html || '');
-    if(!safe) return;
-    var node = _buildSentCommentNode(safe, entry.stamp || '');
+    var hasContent = !!safe || (entry.attachments && entry.attachments.length);
+    if(!hasContent) return;
+    var node = _buildSentCommentNode(safe, entry.stamp || '', entry.attachments || []);
     if(inputWrap) content.insertBefore(node, inputWrap);
     else content.appendChild(node);
     if(tabCount){
@@ -5860,13 +6007,14 @@ function sendComment(){
   var input = document.getElementById('commentInput');
   if(!input) return;
   var plain = _getCommentInputText(input);
-  if(!plain) return;
-  var safeHtml = _sanitizeCommentHtml(input.innerHTML);
+  var attachments = _serializeAttachments();
+  if(!plain && !attachments.length) return;     // need text OR attachments
+  var safeHtml = plain ? _sanitizeCommentHtml(input.innerHTML) : '';
   var content = document.querySelector('.sidebar-content[data-tab="comments"]');
   var now = new Date();
   var stamp = now.toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
   if(content){
-    var node = _buildSentCommentNode(safeHtml, stamp);
+    var node = _buildSentCommentNode(safeHtml, stamp, attachments);
     var inputWrap = content.querySelector('.comment-input-wrap');
     if(inputWrap) content.insertBefore(node, inputWrap);
     else content.appendChild(node);
@@ -5881,10 +6029,11 @@ function sendComment(){
   }
   // Persist so it survives a refresh
   var all = _loadTestComments();
-  all.push({ html: safeHtml, stamp: stamp });
+  all.push({ html: safeHtml, stamp: stamp, attachments: attachments });
   _saveTestComments(all);
 
   input.innerHTML = '';
+  _clearAttachments();
   updateSendState();
 }
 
@@ -6789,6 +6938,242 @@ document.addEventListener('DOMContentLoaded', function(){
     });
   }
 });
+
+/* ═══════════════════════════════════════════════════════════
+   Comment editor — GIF picker + attachment chips
+   ─────────────────────────────────────────────────────────── */
+var GIF_TILES = [
+  { label: 'LOL',         emoji: '😂', color: '#fbbf24' }, // yellow
+  { label: 'Celebrate',   emoji: '🎉', color: '#ec4899' }, // pink
+  { label: 'Thumbs Up',   emoji: '👍', color: '#3b82f6' }, // blue
+  { label: '100%',        emoji: '💯', color: '#ef4444' }, // red
+  { label: 'Fire',        emoji: '🔥', color: '#f97316' }, // orange
+  { label: 'Mind Blown',  emoji: '🤯', color: '#8b5cf6' }, // purple
+  { label: 'High Five',   emoji: '🙌', color: '#10b981' }, // emerald
+  { label: 'Wave',        emoji: '👋', color: '#14b8a6' }  // teal
+];
+
+var _gifPickerEl = null;
+var _gifAnchorBtn = null;
+
+function openGifPicker(anchorBtn){
+  if(_gifPickerEl){
+    var same = _gifAnchorBtn === anchorBtn;
+    closeGifPicker();
+    if(same) return;
+  }
+
+  var picker = document.createElement('div');
+  picker.className = 'gif-picker open';
+  picker.setAttribute('role', 'menu');
+  picker.setAttribute('aria-label', 'Pick a GIF');
+  picker.style.position = 'fixed';
+  picker.style.zIndex = '1150';
+  picker.style.top = '0px';
+  picker.style.left = '-9999px';
+
+  var heading = document.createElement('div');
+  heading.className = 'gif-picker-heading';
+  heading.textContent = 'Popular GIFs';
+  picker.appendChild(heading);
+
+  var grid = document.createElement('div');
+  grid.className = 'gif-picker-grid';
+  GIF_TILES.forEach(function(tile){
+    var b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'gif-tile';
+    b.setAttribute('role', 'menuitem');
+    b.setAttribute('aria-label', tile.label + ' GIF');
+    b.style.background = tile.color;
+    b.innerHTML =
+      '<span class="gif-tile-emoji" aria-hidden="true">' + tile.emoji + '</span>' +
+      '<span>' + escapeHtml(tile.label) + '</span>';
+    b.addEventListener('click', function(ev){
+      ev.stopPropagation();
+      ev.preventDefault();
+      attachGif(tile);
+      closeGifPicker();
+    });
+    grid.appendChild(b);
+  });
+  picker.appendChild(grid);
+  document.body.appendChild(picker);
+
+  _gifPickerEl = picker;
+  _gifAnchorBtn = anchorBtn;
+
+  // Anchor above the button; flip below if no room
+  var r = anchorBtn.getBoundingClientRect();
+  var w = picker.offsetWidth, h = picker.offsetHeight;
+  var top = r.top - h - 6;
+  var left = r.left;
+  if(top < 12) top = r.bottom + 6;
+  if(left + w > window.innerWidth - 12) left = window.innerWidth - 12 - w;
+  if(left < 12) left = 12;
+  picker.style.top = top + 'px';
+  picker.style.left = left + 'px';
+
+  anchorBtn.setAttribute('aria-pressed', 'true');
+  anchorBtn.classList.add('active');
+
+  setTimeout(function(){
+    var first = picker.querySelector('.gif-tile');
+    if(first) first.focus();
+  }, 0);
+}
+
+function closeGifPicker(){
+  if(_gifPickerEl){ _gifPickerEl.remove(); _gifPickerEl = null; }
+  if(_gifAnchorBtn){
+    _gifAnchorBtn.setAttribute('aria-pressed', 'false');
+    _gifAnchorBtn.classList.remove('active');
+    _gifAnchorBtn = null;
+  }
+}
+
+document.addEventListener('click', function(e){
+  if(!_gifPickerEl) return;
+  if(e.target.closest('.gif-picker')) return;
+  if(e.target.closest('#gifToggleBtn')) return;
+  closeGifPicker();
+}, true);
+
+document.addEventListener('keydown', function(e){
+  if(e.key === 'Escape' && _gifPickerEl) closeGifPicker();
+});
+
+/* ───── Attachment chips (shared by GIF and file-attach) ───── */
+function _attachmentsContainer(){
+  return document.getElementById('commentAttachments');
+}
+
+function _updateAttachmentsVisibility(){
+  var c = _attachmentsContainer();
+  if(!c) return;
+  c.classList.toggle('has-items', c.childNodes.length > 0);
+  // Also refresh Send state — an attachment alone should enable Send
+  updateSendState();
+}
+
+function _buildAttachmentChip(payload){
+  // payload: { kind: 'gif'|'file', label, emoji?, color?, sub? }
+  var chip = document.createElement('div');
+  chip.className = 'attachment-chip';
+  chip.dataset.kind = payload.kind;
+  if(payload.kind === 'gif'){
+    chip.dataset.emoji = payload.emoji || '';
+    chip.dataset.color = payload.color || '';
+  }
+  var thumb = document.createElement('div');
+  thumb.className = 'attachment-thumb' + (payload.kind === 'file' ? ' file' : '');
+  if(payload.kind === 'gif'){
+    thumb.style.background = payload.color || 'var(--bg-soft)';
+    thumb.textContent = payload.emoji || '';
+  } else {
+    // File icon
+    thumb.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><polyline points="13 2 13 9 20 9"/></svg>';
+  }
+  var label = document.createElement('span');
+  label.className = 'attachment-label';
+  label.textContent = payload.label || 'Attachment';
+  var sub = payload.sub ? (function(){
+    var s = document.createElement('span');
+    s.className = 'attachment-sub';
+    s.textContent = payload.sub;
+    return s;
+  })() : null;
+  var rm = document.createElement('button');
+  rm.type = 'button';
+  rm.className = 'attachment-remove';
+  rm.setAttribute('aria-label', 'Remove ' + (payload.label || 'attachment'));
+  rm.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
+  rm.addEventListener('click', function(){ removeAttachmentChip(chip); });
+  chip.appendChild(thumb);
+  chip.appendChild(label);
+  if(sub) chip.appendChild(sub);
+  chip.appendChild(rm);
+  return chip;
+}
+
+function attachGif(tile){
+  var c = _attachmentsContainer();
+  if(!c || !tile) return;
+  var chip = _buildAttachmentChip({
+    kind: 'gif',
+    label: tile.label,
+    emoji: tile.emoji,
+    color: tile.color
+  });
+  c.appendChild(chip);
+  _updateAttachmentsVisibility();
+}
+
+function removeAttachmentChip(chip){
+  if(!chip || !chip.parentNode) return;
+  chip.classList.add('leaving');
+  setTimeout(function(){
+    if(chip.parentNode) chip.parentNode.removeChild(chip);
+    _updateAttachmentsVisibility();
+  }, 140);
+}
+
+function _serializeAttachments(){
+  var c = _attachmentsContainer();
+  if(!c) return [];
+  var out = [];
+  c.querySelectorAll('.attachment-chip').forEach(function(chip){
+    if(chip.classList.contains('leaving')) return;
+    var kind = chip.dataset.kind || 'gif';
+    var label = chip.querySelector('.attachment-label').textContent || '';
+    if(kind === 'gif'){
+      out.push({
+        kind: 'gif',
+        label: label,
+        emoji: chip.dataset.emoji || '',
+        color: chip.dataset.color || ''
+      });
+    } else {
+      var subEl = chip.querySelector('.attachment-sub');
+      out.push({
+        kind: 'file',
+        label: label,
+        sub: subEl ? subEl.textContent : ''
+      });
+    }
+  });
+  return out;
+}
+
+function _renderAttachmentsForComment(attachments){
+  if(!attachments || !attachments.length) return '';
+  var html = '<div class="comment-attachments-list">';
+  attachments.forEach(function(a){
+    if(a.kind === 'gif'){
+      html +=
+        '<div class="attachment-chip">' +
+          '<div class="attachment-thumb" style="background:' + escapeHtml(a.color || '#8b5cf6') + '">' + escapeHtml(a.emoji || '') + '</div>' +
+          '<span class="attachment-label">' + escapeHtml(a.label || 'GIF') + '</span>' +
+        '</div>';
+    } else {
+      html +=
+        '<div class="attachment-chip">' +
+          '<div class="attachment-thumb file"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><polyline points="13 2 13 9 20 9"/></svg></div>' +
+          '<span class="attachment-label">' + escapeHtml(a.label || 'Attachment') + '</span>' +
+          (a.sub ? '<span class="attachment-sub">' + escapeHtml(a.sub) + '</span>' : '') +
+        '</div>';
+    }
+  });
+  html += '</div>';
+  return html;
+}
+
+function _clearAttachments(){
+  var c = _attachmentsContainer();
+  if(!c) return;
+  c.innerHTML = '';
+  _updateAttachmentsVisibility();
+}
 
 /* ═══════════════════════════════════════════════════════════
    Comment editor — emoji insert picker (smiley-face button)
