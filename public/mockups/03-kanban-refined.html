@@ -1213,8 +1213,29 @@
     flex: 1;
     color: var(--text);
     letter-spacing: -0.01em;
+    padding: 3px 6px;
+    margin: -3px -6px;
+    border-radius: 6px;
+    border: 1px solid transparent;
+    cursor: text;
+    transition: background 0.12s, border-color 0.12s;
+    min-width: 0;
+    outline: none;
+    word-break: break-word;
+  }
+  .checklist-row:hover .checklist-text { border-color: var(--hairline-soft); }
+  .checklist-text:focus,
+  .checklist-text[contenteditable="true"] {
+    background: var(--bg-faint);
+    border-color: var(--text-faint);
+    cursor: text;
   }
   .checklist-text.done { color: var(--text-faint); text-decoration: line-through; }
+  /* Strip strikethrough while editing a 'done' item so the text is clear */
+  .checklist-text.done[contenteditable="true"] {
+    color: var(--text);
+    text-decoration: none;
+  }
   .checklist-assignee {
     width: 24px; height: 24px;
     border-radius: 50%;
@@ -3658,35 +3679,35 @@
               <button class="checklist-checkbox" onclick="toggleChecklistItem(this)" aria-label="Toggle">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
               </button>
-              <span class="checklist-text">Research competitor hero sections</span>
+              <span class="checklist-text" tabindex="0" role="textbox" aria-label="Edit task" onclick="startEditChecklistText(this)" onkeydown="handleChecklistTextKey(event)">Research competitor hero sections</span>
               <span class="checklist-assignee">NT</span>
             </div>
             <div class="checklist-row">
               <button class="checklist-checkbox" onclick="toggleChecklistItem(this)" aria-label="Toggle">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
               </button>
-              <span class="checklist-text">Create initial sketches</span>
+              <span class="checklist-text" tabindex="0" role="textbox" aria-label="Edit task" onclick="startEditChecklistText(this)" onkeydown="handleChecklistTextKey(event)">Create initial sketches</span>
               <span class="checklist-assignee">SC</span>
             </div>
             <div class="checklist-row">
               <button class="checklist-checkbox checked" onclick="toggleChecklistItem(this)" aria-label="Toggle">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
               </button>
-              <span class="checklist-text done">Finalize color palette</span>
+              <span class="checklist-text done" tabindex="0" role="textbox" aria-label="Edit task" onclick="startEditChecklistText(this)" onkeydown="handleChecklistTextKey(event)">Finalize color palette</span>
               <span class="checklist-assignee">JC</span>
             </div>
             <div class="checklist-row">
               <button class="checklist-checkbox checked" onclick="toggleChecklistItem(this)" aria-label="Toggle">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
               </button>
-              <span class="checklist-text done">Update CSS and animations</span>
+              <span class="checklist-text done" tabindex="0" role="textbox" aria-label="Edit task" onclick="startEditChecklistText(this)" onkeydown="handleChecklistTextKey(event)">Update CSS and animations</span>
               <span class="checklist-assignee">SC</span>
             </div>
             <div class="checklist-row">
               <button class="checklist-checkbox" onclick="toggleChecklistItem(this)" aria-label="Toggle">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
               </button>
-              <span class="checklist-text">Get client feedback</span>
+              <span class="checklist-text" tabindex="0" role="textbox" aria-label="Edit task" onclick="startEditChecklistText(this)" onkeydown="handleChecklistTextKey(event)">Get client feedback</span>
               <span class="checklist-assignee empty">
                 <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
               </span>
@@ -5993,6 +6014,67 @@ function renderCumFlow(){
     }
   });
 })();
+
+/* ═══════════════════════════════════════════════════════════
+   Checklist items — click-to-edit inline text
+   ─────────────────────────────────────────────────────────── */
+function startEditChecklistText(el){
+  if(!el || el.getAttribute('contenteditable') === 'true') return;
+  el.dataset.orig = el.textContent;
+  el.setAttribute('contenteditable', 'true');
+  el.setAttribute('spellcheck', 'true');
+  el.focus();
+  // Select all text for quick replacement
+  try {
+    var range = document.createRange();
+    range.selectNodeContents(el);
+    var sel = window.getSelection();
+    sel.removeAllRanges();
+    sel.addRange(range);
+  } catch(err){}
+  // Attach one-time blur handler to save
+  el.addEventListener('blur', _commitChecklistEdit);
+}
+
+function _commitChecklistEdit(e){
+  var el = e.currentTarget;
+  el.removeEventListener('blur', _commitChecklistEdit);
+  el.removeAttribute('contenteditable');
+  el.removeAttribute('spellcheck');
+  // Flatten any pasted HTML — use textContent only
+  var text = (el.textContent || '').replace(/\s+/g, ' ').trim();
+  if(!text){
+    // Empty → revert to original (forgiveness)
+    el.textContent = el.dataset.orig || '';
+  } else {
+    el.textContent = text;
+  }
+  delete el.dataset.orig;
+  // Clear selection so nothing stays highlighted
+  try { window.getSelection().removeAllRanges(); } catch(err){}
+}
+
+function handleChecklistTextKey(e){
+  var el = e.currentTarget;
+  var isEditing = el.getAttribute('contenteditable') === 'true';
+  if(!isEditing){
+    // Not yet editing — keyboard activation
+    if(e.key === 'Enter' || e.key === ' '){
+      e.preventDefault();
+      startEditChecklistText(el);
+    }
+    return;
+  }
+  // Currently editing
+  if(e.key === 'Enter'){
+    e.preventDefault();
+    el.blur();              // triggers save via _commitChecklistEdit
+  } else if(e.key === 'Escape'){
+    e.preventDefault();
+    el.textContent = el.dataset.orig || '';
+    el.blur();              // commit will see the reverted text and keep it
+  }
+}
 
 /* ═══════════════════════════════════════════════════════════
    Labels — removable pills + add dropdown (card modal metadata)
