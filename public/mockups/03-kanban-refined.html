@@ -4696,10 +4696,10 @@
             <div class="comment-meta">
               <span>Mar 4, 2:15 PM</span>
               <span class="reaction-pill" role="button" tabindex="0" aria-label="React with 👍" onclick="toggleReaction(event, this)" onkeydown="handleReactionKey(event)">👍 2</span>
-              <button class="add-reaction-btn" onclick="openReactionPicker(this)">Add reaction</button>
-              <button>Reply</button>
+              <button class="add-reaction-btn" title="Add reaction" aria-label="Add reaction" onclick="openReactionPicker(this)">Add reaction</button>
+              <button class="reply-btn" title="Reply to comment" aria-label="Reply to comment">Reply</button>
             </div>
-            <button class="replies-toggle expanded" onclick="toggleReplies(this)">
+            <button class="replies-toggle expanded" title="Toggle replies" aria-label="Toggle replies" aria-expanded="true" onclick="toggleReplies(this)">
               <span class="chev">›</span><span class="replies-toggle-text">Hide 3 replies</span>
             </button>
             <div class="replies open" data-reply-count="3">
@@ -4717,10 +4717,10 @@
                   <div class="comment-meta">
                     <span>Mar 4, 3:30 PM</span>
                     <span class="reaction-pill you" role="button" tabindex="0" aria-label="Remove your 👍 reaction" aria-pressed="true" onclick="toggleReaction(event, this)" onkeydown="handleReactionKey(event)">👍 1</span>
-                    <button class="add-reaction-btn" onclick="openReactionPicker(this)">Add reaction</button>
-                    <button>Reply</button>
+                    <button class="add-reaction-btn" title="Add reaction" aria-label="Add reaction" onclick="openReactionPicker(this)">Add reaction</button>
+                    <button class="reply-btn" title="Reply to comment" aria-label="Reply to comment">Reply</button>
                   </div>
-                  <button class="replies-toggle expanded" onclick="toggleReplies(this)">
+                  <button class="replies-toggle expanded" title="Toggle replies" aria-label="Toggle replies" aria-expanded="true" onclick="toggleReplies(this)">
                     <span class="chev">›</span><span class="replies-toggle-text">Hide 1 reply</span>
                   </button>
                   <div class="replies open" data-reply-count="1">
@@ -4737,8 +4737,8 @@
                         </div>
                         <div class="comment-meta">
                           <span>Mar 4, 4:02 PM</span>
-                          <button class="add-reaction-btn" onclick="openReactionPicker(this)">Add reaction</button>
-                          <button>Reply</button>
+                          <button class="add-reaction-btn" title="Add reaction" aria-label="Add reaction" onclick="openReactionPicker(this)">Add reaction</button>
+                          <button class="reply-btn" title="Reply to comment" aria-label="Reply to comment">Reply</button>
                         </div>
                       </div>
                     </div>
@@ -4758,8 +4758,8 @@
                   </div>
                   <div class="comment-meta">
                     <span>Mar 4, 4:10 PM</span>
-                    <button class="add-reaction-btn" onclick="openReactionPicker(this)">Add reaction</button>
-                    <button>Reply</button>
+                    <button class="add-reaction-btn" title="Add reaction" aria-label="Add reaction" onclick="openReactionPicker(this)">Add reaction</button>
+                    <button class="reply-btn" title="Reply to comment" aria-label="Reply to comment">Reply</button>
                   </div>
                 </div>
               </div>
@@ -4778,8 +4778,8 @@
               <span>Mar 5, 10:45 AM</span>
               <span class="reaction-pill" role="button" tabindex="0" aria-label="React with 🙏" onclick="toggleReaction(event, this)" onkeydown="handleReactionKey(event)">🙏 1</span>
               <span class="reaction-pill you" role="button" tabindex="0" aria-label="Remove your 👍 reaction" aria-pressed="true" onclick="toggleReaction(event, this)" onkeydown="handleReactionKey(event)">👍 2</span>
-              <button class="add-reaction-btn" onclick="openReactionPicker(this)">Add reaction</button>
-              <button>Reply</button>
+              <button class="add-reaction-btn" title="Add reaction" aria-label="Add reaction" onclick="openReactionPicker(this)">Add reaction</button>
+              <button class="reply-btn" title="Reply to comment" aria-label="Reply to comment">Reply</button>
             </div>
           </div>
         </div>
@@ -4793,8 +4793,8 @@
             </div>
             <div class="comment-meta">
               <span>Mar 5, 2:30 PM</span>
-              <button class="add-reaction-btn" onclick="openReactionPicker(this)">Add reaction</button>
-              <button>Reply</button>
+              <button class="add-reaction-btn" title="Add reaction" aria-label="Add reaction" onclick="openReactionPicker(this)">Add reaction</button>
+              <button class="reply-btn" title="Reply to comment" aria-label="Reply to comment">Reply</button>
             </div>
           </div>
         </div>
@@ -4870,7 +4870,7 @@
               <input type="file" id="commentFileInput" multiple hidden aria-hidden="true" onchange="handleFileInputChange(event)">
             </div>
             <div class="send-group disabled" id="sendGroup">
-              <button class="send-btn" onclick="sendComment()">
+              <button class="send-btn" aria-label="Send comment" title="Send (⌘↵)" onclick="sendComment()">
                 Send
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
               </button>
@@ -6283,6 +6283,7 @@ function toggleReplies(btn){
   btn.classList.toggle('expanded');
   var replies = btn.nextElementSibling;
   if(replies) replies.classList.toggle('open');
+  btn.setAttribute('aria-expanded', btn.classList.contains('expanded') ? 'true' : 'false');
   var textEl = btn.querySelector('.replies-toggle-text');
   if(textEl && replies){
     var count = replies.getAttribute('data-reply-count') || replies.querySelectorAll(':scope > .comment').length;
@@ -6417,7 +6418,7 @@ function _buildSentCommentNode(safeHtml, stamp, attachments, scheduledIso){
         textHtml +
         attachmentsHtml +
       '</div>' +
-      '<div class="comment-meta">' + stampHtml + '<button class="add-reaction-btn" onclick="openReactionPicker(this)">Add reaction</button><button>Reply</button></div>' +
+      '<div class="comment-meta">' + stampHtml + '<button class="add-reaction-btn" title="Add reaction" aria-label="Add reaction" onclick="openReactionPicker(this)">Add reaction</button><button class="reply-btn" title="Reply to comment" aria-label="Reply to comment">Reply</button></div>' +
     '</div>';
   return node;
 }
@@ -6594,6 +6595,8 @@ function _applyReactionsSnapshot(commentEl, snapshot){
     b.className = 'add-reaction-btn';
     b.type = 'button';
     b.textContent = 'Add reaction';
+    b.title = 'Add reaction';
+    b.setAttribute('aria-label', 'Add reaction');
     b.setAttribute('onclick', 'openReactionPicker(this)');
     var reply = _findReplyButton(meta);
     if(reply) meta.insertBefore(b, reply);
@@ -7052,7 +7055,7 @@ function sendReply(parentComment, text, opts){
         '<div class="comment-author">Nikko Trinidad <span class="you-badge">You</span></div>' +
         '<div class="comment-text">' + escapeHtml(text).replace(/\n/g, '<br>') + '</div>' +
       '</div>' +
-      '<div class="comment-meta"><span>' + escapeHtml(stamp) + '</span><button class="add-reaction-btn" onclick="openReactionPicker(this)">Add reaction</button><button>Reply</button></div>' +
+      '<div class="comment-meta"><span>' + escapeHtml(stamp) + '</span><button class="add-reaction-btn" title="Add reaction" aria-label="Add reaction" onclick="openReactionPicker(this)">Add reaction</button><button class="reply-btn" title="Reply to comment" aria-label="Reply to comment">Reply</button></div>' +
     '</div>';
   while(inner.firstChild) node.appendChild(inner.firstChild);
 
@@ -7067,6 +7070,9 @@ function sendReply(parentComment, text, opts){
   if(!toggle){
     toggle = document.createElement('button');
     toggle.className = 'replies-toggle expanded';
+    toggle.title = 'Toggle replies';
+    toggle.setAttribute('aria-label', 'Toggle replies');
+    toggle.setAttribute('aria-expanded', 'true');
     toggle.setAttribute('onclick', 'toggleReplies(this)');
     toggle.innerHTML = '<span class="chev">›</span><span class="replies-toggle-text">Hide ' + count + ' ' + word + '</span>';
     body.insertBefore(toggle, replies);
