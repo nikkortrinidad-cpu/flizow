@@ -2363,6 +2363,16 @@
     max-height: 120px;
   }
   .comment-input-area textarea::placeholder { color: var(--text-faint); }
+  /* Screen-reader-only utility: visible to AT, invisible on screen. */
+  .sr-only {
+    position: absolute;
+    width: 1px; height: 1px;
+    padding: 0; margin: -1px;
+    overflow: hidden;
+    clip: rect(0,0,0,0);
+    white-space: nowrap;
+    border: 0;
+  }
   /* Rich (contenteditable) comment input — replaces textarea for live formatting */
   .comment-input {
     width: 100%;
@@ -4897,7 +4907,8 @@
             <button type="button" class="link-cancel" onclick="hideLinkInput()">Cancel</button>
           </div>
 
-          <div id="commentInput" class="comment-input" contenteditable="true" role="textbox" aria-label="Write a comment" aria-multiline="true" data-placeholder="Write a comment…" oninput="updateSendState(); _scheduleDraftSave()" onkeydown="handleCommentKeyboardShortcut(event)"></div>
+          <span id="commentInputHelp" class="sr-only">Press Enter to send. Press Shift+Enter for a new line. Press ⌘B for bold, ⌘I for italic, ⌘K to insert a link.</span>
+          <div id="commentInput" class="comment-input" contenteditable="true" role="textbox" aria-label="Write a comment" aria-multiline="true" aria-describedby="commentInputHelp" data-placeholder="Write a comment…" oninput="updateSendState(); _scheduleDraftSave()" onkeydown="handleCommentKeyboardShortcut(event)"></div>
           <div class="comment-attachments" id="commentAttachments" aria-label="Attached items"></div>
           <div class="drop-overlay" id="commentDropOverlay" aria-hidden="true">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
