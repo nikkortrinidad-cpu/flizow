@@ -4716,16 +4716,16 @@
 
     <!-- RIGHT: sidebar -->
     <div class="card-modal-sidebar">
-      <div class="sidebar-tabs">
-        <button class="sidebar-tab active" data-tab="comments" onclick="switchSidebarTab('comments')">
+      <div class="sidebar-tabs" role="tablist" aria-label="Card sidebar">
+        <button class="sidebar-tab active" role="tab" id="sidebarTabComments" data-tab="comments" aria-selected="true" aria-controls="sidebarPanelComments" onclick="switchSidebarTab('comments')">
           Comments <span class="tab-count">3</span>
         </button>
-        <button class="sidebar-tab" data-tab="activity" onclick="switchSidebarTab('activity')">
+        <button class="sidebar-tab" role="tab" id="sidebarTabActivity" data-tab="activity" aria-selected="false" aria-controls="sidebarPanelActivity" onclick="switchSidebarTab('activity')">
           Activity Log <span class="tab-count">4</span>
         </button>
       </div>
 
-      <div class="sidebar-content active" data-tab="comments">
+      <div class="sidebar-content active" id="sidebarPanelComments" role="tabpanel" aria-labelledby="sidebarTabComments" data-tab="comments">
 
         <div class="comment">
           <div class="comment-avatar">JC</div>
@@ -4844,7 +4844,7 @@
 
       </div>
 
-      <div class="sidebar-content" data-tab="activity">
+      <div class="sidebar-content" id="sidebarPanelActivity" role="tabpanel" aria-labelledby="sidebarTabActivity" data-tab="activity" hidden>
         <div class="activity-list">
           <div class="activity-item">
             <div class="activity-dot"></div>
@@ -6312,10 +6312,14 @@ document.addEventListener('keydown', function(e){
 });
 function switchSidebarTab(tab){
   document.querySelectorAll('.sidebar-tab').forEach(function(t){
-    t.classList.toggle('active', t.dataset.tab === tab);
+    var on = t.dataset.tab === tab;
+    t.classList.toggle('active', on);
+    t.setAttribute('aria-selected', on ? 'true' : 'false');
   });
   document.querySelectorAll('.sidebar-content').forEach(function(c){
-    c.classList.toggle('active', c.dataset.tab === tab);
+    var on = c.dataset.tab === tab;
+    c.classList.toggle('active', on);
+    if(on) c.removeAttribute('hidden'); else c.setAttribute('hidden', '');
   });
 }
 /* Thread connectors are now pure CSS (bridge + elbow + mask) —
