@@ -4850,7 +4850,7 @@
             <button type="button" class="link-cancel" onclick="hideLinkInput()">Cancel</button>
           </div>
 
-          <div id="commentInput" class="comment-input" contenteditable="true" role="textbox" aria-label="Write a comment" aria-multiline="true" data-placeholder="Write a comment…" oninput="updateSendState()" onkeydown="handleCommentKeyboardShortcut(event)"></div>
+          <div id="commentInput" class="comment-input" contenteditable="true" role="textbox" aria-label="Write a comment" aria-multiline="true" data-placeholder="Write a comment…" oninput="updateSendState(); _scheduleDraftSave()" onkeydown="handleCommentKeyboardShortcut(event)"></div>
           <div class="comment-attachments" id="commentAttachments" aria-label="Attached items"></div>
           <div class="drop-overlay" id="commentDropOverlay" aria-hidden="true">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
@@ -6432,6 +6432,7 @@ function _bootCommentPersistence(){
   _tagSeedComments();
   _restorePersistedComments();
   _restoreSeedMutations();
+  _restoreDraft();
 }
 if(document.readyState === 'loading'){
   document.addEventListener('DOMContentLoaded', _bootCommentPersistence);
@@ -6596,6 +6597,68 @@ window.clearSeedMutations = function(){
   if(typeof showToast === 'function') showToast('Seed mutations cleared — refresh to see originals');
 };
 
+/* ──────────────────────────────────────────────────────────
+   Draft autosave: in-progress comment text survives refreshes
+   ──────────────────────────────────────────────────────────
+   Persists the contenteditable HTML (with formatting + mentions)
+   to localStorage ~400ms after the user stops typing. Restored on
+   next boot; cleared on Send (scheduled or immediate).
+   Attachments are not persisted (blob URLs are session-bound).
+   ────────────────────────────────────────────────────────── */
+var _DRAFT_KEY = 'refined-comment-draft';
+var _draftSaveTimer = null;
+
+function _isDraftEmpty(html){
+  var tmp = document.createElement('div');
+  tmp.innerHTML = html || '';
+  var text = (tmp.textContent || '').replace(/\u00A0/g, ' ').trim();
+  var hasAtomic = !!tmp.querySelector('img, .mention, a');
+  return !text && !hasAtomic;
+}
+function _saveDraft(){
+  var editor = document.getElementById('commentInput');
+  if(!editor) return;
+  var html = editor.innerHTML;
+  if(_isDraftEmpty(html)){
+    try { localStorage.removeItem(_DRAFT_KEY); } catch(e){}
+    return;
+  }
+  try { localStorage.setItem(_DRAFT_KEY, html); } catch(e){ /* quota — ignore */ }
+}
+function _scheduleDraftSave(){
+  if(_draftSaveTimer) clearTimeout(_draftSaveTimer);
+  _draftSaveTimer = setTimeout(_saveDraft, 400);
+}
+function _clearDraft(){
+  if(_draftSaveTimer){ clearTimeout(_draftSaveTimer); _draftSaveTimer = null; }
+  try { localStorage.removeItem(_DRAFT_KEY); } catch(e){}
+}
+function _restoreDraft(){
+  var editor = document.getElementById('commentInput');
+  if(!editor) return;
+  var html;
+  try { html = localStorage.getItem(_DRAFT_KEY); } catch(e){ return; }
+  if(!html) return;
+  // Always re-sanitize on restore — defends against tampered storage
+  var safe = _sanitizeCommentHtml(html);
+  if(_isDraftEmpty(safe)){
+    try { localStorage.removeItem(_DRAFT_KEY); } catch(e){}
+    return;
+  }
+  editor.innerHTML = safe;
+  updateSendState();
+  if(typeof showToast === 'function') showToast('Draft restored');
+}
+
+/* Dev helper — type clearDraft() in the console to discard the draft */
+window.clearDraft = function(){
+  _clearDraft();
+  var editor = document.getElementById('commentInput');
+  if(editor) editor.innerHTML = '';
+  updateSendState();
+  if(typeof showToast === 'function') showToast('Draft cleared');
+};
+
 function sendComment(scheduledAt){
   var input = document.getElementById('commentInput');
   if(!input) return;
@@ -6632,6 +6695,7 @@ function sendComment(scheduledAt){
 
   input.innerHTML = '';
   _clearAttachments();
+  _clearDraft();
   updateSendState();
 
   if(scheduledIso && typeof showToast === 'function'){
