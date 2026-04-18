@@ -4286,6 +4286,27 @@
     .share-role-menu, .share-people-list .members-row { transition: none; animation: none; }
     .share-overlay .share-modal { transform: none; }
   }
+
+  /* ───────────────────────────────────────────────────────────
+     Narrow-viewport responsiveness (line-length protection)
+     Stacks the card modal and tightens padding so body copy
+     stays within the 45–70 cpl readability band.
+     ─────────────────────────────────────────────────────────── */
+  @media (max-width: 900px) {
+    .card-modal-overlay { padding: 16px; }
+    .card-modal { height: 94vh; max-width: 100%; }
+    .card-modal-body-row { flex-direction: column; }
+    .card-modal-main { border-right: none; border-bottom: 1px solid var(--hairline); }
+    .card-modal-sidebar { width: 100%; max-height: 55vh; }
+    .card-modal-body { padding: 20px 24px 28px; }
+  }
+  @media (max-width: 600px) {
+    .card-modal-overlay { padding: 8px; }
+    .card-modal { height: 96vh; border-radius: 16px; }
+    .card-modal-body { padding: 18px 18px 24px; gap: 22px; }
+    .sidebar-tabs { padding: 14px 10px 0; }
+    .meta-table { grid-template-columns: 1fr; }
+  }
 </style>
 </head>
 <body>
