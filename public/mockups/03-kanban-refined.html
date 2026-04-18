@@ -37,6 +37,7 @@
     --link-blue: #0066CC;           /* darker blue for readable links on light bg */
     --tag-bg: rgba(0,0,0,0.04);
     --tag-text: #636366;
+    --modal-shadow: 0 24px 80px rgba(0, 0, 0, 0.18);
   }
   :root[data-theme="dark"] {
     --bg: #000000;
@@ -69,6 +70,10 @@
     --link-blue: #5AC8FA;           /* Apple Light Blue — WCAG-AA contrast on black */
     --tag-bg: rgba(255,255,255,0.06);
     --tag-text: #aeaeb2;
+    --modal-shadow:
+      0 30px 80px rgba(0, 0, 0, 0.72),
+      0 0 0 1px rgba(255, 255, 255, 0.06),
+      inset 0 1px 0 rgba(255, 255, 255, 0.05);
   }
 
   * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -176,7 +181,7 @@
     width: 100%; max-width: 600px;
     background: var(--bg-elev);
     border-radius: 16px;
-    box-shadow: 0 24px 80px rgba(0,0,0,0.4);
+    box-shadow: var(--modal-shadow);
     overflow: hidden;
     border: 1px solid var(--hairline);
   }
@@ -733,7 +738,7 @@
     border-radius: 20px;
     display: flex; flex-direction: column;
     overflow: hidden;
-    box-shadow: 0 24px 80px rgba(0,0,0,0.5);
+    box-shadow: var(--modal-shadow);
   }
   .card-modal-body-row {
     flex: 1; min-height: 0;
@@ -2617,7 +2622,7 @@
     background: var(--bg-elev);
     border: 1px solid var(--hairline);
     border-radius: 16px;
-    box-shadow: 0 24px 80px rgba(0, 0, 0, 0.5);
+    box-shadow: var(--modal-shadow);
     display: flex;
     overflow: hidden;
     animation: settingsPopIn 0.2s cubic-bezier(0.2, 0.9, 0.3, 1.2);
@@ -3004,7 +3009,7 @@
     background: var(--bg-elev);
     border: 1px solid var(--hairline);
     border-radius: 16px;
-    box-shadow: 0 24px 80px rgba(0,0,0,0.5);
+    box-shadow: var(--modal-shadow);
     display: flex;
     flex-direction: column;
     overflow: hidden;
@@ -3291,7 +3296,7 @@
     background: var(--bg-elev);
     border: 1px solid var(--hairline);
     border-radius: 16px;
-    box-shadow: 0 24px 80px rgba(0,0,0,0.5);
+    box-shadow: var(--modal-shadow);
     display: flex;
     flex-direction: column;
     overflow: hidden;
@@ -3969,7 +3974,7 @@
     border-radius: 16px;
     display: flex; flex-direction: column;
     overflow-y: auto;
-    box-shadow: 0 24px 80px rgba(0,0,0,0.5);
+    box-shadow: var(--modal-shadow);
     transform: translateY(12px);
     transition: transform 0.2s ease-out;
   }
