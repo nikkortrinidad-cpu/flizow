@@ -1611,6 +1611,38 @@
   .emoji-picker.scrollable .emoji-picker-grid + .emoji-picker-heading {
     margin-top: 2px;
   }
+  /* Search input — sticky at top so categories scroll beneath it */
+  .emoji-picker-search {
+    position: sticky;
+    top: 0;
+    background: var(--bg-elev);
+    padding: 2px 0 8px;
+    z-index: 2;
+  }
+  .emoji-picker-search input {
+    width: 100%;
+    box-sizing: border-box;
+    border: 1px solid var(--hairline);
+    background: var(--bg);
+    color: var(--text);
+    border-radius: 8px;
+    padding: 6px 10px;
+    font-size: 12px;
+    font-family: inherit;
+    outline: none;
+    transition: border-color 0.15s, box-shadow 0.15s;
+  }
+  .emoji-picker-search input::placeholder { color: var(--text-faint); }
+  .emoji-picker-search input:focus {
+    border-color: var(--link-blue);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--link-blue) 20%, transparent);
+  }
+  .emoji-picker-empty {
+    padding: 14px 8px 10px;
+    font-size: 12px;
+    color: var(--text-faint);
+    text-align: center;
+  }
   @media (prefers-reduced-motion: reduce) {
     .reaction-picker, .emoji-picker { animation: none; }
     .reaction-emoji-btn, .emoji-picker-btn { transition: background 0.12s; }
@@ -8378,6 +8410,105 @@ var EMOJI_INSERT_SET = (function(){
   return out;
 })();
 
+/* Searchable keywords per emoji — space-separated, lowercase.
+   The emoji itself and its category name are also matched automatically. */
+var EMOJI_KEYWORDS = {
+  '😊':'smile happy blush grin', '😂':'laugh tears joy lol funny',
+  '🤣':'rofl laugh floor rolling', '😍':'love heart eyes adore',
+  '😎':'cool sunglasses shades', '🥳':'party celebrate birthday',
+  '😅':'sweat smile phew relief', '🤔':'think ponder hmm',
+  '😐':'neutral meh', '😕':'confused unsure',
+  '😮':'surprised shock wow', '😳':'flushed embarrassed oh',
+  '😴':'sleep zzz tired', '😭':'cry sob sad tears',
+  '😤':'angry mad huff steam', '🤯':'mind blown explode shock',
+  '🤗':'hug embrace', '🙃':'upside down silly',
+  '😇':'angel halo innocent', '🥰':'love hearts adore',
+  '🤩':'star eyes amazed wow', '😏':'smirk smug',
+  '😢':'sad cry tear', '🥺':'pleading puppy eyes beg',
+  '😬':'grimace awkward', '😌':'relieved content calm',
+  '😪':'sleepy tired', '🤓':'nerd glasses smart',
+  '🙄':'eye roll annoyed', '😑':'expressionless bored flat',
+  '👍':'thumbs up like yes approve good', '👎':'thumbs down dislike no bad',
+  '👏':'clap applause', '🙌':'raised hands hooray praise',
+  '🙏':'pray thanks please folded', '💪':'muscle strong flex',
+  '👌':'ok perfect okay', '✌️':'peace victory',
+  '🤞':'fingers crossed luck hope', '🤝':'handshake deal agreement',
+  '👋':'wave hi bye hello goodbye', '🤲':'palms up cupped',
+  '❤️':'heart love red', '🧡':'orange heart',
+  '💛':'yellow heart', '💚':'green heart',
+  '💙':'blue heart', '💜':'purple heart',
+  '🤎':'brown heart', '🖤':'black heart',
+  '🤍':'white heart', '💔':'broken heart heartbreak',
+  '💕':'two hearts love', '💖':'sparkling heart love',
+  '🐶':'dog puppy pup', '🐱':'cat kitten kitty',
+  '🐭':'mouse', '🐹':'hamster',
+  '🐰':'rabbit bunny', '🦊':'fox',
+  '🐻':'bear', '🐼':'panda',
+  '🐨':'koala', '🐯':'tiger',
+  '🦁':'lion', '🐮':'cow',
+  '🐷':'pig', '🐵':'monkey',
+  '🦄':'unicorn magical', '🐝':'bee buzz',
+  '🌸':'cherry blossom flower pink', '🌻':'sunflower yellow',
+  '🍎':'apple red fruit', '🍊':'orange tangerine fruit',
+  '🍌':'banana fruit', '🍉':'watermelon fruit',
+  '🍓':'strawberry berry fruit', '🍍':'pineapple fruit',
+  '🥑':'avocado', '🍅':'tomato',
+  '🌽':'corn', '🥕':'carrot',
+  '🍕':'pizza slice', '🍔':'burger hamburger',
+  '🍟':'fries chips', '🌮':'taco',
+  '🍣':'sushi', '🍜':'ramen noodles soup',
+  '☕':'coffee tea cafe cup', '🍺':'beer drink mug',
+  '⚽':'soccer football ball', '🏀':'basketball',
+  '🏈':'football american', '⚾':'baseball',
+  '🎾':'tennis', '🏐':'volleyball',
+  '🎮':'video game gaming controller', '🎸':'guitar rock music',
+  '🎨':'art paint palette', '🎯':'target bullseye aim dart',
+  '🎲':'dice game', '🏆':'trophy win award',
+  '🚗':'car drive auto', '✈️':'plane flight travel airplane',
+  '🚀':'rocket launch space', '🚢':'ship boat cruise',
+  '🏠':'house home', '🏢':'office building work',
+  '🌆':'city cityscape dusk sunset', '🌈':'rainbow pride',
+  '🏖️':'beach vacation sand', '🏔️':'mountain snow peak',
+  '🌋':'volcano eruption', '🗺️':'map world',
+  '💻':'laptop computer', '📱':'phone mobile cell',
+  '⌚':'watch clock wrist', '📷':'camera photo',
+  '🔑':'key unlock', '🔒':'lock locked secure closed',
+  '🔓':'unlock unlocked open', '📎':'paperclip attach',
+  '✂️':'scissors cut', '📌':'pin thumbtack',
+  '📍':'pin location map', '💡':'idea lightbulb bulb',
+  '🔋':'battery power', '📅':'calendar date schedule',
+  '📖':'book read open', '📝':'note write memo pencil',
+  '📊':'chart bar graph analytics', '📈':'chart trend up growth increase',
+  '💯':'hundred perfect 100 score', '🔥':'fire hot lit flames',
+  '✨':'sparkles shine magic', '⭐':'star',
+  '🌟':'glowing star bright shine', '⚡':'lightning electric energy bolt',
+  '☀️':'sun bright sunny', '🌙':'moon night crescent',
+  '☁️':'cloud cloudy', '🎉':'party tada confetti celebrate',
+  '🎊':'confetti ball party celebrate', '✅':'check yes done complete tick',
+  '❌':'cross no wrong error fail', '⚠️':'warning caution alert triangle',
+  '⏰':'alarm clock time', '🔔':'bell notification ring',
+  '📢':'loudspeaker announce megaphone', '➡️':'arrow right next'
+};
+
+/* Flat searchable index: [ {emoji, haystack}, … ] — built once */
+var EMOJI_SEARCH_INDEX = (function(){
+  var rows = [];
+  EMOJI_INSERT_CATEGORIES.forEach(function(cat){
+    var catKey = cat.name.toLowerCase();
+    cat.items.forEach(function(em){
+      var kw = (EMOJI_KEYWORDS[em] || '').toLowerCase();
+      rows.push({ emoji: em, haystack: em + ' ' + catKey + ' ' + kw });
+    });
+  });
+  return rows;
+})();
+
+function _filterEmoji(query){
+  var q = (query || '').trim().toLowerCase();
+  if(!q) return null; // null = show categorized view
+  return EMOJI_SEARCH_INDEX.filter(function(r){ return r.haystack.indexOf(q) !== -1; }).map(function(r){ return r.emoji; });
+}
+
 var _emojiInsertPickerEl = null;
 var _emojiInsertAnchor = null;
 var _emojiInsertSavedRange = null;
@@ -8403,30 +8534,83 @@ function openEmojiInsertPicker(anchorBtn){
   picker.style.top = '0px';
   picker.style.left = '-9999px';
 
-  EMOJI_INSERT_CATEGORIES.forEach(function(cat){
-    var heading = document.createElement('div');
-    heading.className = 'emoji-picker-heading';
-    heading.textContent = cat.name;
-    picker.appendChild(heading);
+  // Sticky search at the top
+  var searchWrap = document.createElement('div');
+  searchWrap.className = 'emoji-picker-search';
+  var searchInput = document.createElement('input');
+  searchInput.type = 'text';
+  searchInput.placeholder = 'Search emoji…';
+  searchInput.setAttribute('aria-label', 'Search emoji');
+  searchInput.autocomplete = 'off';
+  searchInput.spellcheck = false;
+  searchWrap.appendChild(searchInput);
+  picker.appendChild(searchWrap);
 
+  var body = document.createElement('div');
+  body.className = 'emoji-picker-body';
+  picker.appendChild(body);
+
+  function addEmojiBtn(container, emoji){
+    var b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'emoji-picker-btn';
+    b.setAttribute('role', 'menuitem');
+    b.setAttribute('aria-label', 'Insert ' + emoji);
+    b.textContent = emoji;
+    b.addEventListener('click', function(ev){
+      ev.stopPropagation();
+      ev.preventDefault();
+      insertEmojiIntoEditor(emoji);
+      // Keep picker open so rapid inserts work; refocus input for more typing
+      setTimeout(function(){ searchInput.focus(); }, 0);
+    });
+    container.appendChild(b);
+  }
+
+  function renderBody(query){
+    body.innerHTML = '';
+    var filtered = _filterEmoji(query);
+    if(filtered === null){
+      // Categorized view
+      EMOJI_INSERT_CATEGORIES.forEach(function(cat){
+        var heading = document.createElement('div');
+        heading.className = 'emoji-picker-heading';
+        heading.textContent = cat.name;
+        body.appendChild(heading);
+        var grid = document.createElement('div');
+        grid.className = 'emoji-picker-grid';
+        cat.items.forEach(function(e){ addEmojiBtn(grid, e); });
+        body.appendChild(grid);
+      });
+      return;
+    }
+    if(!filtered.length){
+      var empty = document.createElement('div');
+      empty.className = 'emoji-picker-empty';
+      empty.textContent = 'No emoji match "' + query.trim() + '"';
+      body.appendChild(empty);
+      return;
+    }
+    // Flat results grid — no category headings when searching
     var grid = document.createElement('div');
     grid.className = 'emoji-picker-grid';
-    cat.items.forEach(function(emoji){
-      var b = document.createElement('button');
-      b.type = 'button';
-      b.className = 'emoji-picker-btn';
-      b.setAttribute('role', 'menuitem');
-      b.setAttribute('aria-label', 'Insert ' + emoji);
-      b.textContent = emoji;
-      b.addEventListener('click', function(ev){
-        ev.stopPropagation();
-        ev.preventDefault();
-        insertEmojiIntoEditor(emoji);
-        // Keep the picker open so rapid emoji inserts work
-      });
-      grid.appendChild(b);
-    });
-    picker.appendChild(grid);
+    filtered.forEach(function(e){ addEmojiBtn(grid, e); });
+    body.appendChild(grid);
+  }
+
+  renderBody('');
+  searchInput.addEventListener('input', function(){
+    renderBody(searchInput.value);
+  });
+  searchInput.addEventListener('keydown', function(e){
+    if(e.key === 'Enter'){
+      // Enter = insert the first match
+      var firstBtn = body.querySelector('.emoji-picker-btn');
+      if(firstBtn){
+        e.preventDefault();
+        firstBtn.click();
+      }
+    }
   });
   document.body.appendChild(picker);
 
@@ -8447,17 +8631,8 @@ function openEmojiInsertPicker(anchorBtn){
   anchorBtn.setAttribute('aria-pressed', 'true');
   anchorBtn.classList.add('active');
 
-  // Keep focus on the editor so the caret position is clear. Users can
-  // still Tab into the grid if they prefer keyboard selection.
-  setTimeout(function(){
-    var editor = document.getElementById('commentInput');
-    if(editor) editor.focus();
-    if(_emojiInsertSavedRange){
-      var sel = window.getSelection();
-      try { sel.removeAllRanges(); sel.addRange(_emojiInsertSavedRange); }
-      catch(err){}
-    }
-  }, 0);
+  // Autofocus search so the user can start typing immediately
+  setTimeout(function(){ searchInput.focus(); }, 0);
 }
 
 function insertEmojiIntoEditor(emoji){
