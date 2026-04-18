@@ -6396,10 +6396,15 @@ function _restorePersistedComments(){
     }
   });
 }
+function _bootCommentPersistence(){
+  _tagSeedComments();
+  _restorePersistedComments();
+  _restoreSeedMutations();
+}
 if(document.readyState === 'loading'){
-  document.addEventListener('DOMContentLoaded', _restorePersistedComments);
+  document.addEventListener('DOMContentLoaded', _bootCommentPersistence);
 } else {
-  setTimeout(_restorePersistedComments, 0);
+  setTimeout(_bootCommentPersistence, 0);
 }
 /* Dev helper — type clearTestComments() in the console to wipe them */
 window.clearTestComments = function(){
@@ -6408,6 +6413,155 @@ window.clearTestComments = function(){
   var tabCount = document.querySelector('.sidebar-tab[data-tab="comments"] .tab-count');
   if(tabCount) tabCount.textContent = document.querySelectorAll('.sidebar-content[data-tab="comments"] > .comment').length;
   if(typeof showToast === 'function') showToast('Test comments cleared');
+};
+
+/* ──────────────────────────────────────────────────────────
+   Persistence: reactions + replies on seed comments survive refreshes
+   ──────────────────────────────────────────────────────────
+   Schema (localStorage key: _SEED_MUT_KEY)
+     {
+       reactions: { [cid]: [ {emoji, count, you}, … ] },
+       replies:   { [parentCid]: [ {cid, text, stamp}, … ] }
+     }
+   Every .comment in the sidebar gets a stable data-cid:
+     seed-N for the initial DOM (document order)
+     user-<timestamp>-<rand> for anything added at runtime
+   ────────────────────────────────────────────────────────── */
+var _SEED_MUT_KEY = 'refined-seed-mutations';
+
+function _loadSeedMutations(){
+  try {
+    var raw = localStorage.getItem(_SEED_MUT_KEY);
+    if(!raw) return { reactions: {}, replies: {} };
+    var obj = JSON.parse(raw) || {};
+    return { reactions: obj.reactions || {}, replies: obj.replies || {} };
+  } catch(e){ return { reactions: {}, replies: {} }; }
+}
+function _saveSeedMutations(data){
+  try { localStorage.setItem(_SEED_MUT_KEY, JSON.stringify(data)); }
+  catch(e){ /* quota or disabled localStorage — silently ignore */ }
+}
+function _newUserCid(){
+  return 'user-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 7);
+}
+function _tagSeedComments(){
+  var sidebar = document.querySelector('.sidebar-content[data-tab="comments"]');
+  if(!sidebar) return;
+  var i = 1;
+  sidebar.querySelectorAll('.comment').forEach(function(c){
+    if(!c.dataset.cid && !c.classList.contains('persisted-comment')){
+      c.dataset.cid = 'seed-' + (i++);
+    }
+  });
+}
+function _snapshotReactions(commentEl){
+  if(!commentEl) return [];
+  var meta = commentEl.querySelector(':scope > .comment-body > .comment-meta');
+  if(!meta) return [];
+  var out = [];
+  meta.querySelectorAll('.reaction-pill').forEach(function(pill){
+    if(pill.classList.contains('leaving')) return;
+    var raw = (pill.textContent || '').trim();
+    var m = raw.match(/^(.+?)\s+(\d+)$/);
+    if(!m) return;
+    out.push({
+      emoji: m[1].trim(),
+      count: parseInt(m[2], 10) || 0,
+      you: pill.classList.contains('you')
+    });
+  });
+  return out;
+}
+function _persistCommentReactions(commentEl){
+  if(!commentEl || !commentEl.dataset || !commentEl.dataset.cid) return;
+  var cid = commentEl.dataset.cid;
+  var all = _loadSeedMutations();
+  all.reactions[cid] = _snapshotReactions(commentEl);
+  _saveSeedMutations(all);
+}
+function _persistReplyAdded(parentComment, replyData){
+  if(!parentComment || !parentComment.dataset || !parentComment.dataset.cid) return;
+  var pcid = parentComment.dataset.cid;
+  var all = _loadSeedMutations();
+  all.replies[pcid] = all.replies[pcid] || [];
+  all.replies[pcid].push(replyData);
+  _saveSeedMutations(all);
+}
+function _applyReactionsSnapshot(commentEl, snapshot){
+  var meta = commentEl.querySelector(':scope > .comment-body > .comment-meta');
+  if(!meta) return;
+  meta.querySelectorAll('.reaction-pill').forEach(function(p){ p.remove(); });
+  var addBtn = meta.querySelector('button.add-reaction-btn');
+  var replyBtn = _findReplyButton(meta);
+  var anchor = addBtn || replyBtn;
+  (snapshot || []).forEach(function(r){
+    var p = document.createElement('span');
+    p.className = 'reaction-pill' + (r.you ? ' you' : '');
+    p.setAttribute('role', 'button');
+    p.setAttribute('tabindex', '0');
+    p.setAttribute('aria-pressed', r.you ? 'true' : 'false');
+    p.setAttribute('aria-label', r.you ? ('Remove your ' + r.emoji + ' reaction') : ('React with ' + r.emoji));
+    p.setAttribute('onclick', 'toggleReaction(event, this)');
+    p.setAttribute('onkeydown', 'handleReactionKey(event)');
+    p.textContent = r.emoji + ' ' + r.count;
+    if(anchor) meta.insertBefore(p, anchor);
+    else meta.appendChild(p);
+  });
+  // If no pills and no Add-reaction button, add one so reacting is still possible
+  var hasPills = !!meta.querySelector('.reaction-pill');
+  if(!hasPills && !meta.querySelector('button.add-reaction-btn') && !_metaHasAddReactionLabel(meta)){
+    var b = document.createElement('button');
+    b.className = 'add-reaction-btn';
+    b.type = 'button';
+    b.textContent = 'Add reaction';
+    b.setAttribute('onclick', 'openReactionPicker(this)');
+    var reply = _findReplyButton(meta);
+    if(reply) meta.insertBefore(b, reply);
+    else meta.appendChild(b);
+  }
+}
+function _restoreSeedMutations(){
+  var sidebar = document.querySelector('.sidebar-content[data-tab="comments"]');
+  if(!sidebar) return;
+  var all = _loadSeedMutations();
+
+  // 1) Replies first — in multiple passes so nested user replies can be restored
+  //    under their parent (which may itself be a restored reply)
+  var pending = [];
+  Object.keys(all.replies || {}).forEach(function(pcid){
+    (all.replies[pcid] || []).forEach(function(r){ pending.push({ pcid: pcid, reply: r }); });
+  });
+  var passes = 10;
+  while(pending.length && passes-- > 0){
+    var leftover = [];
+    pending.forEach(function(item){
+      var parent = sidebar.querySelector('.comment[data-cid="' + item.pcid + '"]');
+      if(!parent){ leftover.push(item); return; }
+      sendReply(parent, item.reply.text, { cid: item.reply.cid, stamp: item.reply.stamp, silent: true });
+    });
+    if(leftover.length === pending.length) break; // no progress — give up
+    pending = leftover;
+  }
+
+  // 2) Reactions — seed + restored user replies are all in place now
+  Object.keys(all.reactions || {}).forEach(function(cid){
+    var el = sidebar.querySelector('.comment[data-cid="' + cid + '"]');
+    if(!el) return;
+    _applyReactionsSnapshot(el, all.reactions[cid]);
+  });
+
+  // 3) Tab count — reflect the extra restored replies (we called sendReply silent)
+  var tabCount = document.querySelector('.sidebar-tab[data-tab="comments"] .tab-count');
+  if(tabCount){
+    var total = sidebar.querySelectorAll('.comment').length;
+    tabCount.textContent = total;
+  }
+}
+
+/* Dev helper — type clearSeedMutations() in the console to reset */
+window.clearSeedMutations = function(){
+  try { localStorage.removeItem(_SEED_MUT_KEY); } catch(e){}
+  if(typeof showToast === 'function') showToast('Seed mutations cleared — refresh to see originals');
 };
 
 function sendComment(scheduledAt){
@@ -6697,9 +6851,10 @@ function makeBridgeLine(leftPx, topPx){
   return d;
 }
 
-function sendReply(parentComment, text){
+function sendReply(parentComment, text, opts){
   text = (text || '').trim();
   if(!text) return;
+  opts = opts || {};
   var body = parentComment.querySelector(':scope > .comment-body');
   if(!body) return;
   var isNested = parentComment.closest('.replies') !== null;
@@ -6731,10 +6886,14 @@ function sendReply(parentComment, text){
     elbowW = 51;
   }
 
-  var now = new Date();
-  var stamp = now.toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+  var stamp = opts.stamp || (function(){
+    var now = new Date();
+    return now.toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+  })();
+  var cid = opts.cid || _newUserCid();
   var node = document.createElement('div');
   node.className = 'comment';
+  node.setAttribute('data-cid', cid);
 
   /* Add mask (new last reply) + elbow SVG before avatar */
   node.appendChild(makeBridgeMask(elbowW));
@@ -6748,7 +6907,7 @@ function sendReply(parentComment, text){
         '<div class="comment-author">Nikko Trinidad <span class="you-badge">You</span></div>' +
         '<div class="comment-text">' + escapeHtml(text).replace(/\n/g, '<br>') + '</div>' +
       '</div>' +
-      '<div class="comment-meta"><span>' + stamp + '</span><button>Reply</button></div>' +
+      '<div class="comment-meta"><span>' + escapeHtml(stamp) + '</span><button class="add-reaction-btn" onclick="openReactionPicker(this)">Add reaction</button><button>Reply</button></div>' +
     '</div>';
   while(inner.firstChild) node.appendChild(inner.firstChild);
 
@@ -6772,13 +6931,15 @@ function sendReply(parentComment, text){
     if(txt) txt.textContent = 'Hide ' + count + ' ' + word;
   }
 
-  var tabCount = document.querySelector('.sidebar-tab[data-tab="comments"] .tab-count');
-  if(tabCount){
-    var n = parseInt(tabCount.textContent, 10);
-    if(!isNaN(n)) tabCount.textContent = (n + 1);
+  if(!opts.silent){
+    var tabCount = document.querySelector('.sidebar-tab[data-tab="comments"] .tab-count');
+    if(tabCount){
+      var n = parseInt(tabCount.textContent, 10);
+      if(!isNaN(n)) tabCount.textContent = (n + 1);
+    }
+    node.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    _persistReplyAdded(parentComment, { cid: cid, text: text, stamp: stamp });
   }
-
-  node.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
 
 /* Reply button click → open composer (event delegation on sidebar) */
@@ -8638,6 +8799,7 @@ function toggleReaction(e, pill){
     void pill.offsetWidth;
     pill.classList.add('popping');
   }
+  _persistCommentReactions(pill.closest('.comment'));
 }
 
 function _metaHasAddReactionLabel(meta){
@@ -8791,6 +8953,7 @@ function applyReaction(meta, emoji){
   requestAnimationFrame(function(){
     newPill.classList.add('popping');
   });
+  _persistCommentReactions(meta.closest('.comment'));
 }
 
 /* Outside click / Escape close */
