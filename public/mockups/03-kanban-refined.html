@@ -2238,13 +2238,53 @@
     flex-shrink: 0;
   }
   .comment-input-area {
+    position: relative;
     background: var(--bg-elev);
     border: 1px solid var(--hairline);
     border-radius: 12px;
     padding: 10px 12px;
-    transition: border-color 0.15s;
+    transition: border-color 0.15s, box-shadow 0.18s ease;
   }
   .comment-input-area:focus-within { border-color: var(--text-faint); }
+
+  /* Drag-and-drop file attach — editor becomes the drop target */
+  body.is-dragging-files .comment-input-area {
+    border-color: var(--link-blue);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--link-blue) 22%, transparent);
+  }
+  .drop-overlay {
+    position: absolute;
+    inset: 0;
+    border-radius: 12px;
+    background: color-mix(in srgb, var(--link-blue) 10%, var(--bg-elev));
+    border: 2px dashed var(--link-blue);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    color: var(--link-blue);
+    font-weight: 600;
+    font-size: 13px;
+    letter-spacing: -0.01em;
+    pointer-events: none;
+    opacity: 0;
+    transform: scale(0.985);
+    transition: opacity 0.16s ease, transform 0.16s ease;
+    z-index: 2;
+  }
+  body.is-dragging-files .drop-overlay {
+    opacity: 1;
+    transform: scale(1);
+  }
+  .drop-overlay svg {
+    width: 18px;
+    height: 18px;
+    stroke-width: 2;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .drop-overlay { transition: opacity 0.08s linear; transform: none; }
+    .comment-input-area { transition: none; }
+  }
   .comment-input-area textarea {
     width: 100%;
     border: none; outline: none;
@@ -4780,6 +4820,10 @@
 
           <div id="commentInput" class="comment-input" contenteditable="true" role="textbox" aria-label="Write a comment" aria-multiline="true" data-placeholder="Write a comment…" oninput="updateSendState()" onkeydown="handleCommentKeyboardShortcut(event)"></div>
           <div class="comment-attachments" id="commentAttachments" aria-label="Attached items"></div>
+          <div class="drop-overlay" id="commentDropOverlay" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            <span>Drop files to attach</span>
+          </div>
           <div class="comment-toolbar">
             <div class="toolbar-group">
               <button class="toolbar-btn" id="formatToggleBtn" title="Format (Aa)" aria-label="Toggle formatting toolbar" aria-pressed="false" onclick="toggleFormatToolbar()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 7 4 4 20 4 20 7"/><line x1="9" y1="20" x2="15" y2="20"/><line x1="12" y1="4" x2="12" y2="20"/></svg></button>
@@ -8047,6 +8091,74 @@ function _clearAttachments(){
   c.innerHTML = '';
   _updateAttachmentsVisibility();
 }
+
+/* ───── Drag-and-drop files into the comment editor ───── */
+(function(){
+  var dragDepth = 0;
+
+  function _hasFiles(e){
+    if(!e.dataTransfer) return false;
+    var types = e.dataTransfer.types;
+    if(!types) return false;
+    // types may be an array-ish DOMStringList
+    for(var i = 0; i < types.length; i++){
+      if(types[i] === 'Files') return true;
+    }
+    return false;
+  }
+
+  function _setDragging(on){
+    document.body.classList.toggle('is-dragging-files', !!on);
+    var ov = document.getElementById('commentDropOverlay');
+    if(ov) ov.setAttribute('aria-hidden', on ? 'false' : 'true');
+  }
+
+  function _resetDrag(){
+    dragDepth = 0;
+    _setDragging(false);
+  }
+
+  window.addEventListener('dragenter', function(e){
+    if(!_hasFiles(e)) return;
+    dragDepth++;
+    if(dragDepth === 1) _setDragging(true);
+  });
+
+  window.addEventListener('dragover', function(e){
+    if(!_hasFiles(e)) return;
+    // prevent the browser from navigating to / opening the file
+    e.preventDefault();
+    if(e.dataTransfer) e.dataTransfer.dropEffect = 'copy';
+  });
+
+  window.addEventListener('dragleave', function(e){
+    if(!_hasFiles(e)) return;
+    dragDepth = Math.max(0, dragDepth - 1);
+    if(dragDepth === 0) _setDragging(false);
+  });
+
+  window.addEventListener('drop', function(e){
+    if(!_hasFiles(e)) return;
+    // Always prevent default so stray drops don't navigate the page
+    e.preventDefault();
+    _resetDrag();
+
+    var editorArea = e.target.closest ? e.target.closest('.comment-input-area') : null;
+    if(!editorArea) return; // dropped outside the editor — quietly ignore
+
+    var files = (e.dataTransfer && e.dataTransfer.files) || [];
+    if(!files.length) return;
+    for(var i = 0; i < files.length; i++) attachFile(files[i]);
+
+    // Return focus to the input so the user can keep typing
+    var input = document.getElementById('commentInput');
+    if(input) input.focus();
+  });
+
+  // Safety: if the drag is cancelled (Esc, window blur), clear state
+  window.addEventListener('dragend', _resetDrag);
+  window.addEventListener('blur', _resetDrag);
+})();
 
 /* ═══════════════════════════════════════════════════════════
    Comment editor — emoji insert picker (smiley-face button)
