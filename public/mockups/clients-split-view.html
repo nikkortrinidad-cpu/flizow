@@ -631,7 +631,7 @@
 
   const savedViews = [
     { id: 'all',       label: 'All',                 match: () => true },
-    { id: 'mine',      label: 'My clients',          match: c => c.am.init === 'NT' },
+    { id: 'mine',      label: 'Assigned to me',      match: c => c.am.init === 'NT' },
     { id: 'fire',      label: 'On Fire',             match: c => c.status === 'fire' },
     { id: 'risk',      label: 'At Risk',             match: c => c.status === 'risk' },
     { id: 'renewing',  label: 'Renewing soon',       match: c => ['acme-corp','cascade-coffee'].includes(c.id) },
