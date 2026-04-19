@@ -1,0 +1,851 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Clients — Split View Mockup</title>
+<style>
+  :root {
+    --bg: #fbfbfd;
+    --bg-elev: #ffffff;
+    --bg-soft: #f5f5f7;
+    --bg-faint: #fafafa;
+    --text: #1d1d1f;
+    --text-muted: #636366;
+    --text-soft: #86868b;
+    --text-faint: #aeaeb2;
+    --hairline: rgba(0,0,0,0.08);
+    --hairline-soft: rgba(0,0,0,0.05);
+    --accent: #ff3b30;
+    --hover-tint: rgba(0,122,255,0.08);
+    --hover-blue: #007AFF;
+    --highlight-soft: rgba(0,122,255,0.10);
+    --tag-bg: rgba(0,0,0,0.04);
+    --tag-text: #636366;
+    --shadow: 0 1px 3px rgba(0,0,0,0.04);
+    --shadow-hover: 0 4px 16px rgba(0,0,0,0.08);
+  }
+  :root[data-theme="dark"] {
+    --bg: #000000;
+    --bg-elev: #1c1c1e;
+    --bg-soft: #2c2c2e;
+    --bg-faint: #161618;
+    --text: #f5f5f7;
+    --text-muted: #aeaeb2;
+    --text-soft: #86868b;
+    --text-faint: #636366;
+    --hairline: rgba(255,255,255,0.1);
+    --hairline-soft: rgba(255,255,255,0.06);
+    --hover-tint: rgba(10,132,255,0.16);
+    --hover-blue: #0A84FF;
+    --highlight-soft: rgba(10,132,255,0.18);
+    --tag-bg: rgba(255,255,255,0.06);
+    --tag-text: #aeaeb2;
+    --shadow: 0 1px 3px rgba(0,0,0,0.4);
+    --shadow-hover: 0 4px 16px rgba(0,0,0,0.6);
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Segoe UI', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    -webkit-font-smoothing: antialiased;
+    font-feature-settings: "ss01", "tnum";
+    letter-spacing: -0.022em;
+  }
+
+  /* Top bar (faux nav to mimic ProjectFlow) */
+  .nav {
+    height: 52px;
+    display: flex; align-items: center; gap: 22px;
+    padding: 0 24px;
+    border-bottom: 1px solid var(--hairline-soft);
+    background: rgba(255,255,255,0.72);
+    backdrop-filter: saturate(180%) blur(20px);
+    position: sticky; top: 0; z-index: 20;
+  }
+  :root[data-theme="dark"] .nav { background: rgba(0,0,0,0.72); }
+  .brand { font-size: 15px; font-weight: 600; }
+  .nav-links { display: flex; gap: 4px; }
+  .nav-link {
+    font-size: 13px; color: var(--text-muted);
+    padding: 6px 10px; border-radius: 6px;
+    text-decoration: none;
+  }
+  .nav-link.active { color: var(--text); background: var(--bg-soft); }
+  .nav-spacer { flex: 1; }
+  .theme-btn {
+    width: 30px; height: 30px; border-radius: 50%;
+    border: 1px solid var(--hairline); background: transparent;
+    color: var(--text-muted); cursor: pointer;
+    display: inline-flex; align-items: center; justify-content: center;
+  }
+
+  /* Page header */
+  .page-header {
+    padding: 28px 32px 20px;
+  }
+  .page-title { font-size: 28px; font-weight: 600; letter-spacing: -0.022em; }
+  .page-subtitle { font-size: 13px; color: var(--text-soft); margin-top: 4px; }
+
+  /* SPLIT SHELL */
+  .split {
+    display: grid;
+    grid-template-columns: 380px 1fr;
+    gap: 0;
+    height: calc(100vh - 52px - 92px); /* nav + page-header */
+    border-top: 1px solid var(--hairline-soft);
+  }
+
+  /* ───── LEFT: compact list ───── */
+  .list-pane {
+    border-right: 1px solid var(--hairline-soft);
+    background: var(--bg-elev);
+    overflow: hidden;
+    display: flex; flex-direction: column;
+  }
+  .list-toolbar {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--hairline-soft);
+    display: flex; align-items: center; gap: 8px;
+    background: var(--bg-elev);
+  }
+  .search-box {
+    flex: 1; min-width: 0;
+    display: flex; align-items: center; gap: 8px;
+    background: var(--bg-soft);
+    border-radius: 8px;
+    padding: 7px 10px;
+  }
+  .search-box svg { width: 14px; height: 14px; color: var(--text-faint); flex-shrink: 0; }
+  .search-box input {
+    flex: 1; min-width: 0;
+    border: 0; background: transparent; outline: none;
+    font-size: 13px; color: var(--text);
+    font-family: inherit;
+  }
+  .search-box input::placeholder { color: var(--text-faint); }
+  .count-chip {
+    font-size: 11px; color: var(--text-soft);
+    padding: 4px 8px; border-radius: 980px;
+    background: var(--bg-soft);
+    flex-shrink: 0;
+  }
+
+  /* Saved Views chip row */
+  .saved-views {
+    display: flex; gap: 6px;
+    padding: 10px 16px;
+    overflow-x: auto;
+    border-bottom: 1px solid var(--hairline-soft);
+    scrollbar-width: none;
+  }
+  .saved-views::-webkit-scrollbar { display: none; }
+  .view-chip {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 5px 10px;
+    border-radius: 980px;
+    font-size: 12px; font-weight: 500;
+    color: var(--text-muted);
+    background: transparent;
+    border: 1px solid var(--hairline);
+    cursor: pointer;
+    white-space: nowrap;
+    flex-shrink: 0;
+    transition: background 0.12s, color 0.12s, border-color 0.12s;
+    font-family: inherit;
+    letter-spacing: -0.005em;
+  }
+  .view-chip:hover { background: var(--bg-soft); color: var(--text); }
+  .view-chip.active {
+    background: var(--text); color: var(--bg-elev); border-color: var(--text);
+  }
+  .view-chip .chip-count {
+    font-size: 11px; opacity: 0.7; font-weight: 500;
+  }
+  .view-chip.new-view {
+    color: var(--hover-blue);
+    border-style: dashed;
+  }
+
+  /* Pinned avatars strip (Messages pattern) */
+  .pinned-strip {
+    display: flex; gap: 12px;
+    padding: 14px 16px 14px;
+    overflow-x: auto;
+    border-bottom: 1px solid var(--hairline-soft);
+    scrollbar-width: none;
+    background: var(--bg-faint);
+  }
+  .pinned-strip::-webkit-scrollbar { display: none; }
+  .pinned-label {
+    font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em;
+    color: var(--text-faint); font-weight: 600;
+    padding: 8px 16px 4px;
+    background: var(--bg-faint);
+  }
+  .pinned-wrap { background: var(--bg-faint); border-bottom: 1px solid var(--hairline-soft); }
+  .pinned-wrap .pinned-strip { border-bottom: 0; padding-top: 4px; }
+  .pinned-avatar {
+    display: flex; flex-direction: column; align-items: center; gap: 5px;
+    min-width: 52px;
+    cursor: pointer;
+    flex-shrink: 0;
+    background: transparent; border: 0;
+    font-family: inherit;
+    padding: 0;
+  }
+  .pinned-avatar-circle {
+    position: relative;
+    width: 44px; height: 44px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    color: #fff; font-weight: 600; font-size: 14px;
+    transition: transform 0.12s, box-shadow 0.15s;
+  }
+  .pinned-avatar:hover .pinned-avatar-circle {
+    transform: translateY(-1px);
+  }
+  .pinned-avatar.selected .pinned-avatar-circle {
+    box-shadow: 0 0 0 2px var(--bg-faint), 0 0 0 4px var(--hover-blue);
+  }
+  .pinned-status-dot {
+    position: absolute;
+    top: -1px; right: -1px;
+    width: 11px; height: 11px; border-radius: 50%;
+    border: 2px solid var(--bg-faint);
+  }
+  .pinned-status-dot.fire { background: #ff453a; }
+  .pinned-status-dot.risk { background: #ff9f0a; }
+  .pinned-status-dot.track { background: #30d158; }
+  .pinned-status-dot.onboard { background: #0A84FF; }
+  .pinned-status-dot.paused { background: #8e8e93; }
+  .pinned-name {
+    font-size: 10px; font-weight: 500;
+    color: var(--text-muted);
+    text-align: center;
+    max-width: 56px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    letter-spacing: -0.005em;
+  }
+
+  .list-scroll {
+    flex: 1; overflow-y: auto;
+  }
+  .list-scroll::-webkit-scrollbar { width: 6px; }
+  .list-scroll::-webkit-scrollbar-thumb { background: var(--hairline); border-radius: 3px; }
+
+  .list-row {
+    display: grid;
+    grid-template-columns: 10px 32px 1fr auto;
+    gap: 10px;
+    align-items: center;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--hairline-soft);
+    cursor: pointer;
+    transition: background 0.12s;
+    position: relative;
+  }
+  .list-row:hover { background: var(--bg-soft); }
+  .list-row.selected {
+    background: var(--highlight-soft);
+  }
+  .list-row.selected::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 8px; bottom: 8px;
+    width: 3px; border-radius: 0 2px 2px 0;
+    background: var(--hover-blue);
+  }
+
+  .row-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    flex-shrink: 0; justify-self: center;
+  }
+  .row-dot.fire { background: #ff453a; box-shadow: 0 0 0 3px rgba(255,69,58,0.16); }
+  .row-dot.risk { background: #ff9f0a; }
+  .row-dot.track { background: #30d158; }
+  .row-dot.onboard { background: #0A84FF; }
+  .row-dot.paused { background: #8e8e93; }
+
+  .row-logo {
+    width: 32px; height: 32px; border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    color: #fff; font-weight: 600; font-size: 11px; letter-spacing: 0.02em;
+    flex-shrink: 0;
+  }
+  .logo-indigo { background: linear-gradient(135deg, #5e5ce6, #7c79f0); }
+  .logo-purple { background: linear-gradient(135deg, #bf5af2, #a04ee2); }
+  .logo-sky    { background: linear-gradient(135deg, #64d2ff, #409cff); }
+  .logo-teal   { background: linear-gradient(135deg, #40c8e0, #30a2c0); }
+  .logo-pink   { background: linear-gradient(135deg, #ff375f, #ff6482); }
+  .logo-orange { background: linear-gradient(135deg, #ff9f0a, #ff7a00); }
+  .logo-green  { background: linear-gradient(135deg, #30d158, #28b14a); }
+  .logo-slate  { background: linear-gradient(135deg, #8e8e93, #636366); }
+  .logo-amber  { background: linear-gradient(135deg, #ffcc00, #ff9f0a); }
+
+  .row-body { min-width: 0; }
+  .row-name {
+    font-size: 14px; font-weight: 600;
+    letter-spacing: -0.01em;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .row-sub {
+    font-size: 12px; color: var(--text-soft);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    margin-top: 2px;
+  }
+  .row-meta {
+    font-size: 11px;
+    color: var(--text-faint);
+    margin-top: 4px;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .row-meta .chip {
+    display: inline-flex; align-items: center;
+    padding: 2px 6px; border-radius: 4px;
+    font-size: 10px; font-weight: 500;
+    letter-spacing: -0.005em;
+    background: var(--tag-bg); color: var(--tag-text);
+  }
+  .row-meta .chip.urgent { background: rgba(255,69,58,0.14); color: #ff453a; }
+  .row-meta .chip.warn   { background: rgba(255,159,10,0.14); color: #ff9f0a; }
+  .row-meta .chip.ok     { background: rgba(48,209,88,0.14); color: #30d158; }
+
+  .row-right {
+    display: flex; flex-direction: column; align-items: flex-end; gap: 6px;
+    flex-shrink: 0;
+  }
+  .row-avatar {
+    width: 22px; height: 22px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    color: #fff; font-size: 9px; font-weight: 600;
+  }
+  .row-time {
+    font-size: 11px; color: var(--text-faint);
+    white-space: nowrap;
+  }
+
+  /* ───── RIGHT: detail ───── */
+  .detail-pane {
+    overflow-y: auto;
+    background: var(--bg);
+  }
+  .detail-pane::-webkit-scrollbar { width: 8px; }
+  .detail-pane::-webkit-scrollbar-thumb { background: var(--hairline); border-radius: 4px; }
+
+  .detail-inner { padding: 36px 40px 80px; max-width: 960px; }
+
+  /* Hero */
+  .hero {
+    display: flex; align-items: center; gap: 20px;
+    padding-bottom: 24px;
+    border-bottom: 1px solid var(--hairline-soft);
+    margin-bottom: 32px;
+  }
+  .hero-logo {
+    width: 72px; height: 72px; border-radius: 16px;
+    display: flex; align-items: center; justify-content: center;
+    color: #fff; font-weight: 600; font-size: 24px; letter-spacing: 0.01em;
+    flex-shrink: 0;
+  }
+  .hero-body { flex: 1; min-width: 0; }
+  .hero-name {
+    font-size: 28px; font-weight: 600; letter-spacing: -0.022em;
+    display: flex; align-items: center; gap: 12px;
+  }
+  .hero-industry {
+    font-size: 14px; color: var(--text-soft);
+    margin-top: 4px;
+  }
+  .status-chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 4px 10px; border-radius: 980px;
+    font-size: 12px; font-weight: 500;
+    background: rgba(255,69,58,0.14); color: #ff453a;
+  }
+  .status-chip .dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: currentColor;
+  }
+  .hero-actions {
+    display: flex; gap: 8px;
+  }
+  .btn {
+    font-size: 13px; font-weight: 500;
+    padding: 7px 14px; border-radius: 8px;
+    border: 1px solid var(--hairline);
+    background: var(--bg-elev);
+    color: var(--text);
+    cursor: pointer;
+    font-family: inherit;
+  }
+  .btn.primary {
+    background: var(--hover-blue); color: #fff; border-color: transparent;
+  }
+  .hero-star-btn {
+    width: 34px; height: 34px;
+    border: 1px solid var(--hairline);
+    background: var(--bg-elev);
+    border-radius: 8px;
+    cursor: pointer;
+    display: inline-flex; align-items: center; justify-content: center;
+    color: var(--text-muted);
+    transition: background 0.12s, color 0.12s, border-color 0.12s;
+  }
+  .hero-star-btn svg {
+    width: 16px; height: 16px;
+    transition: fill 0.15s;
+  }
+  .hero-star-btn:hover {
+    background: var(--bg-soft);
+    color: var(--text);
+  }
+  .hero-star-btn.pinned {
+    color: #ff9f0a;
+    border-color: rgba(255,159,10,0.35);
+    background: rgba(255,159,10,0.1);
+  }
+  .hero-star-btn.pinned svg {
+    fill: #ff9f0a;
+  }
+
+  /* Section header */
+  .section { margin-bottom: 36px; }
+  .section-title {
+    font-size: 13px; font-weight: 600;
+    text-transform: uppercase; letter-spacing: 0.06em;
+    color: var(--text-soft);
+    margin-bottom: 12px;
+  }
+  .section-hint {
+    font-size: 12px; color: var(--text-faint);
+    margin-bottom: 16px;
+  }
+
+  /* Service cards grid */
+  .service-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 12px;
+  }
+  .service-card {
+    background: var(--bg-elev);
+    border: 1px solid var(--hairline-soft);
+    border-radius: 12px;
+    padding: 20px 22px;
+    cursor: pointer;
+    transition: border-color 0.15s, box-shadow 0.15s, transform 0.15s;
+    display: flex; align-items: center; gap: 16px;
+    text-decoration: none; color: inherit;
+  }
+  .service-card:hover {
+    border-color: var(--hover-blue);
+    box-shadow: var(--shadow-hover);
+  }
+  .service-icon {
+    width: 40px; height: 40px; border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    color: #fff; flex-shrink: 0;
+  }
+  .service-icon svg { width: 20px; height: 20px; }
+  .service-body { flex: 1; min-width: 0; }
+  .service-name {
+    font-size: 15px; font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+  .service-meta {
+    font-size: 12px; color: var(--text-soft);
+    margin-top: 2px;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .service-status {
+    display: inline-flex; align-items: center;
+    padding: 2px 7px; border-radius: 4px;
+    font-size: 10px; font-weight: 500;
+    background: rgba(48,209,88,0.14); color: #30d158;
+  }
+  .service-status.warn { background: rgba(255,159,10,0.14); color: #ff9f0a; }
+  .service-chevron {
+    width: 14px; height: 14px; color: var(--text-faint);
+    flex-shrink: 0;
+    transition: transform 0.15s;
+  }
+  .service-card:hover .service-chevron {
+    transform: translateX(2px);
+    color: var(--hover-blue);
+  }
+
+  /* Meta strip (AM/renewal/MRR) */
+  .meta-strip {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 24px;
+    padding: 20px 22px;
+    background: var(--bg-elev);
+    border: 1px solid var(--hairline-soft);
+    border-radius: 12px;
+    margin-bottom: 32px;
+  }
+  .meta-item .meta-label {
+    font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em;
+    color: var(--text-soft);
+    margin-bottom: 4px;
+  }
+  .meta-item .meta-value {
+    font-size: 14px; font-weight: 500;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .meta-avatar {
+    width: 22px; height: 22px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    color: #fff; font-size: 9px; font-weight: 600;
+  }
+
+  /* Empty state for other clients */
+  .empty-note {
+    background: var(--bg-elev);
+    border: 1px dashed var(--hairline);
+    border-radius: 12px;
+    padding: 40px;
+    text-align: center;
+    color: var(--text-soft);
+    font-size: 13px;
+  }
+
+  /* Responsive: collapse to single pane on narrow */
+  @media (max-width: 860px) {
+    .split { grid-template-columns: 1fr; }
+    .list-pane { border-right: 0; }
+    .detail-pane.hidden-mobile { display: none; }
+  }
+</style>
+</head>
+<body data-theme="light">
+
+<div class="nav">
+  <div class="brand">ProjectFlow</div>
+  <div class="nav-links">
+    <a class="nav-link">Overview</a>
+    <a class="nav-link active">Clients</a>
+    <a class="nav-link">Analytics</a>
+  </div>
+  <div class="nav-spacer"></div>
+  <button class="theme-btn" onclick="toggleTheme()" aria-label="Toggle theme">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a9 9 0 1 0 9 9c0-.46-.04-.92-.1-1.36a5.389 5.389 0 0 1-4.4 2.26 5.403 5.403 0 0 1-3.14-9.8c-.44-.06-.9-.1-1.36-.1z"/></svg>
+  </button>
+</div>
+
+<div class="page-header">
+  <div class="page-title">Clients</div>
+  <div class="page-subtitle">50 active · 4 on fire · 6 at risk · 5 onboarding</div>
+</div>
+
+<div class="split" id="split">
+  <!-- LEFT: compact client list -->
+  <aside class="list-pane">
+    <div class="list-toolbar">
+      <div class="search-box">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+        <input type="text" placeholder="Search clients…">
+      </div>
+      <span class="count-chip" id="countChip">50</span>
+    </div>
+
+    <div class="saved-views" id="savedViews"></div>
+
+    <div class="pinned-wrap" id="pinnedWrap">
+      <div class="pinned-label">Pinned</div>
+      <div class="pinned-strip" id="pinnedStrip"></div>
+    </div>
+
+    <div class="list-scroll" id="listScroll">
+      <!-- rows injected by JS -->
+    </div>
+  </aside>
+
+  <!-- RIGHT: detail -->
+  <main class="detail-pane" id="detailPane">
+    <div class="detail-inner" id="detailInner">
+      <!-- populated by JS -->
+    </div>
+  </main>
+</div>
+
+<script>
+  function toggleTheme(){
+    var r = document.documentElement;
+    var cur = r.getAttribute('data-theme') || 'light';
+    r.setAttribute('data-theme', cur === 'light' ? 'dark' : 'light');
+  }
+
+  // ────────────── Mock data ──────────────
+  const clients = [
+    { id:'acme-corp', name:'Acme Corp', industry:'E-commerce · Fashion', status:'fire', chip:{text:'CPC +38%', kind:'urgent'}, am:{init:'NT', name:'Nikko T.', color:'#5e5ce6'}, logo:'AC', logoColor:'indigo', time:'1h ago', mrr:'$24,500', renewal:'Mar 14', tenure:'2y 3mo',
+      services: [
+        { key:'seo', name:'SEO', desc:'Organic search · rank tracking', icon:'search', color:'#30d158', status:{text:'On track', kind:'ok'} },
+        { key:'google-ads', name:'Google Ads', desc:'CPC +38% this week', icon:'ads', color:'#ff453a', status:{text:'Needs review', kind:'warn'} },
+        { key:'content', name:'Content', desc:'8 posts queued · 3 in review', icon:'doc', color:'#bf5af2', status:{text:'On track', kind:'ok'} },
+        { key:'email', name:'Email Marketing', desc:'MoM open rate 42%', icon:'mail', color:'#0A84FF', status:{text:'On track', kind:'ok'} },
+        { key:'pr', name:'PR', desc:'2 placements secured', icon:'megaphone', color:'#ff9f0a', status:{text:'On track', kind:'ok'} },
+        { key:'analytics', name:'Analytics', desc:'Q1 dashboard published', icon:'chart', color:'#40c8e0', status:{text:'On track', kind:'ok'} }
+      ] },
+    { id:'vertex-finance', name:'Vertex Finance', industry:'FinTech · Investments', status:'fire', chip:{text:'2 overdue', kind:'urgent'}, am:{init:'JP', name:'Jordan P.', color:'#64d2ff'}, logo:'VF', logoColor:'purple', time:'4h ago' },
+    { id:'cobalt-auto', name:'Cobalt Auto', industry:'Automotive · Dealers', status:'fire', chip:{text:'Stalled', kind:'urgent'}, am:{init:'MA', name:'Marcus A.', color:'#ff9f0a'}, logo:'CO', logoColor:'sky', time:'1d ago' },
+    { id:'orbit-esports', name:'Orbit Esports', industry:'Media · Gaming', status:'fire', chip:{text:'Launch 2d late', kind:'urgent'}, am:{init:'KC', name:'Kate C.', color:'#ff375f'}, logo:'OE', logoColor:'pink', time:'6h ago' },
+    { id:'bloom-retail', name:'Bloom Retail', industry:'Retail · Home goods', status:'risk', chip:{text:'CTR -12%', kind:'warn'}, am:{init:'MA', name:'Marcus A.', color:'#ff9f0a'}, logo:'BR', logoColor:'teal', time:'3h ago' },
+    { id:'skyline-realty', name:'Skyline Realty', industry:'Real Estate · Luxury', status:'risk', chip:{text:'CPL +34%', kind:'warn'}, am:{init:'JP', name:'Jordan P.', color:'#64d2ff'}, logo:'SR', logoColor:'indigo', time:'2d ago' },
+    { id:'techstart-inc', name:'TechStart Inc.', industry:'SaaS · Developer tools', status:'onboard', chip:{text:'Budget 95%', kind:'warn'}, am:{init:'MA', name:'Marcus A.', color:'#ff9f0a'}, logo:'TS', logoColor:'teal', time:'1d ago' },
+    { id:'atlas-edtech', name:'Atlas EdTech', industry:'EdTech · K–12', status:'onboard', chip:{text:'Onboarding 78%', kind:'ok'}, am:{init:'JP', name:'Jordan P.', color:'#64d2ff'}, logo:'AE', logoColor:'sky', time:'9h ago' },
+    { id:'polaris-aero', name:'Polaris Aero', industry:'Aerospace · Parts', status:'onboard', chip:{text:'Onboarding 12%', kind:'ok'}, am:{init:'NT', name:'Nikko T.', color:'#5e5ce6'}, logo:'PA', logoColor:'indigo', time:'2d ago' },
+    { id:'northwind-labs', name:'Northwind Labs', industry:'Biotech · Research', status:'track', chip:{text:'On schedule', kind:'ok'}, am:{init:'KC', name:'Kate C.', color:'#ff375f'}, logo:'NL', logoColor:'sky', time:'2d ago' },
+    { id:'cascade-coffee', name:'Cascade Coffee', industry:'F&B · DTC roaster', status:'track', chip:{text:'Renewed 2025', kind:'ok'}, am:{init:'KC', name:'Kate C.', color:'#ff375f'}, logo:'CC', logoColor:'orange', time:'1w ago' },
+    { id:'glasslake-dental', name:'Glasslake Dental', industry:'Healthcare · Dental', status:'track', chip:{text:'On schedule', kind:'ok'}, am:{init:'DR', name:'Diana R.', color:'#30d158'}, logo:'GD', logoColor:'sky', time:'3d ago' },
+    { id:'harvest-co', name:'Harvest & Co.', industry:'Agriculture · D2C', status:'track', chip:{text:'On schedule', kind:'ok'}, am:{init:'NT', name:'Nikko T.', color:'#5e5ce6'}, logo:'HC', logoColor:'green', time:'3h ago' },
+    { id:'stoneway-moving', name:'Stoneway Moving', industry:'Logistics · Residential', status:'paused', chip:{text:'Paused Feb 8', kind:'warn'}, am:{init:'MA', name:'Marcus A.', color:'#ff9f0a'}, logo:'SM', logoColor:'slate', time:'2mo ago' }
+  ];
+
+  const statusLabel = { fire:'On Fire', risk:'At Risk', track:'On Track', onboard:'Onboarding', paused:'Paused' };
+  const statusColor = { fire:'#ff453a', risk:'#ff9f0a', track:'#30d158', onboard:'#0A84FF', paused:'#8e8e93' };
+
+  const ICONS = {
+    search:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>',
+    ads:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15.5 12a3.5 3.5 0 1 1-7 0 3.5 3.5 0 0 1 7 0Z"/><path d="M3 12h2M19 12h2M12 3v2M12 19v2"/></svg>',
+    doc:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"/></svg>',
+    mail:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 5L2 7"/></svg>',
+    megaphone:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 11 18-5v12L3 14z"/><path d="M11.6 16.8A3 3 0 1 1 8 20"/></svg>',
+    chart:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 16V8M12 16v-5M17 16v-2"/></svg>'
+  };
+
+  // ────────────── State ──────────────
+  const listScroll = document.getElementById('listScroll');
+  const detailInner = document.getElementById('detailInner');
+  const savedViewsEl = document.getElementById('savedViews');
+  const pinnedStripEl = document.getElementById('pinnedStrip');
+  const pinnedWrapEl = document.getElementById('pinnedWrap');
+  const countChipEl = document.getElementById('countChip');
+
+  const pinned = new Set(['acme-corp', 'vertex-finance', 'bloom-retail']);
+
+  const savedViews = [
+    { id: 'all',       label: 'All',                 match: () => true },
+    { id: 'mine',      label: 'My clients',          match: c => c.am.init === 'NT' },
+    { id: 'fire',      label: 'On Fire',             match: c => c.status === 'fire' },
+    { id: 'risk',      label: 'At Risk',             match: c => c.status === 'risk' },
+    { id: 'renewing',  label: 'Renewing soon',       match: c => ['acme-corp','cascade-coffee'].includes(c.id) },
+    { id: 'onboard',   label: 'Onboarding',          match: c => c.status === 'onboard' }
+  ];
+  let activeView = 'all';
+
+  function getViewCount(view){
+    return clients.filter(view.match).length;
+  }
+
+  function renderSavedViews(){
+    savedViewsEl.innerHTML = savedViews.map(v => `
+      <button class="view-chip ${v.id === activeView ? 'active' : ''}" data-view="${v.id}">
+        ${v.label} <span class="chip-count">${getViewCount(v)}</span>
+      </button>
+    `).join('') + `<button class="view-chip new-view" data-action="new-view">+ New view</button>`;
+  }
+
+  function renderPinned(selectedId){
+    const pinnedList = clients.filter(c => pinned.has(c.id));
+    if (pinnedList.length === 0) {
+      pinnedWrapEl.style.display = 'none';
+      return;
+    }
+    pinnedWrapEl.style.display = '';
+    pinnedStripEl.innerHTML = pinnedList.map(c => `
+      <button class="pinned-avatar ${c.id === selectedId ? 'selected' : ''}" data-id="${c.id}" title="${c.name}">
+        <div class="pinned-avatar-circle logo-${c.logoColor}">
+          ${c.logo}
+          <span class="pinned-status-dot ${c.status}"></span>
+        </div>
+        <span class="pinned-name">${c.name.split(' ')[0]}</span>
+      </button>
+    `).join('');
+  }
+
+  function renderList(selectedId){
+    const view = savedViews.find(v => v.id === activeView);
+    const visible = clients.filter(c => !pinned.has(c.id) && view.match(c));
+    countChipEl.textContent = visible.length;
+    listScroll.innerHTML = visible.map(c => `
+      <div class="list-row ${c.id === selectedId ? 'selected' : ''}" data-id="${c.id}">
+        <span class="row-dot ${c.status}"></span>
+        <div class="row-logo logo-${c.logoColor}">${c.logo}</div>
+        <div class="row-body">
+          <div class="row-name">${c.name}</div>
+          <div class="row-sub">${c.industry}</div>
+          <div class="row-meta">
+            <span class="chip ${c.chip.kind}">${c.chip.text}</span>
+            <span>·</span>
+            <span>${statusLabel[c.status]}</span>
+          </div>
+        </div>
+        <div class="row-right">
+          <div class="row-avatar" style="background:${c.am.color}" title="${c.am.name}">${c.am.init}</div>
+          <div class="row-time">${c.time}</div>
+        </div>
+      </div>
+    `).join('');
+    if (visible.length === 0) {
+      listScroll.innerHTML = '<div style="padding:32px 16px; text-align:center; color:var(--text-faint); font-size:13px;">No clients match this view.</div>';
+    }
+  }
+
+  function renderDetail(c){
+    if (c.services) {
+      detailInner.innerHTML = `
+        <div class="hero">
+          <div class="hero-logo logo-${c.logoColor}">${c.logo}</div>
+          <div class="hero-body">
+            <div class="hero-name">
+              ${c.name}
+              <span class="status-chip" style="background:rgba(${c.status==='fire'?'255,69,58':c.status==='risk'?'255,159,10':c.status==='track'?'48,209,88':c.status==='onboard'?'10,132,255':'142,142,147'},0.14); color:${statusColor[c.status]};">
+                <span class="dot"></span> ${statusLabel[c.status]}
+              </span>
+            </div>
+            <div class="hero-industry">${c.industry}</div>
+          </div>
+          <div class="hero-actions">
+            <button class="hero-star-btn ${pinned.has(c.id) ? 'pinned' : ''}" data-star="${c.id}" aria-label="${pinned.has(c.id) ? 'Unpin client' : 'Pin client'}" title="${pinned.has(c.id) ? 'Unpin' : 'Pin to top'}">
+              <svg viewBox="0 0 24 24" fill="${pinned.has(c.id) ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+            </button>
+            <button class="btn">Open in new tab</button>
+            <button class="btn primary">Message AM</button>
+          </div>
+        </div>
+
+        <div class="meta-strip">
+          <div class="meta-item">
+            <div class="meta-label">Account Manager</div>
+            <div class="meta-value"><span class="meta-avatar" style="background:${c.am.color}">${c.am.init}</span> ${c.am.name}</div>
+          </div>
+          <div class="meta-item">
+            <div class="meta-label">MRR</div>
+            <div class="meta-value">${c.mrr || '—'}</div>
+          </div>
+          <div class="meta-item">
+            <div class="meta-label">Renewal</div>
+            <div class="meta-value">${c.renewal || '—'}</div>
+          </div>
+          <div class="meta-item">
+            <div class="meta-label">Tenure</div>
+            <div class="meta-value">${c.tenure || '—'}</div>
+          </div>
+        </div>
+
+        <div class="section">
+          <div class="section-title">Active Services</div>
+          <div class="section-hint">Click a service to jump straight to its workspace.</div>
+          <div class="service-grid">
+            ${c.services.map(s => `
+              <a class="service-card" data-service="${s.key}" href="#">
+                <div class="service-icon" style="background:${s.color}">${ICONS[s.icon] || ''}</div>
+                <div class="service-body">
+                  <div class="service-name">${s.name}</div>
+                  <div class="service-meta">
+                    <span class="service-status ${s.status.kind}">${s.status.text}</span>
+                    <span>· ${s.desc}</span>
+                  </div>
+                </div>
+                <svg class="service-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+              </a>
+            `).join('')}
+          </div>
+        </div>
+      `;
+    } else {
+      detailInner.innerHTML = `
+        <div class="hero">
+          <div class="hero-logo logo-${c.logoColor}">${c.logo}</div>
+          <div class="hero-body">
+            <div class="hero-name">
+              ${c.name}
+              <span class="status-chip" style="background:rgba(${c.status==='fire'?'255,69,58':c.status==='risk'?'255,159,10':c.status==='track'?'48,209,88':c.status==='onboard'?'10,132,255':'142,142,147'},0.14); color:${statusColor[c.status]};">
+                <span class="dot"></span> ${statusLabel[c.status]}
+              </span>
+            </div>
+            <div class="hero-industry">${c.industry}</div>
+          </div>
+          <div class="hero-actions">
+            <button class="hero-star-btn ${pinned.has(c.id) ? 'pinned' : ''}" data-star="${c.id}" aria-label="${pinned.has(c.id) ? 'Unpin' : 'Pin'}" title="${pinned.has(c.id) ? 'Unpin' : 'Pin to top'}">
+              <svg viewBox="0 0 24 24" fill="${pinned.has(c.id) ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+            </button>
+          </div>
+        </div>
+        <div class="empty-note">
+          Detail for <strong>${c.name}</strong> would render here. Acme Corp shows the fully populated version with clickable service cards.
+        </div>
+      `;
+    }
+  }
+
+  let selected = clients[0].id;
+  function renderAll(){
+    renderSavedViews();
+    renderPinned(selected);
+    renderList(selected);
+    const c = clients.find(x => x.id === selected);
+    if (c) renderDetail(c);
+  }
+  function select(id){
+    selected = id;
+    renderAll();
+    detailInner.parentElement.scrollTop = 0;
+  }
+
+  // Click row → update right pane
+  listScroll.addEventListener('click', (e) => {
+    const row = e.target.closest('.list-row');
+    if (!row) return;
+    select(row.dataset.id);
+  });
+
+  // Click pinned avatar → select client
+  pinnedStripEl.addEventListener('click', (e) => {
+    const btn = e.target.closest('.pinned-avatar');
+    if (!btn) return;
+    select(btn.dataset.id);
+  });
+
+  // Click saved-view chip → switch view
+  savedViewsEl.addEventListener('click', (e) => {
+    const chip = e.target.closest('.view-chip');
+    if (!chip) return;
+    if (chip.dataset.action === 'new-view') {
+      alert('Create a new saved view: define filters like status, AM, renewal window, tags.\n\n(Builder UI comes later.)');
+      return;
+    }
+    activeView = chip.dataset.view;
+    renderAll();
+  });
+
+  // Star toggle (delegated — works for hero star on any client)
+  document.addEventListener('click', (e) => {
+    const star = e.target.closest('.hero-star-btn');
+    if (!star) return;
+    e.preventDefault();
+    const id = star.dataset.star;
+    if (pinned.has(id)) pinned.delete(id); else pinned.add(id);
+    renderAll();
+  });
+
+  // Click service card → demo feedback (no-op destination)
+  document.addEventListener('click', (e) => {
+    const card = e.target.closest('.service-card');
+    if (!card) return;
+    e.preventDefault();
+    const name = card.querySelector('.service-name').textContent;
+    alert('Would navigate to service: ' + name + '\n\n(Real destination wires up later.)');
+  });
+
+  // Init
+  select('acme-corp');
+</script>
+</body>
+</html>
