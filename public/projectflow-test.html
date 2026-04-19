@@ -5736,7 +5736,52 @@
   }
   .service-pill.more {
     background: transparent; color: var(--text-soft);
-    padding: 3px 4px;
+    padding: 3px 6px;
+    cursor: pointer;
+    border: 1px solid var(--hairline);
+    transition: background 0.12s, color 0.12s, border-color 0.12s;
+  }
+  .service-pill.more:hover,
+  .service-pill.more:focus-visible,
+  .service-pill.more[data-popover-open="true"] {
+    background: var(--bg-soft);
+    color: var(--text);
+    border-color: var(--hairline);
+    outline: none;
+  }
+
+  /* Services popover — portaled to body, positioned via JS */
+  .services-popover {
+    position: fixed;
+    z-index: 2000;
+    min-width: 200px; max-width: 280px;
+    background: var(--bg-elev);
+    border: 1px solid var(--hairline);
+    border-radius: 12px;
+    box-shadow: var(--shadow-hover);
+    padding: 12px 14px;
+    display: flex; flex-direction: column; gap: 8px;
+    animation: servicesPopoverIn 0.14s ease-out;
+    pointer-events: auto;
+  }
+  @keyframes servicesPopoverIn {
+    from { opacity: 0; transform: translateY(-4px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .services-popover .popover-label {
+    font-size: 11px; font-weight: 600;
+    text-transform: uppercase; letter-spacing: 0.06em;
+    color: var(--text-soft);
+  }
+  .services-popover .popover-list {
+    display: flex; flex-wrap: wrap; gap: 6px;
+  }
+  .services-popover .popover-item {
+    display: inline-flex; align-items: center;
+    padding: 4px 10px; border-radius: 980px;
+    font-size: 12px; font-weight: 500; letter-spacing: -0.005em;
+    background: var(--tag-bg); color: var(--text);
+    white-space: nowrap;
   }
 
   .client-am {
@@ -14360,6 +14405,204 @@ document.addEventListener('keydown', function(e) {
     var parsed = parseHash();
     routeToView(parsed.view, parsed.id);
   })();
+})();
+</script>
+
+<script>
+/* ═══════ Services Popover — reveals full service list on .more pill hover/tap ═══════ */
+(function(){
+  // Realistic portfolios beyond the 2-3 services visible inline.
+  // Keys map to data-client-id; values are services NOT already shown in the row.
+  var EXTRA = {
+    'acme-corp':          ['Email Marketing', 'PR', 'Analytics'],
+    'bloom-retail':       ['CRO', 'Email Marketing'],
+    'techstart-inc':      ['Paid Social', 'Webinars', 'Landing Pages'],
+    'harvest-co':         ['Packaging', 'Social'],
+    'northwind-labs':     ['Analytics'],
+    'cascade-coffee':     ['Email Marketing', 'Video'],
+    'meridian-health':    ['SEO', 'Content', 'Paid Social'],
+    'vertex-finance':     ['Email Marketing', 'PR', 'Analytics'],
+    'cobalt-auto':        ['Video', 'Paid Social'],
+    'orbit-esports':      ['Influencer', 'Creator Mgmt', 'Video'],
+    'northshore-legal':   ['PR', 'Content'],
+    'pulse-cardio':       ['Content', 'Email Marketing'],
+    'driftwood-spa':      ['Social', 'Photography'],
+    'skyline-realty':     ['Video Tours', 'Paid Social', 'Email Marketing'],
+    'riverbank-law':      ['Brand', 'Website'],
+    'thistle-florals':    ['Social', 'Influencer'],
+    'atlas-edtech':       ['Content', 'Email Marketing', 'Webinars', 'Paid Social'],
+    'polaris-aero':       ['PR', 'Whitepapers'],
+    'glasslake-dental':   ['Paid Social', 'Reviews'],
+    'silvercrest-hvac':   ['Google Ads', 'Call Tracking'],
+    'quantum-biolabs':    ['Content', 'PR', 'Whitepapers'],
+    'nimbus-design':      ['Social', 'Case Studies'],
+    'lumen-photovoltaics':['Content', 'PR'],
+    'ivory-luxe':         ['Influencer', 'Photography', 'Email Marketing'],
+    'ironclad-sec':       ['Content', 'Webinars', 'LinkedIn Ads'],
+    'mosaic-coworking':   ['Paid Social', 'Email Marketing'],
+    'heritage-winery':    ['Content', 'Events'],
+    'echo-voiceai':       ['Content', 'PR', 'Webinars']
+  };
+
+  var BASE_POSITION_OFFSET = 8;
+
+  function escapeHtml(s){
+    return String(s).replace(/[&<>"']/g, function(c){
+      return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c];
+    });
+  }
+
+  function enhanceRows(){
+    var rows = document.querySelectorAll('.client-row[data-client-id]');
+    rows.forEach(function(row){
+      var id = row.getAttribute('data-client-id');
+      var extras = EXTRA[id];
+      if (!extras || !extras.length) return;
+      var services = row.querySelector('.client-services');
+      if (!services) return;
+      // Remove any existing .more pill
+      var existing = services.querySelector('.service-pill.more');
+      if (existing) existing.remove();
+      // Collect visible services (case-insensitive dedupe)
+      var visible = [].slice.call(services.querySelectorAll('.service-pill:not(.more)'))
+        .map(function(p){ return p.textContent.trim(); });
+      var seen = {};
+      visible.forEach(function(s){ seen[s.toLowerCase()] = true; });
+      var newExtras = extras.filter(function(s){
+        var k = s.toLowerCase();
+        if (seen[k]) return false;
+        seen[k] = true;
+        return true;
+      });
+      if (!newExtras.length) return;
+      var all = visible.concat(newExtras);
+      var more = document.createElement('span');
+      more.className = 'service-pill more';
+      more.textContent = '+' + newExtras.length;
+      more.setAttribute('tabindex', '0');
+      more.setAttribute('role', 'button');
+      more.setAttribute('aria-haspopup', 'true');
+      more.setAttribute('aria-expanded', 'false');
+      more.setAttribute('aria-label', 'Show all ' + all.length + ' services');
+      more.dataset.services = all.join('|');
+      services.appendChild(more);
+    });
+  }
+
+  var activePopover = null;
+  var activeTrigger = null;
+
+  function closePopover(){
+    if (activePopover) activePopover.remove();
+    if (activeTrigger){
+      activeTrigger.removeAttribute('data-popover-open');
+      activeTrigger.setAttribute('aria-expanded', 'false');
+    }
+    activePopover = null;
+    activeTrigger = null;
+  }
+
+  function openPopover(trigger){
+    closePopover();
+    var raw = trigger.dataset.services || '';
+    var items = raw.split('|').filter(Boolean);
+    if (!items.length) return;
+    var pop = document.createElement('div');
+    pop.className = 'services-popover';
+    pop.setAttribute('role', 'tooltip');
+    pop.innerHTML =
+      '<div class="popover-label">Active services</div>' +
+      '<div class="popover-list">' +
+        items.map(function(s){ return '<span class="popover-item">' + escapeHtml(s) + '</span>'; }).join('') +
+      '</div>';
+    document.body.appendChild(pop);
+    position(pop, trigger);
+    trigger.setAttribute('data-popover-open', 'true');
+    trigger.setAttribute('aria-expanded', 'true');
+    activePopover = pop;
+    activeTrigger = trigger;
+  }
+
+  function position(pop, trigger){
+    var rect = trigger.getBoundingClientRect();
+    var pw = pop.offsetWidth;
+    var ph = pop.offsetHeight;
+    var vw = window.innerWidth;
+    var vh = window.innerHeight;
+    var top = rect.bottom + BASE_POSITION_OFFSET;
+    var left = rect.right - pw;  // right-align to pill
+    // Flip up if off-bottom
+    if (top + ph > vh - 12) top = rect.top - ph - BASE_POSITION_OFFSET;
+    // Keep inside viewport horizontally
+    if (left < 12) left = 12;
+    if (left + pw > vw - 12) left = vw - pw - 12;
+    pop.style.top = top + 'px';
+    pop.style.left = left + 'px';
+  }
+
+  // Delegate hover + click on .more pills (works for rows rendered after init)
+  document.addEventListener('mouseover', function(e){
+    var trigger = e.target.closest('.service-pill.more');
+    if (!trigger || !trigger.dataset.services) return;
+    if (activeTrigger === trigger) return;
+    openPopover(trigger);
+  });
+
+  document.addEventListener('mouseout', function(e){
+    var from = e.target.closest('.service-pill.more');
+    if (!from) return;
+    // Only close if leaving the whole pill area AND not entering the popover
+    var to = e.relatedTarget;
+    if (to && (from.contains(to) || (activePopover && activePopover.contains(to)))) return;
+    // Tap-open keeps popover visible on mouseout
+    if (from.getAttribute('data-popover-open') === 'true' && from === activeTrigger) {
+      // Allow hover to leave without closing if it was opened by click (heuristic: data-tap-open)
+      if (from.dataset.tapOpen === '1') return;
+    }
+    closePopover();
+  });
+
+  document.addEventListener('click', function(e){
+    var trigger = e.target.closest('.service-pill.more');
+    if (trigger && trigger.dataset.services) {
+      e.preventDefault();
+      e.stopPropagation();
+      if (activeTrigger === trigger) {
+        closePopover();
+      } else {
+        openPopover(trigger);
+        trigger.dataset.tapOpen = '1';
+      }
+      return;
+    }
+    // Click outside closes any open popover
+    if (activePopover && !e.target.closest('.services-popover')) {
+      closePopover();
+    }
+  }, true);
+
+  document.addEventListener('keydown', function(e){
+    if (e.key === 'Escape' && activePopover) {
+      var t = activeTrigger;
+      closePopover();
+      if (t) t.focus();
+      return;
+    }
+    var trigger = e.target.closest && e.target.closest('.service-pill.more');
+    if (trigger && trigger.dataset.services && (e.key === 'Enter' || e.key === ' ')) {
+      e.preventDefault();
+      if (activeTrigger === trigger) closePopover(); else openPopover(trigger);
+    }
+  });
+
+  window.addEventListener('scroll', closePopover, true);
+  window.addEventListener('resize', closePopover);
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', enhanceRows);
+  } else {
+    enhanceRows();
+  }
 })();
 </script>
 
