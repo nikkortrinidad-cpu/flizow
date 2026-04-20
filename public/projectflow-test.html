@@ -14375,13 +14375,14 @@ function openDelegate(e, btn) {
 })();
 
 /* ── Week board: day progression logic ── */
-var DAY_LABELS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
+var DAY_LABELS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday',
+                  'Mon next week', 'Tue next week', 'Wed next week', 'Thu next week', 'Fri next week'];
 var carriedSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 17 20 12 15 7"/><path d="M4 18v-1a5 5 0 0 1 5-5h11"/></svg>';
 
 /* Store the original task HTML keyed by data-id so we can rebuild */
 var originalTasks = {};
 (function() {
-  document.querySelectorAll('.week-col[data-week="current"] .week-task').forEach(function(t) {
+  document.querySelectorAll('.week-col .week-task').forEach(function(t) {
     originalTasks[t.dataset.id] = {
       html: t.innerHTML,
       done: t.dataset.done === 'true',
@@ -14390,56 +14391,64 @@ var originalTasks = {};
   });
 })();
 
-/* Detect which column index (0-4) matches today's real date */
+/* Highlight today across both shown weeks, gray earlier days, carry over
+   unfinished work to today, and auto-activate the correct week tab. */
 function applyToday() {
-  var now = new Date();
+  // Use the demo's PROJECTFLOW_DATA.today so the highlight stays stable
+  // even when the real-world date drifts past the schedule's window.
+  var D = window.PROJECTFLOW_DATA;
+  var now = (D && D.today) ? new Date(D.today) : new Date();
   var todayDate = now.getDate();
-  var currentCols = document.querySelectorAll('.week-col[data-week="current"]');
-  var activeIdx = -1;
 
-  for (var i = 0; i < currentCols.length; i++) {
-    if (parseInt(currentCols[i].dataset.date) === todayDate) {
-      activeIdx = i;
+  var allCols = Array.prototype.slice.call(document.querySelectorAll('.week-col'));
+  var todayCol = null;
+  for (var i = 0; i < allCols.length; i++) {
+    if (parseInt(allCols[i].dataset.date) === todayDate) {
+      todayCol = allCols[i];
       break;
     }
   }
+  if (!todayCol) return;
 
-  /* Apply today / past states to current-week columns only */
-  currentCols.forEach(function(col) {
-    var dayIdx = parseInt(col.dataset.day);
-    if (dayIdx === activeIdx) {
-      col.classList.add('is-today');
-    } else if (activeIdx >= 0 && dayIdx < activeIdx) {
-      col.classList.add('is-past');
-    }
+  todayCol.classList.add('is-today');
+  var todayWeek = todayCol.dataset.week;
+  var todayDayIdx = parseInt(todayCol.dataset.day);
+
+  // Day index is 0-9 across both weeks; anything earlier is in the past.
+  allCols.forEach(function(col) {
+    if (col === todayCol) return;
+    if (parseInt(col.dataset.day) < todayDayIdx) col.classList.add('is-past');
   });
 
-  /* Move unfinished tasks from past days to today's column */
-  if (activeIdx >= 0) {
-    var todayCol = document.querySelector('.week-col[data-week="current"][data-day="' + activeIdx + '"]');
-    if (todayCol) {
-      var todayBody = todayCol.querySelector('.week-col-body');
-
-      currentCols.forEach(function(col) {
-        var dayIdx = parseInt(col.dataset.day);
-        if (dayIdx >= activeIdx) return;
-
-        col.querySelectorAll('.week-task').forEach(function(task) {
-          var info = originalTasks[task.dataset.id];
-          if (info && !info.done) {
-            var clone = task.cloneNode(false); // preserves tag (a vs div) + attrs (href, data-client-id)
-            clone.className = 'week-task carried';
-            clone.dataset.id = task.dataset.id + '-carried';
-            var origLabel = DAY_LABELS[info.origDayIdx] || 'Earlier';
-            clone.innerHTML =
-              '<div class="carried-badge">' + carriedSvg + 'Carried from ' + origLabel + '</div>' +
-              info.html;
-            todayBody.insertBefore(clone, todayBody.firstChild);
-          }
-        });
-      });
-    }
+  // Auto-activate the week tab containing today (so the user lands on
+  // the right week without manual switching).
+  var tabs = document.querySelectorAll('#weekTabs .week-tab');
+  var board = document.getElementById('weekBoard');
+  if (tabs.length && board) {
+    tabs.forEach(function(t) { t.classList.remove('active'); });
+    var activeTab = document.querySelector('#weekTabs .week-tab[data-target="' + todayWeek + '"]');
+    if (activeTab) activeTab.classList.add('active');
+    board.classList.toggle('show-next', todayWeek === 'next');
   }
+
+  // Carry unfinished tasks from any earlier day into today's column.
+  var todayBody = todayCol.querySelector('.week-col-body');
+  if (!todayBody) return;
+  allCols.forEach(function(col) {
+    if (parseInt(col.dataset.day) >= todayDayIdx) return;
+    col.querySelectorAll('.week-task').forEach(function(task) {
+      var info = originalTasks[task.dataset.id];
+      if (!info || info.done) return;
+      var clone = task.cloneNode(false); // preserves tag (a vs div) + attrs (href, data-client-id)
+      clone.className = 'week-task carried';
+      clone.dataset.id = task.dataset.id + '-carried';
+      var origLabel = DAY_LABELS[info.origDayIdx] || 'Earlier';
+      clone.innerHTML =
+        '<div class="carried-badge">' + carriedSvg + 'Carried from ' + origLabel + '</div>' +
+        info.html;
+      todayBody.insertBefore(clone, todayBody.firstChild);
+    });
+  });
 }
 
 applyToday();
