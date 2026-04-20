@@ -5145,17 +5145,26 @@
     mask-image: linear-gradient(to bottom, #000 calc(100% - 28px), transparent 100%);
   }
   .week-task {
+    display: block;
     background: var(--bg-soft);
     border-radius: 10px;
     padding: 12px 14px;
     cursor: pointer;
     transition: background 0.15s, box-shadow 0.15s;
     position: relative;
+    color: inherit;
+    text-decoration: none;
   }
   .week-task:hover {
     background: var(--bg-faint);
     box-shadow: 0 2px 8px rgba(0,0,0,0.06);
   }
+  .week-task:focus-visible {
+    outline: 2px solid var(--hover-blue);
+    outline-offset: 2px;
+  }
+  .week-task.unlinked { cursor: default; }
+  .week-task.unlinked:hover { box-shadow: none; background: var(--bg-soft); }
   .week-task-title {
     font-size: 13px; font-weight: 600; color: var(--text);
     line-height: 1.4; letter-spacing: -0.01em;
@@ -6854,16 +6863,16 @@
           <div class="week-col-day">Monday</div>
         </div>
         <div class="week-col-body">
-          <div class="week-task" data-id="seo-audit" data-done="false">
+          <a class="week-task" data-id="seo-audit" data-done="false" href="#clients/techstart-inc" data-client-id="techstart-inc" aria-label="Open TechStart Inc.">
             <div class="week-task-title">TechStart SEO audit final delivery</div>
             <div class="week-task-meta">Chris Castellano · Running 2 days behind</div>
             <span class="week-task-tag deadline" data-tip="Deliverable due on this day"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>Deadline</span>
-          </div>
-          <div class="week-task" data-id="bloom-deck" data-done="false">
+          </a>
+          <a class="week-task" data-id="bloom-deck" data-done="false" href="#clients/bloom-retail" data-client-id="bloom-retail" aria-label="Open Bloom Retail">
             <div class="week-task-title">Bloom Retail reporting deck due</div>
             <div class="week-task-meta">Kate Lawrence · Client meeting at 9am</div>
             <span class="week-task-tag deadline" data-tip="Deliverable due on this day"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>Deadline</span>
-          </div>
+          </a>
         </div>
       </div>
 
@@ -6874,7 +6883,7 @@
           <div class="week-col-day">Tuesday</div>
         </div>
         <div class="week-col-body">
-          <div class="week-task" data-id="harbor-kickoff" data-done="true">
+          <div class="week-task unlinked" data-id="harbor-kickoff" data-done="true">
             <div class="week-task-title">Harbor Financial kickoff meeting</div>
             <div class="week-task-meta">10:00 AM · New client onboarding</div>
             <span class="week-task-tag meeting" data-tip="Scheduled meeting or call"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Meeting</span>
@@ -6889,32 +6898,32 @@
           <div class="week-col-day">Wednesday</div>
         </div>
         <div class="week-col-body">
-          <div class="week-task" data-id="northstar-scope" data-done="false">
+          <div class="week-task unlinked" data-id="northstar-scope" data-done="false">
             <div class="week-task-title">Northstar scope change decision</div>
             <div class="week-task-meta">Your sign-off needed by EOD</div>
             <span class="week-task-tag deadline" data-tip="Deliverable due on this day"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>Deadline</span>
           </div>
-          <div class="week-task" data-id="nova-api" data-done="false">
+          <div class="week-task unlinked" data-id="nova-api" data-done="false">
             <div class="week-task-title">Nova Ventures API credentials follow-up</div>
             <div class="week-task-meta">Client IT still hasn't responded</div>
             <span class="week-task-tag deadline" data-tip="Deliverable due on this day"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>Deadline</span>
           </div>
-          <div class="week-task" data-id="acme-wireframes" data-done="false">
+          <a class="week-task" data-id="acme-wireframes" data-done="false" href="#clients/acme-corp" data-client-id="acme-corp" aria-label="Open Acme Corporation">
             <div class="week-task-title">Acme wireframes v3 internal review</div>
             <div class="week-task-meta">Harvey San Juan · Prep before Thu stakeholder call</div>
             <span class="week-task-tag meeting" data-tip="Scheduled meeting or call"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Meeting</span>
-          </div>
-          <div class="week-task" data-id="bloom-q2" data-done="false">
+          </a>
+          <a class="week-task" data-id="bloom-q2" data-done="false" href="#clients/bloom-retail" data-client-id="bloom-retail" aria-label="Open Bloom Retail">
             <div class="week-task-title">Bloom Retail Q2 plan — team alignment</div>
             <div class="week-task-meta">11:00 AM · Kate Lawrence presenting draft</div>
             <span class="week-task-tag meeting" data-tip="Scheduled meeting or call"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Meeting</span>
-          </div>
-          <div class="week-task" data-id="summit-calendar" data-done="false">
+          </a>
+          <a class="week-task" data-id="summit-calendar" data-done="false" href="#clients/summit-outdoor" data-client-id="summit-outdoor" aria-label="Open Summit Outdoor">
             <div class="week-task-title">Summit Outdoor content calendar sign-off</div>
             <div class="week-task-meta">May publishing schedule needs approval</div>
             <span class="week-task-tag deadline" data-tip="Deliverable due on this day"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>Deadline</span>
-          </div>
-          <div class="week-task" data-id="mountain-sow" data-done="false">
+          </a>
+          <div class="week-task unlinked" data-id="mountain-sow" data-done="false">
             <div class="week-task-title">Mountain View Dental SOW draft review</div>
             <div class="week-task-meta">New client · Contract terms need your input</div>
             <span class="week-task-tag deadline" data-tip="Deliverable due on this day"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>Deadline</span>
@@ -6929,11 +6938,11 @@
           <div class="week-col-day">Thursday</div>
         </div>
         <div class="week-col-body">
-          <div class="week-task" data-id="acme-review" data-done="false">
+          <a class="week-task" data-id="acme-review" data-done="false" href="#clients/acme-corp" data-client-id="acme-corp" aria-label="Open Acme Corporation">
             <div class="week-task-title">Acme design review — stakeholder walkthrough</div>
             <div class="week-task-meta">2:00 PM · Harvey San Juan presenting</div>
             <span class="week-task-tag meeting" data-tip="Scheduled meeting or call"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Meeting</span>
-          </div>
+          </a>
         </div>
       </div>
 
@@ -6944,16 +6953,16 @@
           <div class="week-col-day">Friday</div>
         </div>
         <div class="week-col-body">
-          <div class="week-task" data-id="acme-launch" data-done="false">
+          <a class="week-task" data-id="acme-launch" data-done="false" href="#clients/acme-corp" data-client-id="acme-corp" aria-label="Open Acme Corporation">
             <div class="week-task-title">Acme website launch target</div>
             <div class="week-task-meta">At risk — waiting on client feedback</div>
             <span class="week-task-tag milestone" data-tip="Key project milestone or launch"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>Milestone</span>
-          </div>
-          <div class="week-task" data-id="bloom-ads" data-done="false">
+          </a>
+          <a class="week-task" data-id="bloom-ads" data-done="false" href="#clients/bloom-retail" data-client-id="bloom-retail" aria-label="Open Bloom Retail">
             <div class="week-task-title">Bloom Retail paid ads — performance report</div>
             <div class="week-task-meta">SEM team · First-week results</div>
             <span class="week-task-tag milestone" data-tip="Key project milestone or launch"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>Milestone</span>
-          </div>
+          </a>
         </div>
       </div>
 
@@ -6966,11 +6975,11 @@
           <div class="week-col-day">Monday</div>
         </div>
         <div class="week-col-body">
-          <div class="week-task" data-id="nw-bloom-retro" data-done="false">
+          <a class="week-task" data-id="nw-bloom-retro" data-done="false" href="#clients/bloom-retail" data-client-id="bloom-retail" aria-label="Open Bloom Retail">
             <div class="week-task-title">Bloom Retail campaign retro</div>
             <div class="week-task-meta">10:00 AM · Full team debrief</div>
             <span class="week-task-tag meeting" data-tip="Scheduled meeting or call"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Meeting</span>
-          </div>
+          </a>
         </div>
       </div>
 
@@ -6981,16 +6990,16 @@
           <div class="week-col-day">Tuesday</div>
         </div>
         <div class="week-col-body">
-          <div class="week-task" data-id="nw-harbor-checkin" data-done="false">
+          <div class="week-task unlinked" data-id="nw-harbor-checkin" data-done="false">
             <div class="week-task-title">Harbor Financial 1-week check-in</div>
             <div class="week-task-meta">2:00 PM · Post-kickoff progress review</div>
             <span class="week-task-tag meeting" data-tip="Scheduled meeting or call"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Meeting</span>
           </div>
-          <div class="week-task" data-id="nw-summit-publish" data-done="false">
+          <a class="week-task" data-id="nw-summit-publish" data-done="false" href="#clients/summit-outdoor" data-client-id="summit-outdoor" aria-label="Open Summit Outdoor">
             <div class="week-task-title">Summit Outdoor May content goes live</div>
             <div class="week-task-meta">First batch of scheduled posts</div>
             <span class="week-task-tag milestone" data-tip="Key project milestone or launch"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>Milestone</span>
-          </div>
+          </a>
         </div>
       </div>
 
@@ -7001,11 +7010,11 @@
           <div class="week-col-day">Wednesday</div>
         </div>
         <div class="week-col-body">
-          <div class="week-task" data-id="nw-acme-revisions" data-done="false">
+          <a class="week-task" data-id="nw-acme-revisions" data-done="false" href="#clients/acme-corp" data-client-id="acme-corp" aria-label="Open Acme Corporation">
             <div class="week-task-title">Acme design revisions due</div>
             <div class="week-task-meta">Harvey San Juan · Based on Thu feedback</div>
             <span class="week-task-tag deadline" data-tip="Deliverable due on this day"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>Deadline</span>
-          </div>
+          </a>
         </div>
       </div>
 
@@ -7016,7 +7025,7 @@
           <div class="week-col-day">Thursday</div>
         </div>
         <div class="week-col-body">
-          <div class="week-task" data-id="nw-mountain-kickoff" data-done="false">
+          <div class="week-task unlinked" data-id="nw-mountain-kickoff" data-done="false">
             <div class="week-task-title">Mountain View Dental project kickoff</div>
             <div class="week-task-meta">11:00 AM · New client onboarding</div>
             <span class="week-task-tag meeting" data-tip="Scheduled meeting or call"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Meeting</span>
@@ -7031,7 +7040,7 @@
           <div class="week-col-day">Friday</div>
         </div>
         <div class="week-col-body">
-          <div class="week-task" data-id="nw-northstar-delivery" data-done="false">
+          <div class="week-task unlinked" data-id="nw-northstar-delivery" data-done="false">
             <div class="week-task-title">Northstar mobile module spec delivery</div>
             <div class="week-task-meta">End of sprint 1 · Scope approved this week</div>
             <span class="week-task-tag deadline" data-tip="Deliverable due on this day"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>Deadline</span>
@@ -14402,8 +14411,10 @@ function applyToday() {
         col.querySelectorAll('.week-task').forEach(function(task) {
           var info = originalTasks[task.dataset.id];
           if (info && !info.done) {
-            var clone = document.createElement('div');
-            clone.className = 'week-task carried';
+            var clone = task.cloneNode(false); // preserves tag (a vs div) + attrs (href, data-client-id)
+            clone.className = task.classList.contains('unlinked')
+              ? 'week-task unlinked carried'
+              : 'week-task carried';
             clone.dataset.id = task.dataset.id + '-carried';
             var origLabel = DAY_LABELS[info.origDayIdx] || 'Earlier';
             clone.innerHTML =
