@@ -6724,16 +6724,8 @@
       <input type="text" class="cmdk-input" placeholder="Search clients, tasks, people, or commands…">
       <span class="cmdk-esc">ESC</span>
     </div>
-    <div class="cmdk-results">
-      <div class="cmdk-group">
-        <div class="cmdk-group-label">On this board</div>
-        <div class="cmdk-item active"><div class="cmdk-icon">T</div><div class="cmdk-item-main"><div class="cmdk-item-title">Implement responsive navigation menu</div><div class="cmdk-item-sub">In Progress · Nikko Trinidad · High priority</div></div><div class="cmdk-item-kbd">↵</div></div>
-        <div class="cmdk-item"><div class="cmdk-icon">T</div><div class="cmdk-item-main"><div class="cmdk-item-title">Homepage layout with CMS integration</div><div class="cmdk-item-sub">Needs Review · Waiting on client feedback</div></div></div>
-      </div>
-      <div class="cmdk-group">
-        <div class="cmdk-group-label">Clients</div>
-        <div class="cmdk-item"><div class="cmdk-icon">AC</div><div class="cmdk-item-main"><div class="cmdk-item-title">Acme Corporation</div><div class="cmdk-item-sub">4 services · 23 active tasks · On Fire</div></div></div>
-      </div>
+    <div class="cmdk-results" id="cmdkResults">
+      <!-- Populated at runtime from PROJECTFLOW_DATA (clients, tasks, members, commands). -->
     </div>
   </div>
 </div>
@@ -15976,6 +15968,178 @@ document.addEventListener('keydown', function(e) {
     _lastServiceId = nextId;
     renderBoard();
   });
+})();
+</script>
+
+<script>
+/* Phase 6: Cmd+K — live search against PROJECTFLOW_DATA (clients, tasks, people)
+   plus a small fixed set of navigation commands. */
+(function(){
+  var D = window.PROJECTFLOW_DATA;
+  if (!D) return;
+
+  var overlay = document.getElementById('cmdkOverlay');
+  var input = document.querySelector('.cmdk-input');
+  var results = document.getElementById('cmdkResults');
+  if (!overlay || !input || !results) return;
+
+  var STATUS_LABEL = { fire: 'On Fire', risk: 'At Risk', track: 'On Track', onboard: 'Onboarding', paused: 'Paused' };
+  var COLUMN_LABEL = { todo: 'To Do', inprogress: 'In Progress', blocked: 'Blocked', review: 'Needs Review', done: 'Done' };
+  var COMMANDS = [
+    { icon: '⌂', title: 'Go to Overview',  sub: 'Dashboard — portfolio health, attention',  hash: '#overview' },
+    { icon: '◉', title: 'Go to Clients',   sub: 'Directory of all client accounts',         hash: '#clients' },
+    { icon: '⊞', title: 'Go to Board',     sub: 'Kanban board for the default service',     hash: '#board' }
+  ];
+
+  function esc(s){
+    return String(s == null ? '' : s)
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+      .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+  }
+  function norm(s){ return String(s || '').toLowerCase(); }
+  function matches(hay, q){ return norm(hay).indexOf(q) !== -1; }
+
+  var items = [];
+  var activeIdx = 0;
+
+  function build(rawQuery){
+    var q = norm(rawQuery).trim();
+    var out = [];
+
+    COMMANDS.forEach(function(c){
+      if (!q || matches(c.title, q)) out.push({ type: 'cmd', title: c.title, sub: c.sub, icon: c.icon, hash: c.hash });
+    });
+
+    var cappedClients = 0;
+    D.clients.forEach(function(c){
+      if (cappedClients >= (q ? 12 : 5)) return;
+      if (q && !matches(c.name, q) && !matches(c.industry, q)) return;
+      cappedClients++;
+      out.push({
+        type: 'client',
+        title: c.name,
+        sub: c.industry + ' · ' + (STATUS_LABEL[c.status] || c.status),
+        icon: c.initials,
+        hash: '#clients/' + c.id
+      });
+    });
+
+    var serviceById = {}; D.services.forEach(function(s){ serviceById[s.id] = s; });
+    var clientById = {}; D.clients.forEach(function(c){ clientById[c.id] = c; });
+    var cappedTasks = 0;
+    D.tasks.forEach(function(t){
+      if (cappedTasks >= (q ? 20 : 5)) return;
+      if (q && !matches(t.title, q)) return;
+      cappedTasks++;
+      var svc = serviceById[t.serviceId];
+      var cli = clientById[t.clientId];
+      var subParts = [];
+      if (cli) subParts.push(cli.name);
+      if (svc) subParts.push(svc.name);
+      subParts.push(COLUMN_LABEL[t.columnId] || t.columnId);
+      out.push({
+        type: 'task',
+        title: t.title,
+        sub: subParts.join(' · '),
+        icon: 'T',
+        taskId: t.id,
+        serviceId: t.serviceId
+      });
+    });
+
+    D.members.forEach(function(m){
+      if (q && !matches(m.name, q) && !matches(m.initials, q)) return;
+      out.push({
+        type: 'member',
+        title: m.name,
+        sub: 'Account Manager',
+        icon: m.initials
+      });
+    });
+
+    return out;
+  }
+
+  function render(query){
+    items = build(query);
+    activeIdx = 0;
+    if (!items.length){
+      results.innerHTML = '<div class="cmdk-group"><div class="cmdk-group-label">No results</div></div>';
+      return;
+    }
+    var LABELS = { cmd: 'Commands', client: 'Clients', task: 'Tasks', member: 'People' };
+    var order = ['cmd','client','task','member'];
+    var groups = {}; order.forEach(function(k){ groups[k] = []; });
+    items.forEach(function(it, i){ it._idx = i; (groups[it.type] || groups.cmd).push(it); });
+
+    var html = '';
+    order.forEach(function(key){
+      var grp = groups[key];
+      if (!grp.length) return;
+      html += '<div class="cmdk-group"><div class="cmdk-group-label">' + LABELS[key] + '</div>';
+      grp.forEach(function(it){
+        html += '<div class="cmdk-item" data-idx="' + it._idx + '">' +
+          '<div class="cmdk-icon">' + esc(it.icon) + '</div>' +
+          '<div class="cmdk-item-main">' +
+            '<div class="cmdk-item-title">' + esc(it.title) + '</div>' +
+            '<div class="cmdk-item-sub">' + esc(it.sub) + '</div>' +
+          '</div>' +
+        '</div>';
+      });
+      html += '</div>';
+    });
+    results.innerHTML = html;
+    setActive(0);
+  }
+
+  function setActive(i){
+    if (!items.length) return;
+    activeIdx = Math.max(0, Math.min(items.length - 1, i));
+    var nodes = results.querySelectorAll('.cmdk-item');
+    for (var k = 0; k < nodes.length; k++){
+      var isActive = Number(nodes[k].getAttribute('data-idx')) === activeIdx;
+      nodes[k].classList.toggle('active', isActive);
+      if (isActive) nodes[k].scrollIntoView({ block: 'nearest' });
+    }
+  }
+
+  function activate(it){
+    if (typeof closeCmdK === 'function') closeCmdK();
+    if (it.type === 'task'){
+      var target = '#board/' + it.serviceId;
+      if (location.hash !== target) location.hash = target;
+      setTimeout(function(){
+        var card = document.querySelector('.view-board .card[data-card-id="' + CSS.escape(it.taskId) + '"]');
+        if (card && typeof openCardPanel === 'function') openCardPanel(card);
+      }, 90);
+      return;
+    }
+    if (it.hash){
+      if (location.hash !== it.hash) location.hash = it.hash;
+    }
+  }
+
+  input.addEventListener('input', function(){ render(input.value); });
+  input.addEventListener('keydown', function(e){
+    if (e.key === 'ArrowDown'){ e.preventDefault(); setActive(activeIdx + 1); }
+    else if (e.key === 'ArrowUp'){ e.preventDefault(); setActive(activeIdx - 1); }
+    else if (e.key === 'Enter'){ e.preventDefault(); if (items[activeIdx]) activate(items[activeIdx]); }
+  });
+  results.addEventListener('click', function(e){
+    var el = e.target.closest('.cmdk-item');
+    if (!el) return;
+    var idx = Number(el.getAttribute('data-idx'));
+    if (items[idx]) activate(items[idx]);
+  });
+
+  var prevOpen = window.openCmdK;
+  window.openCmdK = function(){
+    if (typeof prevOpen === 'function') prevOpen();
+    input.value = '';
+    render('');
+  };
+
+  render('');
 })();
 </script>
 
