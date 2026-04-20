@@ -6753,7 +6753,7 @@
     <div class="block-header">
       <button class="block-drag-handle" data-tip="Drag to reorder" aria-label="Drag to reorder"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="9" cy="6" r="1.5"/><circle cx="15" cy="6" r="1.5"/><circle cx="9" cy="12" r="1.5"/><circle cx="15" cy="12" r="1.5"/><circle cx="9" cy="18" r="1.5"/><circle cx="15" cy="18" r="1.5"/></svg></button>
       <div class="block-title">Portfolio Health</div>
-      <div class="block-sub">Across 8 active clients</div>
+      <div class="block-sub"><span id="healthActiveLabel">Across 8 active clients</span></div>
     </div>
     <div class="health-strip">
       <div class="health-cell clickable" role="button" tabindex="0" data-saved-view="fire" aria-label="View On Fire clients">
@@ -6762,7 +6762,7 @@
         </div>
         <div>
           <div class="health-label">On Fire</div>
-          <div class="health-value urgent">1</div>
+          <div class="health-value urgent" id="healthFireCount">1</div>
           <div class="health-sub">needs you now</div>
         </div>
       </div>
@@ -6773,7 +6773,7 @@
         </div>
         <div>
           <div class="health-label">At Risk</div>
-          <div class="health-value">2</div>
+          <div class="health-value" id="healthRiskCount">2</div>
           <div class="health-sub">need review</div>
         </div>
       </div>
@@ -6784,7 +6784,7 @@
         </div>
         <div>
           <div class="health-label">On Track</div>
-          <div class="health-value">5</div>
+          <div class="health-value" id="healthTrackCount">5</div>
           <div class="health-sub">clients healthy</div>
         </div>
       </div>
@@ -15226,6 +15226,24 @@ document.addEventListener('keydown', function(e) {
       clients.forEach(function(c) { if (match(c)) n++; });
       el.textContent = n;
     });
+
+    // Overview Portfolio Health — computed from the same client data so the
+    // KPIs always agree with the Clients saved-view chip counts.
+    var fireN = 0, riskN = 0, trackN = 0, activeN = 0;
+    clients.forEach(function(c) {
+      if (c.statusClass === 'fire')  fireN++;
+      if (c.statusClass === 'risk')  riskN++;
+      if (c.statusClass === 'track') trackN++;
+      if (c.statusClass !== 'paused') activeN++;
+    });
+    var fireEl = document.getElementById('healthFireCount');
+    if (fireEl) fireEl.textContent = fireN;
+    var riskEl = document.getElementById('healthRiskCount');
+    if (riskEl) riskEl.textContent = riskN;
+    var trackEl = document.getElementById('healthTrackCount');
+    if (trackEl) trackEl.textContent = trackN;
+    var activeEl = document.getElementById('healthActiveLabel');
+    if (activeEl) activeEl.textContent = 'Across ' + activeN + ' active client' + (activeN === 1 ? '' : 's');
 
     // Empty state
     var empty = document.getElementById('listEmptyState');
