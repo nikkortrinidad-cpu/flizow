@@ -1,0 +1,822 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>My Boards Redesign — Client Directory</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+  :root {
+    --bg:           #fbfbfd;
+    --bg-elev:      #ffffff;
+    --bg-soft:      #f5f5f7;
+    --bg-hover:     #f0f0f2;
+    --hairline:     #e5e5e7;
+    --hairline-soft:#f0f0f2;
+
+    --text:         #1d1d1f;
+    --text-muted:   #3c3c43;
+    --text-soft:    #6e6e73;
+    --text-faint:   #86868b;
+
+    --highlight:        #5e5ce6;
+    --highlight-soft:   rgba(94,92,230,0.12);
+
+    --status-fire:      #ff453a;
+    --status-fire-soft: rgba(255,69,58,0.12);
+    --status-risk:      #ff9f0a;
+    --status-risk-soft: rgba(255,159,10,0.12);
+    --status-track:     #30d158;
+    --status-track-soft:rgba(48,209,88,0.14);
+    --status-onboard:   #0a84ff;
+    --status-onboard-soft:rgba(10,132,255,0.14);
+    --status-paused:    #98989d;
+
+    --logo-indigo: #5e5ce6;
+    --logo-green:  #30d158;
+    --logo-purple: #bf5af2;
+    --logo-pink:   #ff375f;
+    --logo-amber:  #ff9f0a;
+    --logo-teal:   #64d2ff;
+    --logo-blue:   #0a84ff;
+    --logo-red:    #ff453a;
+    --logo-slate:  #8e8e93;
+    --logo-brown:  #a2845e;
+
+    --kbd-bg:      #ffffff;
+    --kbd-border:  #e5e5e7;
+    --shadow-hover:0 2px 8px rgba(0,0,0,0.04);
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0; padding: 0;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Helvetica Neue', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    font-size: 14px;
+    -webkit-font-smoothing: antialiased;
+    letter-spacing: -0.005em;
+  }
+
+  .app {
+    width: 1440px;
+    height: 900px;
+    margin: 40px auto;
+    display: flex;
+    flex-direction: column;
+    background: var(--bg-elev);
+    border-radius: 14px;
+    overflow: hidden;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.08), 0 4px 20px rgba(0,0,0,0.04);
+    border: 1px solid var(--hairline);
+  }
+
+  /* ── Header ─────────────────────────── */
+  .header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 18px;
+    background: var(--bg-elev);
+    border-bottom: 1px solid var(--hairline);
+    flex-shrink: 0;
+  }
+  .header-left { display: flex; align-items: center; gap: 24px; }
+  .header-logo { font-size: 15px; font-weight: 700; letter-spacing: -0.015em; }
+  .header-nav { display: flex; gap: 4px; }
+  .header-nav a {
+    font-size: 13px; color: var(--text-soft); text-decoration: none;
+    padding: 6px 10px; border-radius: 8px; font-weight: 500;
+  }
+  .header-nav a.on { color: var(--text); background: var(--bg-soft); }
+  .header-right { display: flex; align-items: center; gap: 10px; }
+  .cmdk-trigger {
+    display: flex; align-items: center; gap: 8px;
+    padding: 7px 12px;
+    background: var(--bg-soft);
+    border: 1px solid transparent;
+    border-radius: 10px;
+    font-size: 13px; color: var(--text-soft);
+    min-width: 340px;
+  }
+  .cmdk-trigger svg { opacity: 0.6; }
+  .cmdk-trigger .cmdk-label { flex: 1; text-align: left; }
+  .cmdk-trigger .cmdk-kbd {
+    font-size: 11px; font-weight: 600;
+    padding: 2px 6px;
+    background: var(--kbd-bg);
+    border: 1px solid var(--kbd-border);
+    border-radius: 4px; color: var(--text-muted);
+  }
+  .header-icon {
+    width: 36px; height: 36px; border-radius: 50%;
+    background: var(--bg-soft);
+    display: flex; align-items: center; justify-content: center;
+    color: var(--text-soft);
+  }
+  .header-avatar {
+    width: 32px; height: 32px; border-radius: 50%;
+    background: var(--logo-indigo); color: #fff;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px; font-weight: 600;
+  }
+
+  /* ── Split wrapper ──────────────────── */
+  .split {
+    flex: 1; display: flex; min-height: 0;
+  }
+  .list-pane {
+    flex: 0 0 420px;
+    background: var(--bg-elev);
+    border-right: 1px solid var(--hairline);
+    display: flex; flex-direction: column;
+    overflow: hidden;
+  }
+  .detail-pane {
+    flex: 1;
+    background: var(--bg);
+    overflow-y: auto;
+  }
+
+  /* ── List pane toolbar ──────────────── */
+  .list-toolbar {
+    display: flex; align-items: center; gap: 10px;
+    padding: 14px 14px 10px;
+    border-bottom: 1px solid var(--hairline-soft);
+    flex-shrink: 0;
+  }
+  .list-search {
+    flex: 1; display: flex; align-items: center; gap: 8px;
+    padding: 7px 10px; border-radius: 10px;
+    background: var(--bg-soft);
+    font-size: 13px; color: var(--text-soft);
+  }
+  .list-search svg { opacity: 0.5; }
+  .list-count {
+    font-size: 11px; font-weight: 500;
+    color: var(--text-faint);
+    padding: 2px 7px; border-radius: 980px;
+    background: var(--bg-soft);
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* ── MY BOARDS strip ────────────────── */
+  .boards-wrap {
+    position: relative;
+    padding: 10px 8px 4px;
+    border-bottom: 1px solid var(--hairline-soft);
+    background: var(--bg-elev);
+    flex-shrink: 0;
+  }
+  .boards-label {
+    display: flex; align-items: center; justify-content: space-between;
+    margin: 0 6px 6px;
+    font-size: 10px; font-weight: 600;
+    color: var(--text-faint);
+    text-transform: uppercase; letter-spacing: 0.08em;
+  }
+  .boards-label-text { display: inline-flex; align-items: center; gap: 5px; color: var(--text-muted); }
+  .boards-label-text svg { width: 11px; height: 11px; color: var(--status-risk); }
+  .boards-count { font-variant-numeric: tabular-nums; font-weight: 500; }
+
+  .boards-strip {
+    display: flex; gap: 8px;
+    overflow-x: auto;
+    padding: 4px 6px 8px;
+    scrollbar-width: none;
+  }
+  .boards-strip::-webkit-scrollbar { display: none; }
+
+  .board-chip {
+    flex-shrink: 0;
+    width: 178px;
+    background: var(--bg-elev);
+    border: 1px solid var(--hairline-soft);
+    border-radius: 10px;
+    padding: 8px 10px 8px 12px;
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 8px;
+    align-items: center;
+    cursor: pointer;
+    position: relative;
+    transition: border-color 0.15s, box-shadow 0.15s, background 0.15s;
+    text-decoration: none;
+  }
+  .board-chip::before {
+    content: '';
+    position: absolute; left: 0; top: 10px; bottom: 10px;
+    width: 3px; border-radius: 0 3px 3px 0;
+    background: var(--status-paused);
+  }
+  .board-chip[data-status="fire"]::before    { background: var(--status-fire); }
+  .board-chip[data-status="risk"]::before    { background: var(--status-risk); }
+  .board-chip[data-status="track"]::before   { background: var(--status-track); }
+  .board-chip[data-status="onboard"]::before { background: var(--status-onboard); }
+
+  .board-chip:hover {
+    border-color: var(--hairline);
+    background: var(--bg-soft);
+    box-shadow: var(--shadow-hover);
+  }
+  .board-chip.selected {
+    border-color: var(--highlight);
+    box-shadow: 0 0 0 2px var(--highlight-soft);
+  }
+  .board-chip-logo {
+    width: 26px; height: 26px; border-radius: 7px;
+    display: flex; align-items: center; justify-content: center;
+    color: #fff; font-size: 10px; font-weight: 700;
+    letter-spacing: -0.01em;
+  }
+  .board-chip-body { min-width: 0; }
+  .board-chip-name {
+    font-size: 12px; font-weight: 600;
+    color: var(--text);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    line-height: 1.2;
+    letter-spacing: -0.01em;
+  }
+  .board-chip-meta {
+    font-size: 10px; font-weight: 500;
+    color: var(--text-faint);
+    margin-top: 2px;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .board-chip-meta .sep { margin: 0 5px; color: var(--hairline); }
+
+  .boards-nav {
+    position: absolute;
+    top: 30px;
+    width: 28px; height: 64px;
+    display: flex; align-items: center; justify-content: center;
+    background: linear-gradient(to left, var(--bg-elev) 45%, rgba(255,255,255,0));
+    color: var(--text-soft);
+    border: none; cursor: pointer;
+    z-index: 2;
+  }
+  .boards-nav.left {
+    left: 0;
+    background: linear-gradient(to right, var(--bg-elev) 45%, rgba(255,255,255,0));
+  }
+  .boards-nav.right { right: 0; }
+  .boards-nav svg { width: 14px; height: 14px; }
+
+  /* ── Clients section ───────────────── */
+  .clients-section-header {
+    padding: 14px 14px 6px;
+    font-size: 10px; font-weight: 600;
+    color: var(--text-faint);
+    text-transform: uppercase; letter-spacing: 0.08em;
+    flex-shrink: 0;
+  }
+
+  .chips-row {
+    display: flex; flex-wrap: wrap; gap: 5px;
+    padding: 4px 14px 10px;
+    border-bottom: 1px solid var(--hairline-soft);
+    flex-shrink: 0;
+  }
+  .chip {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 4px 9px; border-radius: 980px;
+    background: var(--bg-soft); color: var(--text-muted);
+    font-size: 12px; font-weight: 500;
+    cursor: pointer;
+  }
+  .chip.active { background: var(--highlight); color: #fff; }
+  .chip-count {
+    font-size: 10px; font-weight: 500;
+    padding: 0 5px; border-radius: 980px;
+    background: rgba(0,0,0,0.06);
+    font-variant-numeric: tabular-nums;
+    opacity: 0.75;
+  }
+  .chip.active .chip-count { background: rgba(255,255,255,0.2); opacity: 1; }
+
+  /* ── Client list rows ──────────────── */
+  .client-list { flex: 1; overflow-y: auto; padding: 4px 0 10px; }
+  .client-row {
+    display: grid;
+    grid-template-columns: 10px auto 1fr auto;
+    gap: 10px;
+    align-items: center;
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--hairline-soft);
+    cursor: pointer;
+    position: relative;
+  }
+  .client-row.selected { background: var(--highlight-soft); }
+  .client-row.selected::before {
+    content: '';
+    position: absolute; left: 0; top: 6px; bottom: 6px;
+    width: 3px; background: var(--highlight); border-radius: 0 3px 3px 0;
+  }
+  .client-row .status-dot {
+    width: 7px; height: 7px; border-radius: 50%;
+    background: var(--status-paused);
+  }
+  .client-row[data-status="fire"] .status-dot    { background: var(--status-fire); }
+  .client-row[data-status="risk"] .status-dot    { background: var(--status-risk); }
+  .client-row[data-status="track"] .status-dot   { background: var(--status-track); }
+  .client-row[data-status="onboard"] .status-dot { background: var(--status-onboard); }
+  .client-logo {
+    width: 36px; height: 36px; border-radius: 9px;
+    display: flex; align-items: center; justify-content: center;
+    color: #fff; font-size: 12px; font-weight: 600;
+  }
+  .client-body { min-width: 0; }
+  .client-name {
+    font-size: 13px; font-weight: 600; color: var(--text);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    letter-spacing: -0.01em;
+  }
+  .client-industry {
+    font-size: 11px; color: var(--text-faint);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    margin-top: 1px;
+  }
+  .client-service-pills {
+    display: flex; gap: 4px; margin-top: 5px;
+  }
+  .pill {
+    font-size: 9px; font-weight: 500;
+    padding: 2px 6px; border-radius: 4px;
+    background: var(--bg-soft); color: var(--text-soft);
+    text-transform: uppercase; letter-spacing: 0.04em;
+  }
+  .pill.more { background: transparent; color: var(--text-faint); }
+  .client-time { font-size: 10px; color: var(--text-faint); white-space: nowrap; font-variant-numeric: tabular-nums; }
+
+  /* ── Logo colors ──────────────────── */
+  .logo-indigo { background: var(--logo-indigo); }
+  .logo-green  { background: var(--logo-green); }
+  .logo-purple { background: var(--logo-purple); }
+  .logo-pink   { background: var(--logo-pink); }
+  .logo-amber  { background: var(--logo-amber); }
+  .logo-teal   { background: var(--logo-teal); }
+  .logo-blue   { background: var(--logo-blue); }
+  .logo-red    { background: var(--logo-red); }
+  .logo-slate  { background: var(--logo-slate); }
+  .logo-brown  { background: var(--logo-brown); }
+
+  /* ── Detail pane ──────────────────── */
+  .detail-inner {
+    max-width: 960px;
+    padding: 26px 32px 40px;
+  }
+  .client-hero {
+    background: var(--bg-elev);
+    border: 1px solid var(--hairline-soft);
+    border-radius: 14px;
+    padding: 22px 26px;
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: 20px;
+    align-items: center;
+    margin-bottom: 26px;
+  }
+  .hero-logo {
+    width: 56px; height: 56px; border-radius: 14px;
+    display: flex; align-items: center; justify-content: center;
+    color: #fff; font-size: 18px; font-weight: 600;
+  }
+  .hero-body .hero-title {
+    display: flex; align-items: center; gap: 10px;
+    margin-bottom: 6px;
+  }
+  .hero-name { font-size: 22px; font-weight: 700; letter-spacing: -0.02em; }
+  .hero-badge {
+    font-size: 11px; font-weight: 600;
+    padding: 3px 8px; border-radius: 980px;
+    background: var(--status-fire-soft); color: var(--status-fire);
+    display: inline-flex; align-items: center; gap: 5px;
+  }
+  .hero-badge::before {
+    content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--status-fire);
+  }
+  .hero-meta {
+    display: flex; flex-wrap: wrap; gap: 4px 14px;
+    font-size: 12px; color: var(--text-soft);
+  }
+  .hero-meta .sep { color: var(--hairline); }
+
+  .hero-actions { display: flex; gap: 6px; }
+  .hero-tool {
+    width: 32px; height: 32px; border-radius: 8px;
+    background: var(--bg-soft);
+    display: flex; align-items: center; justify-content: center;
+    color: var(--text-soft); cursor: pointer;
+  }
+
+  /* ── Services ────────────────────── */
+  .section-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 10px;
+  }
+  .section-title {
+    font-size: 11px; font-weight: 600;
+    color: var(--text-soft);
+    text-transform: uppercase; letter-spacing: 0.08em;
+  }
+  .section-sub { font-size: 11px; color: var(--text-faint); }
+
+  .service-card {
+    background: var(--bg-elev);
+    border: 1px solid var(--hairline-soft);
+    border-radius: 14px;
+    padding: 18px 22px;
+    display: grid;
+    grid-template-columns: auto 1fr auto auto;
+    gap: 18px;
+    align-items: center;
+    cursor: pointer;
+    margin-bottom: 10px;
+    transition: border-color 0.15s, box-shadow 0.15s, background 0.15s;
+  }
+  .service-card:hover { background: var(--bg-soft); border-color: var(--hairline); }
+  .service-icon {
+    width: 40px; height: 40px; border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    color: #fff;
+  }
+  .service-icon svg { width: 16px; height: 16px; }
+  .service-body { min-width: 0; }
+  .service-name-row { display: flex; align-items: center; gap: 10px; }
+  .service-name { font-size: 15px; font-weight: 600; letter-spacing: -0.01em; }
+  .service-type {
+    font-size: 10px; font-weight: 600;
+    padding: 2px 7px; border-radius: 980px;
+    text-transform: uppercase; letter-spacing: 0.06em;
+  }
+  .service-type.retainer { color: var(--status-track); background: var(--status-track-soft); }
+  .service-type.project  { color: var(--status-onboard); background: var(--status-onboard-soft); }
+  .service-sub {
+    font-size: 11px; color: var(--text-soft); margin-top: 3px;
+  }
+  .service-sub .sep { margin: 0 5px; color: var(--hairline); }
+  .service-progress { display: flex; flex-direction: column; gap: 5px; min-width: 150px; }
+  .service-progress-label {
+    display: flex; justify-content: space-between; align-items: baseline;
+    font-size: 10px; color: var(--text-soft);
+  }
+  .service-progress-label strong { font-size: 11px; color: var(--text); font-weight: 600; font-variant-numeric: tabular-nums; }
+  .service-progress-bar { height: 4px; background: var(--bg-soft); border-radius: 2px; overflow: hidden; }
+  .service-progress-fill { height: 100%; background: var(--highlight); border-radius: 2px; }
+
+  .service-star {
+    width: 32px; height: 32px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    background: transparent;
+    color: var(--text-faint); cursor: pointer;
+  }
+  .service-star:hover { background: var(--bg-soft); color: var(--status-risk); }
+  .service-star.active { color: var(--status-risk); }
+  .service-star svg { width: 16px; height: 16px; }
+
+  /* ── Annotation callouts ──────────── */
+  .note {
+    position: absolute;
+    background: #1d1d1f;
+    color: #fff;
+    font-size: 11px;
+    padding: 8px 10px; border-radius: 8px;
+    max-width: 220px;
+    line-height: 1.4;
+    z-index: 10;
+  }
+  .note::before {
+    content: '';
+    position: absolute;
+    border: 6px solid transparent;
+  }
+  .note.left::before { right: -12px; top: 14px; border-left-color: #1d1d1f; }
+  .note.right::before { left: -12px; top: 14px; border-right-color: #1d1d1f; }
+  .note strong { color: var(--status-track); }
+
+  /* ── Legend ────────────────────── */
+  .legend {
+    width: 1440px;
+    margin: 0 auto 40px;
+    padding: 18px 24px;
+    background: var(--bg-elev);
+    border: 1px solid var(--hairline);
+    border-radius: 14px;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+    font-size: 12px;
+    color: var(--text-muted);
+    line-height: 1.5;
+  }
+  .legend h3 {
+    margin: 0 0 6px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-faint);
+  }
+  .legend strong { color: var(--status-track); font-weight: 600; }
+  .legend p { margin: 0 0 6px; }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <!-- HEADER -->
+  <div class="header">
+    <div class="header-left">
+      <div class="header-logo">ProjectFlow</div>
+      <nav class="header-nav">
+        <a href="#">Overview</a>
+        <a href="#" class="on">Clients</a>
+        <a href="#">Analytics</a>
+      </nav>
+    </div>
+    <div class="header-right">
+      <div class="cmdk-trigger">
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85zm-5.242.656a5 5 0 1 1 0-10 5 5 0 0 1 0 10z"/></svg>
+        <span class="cmdk-label">Search clients, tasks, people…</span>
+        <span class="cmdk-kbd">⌘K</span>
+      </div>
+      <div class="header-icon">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+      </div>
+      <div class="header-avatar">NT</div>
+    </div>
+  </div>
+
+  <!-- SPLIT VIEW -->
+  <div class="split">
+    <!-- LIST PANE -->
+    <div class="list-pane">
+
+      <!-- Toolbar -->
+      <div class="list-toolbar">
+        <div class="list-search">
+          <svg width="13" height="13" viewBox="0 0 16 16" fill="currentColor"><path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85zm-5.242.656a5 5 0 1 1 0-10 5 5 0 0 1 0 10z"/></svg>
+          <span>Search clients</span>
+        </div>
+        <span class="list-count">50</span>
+      </div>
+
+      <!-- ⭐ MY BOARDS STRIP -->
+      <div class="boards-wrap">
+        <div class="boards-label">
+          <span class="boards-label-text">
+            <svg viewBox="0 0 24 24" fill="currentColor"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+            My Boards
+          </span>
+          <span class="boards-count">5 / 9</span>
+        </div>
+        <div class="boards-strip">
+          <a class="board-chip selected" data-status="fire" href="#">
+            <div class="board-chip-logo logo-indigo">AC</div>
+            <div class="board-chip-body">
+              <div class="board-chip-name">Conversion Optimization</div>
+              <div class="board-chip-meta">Acme<span class="sep">·</span>retainer</div>
+            </div>
+          </a>
+          <a class="board-chip" data-status="fire" href="#">
+            <div class="board-chip-logo logo-indigo">AC</div>
+            <div class="board-chip-body">
+              <div class="board-chip-name">Demand Gen Retainer</div>
+              <div class="board-chip-meta">Acme<span class="sep">·</span>retainer</div>
+            </div>
+          </a>
+          <a class="board-chip" data-status="risk" href="#">
+            <div class="board-chip-logo logo-pink">BR</div>
+            <div class="board-chip-body">
+              <div class="board-chip-name">Google Ads Q2</div>
+              <div class="board-chip-meta">Bloom<span class="sep">·</span>retainer</div>
+            </div>
+          </a>
+          <a class="board-chip" data-status="track" href="#">
+            <div class="board-chip-logo logo-teal">TS</div>
+            <div class="board-chip-body">
+              <div class="board-chip-name">SEO &amp; Content</div>
+              <div class="board-chip-meta">TechStart<span class="sep">·</span>retainer</div>
+            </div>
+          </a>
+          <a class="board-chip" data-status="onboard" href="#">
+            <div class="board-chip-logo logo-amber">SO</div>
+            <div class="board-chip-body">
+              <div class="board-chip-name">Spring Launch</div>
+              <div class="board-chip-meta">Summit<span class="sep">·</span>project</div>
+            </div>
+          </a>
+        </div>
+        <!-- Right overflow chevron (shown when strip overflows) -->
+        <div class="boards-nav right">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+        </div>
+      </div>
+
+      <!-- CLIENTS SECTION HEADER -->
+      <div class="clients-section-header">All Clients</div>
+
+      <!-- Filter chips -->
+      <div class="chips-row">
+        <div class="chip active">All <span class="chip-count">50</span></div>
+        <div class="chip">Assigned to me <span class="chip-count">9</span></div>
+        <div class="chip">On Fire <span class="chip-count">4</span></div>
+        <div class="chip">At Risk <span class="chip-count">6</span></div>
+        <div class="chip">On Track <span class="chip-count">30</span></div>
+        <div class="chip">Renewing soon <span class="chip-count">2</span></div>
+        <div class="chip">Onboarding <span class="chip-count">5</span></div>
+      </div>
+
+      <!-- Client rows -->
+      <div class="client-list">
+        <div class="client-row selected" data-status="fire">
+          <div class="status-dot"></div>
+          <div class="client-logo logo-indigo">AC</div>
+          <div class="client-body">
+            <div class="client-name">Acme Corporation</div>
+            <div class="client-industry">Technology · B2B SaaS</div>
+            <div class="client-service-pills"><span class="pill">Website</span><span class="pill">SEO</span><span class="pill">Content</span><span class="pill more">+3</span></div>
+          </div>
+          <div class="client-time">2h ago</div>
+        </div>
+        <div class="client-row" data-status="risk">
+          <div class="status-dot"></div>
+          <div class="client-logo logo-pink">BR</div>
+          <div class="client-body">
+            <div class="client-name">Bloom Retail</div>
+            <div class="client-industry">E-commerce · Fashion</div>
+            <div class="client-service-pills"><span class="pill">SEO</span><span class="pill">Google Ads</span><span class="pill more">+2</span></div>
+          </div>
+          <div class="client-time">5h ago</div>
+        </div>
+        <div class="client-row" data-status="track">
+          <div class="status-dot"></div>
+          <div class="client-logo logo-teal">TS</div>
+          <div class="client-body">
+            <div class="client-name">TechStart Inc.</div>
+            <div class="client-industry">SaaS · Developer tools</div>
+            <div class="client-service-pills"><span class="pill">SEO</span><span class="pill">Content</span><span class="pill more">+3</span></div>
+          </div>
+          <div class="client-time">1d ago</div>
+        </div>
+        <div class="client-row" data-status="track">
+          <div class="status-dot"></div>
+          <div class="client-logo logo-green">HC</div>
+          <div class="client-body">
+            <div class="client-name">Harvest &amp; Co.</div>
+            <div class="client-industry">Agriculture · D2C</div>
+            <div class="client-service-pills"><span class="pill">Website</span><span class="pill">Brand</span><span class="pill more">+2</span></div>
+          </div>
+          <div class="client-time">3h ago</div>
+        </div>
+        <div class="client-row" data-status="track">
+          <div class="status-dot"></div>
+          <div class="client-logo logo-purple">NL</div>
+          <div class="client-body">
+            <div class="client-name">Northwind Labs</div>
+            <div class="client-industry">Biotech · Research</div>
+            <div class="client-service-pills"><span class="pill">SEO</span><span class="pill">Google Ads</span><span class="pill">Content</span><span class="pill more">+1</span></div>
+          </div>
+          <div class="client-time">2d ago</div>
+        </div>
+        <div class="client-row" data-status="onboard">
+          <div class="status-dot"></div>
+          <div class="client-logo logo-amber">SO</div>
+          <div class="client-body">
+            <div class="client-name">Summit Outdoor</div>
+            <div class="client-industry">Retail · Outdoor apparel</div>
+            <div class="client-service-pills"><span class="pill">Content</span></div>
+          </div>
+          <div class="client-time">4d ago</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- DETAIL PANE -->
+    <div class="detail-pane">
+      <div class="detail-inner">
+
+        <!-- CLIENT HERO — no longer has a pin button -->
+        <div class="client-hero">
+          <div class="hero-logo logo-indigo">AC</div>
+          <div class="hero-body">
+            <div class="hero-title">
+              <div class="hero-name">Acme Corporation</div>
+              <div class="hero-badge">On Fire</div>
+            </div>
+            <div class="hero-meta">
+              <span>Technology · B2B SaaS</span>
+              <span class="sep">·</span>
+              <span>AM: Nikko Trinidad</span>
+              <span class="sep">·</span>
+              <span>Client since Aug 2023</span>
+              <span class="sep">·</span>
+              <span>$14,500/mo · Renews Aug 12</span>
+            </div>
+          </div>
+          <div class="hero-actions">
+            <div class="hero-tool" title="Share">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
+            </div>
+            <div class="hero-tool" title="Edit">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+            </div>
+            <div class="hero-tool" title="More">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>
+            </div>
+          </div>
+        </div>
+
+        <!-- ACTIVE SERVICES -->
+        <div class="section-header">
+          <div class="section-title">Active Services</div>
+          <div class="section-sub">3 of 3 · Onboarding complete</div>
+        </div>
+
+        <div class="service-card">
+          <div class="service-icon logo-indigo">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+          </div>
+          <div class="service-body">
+            <div class="service-name-row">
+              <div class="service-name">Conversion Optimization</div>
+              <div class="service-type retainer">Retainer</div>
+            </div>
+            <div class="service-sub">Template: Web Design — Full Stack<span class="sep">·</span>Due Apr 18<span class="sep">·</span>6 / 14 cards done</div>
+          </div>
+          <div class="service-progress">
+            <div class="service-progress-label"><span>Progress</span><strong>33%</strong></div>
+            <div class="service-progress-bar"><div class="service-progress-fill" style="width:33%"></div></div>
+          </div>
+          <button class="service-star active" aria-label="Unfavorite board">
+            <svg viewBox="0 0 24 24" fill="currentColor"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+          </button>
+        </div>
+
+        <div class="service-card">
+          <div class="service-icon logo-green">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          </div>
+          <div class="service-body">
+            <div class="service-name-row">
+              <div class="service-name">Demand Gen Retainer</div>
+              <div class="service-type retainer">Retainer</div>
+            </div>
+            <div class="service-sub">Template: SEO Retainer — Monthly<span class="sep">·</span>Started Aug 2023<span class="sep">·</span>Next deliverable Apr 22</div>
+          </div>
+          <div class="service-progress">
+            <div class="service-progress-label"><span>This month</span><strong>40%</strong></div>
+            <div class="service-progress-bar"><div class="service-progress-fill" style="width:40%"></div></div>
+          </div>
+          <button class="service-star active" aria-label="Unfavorite board">
+            <svg viewBox="0 0 24 24" fill="currentColor"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+          </button>
+        </div>
+
+        <div class="service-card">
+          <div class="service-icon logo-purple">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+          </div>
+          <div class="service-body">
+            <div class="service-name-row">
+              <div class="service-name">Content &amp; SEO</div>
+              <div class="service-type retainer">Retainer</div>
+            </div>
+            <div class="service-sub">Template: Content — 8 articles/mo<span class="sep">·</span>Started Jan 2025<span class="sep">·</span>Next publish Apr 19</div>
+          </div>
+          <div class="service-progress">
+            <div class="service-progress-label"><span>This month</span><strong>47%</strong></div>
+            <div class="service-progress-bar"><div class="service-progress-fill" style="width:47%"></div></div>
+          </div>
+          <button class="service-star" aria-label="Favorite board">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+          </button>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- LEGEND — explains what changed -->
+<div class="legend">
+  <div>
+    <h3>What's new</h3>
+    <p><strong>"My Boards"</strong> replaces "Pinned Clients". Each chip is a direct shortcut to a kanban board.</p>
+    <p><strong>Chip anatomy</strong>: 3px status bar · client initials · board name · client name + service type.</p>
+  </div>
+  <div>
+    <h3>What's removed</h3>
+    <p>The hero-level star button on the client card is gone. Favoriting lives on the <strong>service card</strong> instead — one star per board.</p>
+    <p>No more two-step travel: the strip goes straight to <code>#board/&lt;serviceId&gt;</code>.</p>
+  </div>
+  <div>
+    <h3>Interaction</h3>
+    <p>Active stars (filled, amber) = board is in "My Boards". Empty stars = not yet favorited. Toggle anywhere, updates everywhere.</p>
+    <p>Strip scrolls horizontally with left/right chevrons when > 5-6 pinned (9-board cap).</p>
+  </div>
+</div>
+
+</body>
+</html>
