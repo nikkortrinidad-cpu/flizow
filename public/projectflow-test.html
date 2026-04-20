@@ -6425,7 +6425,8 @@
 
   /* Pinned avatars strip */
   .pinned-wrap {
-    padding: 10px 14px 8px;
+    position: relative;
+    padding: 10px 8px 4px;
     border-bottom: 1px solid var(--hairline-soft);
     flex-shrink: 0;
   }
@@ -6433,17 +6434,47 @@
     font-size: 10px; font-weight: 500;
     color: var(--text-faint);
     text-transform: uppercase; letter-spacing: 0.06em;
-    margin-bottom: 8px;
-    display: flex; align-items: center; gap: 4px;
+    margin: 0 6px 4px;
+    display: flex; align-items: center; justify-content: space-between; gap: 4px;
   }
+  .pinned-label-text { display: inline-flex; align-items: center; gap: 4px; }
   .pinned-label svg { width: 10px; height: 10px; }
+  .pinned-count {
+    font-weight: 500;
+    color: var(--text-faint);
+    letter-spacing: 0.04em;
+    font-variant-numeric: tabular-nums;
+  }
   .pinned-strip {
     display: flex; gap: 10px;
     overflow-x: auto; overflow-y: hidden;
-    padding-bottom: 2px;
+    padding: 6px 6px 8px;
     scrollbar-width: none;
   }
   .pinned-strip::-webkit-scrollbar { display: none; }
+  .pinned-nav {
+    position: absolute;
+    top: 28px;
+    width: 24px; height: 52px;
+    display: none;
+    align-items: center; justify-content: center;
+    background: linear-gradient(to left, var(--bg-elev) 40%, rgba(255,255,255,0) 100%);
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    padding: 0;
+    z-index: 2;
+  }
+  .pinned-nav svg { width: 14px; height: 14px; }
+  .pinned-nav:hover { color: var(--text); }
+  .pinned-nav.right { right: 0; }
+  .pinned-nav.left {
+    left: 0;
+    background: linear-gradient(to right, var(--bg-elev) 40%, rgba(255,255,255,0) 100%);
+    justify-content: center;
+  }
+  .pinned-wrap.has-overflow-right .pinned-nav.right { display: flex; }
+  .pinned-wrap.has-overflow-left  .pinned-nav.left  { display: flex; }
   .pinned-avatar {
     flex-shrink: 0;
     display: flex; flex-direction: column; align-items: center; gap: 4px;
@@ -7096,10 +7127,19 @@
   <!-- Split view: pinned avatars strip -->
   <div class="pinned-wrap" id="pinnedWrap">
     <div class="pinned-label">
-      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M14 2a1 1 0 0 1 .993.883L15 3v4.586l2.707 2.707A1 1 0 0 1 18 11v1a1 1 0 0 1-1 1h-4v6a1 1 0 0 1-1.993.117L11 19v-6H7a1 1 0 0 1-.993-.883L6 12v-1a1 1 0 0 1 .293-.707L9 7.586V3a1 1 0 0 1 .883-.993L10 2h4z"/></svg>
-      Pinned
+      <span class="pinned-label-text">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M14 2a1 1 0 0 1 .993.883L15 3v4.586l2.707 2.707A1 1 0 0 1 18 11v1a1 1 0 0 1-1 1h-4v6a1 1 0 0 1-1.993.117L11 19v-6H7a1 1 0 0 1-.993-.883L6 12v-1a1 1 0 0 1 .293-.707L9 7.586V3a1 1 0 0 1 .883-.993L10 2h4z"/></svg>
+        Pinned
+      </span>
+      <span class="pinned-count" id="pinnedCount"></span>
     </div>
+    <button type="button" class="pinned-nav left" id="pinnedNavLeft" aria-label="Scroll pinned left">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+    </button>
     <div class="pinned-strip" id="pinnedStrip"></div>
+    <button type="button" class="pinned-nav right" id="pinnedNavRight" aria-label="Scroll pinned right">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+    </button>
   </div>
 
   <!-- Pinned clients (yours) — legacy 2-card grid, hidden in split view -->
@@ -15253,6 +15293,7 @@ document.addEventListener('keydown', function(e) {
   var STORAGE_KEY = 'projectflow-pinned-clients';
   var MAX_PINNED = 8;
   var DEFAULT_PINNED = ['acme-corp', 'vertex-finance', 'bloom-retail'];
+  var MAX_PINNED = 9;
 
   function loadPinned() {
     try {
@@ -15398,6 +15439,7 @@ document.addEventListener('keydown', function(e) {
     var strip = document.getElementById('pinnedStrip');
     if (!strip) return;
     var wrap = document.getElementById('pinnedWrap');
+    var countEl = document.getElementById('pinnedCount');
     var clients = readClients();
     var byId = {};
     clients.forEach(function(c) { byId[c.id] = c; });
@@ -15407,6 +15449,7 @@ document.addEventListener('keydown', function(e) {
 
     // Hide whole strip if no pinned
     if (wrap) wrap.style.display = items.length ? '' : 'none';
+    if (countEl) countEl.textContent = items.length + ' / ' + MAX_PINNED;
 
     var currentId = getCurrentClientId();
     strip.innerHTML = items.map(function(c) {
@@ -15421,7 +15464,37 @@ document.addEventListener('keydown', function(e) {
         '<div class="pinned-name">' + escapeHtml(c.name.split(' ')[0]) + '</div>' +
       '</a>';
     }).join('');
+
+    updatePinnedOverflow();
   }
+
+  function updatePinnedOverflow() {
+    var strip = document.getElementById('pinnedStrip');
+    var wrap = document.getElementById('pinnedWrap');
+    if (!strip || !wrap) return;
+    var overflowsRight = strip.scrollLeft + strip.clientWidth < strip.scrollWidth - 2;
+    var overflowsLeft  = strip.scrollLeft > 2;
+    wrap.classList.toggle('has-overflow-right', overflowsRight);
+    wrap.classList.toggle('has-overflow-left', overflowsLeft);
+  }
+
+  (function wirePinnedNav(){
+    var strip = document.getElementById('pinnedStrip');
+    var left = document.getElementById('pinnedNavLeft');
+    var right = document.getElementById('pinnedNavRight');
+    if (!strip) return;
+    var step = 140;
+    if (left)  left.addEventListener('click',  function(){
+      strip.scrollLeft = Math.max(0, strip.scrollLeft - step);
+      updatePinnedOverflow();
+    });
+    if (right) right.addEventListener('click', function(){
+      strip.scrollLeft = Math.min(strip.scrollWidth - strip.clientWidth, strip.scrollLeft + step);
+      updatePinnedOverflow();
+    });
+    strip.addEventListener('scroll', updatePinnedOverflow, { passive: true });
+    window.addEventListener('resize', updatePinnedOverflow);
+  })();
 
   function escapeHtml(s) {
     return (s || '').replace(/[&<>"']/g, function(ch) {
