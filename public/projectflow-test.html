@@ -15128,6 +15128,230 @@ document.addEventListener('keydown', function(e) {
 </script>
 
 <script>
+/* ═══════ PROJECTFLOW_DATA — unified data model (Phase 1: seed + synthesize)
+   Scrapes the 50 client rows, enriches each with industry-template-driven
+   services / tasks / integrations, and exposes window.PROJECTFLOW_DATA.
+   No view reads from this yet; later phases will migrate renderers. */
+(function(){
+  if (window.PROJECTFLOW_DATA) return;
+
+  var TODAY = new Date('2026-04-20');
+  function daysFromToday(d){ return new Date(TODAY.getTime() + d*86400000).toISOString().slice(0,10); }
+  function hash(s){ var h=0; for(var i=0;i<s.length;i++){ h = ((h<<5)-h + s.charCodeAt(i))|0; } return Math.abs(h); }
+  function pick(arr, seed){ return arr[seed % arr.length]; }
+
+  /* Collapse 49 specific industry labels into ~10 template buckets. */
+  var INDUSTRY_CATEGORY = {
+    saas:         /Tech|SaaS|Developer/i,
+    ecommerce:    /E-commerce|Retail · (Fashion|Outdoor|Surf|Water|Handcraft|Floral|jewelry|Fine)/i,
+    healthcare:   /Healthcare|Biotech|Fitness|Rehab/i,
+    fnb:          /F&B|Agriculture/i,
+    education:    /Education|EdTech/i,
+    professional: /Legal|Finance|FinTech|Professional · Agency|Accounting|Architecture/i,
+    realestate:   /Real Estate|Hospitality|Travel/i,
+    services:     /Services · (HVAC|Electrical|Movers|Cybersecurity)/i,
+    industrial:   /Manufacturing|Aerospace|Automotive|Energy|Logistics/i,
+    media:        /Media|Gaming|Beauty/i
+  };
+  function categoryFor(industry){
+    for (var k in INDUSTRY_CATEGORY) if (INDUSTRY_CATEGORY[k].test(industry)) return k;
+    return 'professional';
+  }
+
+  var SERVICE_TEMPLATES = {
+    saas: [
+      { name: 'Demand Gen Retainer', type: 'retainer', pool: 'demandgen' },
+      { name: 'Content & SEO',       type: 'retainer', pool: 'contentSEO' },
+      { name: 'Product Launch',      type: 'project',  pool: 'launch' },
+      { name: 'Conversion Optimization', type: 'retainer', pool: 'cro' }
+    ],
+    ecommerce: [
+      { name: 'Paid Social & Shopping', type: 'retainer', pool: 'paidSocial' },
+      { name: 'Email Marketing',        type: 'retainer', pool: 'email' },
+      { name: 'Seasonal Campaign',      type: 'project',  pool: 'seasonal' },
+      { name: 'Site CRO',               type: 'retainer', pool: 'cro' }
+    ],
+    healthcare: [
+      { name: 'Local SEO & Reviews',    type: 'retainer', pool: 'localSEO' },
+      { name: 'Patient Acquisition',    type: 'retainer', pool: 'paidLead' },
+      { name: 'Content & Compliance',   type: 'retainer', pool: 'contentSEO' },
+      { name: 'Reputation Rebuild',     type: 'project',  pool: 'reputation' }
+    ],
+    fnb: [
+      { name: 'Social & Influencer',    type: 'retainer', pool: 'social' },
+      { name: 'Photography Retainer',   type: 'retainer', pool: 'photo' },
+      { name: 'Local SEO',              type: 'retainer', pool: 'localSEO' },
+      { name: 'Product Launch',         type: 'project',  pool: 'launch' }
+    ],
+    education: [
+      { name: 'Enrollment Funnel',      type: 'retainer', pool: 'paidLead' },
+      { name: 'Email Nurture',          type: 'retainer', pool: 'email' },
+      { name: 'Content Marketing',      type: 'retainer', pool: 'contentSEO' }
+    ],
+    professional: [
+      { name: 'LinkedIn & PR',          type: 'retainer', pool: 'linkedin' },
+      { name: 'Content & SEO',          type: 'retainer', pool: 'contentSEO' },
+      { name: 'Website Redesign',       type: 'project',  pool: 'website' }
+    ],
+    realestate: [
+      { name: 'Photography & Video',    type: 'retainer', pool: 'photo' },
+      { name: 'Paid Social',            type: 'retainer', pool: 'paidSocial' },
+      { name: 'Email & CRM',            type: 'retainer', pool: 'email' }
+    ],
+    services: [
+      { name: 'Google Ads',             type: 'retainer', pool: 'paidLead' },
+      { name: 'Local SEO & Reviews',    type: 'retainer', pool: 'localSEO' },
+      { name: 'Website Refresh',        type: 'project',  pool: 'website' }
+    ],
+    industrial: [
+      { name: 'PR & Case Studies',      type: 'retainer', pool: 'linkedin' },
+      { name: 'Content Marketing',      type: 'retainer', pool: 'contentSEO' },
+      { name: 'Trade Show Campaign',    type: 'project',  pool: 'seasonal' }
+    ],
+    media: [
+      { name: 'Creator & Influencer',   type: 'retainer', pool: 'social' },
+      { name: 'Video Production',       type: 'retainer', pool: 'photo' },
+      { name: 'Launch Campaign',        type: 'project',  pool: 'launch' }
+    ]
+  };
+
+  var TASK_POOLS = {
+    demandgen: ['LinkedIn ad creative refresh for pricing audience','Retargeting campaign for demo requests','Webinar landing page A/B test','Q2 account-based campaign kickoff','Email nurture sequence v3','Competitor ad audit','Lead routing QA with sales ops','Q1 campaign performance retro','Attribution model review','Budget reallocation proposal'],
+    contentSEO: ['Keyword research for product category pages','Content cluster on migration guides','Technical SEO audit','Blog editorial calendar — Q2','Internal linking cleanup','Pillar page for buyer guide','Featured snippet optimization','Guest post outreach batch','Sitemap regeneration','Schema markup for pricing page'],
+    launch: ['Launch plan & timeline','Press release draft','Demo video recording','Product Hunt submission','Launch-day social schedule','Sales enablement deck','Customer reference outreach','Launch email to existing list','Analyst briefing prep','Post-launch retrospective'],
+    cro: ['Pricing page hero A/B test','Checkout abandonment funnel fix','Signup form field reduction','Heatmap analysis — homepage','User session replay review','Mobile nav simplification','Trust signal placement test','Free trial onboarding flow','Exit-intent popup v2','Product page FAQ expansion'],
+    paidSocial: ['Meta ad creative batch — April','Shopping feed optimization','TikTok Spark Ads test','Pinterest seasonal campaign','Remarketing audience refresh','UGC collection for paid creative','Reel editing for upcoming drop','DPA catalog update','Creative performance report','Budget pacing adjustment'],
+    email: ['Monthly newsletter — April','Abandoned cart sequence v2','VIP re-engagement flow','Segmentation cleanup','Template redesign for mobile','Deliverability audit','Black Friday pre-warming','Birthday/anniversary automation','A/B subject line test','Preference center redesign'],
+    seasonal: ['Campaign concept & mood board','Landing page build','Influencer outreach list','Asset production schedule','Paid media plan','Launch-week content calendar','PR pitch list','Performance dashboard setup','Budget approval','Post-campaign report'],
+    localSEO: ['Google Business Profile updates','Review response automation','Citation cleanup batch','Location page content refresh','Local backlink outreach','NAP consistency audit','Service area page build','Monthly local SEO report','Q&A monitoring setup','Photo upload schedule'],
+    paidLead: ['Google Ads search campaign build','Negative keyword list refresh','Landing page variant test','Call tracking setup','Conversion action review','Budget pacing check','Ad copy refresh batch','Bid strategy migration','Performance Max experiment','Monthly paid report'],
+    reputation: ['Review audit across platforms','Response templates by scenario','Customer care training session','Negative review mitigation plan','Review request automation','Third-party monitoring setup','Press release — service update','Google Business Profile overhaul'],
+    social: ['Content calendar — April','Creator shortlist & outreach','UGC rights collection','Stories series production','Reels editing batch','Community management playbook','Giveaway logistics','Monthly social report','Trend scouting digest','Collab brief for creators'],
+    photo: ['Product photography shoot','Lifestyle shoot planning','Post-production batch','Studio booking for next session','Model casting','Asset library reorganization','Color grading standards','Video b-roll capture','Final asset delivery','Archive QA'],
+    linkedin: ['Executive thought-leadership posts','PR pitch for industry award','Whitepaper distribution plan','LinkedIn ad creative refresh','Employee advocacy rollout','Media list update','Speaker bureau outreach','Byline article draft','Podcast guest booking','Analyst engagement plan'],
+    website: ['Sitemap & wireframe approval','Homepage hero build','Case study template','Navigation redesign','CMS migration plan','Accessibility audit','Performance optimization','Staging QA pass','Analytics event mapping','Launch-day checklist']
+  };
+
+  var AM_COLORS = { NT: '#5e5ce6', KC: '#ff375f', MA: '#ff9f0a', DR: '#30d158', JP: '#64d2ff' };
+
+  function extractAM(row){
+    var av = row.querySelector('.client-am-avatar');
+    var nm = row.querySelector('.client-am-name');
+    if (!av || !nm) return null;
+    var inits = (av.textContent || '').trim();
+    return { id: inits.toLowerCase(), initials: inits, name: nm.textContent.trim(), color: AM_COLORS[inits] || '#8e8e93' };
+  }
+
+  function distributeColumn(progress, i, n, seed){
+    var r = ((seed + i*31) % 100);
+    if (progress < 20) return r < 70 ? 'todo' : 'inprogress';
+    if (progress < 40) return r < 35 ? 'todo' : (r < 75 ? 'inprogress' : 'review');
+    if (progress < 70) return r < 15 ? 'todo' : (r < 55 ? 'inprogress' : (r < 80 ? 'review' : 'done'));
+    return r < 10 ? 'inprogress' : (r < 30 ? 'review' : 'done');
+  }
+
+  function progressForStatus(status, seed){
+    var map = { fire: 30 + (seed % 20), risk: 40 + (seed % 20), track: 60 + (seed % 30), onboard: 5 + (seed % 15), paused: seed % 5 };
+    return map[status] != null ? map[status] : 50;
+  }
+
+  function mrrForCategory(cat, seed){
+    var r = ({ saas:[8000,18000], ecommerce:[6000,14000], healthcare:[5000,12000], fnb:[3000,8000], education:[4000,10000], professional:[7000,16000], realestate:[4000,10000], services:[3000,7000], industrial:[8000,20000], media:[5000,12000] }[cat]) || [4000,10000];
+    return Math.round((r[0] + (seed % (r[1]-r[0]))) / 500) * 500;
+  }
+
+  var INTEGRATION_POOL = ['Google Analytics','Google Ads','Meta Ads','HubSpot','Salesforce','Klaviyo','Slack','Figma','Notion','Shopify'];
+
+  var clients = [], services = [], tasks = [], members = [], integrations = [];
+  var memberSeen = {};
+
+  var rows = document.querySelectorAll('.view-clients .client-row');
+  rows.forEach(function(row){
+    var id = row.getAttribute('data-client-id');
+    if (!id) return;
+    var seed = hash(id);
+    var nameEl = row.querySelector('.client-name');
+    var indEl = row.querySelector('.client-industry');
+    var logoEl = row.querySelector('.client-logo');
+    var dotEl = row.querySelector('.client-status-dot');
+    var am = extractAM(row);
+    if (am && !memberSeen[am.id]) { members.push(am); memberSeen[am.id] = true; }
+
+    var industry = indEl ? indEl.textContent.trim() : '';
+    var cat = categoryFor(industry);
+    var status = (dotEl && (dotEl.className.match(/fire|risk|track|onboard|paused/) || [''])[0]) || 'track';
+    var logoClass = (logoEl && (logoEl.className.match(/logo-[\w-]+/) || [''])[0]) || 'logo-slate';
+    var initials = logoEl ? (logoEl.textContent || '').trim() : '';
+
+    var client = {
+      id: id, name: nameEl ? nameEl.textContent.trim() : id, initials: initials,
+      logoClass: logoClass, status: status, industry: industry, industryCategory: cat,
+      amId: am ? am.id : null, mrr: mrrForCategory(cat, seed),
+      renewsAt: daysFromToday(30 + (seed % 240)),
+      startedAt: daysFromToday(-180 - (seed % 900)),
+      serviceIds: []
+    };
+
+    var catServices = SERVICE_TEMPLATES[cat] || SERVICE_TEMPLATES.professional;
+    var nServices = Math.min(2 + (seed % 3), catServices.length);
+    var offset = seed % catServices.length;
+    for (var si = 0; si < nServices; si++) {
+      var tmpl = catServices[(offset + si) % catServices.length];
+      var serviceId = id + '-svc-' + si;
+      var progress = progressForStatus(status, seed + si*7);
+      var service = {
+        id: serviceId, clientId: id, name: tmpl.name, type: tmpl.type,
+        templateKey: tmpl.pool, progress: progress,
+        nextDeliverableAt: daysFromToday(3 + ((seed+si) % 25)), taskIds: []
+      };
+      var pool = TASK_POOLS[tmpl.pool] || TASK_POOLS.contentSEO;
+      var nTasks = 5 + ((seed+si) % 4);
+      for (var ti = 0; ti < nTasks; ti++) {
+        var taskId = serviceId + '-t' + ti;
+        var col = distributeColumn(progress, ti, nTasks, seed+si);
+        var task = {
+          id: taskId, serviceId: serviceId, clientId: id,
+          title: pool[(seed + si*11 + ti) % pool.length],
+          columnId: col,
+          priority: pick(['low','medium','high','urgent'], (seed+ti*3) % 4),
+          assigneeId: am ? am.id : null, labels: [],
+          dueDate: daysFromToday(((seed+ti*2) % 30) - 3),
+          createdAt: daysFromToday(-(((seed+ti*5) % 60) + 1))
+        };
+        if (status === 'fire' && (col === 'todo' || col === 'inprogress') && ti === 0) {
+          task.severity = 'critical'; task.priority = 'urgent';
+          task.dueDate = daysFromToday(-(((seed+ti) % 5) + 1));
+          task.blockerReason = pick(['Waiting on client feedback','Missing creative assets','Legal review pending','Budget approval stalled'], (seed+ti) % 4);
+        } else if (status === 'risk' && col === 'inprogress' && ti < 2) {
+          task.severity = 'warning'; task.priority = ti === 0 ? 'high' : 'medium';
+        }
+        tasks.push(task);
+        service.taskIds.push(taskId);
+      }
+      services.push(service);
+      client.serviceIds.push(serviceId);
+    }
+
+    var nInt = 2 + (seed % 3);
+    for (var ii = 0; ii < nInt; ii++) {
+      integrations.push({
+        clientId: id,
+        name: INTEGRATION_POOL[(seed + ii*3) % INTEGRATION_POOL.length],
+        status: ((seed + ii) % 11 === 0) ? 'error' : 'connected'
+      });
+    }
+
+    clients.push(client);
+  });
+
+  window.PROJECTFLOW_DATA = {
+    clients: clients, services: services, tasks: tasks,
+    members: members, integrations: integrations, today: TODAY
+  };
+})();
+</script>
+
+<script>
 /* ═══════ Clients Split View — pinning, saved views, search, hero star ═══════ */
 (function(){
   var STORAGE_KEY = 'projectflow-pinned-clients';
