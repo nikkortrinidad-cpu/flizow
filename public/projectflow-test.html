@@ -4752,6 +4752,18 @@
   .attn-client {
     font-size: 12px; font-weight: 600; color: var(--text-muted);
     letter-spacing: -0.005em;
+    text-decoration: none;
+    border-bottom: 1px solid transparent;
+    transition: color 0.15s, border-color 0.15s;
+  }
+  a.attn-client:hover {
+    color: var(--highlight);
+    border-bottom-color: var(--highlight);
+  }
+  a.attn-client:focus-visible {
+    outline: none;
+    color: var(--highlight);
+    border-bottom-color: var(--highlight);
   }
   .attn-age {
     font-size: 11px; color: var(--text-faint); margin-left: auto;
@@ -13937,6 +13949,53 @@ function toggleAttn(e) {
   link.setAttribute('aria-expanded', isOpen);
 }
 
+/* ── Attention card → board + task modal (same pattern as Cmd+K) ── */
+function goToBoardTask(serviceId, taskId) {
+  if (!serviceId) return;
+  var target = '#board/' + serviceId;
+  if (location.hash !== target) {
+    location.hash = target;
+  }
+  if (!taskId) return;
+  setTimeout(function(){
+    var cardEl = document.querySelector('.view-board .card[data-card-id="' + CSS.escape(taskId) + '"]');
+    if (cardEl && typeof openCardPanel === 'function') openCardPanel(cardEl);
+  }, 90);
+}
+
+function openAttentionTask(e, btn) {
+  if (e) { e.stopPropagation(); e.preventDefault(); }
+  var card = btn.closest('.attn-card');
+  if (!card) return;
+  goToBoardTask(card.getAttribute('data-service-id'), card.getAttribute('data-task-id'));
+}
+
+(function wireAttentionClicks(){
+  var list = document.getElementById('attentionList');
+  if (!list) return;
+  list.addEventListener('click', function(e){
+    // Let individual buttons handle themselves (Delegate popover, Review onclick).
+    if (e.target.closest('.attn-btn')) return;
+    // Client name links to client profile via its own href — let the browser navigate.
+    if (e.target.closest('.attn-client')) return;
+    // "N more items" toggle has its own handler.
+    if (e.target.closest('.attn-more')) return;
+
+    var card = e.target.closest('.attn-card');
+    if (!card) return;
+    goToBoardTask(card.getAttribute('data-service-id'), card.getAttribute('data-task-id'));
+  });
+
+  // Keyboard activation — Enter or Space on a focused card
+  list.addEventListener('keydown', function(e){
+    if (e.key !== 'Enter' && e.key !== ' ') return;
+    var card = e.target.closest('.attn-card');
+    if (!card || card !== e.target) return;
+    e.preventDefault();
+    goToBoardTask(card.getAttribute('data-service-id'), card.getAttribute('data-task-id'));
+  });
+})();
+
 /* ── Delegate popover ── */
 var TEAM = [
   { name: 'Roxy Calinga', initials: 'RC', role: 'Operations Manager' },
@@ -15837,11 +15896,11 @@ document.addEventListener('keydown', function(e) {
         : 'Behind schedule or at risk of missing deadline';
       var hiddenCls = idx >= 3 ? ' attn-hidden' : '';
 
-      html += '<div class="attn-card ' + cardCls + hiddenCls + '" data-task-id="' + escapeHtml(t.id) + '">' +
+      html += '<div class="attn-card ' + cardCls + hiddenCls + '" role="button" tabindex="0" data-task-id="' + escapeHtml(t.id) + '" data-service-id="' + escapeHtml(t.serviceId) + '" data-client-id="' + escapeHtml(t.clientId) + '" aria-label="Open ' + escapeHtml(t.title) + '">' +
         '<div class="attn-content">' +
           '<div class="attn-row1">' +
             '<span class="attn-severity ' + sevCls + '" data-tip="' + sevTip + '"><span class="dot"></span>' + sevLabel + '</span>' +
-            '<span class="attn-client">' + escapeHtml(client.name) + '</span>' +
+            '<a class="attn-client" href="#clients/' + escapeHtml(t.clientId) + '" data-client-id="' + escapeHtml(t.clientId) + '" data-tip="Open ' + escapeHtml(client.name) + ' profile">' + escapeHtml(client.name) + '</a>' +
             '<span class="attn-age">' + escapeHtml(ageLabel(t.dueDate, today)) + '</span>' +
           '</div>' +
           '<div class="attn-title">' + escapeHtml(t.title) + '</div>' +
@@ -15849,7 +15908,7 @@ document.addEventListener('keydown', function(e) {
         '</div>' +
         '<div class="attn-actions">' +
           '<button class="attn-btn" onclick="openDelegate(event,this)" data-tip="Assign this to a team member who can follow up" aria-label="Assign this to a team member who can follow up">Delegate</button>' +
-          '<button class="attn-btn primary" onclick="event.stopPropagation()" data-tip="Open this item and take action now" aria-label="Open this item and take action now">Review</button>' +
+          '<button class="attn-btn primary" onclick="openAttentionTask(event,this)" data-tip="Open this item and take action now" aria-label="Open this item and take action now">Review</button>' +
         '</div>' +
       '</div>';
 
