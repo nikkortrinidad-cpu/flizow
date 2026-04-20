@@ -6478,6 +6478,46 @@
   .pinned-wrap.has-overflow-right .pinned-nav.right { display: flex; }
   .pinned-wrap.has-overflow-left  .pinned-nav.left  { display: flex; }
 
+  /* Overview variant: lives inside an Overview block, no bottom border or
+     uppercase label needed (the block-header already supplies the title). */
+  .pinned-wrap--inline { padding: 0; border-bottom: none; }
+  .pinned-wrap--inline .pinned-strip { padding: 4px 2px 2px; gap: 10px; }
+  .pinned-wrap--inline .pinned-nav { top: 4px; height: calc(100% - 6px); }
+  .pinned-wrap--inline .board-chip { width: 200px; padding: 10px 12px; }
+  .pinned-wrap--inline.has-empty .pinned-strip,
+  .pinned-wrap--inline.has-empty .pinned-nav { display: none; }
+  .pinned-wrap--inline:not(.has-empty) .pinned-empty { display: none; }
+  .pinned-empty {
+    display: flex; align-items: center; gap: 14px;
+    padding: 18px 16px;
+    border: 1px dashed var(--hairline);
+    border-radius: 12px;
+    background: var(--bg-soft, rgba(0,0,0,0.02));
+    color: var(--text-soft);
+  }
+  .pinned-empty > svg {
+    width: 22px; height: 22px;
+    color: var(--text-faint);
+    flex-shrink: 0;
+  }
+  .pinned-empty > div { flex: 1; min-width: 0; }
+  .pinned-empty-title {
+    font-size: 13px; font-weight: 600;
+    color: var(--text);
+    margin-bottom: 2px;
+  }
+  .pinned-empty-sub {
+    font-size: 12px;
+    color: var(--text-soft);
+  }
+  .pinned-empty-cta {
+    font-size: 12px; font-weight: 600;
+    color: var(--highlight);
+    text-decoration: none;
+    flex-shrink: 0;
+  }
+  .pinned-empty-cta:hover { text-decoration: underline; }
+
   /* My Boards chip — pins a service board */
   .board-chip {
     flex-shrink: 0;
@@ -6856,34 +6896,33 @@
 
   </div>
 
-  <!-- BLOCK 4: TEAM WORKLOAD -->
-  <div class="block" data-block-id="workload">
+  <!-- BLOCK 4: MY BOARDS — pinned kanban boards, shared store with Clients view -->
+  <div class="block" data-block-id="myboards">
     <div class="block-header">
       <button class="block-drag-handle" data-tip="Drag to reorder" aria-label="Drag to reorder"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="9" cy="6" r="1.5"/><circle cx="15" cy="6" r="1.5"/><circle cx="9" cy="12" r="1.5"/><circle cx="15" cy="12" r="1.5"/><circle cx="9" cy="18" r="1.5"/><circle cx="15" cy="18" r="1.5"/></svg></button>
-      <div class="block-title">Team Workload</div>
-      <div class="block-sub">This week's capacity</div>
+      <div class="block-title">My Boards</div>
+      <div class="block-sub"><span id="overviewPinnedCount"></span></div>
     </div>
-    <div class="workload-grid" id="workloadGrid"></div>
+    <div class="pinned-wrap pinned-wrap--inline" id="overviewPinnedWrap" data-keep-empty="true">
+      <button type="button" class="pinned-nav left" aria-label="Scroll boards left">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+      </button>
+      <div class="pinned-strip" id="overviewPinnedStrip"></div>
+      <button type="button" class="pinned-nav right" aria-label="Scroll boards right">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+      </button>
+      <div class="pinned-empty" id="overviewPinnedEmpty">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+        <div>
+          <div class="pinned-empty-title">No boards favorited yet</div>
+          <div class="pinned-empty-sub">Open any client and tap the star on a service to pin its board here.</div>
+        </div>
+        <a class="pinned-empty-cta" href="#clients">Browse clients →</a>
+      </div>
+    </div>
   </div>
 
 </main>
-
-<!-- Team workload slide-out panel -->
-<div class="wl-panel-backdrop" id="wlBackdrop" onclick="closeWlPanel()"></div>
-<div class="wl-panel" id="wlPanel">
-  <div class="wl-panel-header">
-    <div class="wl-panel-avatar" id="wlPanelAvatar"></div>
-    <div>
-      <div class="wl-panel-name" id="wlPanelName"></div>
-      <div class="wl-panel-role" id="wlPanelRole"></div>
-    </div>
-    <button class="wl-panel-close" onclick="closeWlPanel()" aria-label="Close panel">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-    </button>
-  </div>
-  <div class="wl-panel-summary" id="wlPanelSummary"></div>
-  <div class="wl-panel-body" id="wlPanelBody"></div>
-</div>
 
 <!-- Back to top button -->
 <button class="back-to-top" id="backToTop" aria-label="Back to top" data-tip="Back to top" data-tip-pos="left" onclick="window.scrollTo({top:0,behavior:'smooth'})">
@@ -14414,195 +14453,20 @@ applyToday();
   });
 })();
 
-/* ── Team workload panel ── */
-/* Block types: full=1 FDE, half=0.5, quarter=0.25, quick≈0 */
-var BLOCK_VAL = { full: 1, half: 0.5, quarter: 0.25, quick: 0 };
-var BLOCK_LABEL = { full: 'Full Day', half: 'Half Day', quarter: 'Quarter Day', quick: 'Quick Task' };
-var BLOCK_SYMBOL = { full: '\u{1F7E6}', half: '\u{1F7E9}', quarter: '\u{1F7E8}', quick: '\u2B1C' };
-var CAPACITY = 4; /* Full Day equivalents per week */
-
-/* OPS_TEAM is the single source of truth for the operator team — the
-   employees who appear in Team Workload AND in the Delegate popover.
-   Pushed into PROJECTFLOW_DATA.members (with type: 'operator') by the
-   PROJECTFLOW_DATA IIFE so the rest of the app can reference them by id.
-   `tasks[*].seedId` (when set) links a workload tile to a SCHEDULE_SEEDS
-   entry, making it click-through to the matching kanban card. */
+/* OPS_TEAM is the single source of truth for the operator team. Pushed
+   into PROJECTFLOW_DATA.members with `type: 'operator'` so the delegate
+   popover, future assignee pickers, and reporting all resolve the same
+   employee records by id. (Team Workload widget was retired in favour
+   of the My Boards block on Overview, but the roster stays — it's used
+   wherever someone needs to be assigned.) */
 var OPS_TEAM = [
-  { id: 'rc', initials: 'RC', name: 'Roxy Calinga', role: 'Operations Manager', color: '#4f46e5', bg: '#e0e7ff', type: 'operator',
-    tasks: [
-      { title: 'Acme wireframes v3 — internal review',         meta: 'Wed · Prep before stakeholder call',   block: 'full',    urgent: true,  seedId: 'acme-wireframes' },
-      { title: 'Acme design review — stakeholder walkthrough', meta: 'Thu 2:00 PM · Coordinating',           block: 'half',    urgent: true,  seedId: 'acme-review' },
-      { title: 'Acme website launch prep',                     meta: 'Fri · At risk, waiting on feedback',   block: 'full',    urgent: false, seedId: 'acme-launch' },
-      { title: 'Acme design revisions',                        meta: 'Next week Wed · Based on Thu feedback',block: 'full',    urgent: false, seedId: 'nw-acme-revisions' },
-      { title: 'Bloom brand refresh concepts',                 meta: 'Backlog · No deadline yet',            block: 'full',    urgent: false }
-    ]},
-  { id: 'cc', initials: 'CC', name: 'Chris Castellano', role: 'Senior Growth & SEO Manager', color: '#d97706', bg: '#fef3c7', type: 'operator',
-    tasks: [
-      { title: 'TechStart SEO audit final delivery',           meta: 'Mon · Running 2 days behind',          block: 'full',    urgent: true,  seedId: 'seo-audit' },
-      { title: 'Bloom Retail paid ads — performance report',   meta: 'Fri · First-week results',             block: 'half',    urgent: false, seedId: 'bloom-ads' },
-      { title: 'Summit Outdoor content calendar review',       meta: 'Wed · May schedule approval',          block: 'quarter', urgent: false, seedId: 'summit-calendar' },
-      { title: 'Client keyword brief updates',                 meta: 'Ongoing · 3 clients',                  block: 'quarter', urgent: false }
-    ]},
-  { id: 'kl', initials: 'KL', name: 'Kate Lawrence', role: 'Account Manager', color: '#db2777', bg: '#fce7f3', type: 'operator',
-    tasks: [
-      { title: 'Bloom Retail reporting deck',                  meta: 'Today · Client meeting tomorrow 9am',  block: 'full',    urgent: true,  seedId: 'bloom-deck' },
-      { title: 'Bloom Retail Q2 plan — team alignment',        meta: 'Wed 11:00 AM · Presenting draft',      block: 'half',    urgent: false, seedId: 'bloom-q2' },
-      { title: 'Harbor Financial kickoff follow-up email',     meta: 'Tue · Post-meeting action items',      block: 'quarter', urgent: false },
-      { title: 'Approve Northstar scope change',               meta: 'Wed · Quick sign-off',                 block: 'quick',   urgent: false }
-    ]},
-  { id: 'hs', initials: 'HS', name: 'Harvey San Juan', role: 'Web Designer', color: '#059669', bg: '#d1fae5', type: 'operator',
-    tasks: [
-      { title: 'Nova Ventures API credentials follow-up',      meta: 'Blocked · Client IT hasn\'t responded',block: 'quarter', urgent: false },
-      { title: 'Harbor Financial dev environment setup',       meta: 'Tue · New client onboarding',          block: 'half',    urgent: false }
-    ]},
-  { id: 'mp', initials: 'MP', name: 'Michael Potts', role: 'Paid Social Manager', color: '#7c3aed', bg: '#ede9fe', type: 'operator',
-    tasks: [
-      { title: 'Harbor Financial onboarding checklist',        meta: 'Kickoff Tue · 8 tasks created',        block: 'half',    urgent: false },
-      { title: 'Northstar scope change follow-up',             meta: 'Waiting 2 days · Team paused',         block: 'quarter', urgent: false },
-      { title: 'Weekly project status updates',                meta: 'Fri · All active clients',             block: 'half',    urgent: false },
-      { title: 'Forward Acme invoice to finance',              meta: 'Quick · Minor admin',                  block: 'quick',   urgent: false }
-    ]}
+  { id: 'rc', initials: 'RC', name: 'Roxy Calinga',     role: 'Operations Manager',          color: '#4f46e5', bg: '#e0e7ff', type: 'operator' },
+  { id: 'cc', initials: 'CC', name: 'Chris Castellano', role: 'Senior Growth & SEO Manager', color: '#d97706', bg: '#fef3c7', type: 'operator' },
+  { id: 'kl', initials: 'KL', name: 'Kate Lawrence',    role: 'Account Manager',             color: '#db2777', bg: '#fce7f3', type: 'operator' },
+  { id: 'hs', initials: 'HS', name: 'Harvey San Juan',  role: 'Web Designer',                color: '#059669', bg: '#d1fae5', type: 'operator' },
+  { id: 'mp', initials: 'MP', name: 'Michael Potts',    role: 'Paid Social Manager',         color: '#7c3aed', bg: '#ede9fe', type: 'operator' }
 ];
 window.OPS_TEAM = OPS_TEAM;
-/* Legacy alias — wlData was the original name. Kept as a pointer so any
-   external references continue to resolve. New code should use OPS_TEAM. */
-var wlData = OPS_TEAM;
-
-function calcFDE(tasks) {
-  var total = 0;
-  tasks.forEach(function(t) { total += (BLOCK_VAL[t.block] || 0); });
-  return total;
-}
-
-function fdeStatus(fde) {
-  if (fde >= 5) return 'over';
-  if (fde >= 4) return 'heavy';
-  if (fde >= 2) return 'steady';
-  return 'light';
-}
-
-/* Render workload cards. Idempotent — clears existing tiles before
-   rebuilding so the PROJECTFLOW_DATA kicker can re-run after the data
-   layer is built. Each card resolves its colour/avatar from the
-   member's PROJECTFLOW_DATA entry when available; falls back to the
-   inline OPS_TEAM fields for the first paint. */
-function renderWorkload() {
-  var grid = document.getElementById('workloadGrid');
-  if (!grid) return;
-  grid.innerHTML = '';
-  var CIRC = 2 * Math.PI * 21; /* ~131.95 */
-  var D = window.PROJECTFLOW_DATA;
-  var memberById = {};
-  if (D && D.members) D.members.forEach(function(m){ memberById[m.id] = m; });
-
-  OPS_TEAM.forEach(function(d, i) {
-    var m = memberById[d.id] || d;
-    var fde = calcFDE(d.tasks);
-    var status = fdeStatus(fde);
-    var pct = Math.min(fde / CAPACITY, 1);
-    var offset = CIRC * (1 - pct);
-    var label = fde % 1 === 0 ? fde : fde.toFixed(1);
-
-    var card = document.createElement('div');
-    card.className = 'wl-card';
-    card.onclick = function() { openWlPanel(i); };
-    var statusTip = { light: 'Healthy', steady: 'Healthy', heavy: 'Watch — approaching capacity', over: 'Overloaded — redistribute work' };
-    card.innerHTML =
-      '<div class="wl-bar-ring" data-tip="' + label + ' of ' + CAPACITY + ' Full Day Equivalents — ' + statusTip[status] + '">' +
-        '<svg viewBox="0 0 52 52"><circle class="ring-bg" cx="26" cy="26" r="21"/>' +
-        '<circle class="ring-fill ' + status + '" cx="26" cy="26" r="21" stroke-dasharray="' + CIRC.toFixed(1) + '" stroke-dashoffset="' + offset.toFixed(1) + '"/></svg>' +
-        '<div class="wl-ring-label">' + label + '/' + CAPACITY + '</div>' +
-      '</div>' +
-      '<div class="wl-avatar" style="background:' + (m.bg || d.bg) + ';color:' + (m.color || d.color) + ';">' + (m.initials || d.initials) + '</div>' +
-      '<div class="wl-name">' + (m.name || d.name) + '</div>' +
-      '<div class="wl-caption">' + (m.role || d.role) + '</div>';
-    grid.appendChild(card);
-  });
-}
-window.renderWorkload = renderWorkload;
-renderWorkload();
-
-function openWlPanel(idx) {
-  var d = OPS_TEAM[idx];
-  /* Resolve member info from the central data layer when available so
-     name/role/colour stay in sync if PROJECTFLOW_DATA is the source of
-     truth. Falls back to the inline OPS_TEAM fields. */
-  var D = window.PROJECTFLOW_DATA;
-  var m = d;
-  if (D && D.members) {
-    for (var mi = 0; mi < D.members.length; mi++) {
-      if (D.members[mi].id === d.id) { m = D.members[mi]; break; }
-    }
-  }
-  var fde = calcFDE(d.tasks);
-  var status = fdeStatus(fde);
-
-  var avatar = document.getElementById('wlPanelAvatar');
-  avatar.textContent = m.initials || d.initials;
-  avatar.style.background = m.bg || d.bg;
-  avatar.style.color = m.color || d.color;
-  document.getElementById('wlPanelName').textContent = m.name || d.name;
-  document.getElementById('wlPanelRole').textContent = m.role || d.role;
-
-  /* Summary: count blocks by type */
-  var counts = { full: 0, half: 0, quarter: 0, quick: 0 };
-  d.tasks.forEach(function(t) { counts[t.block]++; });
-  var summary = document.getElementById('wlPanelSummary');
-  var statusLabel = { light: 'Healthy', steady: 'Healthy', heavy: 'Watch', over: 'Overloaded' };
-  var statusColor = { light: '#10b981', steady: '#10b981', heavy: '#f59e0b', over: 'var(--accent)' };
-  var fdeLabel = fde % 1 === 0 ? fde : fde.toFixed(1);
-  var html = '<span class="wl-summary-chip" style="font-weight:600;color:' + statusColor[status] + ';">' + statusLabel[status] + ' &middot; ' + fdeLabel + '/' + CAPACITY + ' FDE</span>';
-  ['full','half','quarter','quick'].forEach(function(type) {
-    if (counts[type] > 0) {
-      html += '<span class="wl-summary-chip"><span class="wl-sc-dot ' + type + '"></span>' + counts[type] + ' ' + BLOCK_LABEL[type] + '</span>';
-    }
-  });
-  summary.innerHTML = html;
-
-  /* Task list with block tags. Tasks linked to a SCHEDULE_SEEDS entry
-     (via seedId) are clickable — they route to the matching kanban
-     card on the client's board, just like the Overview Schedule. */
-  var body = document.getElementById('wlPanelBody');
-  body.innerHTML = '';
-  var scheduleMap = (D && D.scheduleTaskMap) || {};
-  d.tasks.forEach(function(t) {
-    var div = document.createElement('div');
-    div.className = 'wl-panel-task';
-    var serviceId = t.seedId ? scheduleMap[t.seedId] : null;
-    if (serviceId) {
-      div.classList.add('linked');
-      div.setAttribute('data-service-id', serviceId);
-      div.setAttribute('data-task-id', t.seedId);
-      div.style.cursor = 'pointer';
-      div.onclick = function(e) {
-        e.stopPropagation();
-        closeWlPanel();
-        if (typeof goToBoardTask === 'function') goToBoardTask(serviceId, t.seedId);
-      };
-    }
-    div.innerHTML =
-      '<span class="wl-pt-dot ' + (t.urgent ? 'urgent' : 'normal') + '"></span>' +
-      '<div><div>' + t.title + '</div>' +
-      '<div class="wl-pt-meta">' + t.meta + '</div>' +
-      '<span class="wl-block-tag ' + t.block + '">' + BLOCK_SYMBOL[t.block] + ' ' + BLOCK_LABEL[t.block] + '</span>' +
-      '</div>';
-    body.appendChild(div);
-  });
-
-  document.getElementById('wlBackdrop').classList.add('open');
-  document.getElementById('wlPanel').classList.add('open');
-}
-
-function closeWlPanel() {
-  document.getElementById('wlBackdrop').classList.remove('open');
-  document.getElementById('wlPanel').classList.remove('open');
-}
-
-document.addEventListener('keydown', function(e) {
-  if (e.key === 'Escape' && document.getElementById('wlPanel').classList.contains('open')) {
-    closeWlPanel();
-  }
-});
 
 /* ── Block drag-and-drop reorder ── */
 (function() {
@@ -15442,9 +15306,7 @@ document.addEventListener('keydown', function(e) {
   // (PROJECTFLOW_DATA is built lazily after page DOM). Render now.
   if (typeof renderSchedule === 'function') renderSchedule();
   if (typeof applyToday === 'function') applyToday();
-  // Re-render workload now that PROJECTFLOW_DATA.members is populated,
-  // so the cards pick up canonical name/role/colour from the data layer.
-  if (typeof renderWorkload === 'function') renderWorkload();
+  if (typeof renderPinnedStrip === 'function') renderPinnedStrip();
 })();
 </script>
 
@@ -15597,13 +15459,15 @@ document.addEventListener('keydown', function(e) {
     if (input) input.focus();
   }
 
-  /* Render My Boards strip — each chip is a direct shortcut to a kanban board */
+  /* Render My Boards strip — each chip is a direct shortcut to a kanban
+     board. Renders into every `.pinned-strip` on the page so the Clients
+     header strip and the Overview block stay in lock-step (same favorites
+     store, same chips, same selected-state highlighting). Wraps with
+     `data-keep-empty="true"` (the Overview block) keep the wrap visible
+     and show an inline empty state instead of disappearing. */
   function renderPinnedStrip() {
-    var strip = document.getElementById('pinnedStrip');
-    if (!strip) return;
-    var wrap = document.getElementById('pinnedWrap');
-    var countEl = document.getElementById('pinnedCount');
-
+    var strips = document.querySelectorAll('.pinned-strip');
+    if (!strips.length) return;
     var D = window.PROJECTFLOW_DATA;
     if (!D) return;
     var clientById = {};
@@ -15611,7 +15475,6 @@ document.addEventListener('keydown', function(e) {
     var serviceById = {};
     D.services.forEach(function(s) { serviceById[s.id] = s; });
 
-    // Filter pinned IDs down to services that actually exist
     var items = pinned
       .filter(function(id) { return serviceById[id]; })
       .map(function(id) {
@@ -15621,11 +15484,8 @@ document.addEventListener('keydown', function(e) {
       })
       .filter(function(x) { return x.client; });
 
-    if (wrap) wrap.style.display = items.length ? '' : 'none';
-    if (countEl) countEl.textContent = items.length + ' / ' + MAX_PINNED;
-
     var currentServiceId = getCurrentServiceId();
-    strip.innerHTML = items.map(function(it) {
+    var html = items.map(function(it) {
       var svc = it.service, client = it.client;
       var logoColor = getLogoColor(client.logoClass);
       var selected = currentServiceId === svc.id ? ' selected' : '';
@@ -15641,34 +15501,62 @@ document.addEventListener('keydown', function(e) {
       '</a>';
     }).join('');
 
+    strips.forEach(function(strip) {
+      var wrap = strip.closest('.pinned-wrap');
+      strip.innerHTML = html;
+      if (wrap) {
+        var keepEmpty = wrap.getAttribute('data-keep-empty') === 'true';
+        if (keepEmpty) {
+          wrap.classList.toggle('has-empty', items.length === 0);
+        } else {
+          wrap.style.display = items.length ? '' : 'none';
+        }
+        var countEl = wrap.querySelector('.pinned-count, [id$="PinnedCount"]');
+        if (countEl) countEl.textContent = items.length + ' / ' + MAX_PINNED;
+      }
+    });
+
+    // Block-level count chip on Overview (lives in the block-header, not
+    // inside the wrap, so it's outside the per-strip lookup above).
+    var ovCount = document.getElementById('overviewPinnedCount');
+    if (ovCount) ovCount.textContent = items.length + ' / ' + MAX_PINNED + ' favorited';
+
     updatePinnedOverflow();
   }
 
   function updatePinnedOverflow() {
-    var strip = document.getElementById('pinnedStrip');
-    var wrap = document.getElementById('pinnedWrap');
-    if (!strip || !wrap) return;
-    var overflowsRight = strip.scrollLeft + strip.clientWidth < strip.scrollWidth - 2;
-    var overflowsLeft  = strip.scrollLeft > 2;
-    wrap.classList.toggle('has-overflow-right', overflowsRight);
-    wrap.classList.toggle('has-overflow-left', overflowsLeft);
+    document.querySelectorAll('.pinned-strip').forEach(function(strip) {
+      var wrap = strip.closest('.pinned-wrap');
+      if (!wrap) return;
+      var overflowsRight = strip.scrollLeft + strip.clientWidth < strip.scrollWidth - 2;
+      var overflowsLeft  = strip.scrollLeft > 2;
+      wrap.classList.toggle('has-overflow-right', overflowsRight);
+      wrap.classList.toggle('has-overflow-left', overflowsLeft);
+    });
   }
 
+  /* Delegated nav handler — works for any `.pinned-wrap` on the page,
+     including the Clients header strip and the Overview My Boards block. */
   (function wirePinnedNav(){
-    var strip = document.getElementById('pinnedStrip');
-    var left = document.getElementById('pinnedNavLeft');
-    var right = document.getElementById('pinnedNavRight');
-    if (!strip) return;
     var step = 140;
-    if (left)  left.addEventListener('click',  function(){
-      strip.scrollLeft = Math.max(0, strip.scrollLeft - step);
+    document.addEventListener('click', function(e) {
+      var nav = e.target.closest('.pinned-nav');
+      if (!nav) return;
+      var wrap = nav.closest('.pinned-wrap');
+      var strip = wrap && wrap.querySelector('.pinned-strip');
+      if (!strip) return;
+      var dir = nav.classList.contains('left') ? -1 : 1;
+      strip.scrollLeft = Math.max(0, Math.min(
+        strip.scrollWidth - strip.clientWidth,
+        strip.scrollLeft + dir * step
+      ));
       updatePinnedOverflow();
     });
-    if (right) right.addEventListener('click', function(){
-      strip.scrollLeft = Math.min(strip.scrollWidth - strip.clientWidth, strip.scrollLeft + step);
-      updatePinnedOverflow();
-    });
-    strip.addEventListener('scroll', updatePinnedOverflow, { passive: true });
+    document.addEventListener('scroll', function(e) {
+      if (e.target && e.target.classList && e.target.classList.contains('pinned-strip')) {
+        updatePinnedOverflow();
+      }
+    }, true);
     window.addEventListener('resize', updatePinnedOverflow);
   })();
 
