@@ -9840,7 +9840,18 @@ function closeCardPanel(e){
   document.body.style.overflow = '';
   var menu = document.getElementById('tbMenu');
   if(menu) menu.classList.remove('open');
-  // drop the hash when the card closes so the URL reflects current state
+  // If the card was opened from another view (Overview, Clients) via
+  // goToBoardTask, return there. Otherwise just drop the #card-… hash.
+  var ret = window._modalReturnHash;
+  if (ret) {
+    window._modalReturnHash = null;
+    if (location.hash !== ret) {
+      location.hash = ret;
+    } else {
+      try { history.replaceState(null, '', location.pathname + location.search + ret); } catch(err){}
+    }
+    return;
+  }
   if(/^#card-/.test(location.hash || '')){
     try { history.replaceState(null, '', location.pathname + location.search); } catch(err){}
   }
@@ -13939,6 +13950,13 @@ function toggleAttn(e) {
 /* ── Attention card → board + task modal (same pattern as Cmd+K) ── */
 function goToBoardTask(serviceId, taskId) {
   if (!serviceId) return;
+  // If we're navigating in from another view (Overview, Clients), remember
+  // where we came from so closing the card modal returns the user there
+  // instead of stranding them on the board.
+  var currentHash = location.hash || '';
+  if (!/^#board(\/|$)/.test(currentHash) && !/^#card-/.test(currentHash)) {
+    window._modalReturnHash = currentHash || '#overview';
+  }
   var target = '#board/' + serviceId;
   if (location.hash !== target) {
     location.hash = target;
@@ -14876,18 +14894,7 @@ document.addEventListener('keydown', function(e) {
     if (!serviceId) return; // fall through to client-detail handler below
     e.preventDefault();
     e.stopImmediatePropagation(); // prevent the client-detail handler from also firing
-    var newHash = '#board/' + serviceId;
-    // Use location.hash (not pushState) so the kanban re-render listener fires.
-    if (window.location.hash !== newHash) {
-      window.location.hash = newHash;
-    } else {
-      routeToView('board');
-    }
-    // Wait for the kanban renderer to draw cards for this service.
-    setTimeout(function(){
-      var card = document.querySelector('.view-board .card[data-card-id="' + CSS.escape(taskId) + '"]');
-      if (card && typeof openCardPanel === 'function') openCardPanel(card);
-    }, 220);
+    if (typeof goToBoardTask === 'function') goToBoardTask(serviceId, taskId);
   });
 
   // Links into client detail (from directory rows, pinned strip, Cmd+K etc.)
