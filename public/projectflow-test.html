@@ -6381,6 +6381,12 @@
     scroll-behavior: smooth;
   }
   .saved-views::-webkit-scrollbar { display: none; }
+  /* In the narrow list pane, wrap chips instead of horizontal scroll */
+  .clients-split-wrapper .saved-views {
+    flex-wrap: wrap;
+    overflow-x: visible;
+  }
+  .clients-split-wrapper .saved-views-wrap::after { display: none; }
   .view-chip-count {
     font-size: 10px; font-weight: 500;
     margin-left: 4px;
