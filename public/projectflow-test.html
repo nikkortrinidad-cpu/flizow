@@ -115,6 +115,14 @@
   }
   .header-nav a:hover { color: var(--text); }
   .header-nav a.on { color: var(--text); font-weight: 600; }
+  .header-nav a.is-stub { display: inline-flex; align-items: center; gap: 6px; cursor: default; }
+  .header-nav a.is-stub:hover { color: var(--text-soft); }
+  .nav-soon-pill {
+    font-size: 9px; font-weight: 700; letter-spacing: 0.06em;
+    padding: 2px 5px; border-radius: 4px; line-height: 1;
+    background: var(--bg-soft, rgba(0,0,0,0.06)); color: var(--text-faint, #94a3b8);
+    text-transform: uppercase;
+  }
   .header-right { display: flex; align-items: center; gap: 12px; }
   .cmdk-trigger {
     display: flex; align-items: center; gap: 8px;
@@ -6775,7 +6783,8 @@
     <nav class="header-nav">
       <a href="#overview" data-view-target="overview" class="on" aria-current="page">Overview</a>
       <a href="#clients" data-view-target="clients">Clients</a>
-      <a href="#">Analytics</a>
+      <a href="#" class="is-stub" onclick="event.preventDefault()" data-tip="Coming soon" data-tip-pos="below">Analytics<span class="nav-soon-pill">Soon</span></a>
+      <a href="#" class="is-stub" onclick="event.preventDefault()" data-tip="Coming soon" data-tip-pos="below">Weekly WIP<span class="nav-soon-pill">Soon</span></a>
     </nav>
   </div>
   <div class="header-right">
