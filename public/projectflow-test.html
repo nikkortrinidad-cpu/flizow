@@ -16166,6 +16166,23 @@ window.OPS_TEAM = OPS_TEAM;
 
     var serviceById = {}; D.services.forEach(function(s){ serviceById[s.id] = s; });
     var clientById = {}; D.clients.forEach(function(c){ clientById[c.id] = c; });
+
+    var cappedServices = 0;
+    D.services.forEach(function(s){
+      if (cappedServices >= (q ? 15 : 5)) return;
+      var cli = clientById[s.clientId];
+      if (q && !matches(s.name, q) && !(cli && matches(cli.name, q))) return;
+      cappedServices++;
+      var typeLabel = s.type === 'project' ? 'Project' : 'Retainer';
+      out.push({
+        type: 'service',
+        title: s.name,
+        sub: (cli ? cli.name + ' · ' : '') + typeLabel,
+        icon: '⊞',
+        hash: '#board/' + s.id
+      });
+    });
+
     var cappedTasks = 0;
     D.tasks.forEach(function(t){
       if (cappedTasks >= (q ? 20 : 5)) return;
@@ -16187,12 +16204,15 @@ window.OPS_TEAM = OPS_TEAM;
       });
     });
 
+    var cappedMembers = 0;
     D.members.forEach(function(m){
-      if (q && !matches(m.name, q) && !matches(m.initials, q)) return;
+      if (cappedMembers >= (q ? 15 : 5)) return;
+      if (q && !matches(m.name, q) && !matches(m.initials, q) && !matches(m.role || '', q)) return;
+      cappedMembers++;
       out.push({
         type: 'member',
         title: m.name,
-        sub: 'Account Manager',
+        sub: m.role || (m.type === 'operator' ? 'Team member' : 'Account Manager'),
         icon: m.initials
       });
     });
@@ -16207,8 +16227,8 @@ window.OPS_TEAM = OPS_TEAM;
       results.innerHTML = '<div class="cmdk-group"><div class="cmdk-group-label">No results</div></div>';
       return;
     }
-    var LABELS = { cmd: 'Commands', client: 'Clients', task: 'Tasks', member: 'People' };
-    var order = ['cmd','client','task','member'];
+    var LABELS = { cmd: 'Commands', client: 'Clients', service: 'Boards', task: 'Tasks', member: 'People' };
+    var order = ['cmd','client','service','task','member'];
     var groups = {}; order.forEach(function(k){ groups[k] = []; });
     items.forEach(function(it, i){ it._idx = i; (groups[it.type] || groups.cmd).push(it); });
 
