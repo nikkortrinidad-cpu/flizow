@@ -14475,15 +14475,21 @@ window.OPS_TEAM = OPS_TEAM;
   var pageHeader = page.querySelector('.page-header');
   var blocks = Array.from(page.querySelectorAll('.block[data-block-id]'));
 
-  /* Restore saved order */
+  /* Restore saved order. Append any blocks missing from the saved list at the
+     end (in their DOM order) so newly introduced blocks don't get stranded at
+     the top when older saved orders don't reference them. */
   var saved = localStorage.getItem(STORAGE_KEY);
   if (saved) {
     try {
       var order = JSON.parse(saved);
       var map = {};
       blocks.forEach(function(b) { map[b.dataset.blockId] = b; });
+      var seen = {};
       order.forEach(function(id) {
-        if (map[id]) page.appendChild(map[id]);
+        if (map[id]) { page.appendChild(map[id]); seen[id] = true; }
+      });
+      blocks.forEach(function(b) {
+        if (!seen[b.dataset.blockId]) page.appendChild(b);
       });
       blocks = Array.from(page.querySelectorAll('.block[data-block-id]'));
     } catch(e) {}
