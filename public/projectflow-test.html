@@ -6097,6 +6097,66 @@
   .service-star.active { color: var(--status-risk); }
   .service-star svg { width: 16px; height: 16px; }
 
+  /* ── Attention panel — one-row rollup of what needs action ── */
+  .attention-panel {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 10px;
+  }
+  .attention-chip {
+    display: flex; align-items: center; gap: 12px;
+    padding: 14px 16px;
+    background: var(--bg-elev);
+    border: 1px solid var(--hairline-soft);
+    border-radius: 12px;
+    text-decoration: none;
+    color: inherit;
+    box-shadow: var(--shadow);
+    transition: background 0.15s, border-color 0.15s, transform 0.15s;
+    min-width: 0;
+  }
+  .attention-chip:hover { background: var(--bg-soft); border-color: var(--hairline); transform: translateY(-1px); }
+  .attention-chip-icon {
+    width: 34px; height: 34px; border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    background: var(--bg-soft);
+    color: var(--text-muted);
+  }
+  .attention-chip-icon svg { width: 17px; height: 17px; }
+  .attention-chip-body { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+  .attention-chip-value {
+    font-size: 14px; font-weight: 600; letter-spacing: -0.01em;
+    color: var(--text);
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .attention-chip-label {
+    font-size: 11.5px; color: var(--text-muted); letter-spacing: 0.005em;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .attention-chip.fire {
+    background: color-mix(in srgb, var(--status-fire) 10%, var(--bg-elev));
+    border-color: color-mix(in srgb, var(--status-fire) 35%, var(--hairline-soft));
+  }
+  .attention-chip.fire .attention-chip-icon {
+    background: color-mix(in srgb, var(--status-fire) 18%, transparent);
+    color: var(--status-fire);
+  }
+  .attention-chip.fire:hover {
+    background: color-mix(in srgb, var(--status-fire) 14%, var(--bg-elev));
+  }
+  .attention-chip.warn {
+    background: color-mix(in srgb, var(--status-risk) 10%, var(--bg-elev));
+    border-color: color-mix(in srgb, var(--status-risk) 32%, var(--hairline-soft));
+  }
+  .attention-chip.warn .attention-chip-icon {
+    background: color-mix(in srgb, var(--status-risk) 18%, transparent);
+    color: var(--status-risk);
+  }
+  .attention-chip.warn:hover {
+    background: color-mix(in srgb, var(--status-risk) 14%, var(--bg-elev));
+  }
+
   /* ── Relationship panel — contacts, last touchpoint, quick links ── */
   .relationship-grid {
     display: grid; grid-template-columns: repeat(3, 1fr);
@@ -7594,6 +7654,52 @@
       </div>
     </div>
 
+    <!-- ATTENTION -->
+    <div class="detail-section" data-section-id="acme-attention">
+      <div class="detail-section-header">
+        <div class="detail-section-title">Needs attention</div>
+        <div class="detail-section-sub">As of this morning</div>
+      </div>
+      <div class="attention-panel">
+        <a href="#clients/acme-corp/website-redesign" class="attention-chip fire">
+          <span class="attention-chip-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg>
+          </span>
+          <span class="attention-chip-body">
+            <span class="attention-chip-value">2 cards past due</span>
+            <span class="attention-chip-label">Website Redesign · tap to open</span>
+          </span>
+        </a>
+        <a href="#clients/acme-corp" class="attention-chip warn">
+          <span class="attention-chip-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+          </span>
+          <span class="attention-chip-body">
+            <span class="attention-chip-value">1 draft waiting · 14d</span>
+            <span class="attention-chip-label">Brand refresh copy · client review</span>
+          </span>
+        </a>
+        <a href="#clients/acme-corp" class="attention-chip">
+          <span class="attention-chip-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+          </span>
+          <span class="attention-chip-body">
+            <span class="attention-chip-value">1 open action item</span>
+            <span class="attention-chip-label">From Apr 14 Q2 roadmap sync</span>
+          </span>
+        </a>
+        <a href="#clients/acme-corp" class="attention-chip">
+          <span class="attention-chip-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          </span>
+          <span class="attention-chip-body">
+            <span class="attention-chip-value">Next sync in 6d</span>
+            <span class="attention-chip-label">Apr 28 · 10:00 AM · Fellow</span>
+          </span>
+        </a>
+      </div>
+    </div>
+
     <!-- RELATIONSHIP -->
     <div class="detail-section" data-section-id="acme-relationship">
       <div class="detail-section-header">
@@ -7704,6 +7810,58 @@
           </div>
         </div>
 
+      </div>
+    </div>
+
+    <!-- TEAM -->
+    <div class="detail-section" data-section-id="acme-team">
+      <div class="detail-section-header">
+        <div class="detail-section-title">Team</div>
+        <div class="detail-section-sub">6 people assigned</div>
+      </div>
+      <div class="team-section-grid">
+        <div class="team-member-card">
+          <div class="team-member-avatar" style="background:#5e5ce6">NT</div>
+          <div class="team-member-body">
+            <div class="team-member-name">Nikko Trinidad</div>
+            <div class="team-member-role">Account Manager</div>
+          </div>
+        </div>
+        <div class="team-member-card">
+          <div class="team-member-avatar" style="background:#ff9f0a">MA</div>
+          <div class="team-member-body">
+            <div class="team-member-name">Marcus Aldrin</div>
+            <div class="team-member-role">Lead Designer</div>
+          </div>
+        </div>
+        <div class="team-member-card">
+          <div class="team-member-avatar" style="background:#30d158">EV</div>
+          <div class="team-member-body">
+            <div class="team-member-name">Elena Vasquez</div>
+            <div class="team-member-role">Developer</div>
+          </div>
+        </div>
+        <div class="team-member-card">
+          <div class="team-member-avatar" style="background:#bf5af2">JC</div>
+          <div class="team-member-body">
+            <div class="team-member-name">James Chen</div>
+            <div class="team-member-role">SEO Specialist</div>
+          </div>
+        </div>
+        <div class="team-member-card">
+          <div class="team-member-avatar" style="background:#ff375f">SP</div>
+          <div class="team-member-body">
+            <div class="team-member-name">Sophie Park</div>
+            <div class="team-member-role">Content Writer</div>
+          </div>
+        </div>
+        <div class="team-member-card">
+          <div class="team-member-avatar" style="background:#64d2ff">RM</div>
+          <div class="team-member-body">
+            <div class="team-member-name">Ravi Mehta</div>
+            <div class="team-member-role">Developer</div>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -7891,58 +8049,6 @@
           </div>
         </div>
 
-      </div>
-    </div>
-
-    <!-- TEAM -->
-    <div class="detail-section" data-section-id="acme-team">
-      <div class="detail-section-header">
-        <div class="detail-section-title">Team</div>
-        <div class="detail-section-sub">6 people assigned</div>
-      </div>
-      <div class="team-section-grid">
-        <div class="team-member-card">
-          <div class="team-member-avatar" style="background:#5e5ce6">NT</div>
-          <div class="team-member-body">
-            <div class="team-member-name">Nikko Trinidad</div>
-            <div class="team-member-role">Account Manager</div>
-          </div>
-        </div>
-        <div class="team-member-card">
-          <div class="team-member-avatar" style="background:#ff9f0a">MA</div>
-          <div class="team-member-body">
-            <div class="team-member-name">Marcus Aldrin</div>
-            <div class="team-member-role">Lead Designer</div>
-          </div>
-        </div>
-        <div class="team-member-card">
-          <div class="team-member-avatar" style="background:#30d158">EV</div>
-          <div class="team-member-body">
-            <div class="team-member-name">Elena Vasquez</div>
-            <div class="team-member-role">Developer</div>
-          </div>
-        </div>
-        <div class="team-member-card">
-          <div class="team-member-avatar" style="background:#bf5af2">JC</div>
-          <div class="team-member-body">
-            <div class="team-member-name">James Chen</div>
-            <div class="team-member-role">SEO Specialist</div>
-          </div>
-        </div>
-        <div class="team-member-card">
-          <div class="team-member-avatar" style="background:#ff375f">SP</div>
-          <div class="team-member-body">
-            <div class="team-member-name">Sophie Park</div>
-            <div class="team-member-role">Content Writer</div>
-          </div>
-        </div>
-        <div class="team-member-card">
-          <div class="team-member-avatar" style="background:#64d2ff">RM</div>
-          <div class="team-member-body">
-            <div class="team-member-name">Ravi Mehta</div>
-            <div class="team-member-role">Developer</div>
-          </div>
-        </div>
       </div>
     </div>
 
