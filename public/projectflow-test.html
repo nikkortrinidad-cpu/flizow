@@ -5911,9 +5911,12 @@
     margin-bottom: 28px;
     box-shadow: var(--shadow);
   }
-  .hero-kebab {
+  .hero-kebab-wrap {
     position: absolute;
     top: 14px; right: 14px;
+    z-index: 3;
+  }
+  .hero-kebab {
     width: 30px; height: 30px;
     display: inline-flex; align-items: center; justify-content: center;
     border-radius: 980px;
@@ -5922,14 +5925,111 @@
     color: var(--text-muted);
     cursor: pointer;
     transition: background 0.15s, border-color 0.15s, color 0.15s;
-    z-index: 2;
   }
-  .hero-kebab:hover {
+  .hero-kebab:hover,
+  .hero-kebab[aria-expanded="true"] {
     background: var(--bg-soft);
     border-color: var(--hairline-soft);
     color: var(--text);
   }
   .hero-kebab svg { width: 14px; height: 14px; }
+
+  /* Kebab dropdown menu */
+  .kebab-menu {
+    position: absolute; top: calc(100% + 6px); right: 0;
+    min-width: 220px;
+    background: var(--bg-elev);
+    border: 1px solid var(--hairline);
+    border-radius: 12px;
+    box-shadow: 0 18px 44px -14px rgba(0, 0, 0, 0.55), 0 2px 10px rgba(0, 0, 0, 0.2);
+    padding: 6px;
+    z-index: 1100;
+    display: none;
+    transform: translateY(-4px);
+    opacity: 0;
+    transition: opacity 0.12s ease, transform 0.12s ease;
+  }
+  .kebab-menu[data-open="true"] { display: block; opacity: 1; transform: translateY(0); }
+  .kebab-menu-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 10px; border-radius: 8px;
+    background: transparent; border: 0;
+    width: 100%; text-align: left;
+    color: var(--text); cursor: pointer;
+    font-size: 13px; font-weight: 500; letter-spacing: -0.005em;
+    transition: background 0.1s, color 0.1s;
+  }
+  .kebab-menu-item:hover, .kebab-menu-item:focus-visible {
+    background: var(--bg-soft); outline: none;
+  }
+  .kebab-menu-item svg {
+    width: 14px; height: 14px; color: var(--text-muted); flex-shrink: 0;
+  }
+  .kebab-menu-item.danger { color: #ff453a; }
+  .kebab-menu-item.danger svg { color: #ff453a; }
+  .kebab-menu-item.danger:hover {
+    background: color-mix(in srgb, #ff453a 10%, transparent);
+  }
+  .kebab-menu-divider {
+    height: 1px; background: var(--hairline-soft); margin: 4px 4px;
+  }
+
+  /* Confirm dialog (reusable destructive confirmation) */
+  .confirm-overlay {
+    position: fixed; inset: 0;
+    background: rgba(0, 0, 0, 0.55);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    display: none;
+    align-items: center; justify-content: center;
+    z-index: 1400;
+    opacity: 0;
+    transition: opacity 0.15s ease;
+  }
+  .confirm-overlay[data-open="true"] {
+    display: flex; opacity: 1;
+  }
+  .confirm-dialog {
+    width: 100%; max-width: 400px;
+    background: var(--bg-elev);
+    border: 1px solid var(--hairline);
+    border-radius: 14px;
+    padding: 22px 24px 18px;
+    box-shadow: 0 24px 64px -16px rgba(0, 0, 0, 0.65), 0 4px 16px rgba(0, 0, 0, 0.3);
+    transform: scale(0.96);
+    transition: transform 0.15s cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+  .confirm-overlay[data-open="true"] .confirm-dialog { transform: scale(1); }
+  .confirm-title {
+    font-size: 16px; font-weight: 600; color: var(--text);
+    letter-spacing: -0.012em;
+    margin-bottom: 6px;
+  }
+  .confirm-body {
+    font-size: 13px; color: var(--text-muted);
+    line-height: 1.5;
+    margin-bottom: 18px;
+  }
+  .confirm-actions {
+    display: flex; justify-content: flex-end; gap: 8px;
+  }
+  .confirm-btn {
+    padding: 8px 16px; border-radius: 980px;
+    font-size: 13px; font-weight: 500;
+    cursor: pointer;
+    border: 1px solid transparent;
+    transition: background 0.12s, border-color 0.12s, color 0.12s;
+  }
+  .confirm-btn.secondary {
+    background: var(--bg-soft);
+    border-color: var(--hairline-soft);
+    color: var(--text);
+  }
+  .confirm-btn.secondary:hover { background: var(--hover-tint); }
+  .confirm-btn.danger {
+    background: #ff453a; border-color: #ff453a; color: #fff;
+  }
+  .confirm-btn.danger:hover { background: #d73a30; border-color: #d73a30; }
   .hero-logo {
     width: 72px; height: 72px; border-radius: 16px;
     display: flex; align-items: center; justify-content: center;
@@ -8856,9 +8956,40 @@
           </div>
         </div>
       </div>
-      <button class="hero-kebab" aria-label="More options" data-tip="More options" data-tip-pos="below-end">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/><circle cx="5" cy="12" r="1.5"/></svg>
-      </button>
+      <div class="hero-kebab-wrap">
+        <button class="hero-kebab" id="acme-kebab-btn" aria-haspopup="menu" aria-expanded="false" aria-controls="acme-kebab-menu" aria-label="More options" data-tip="More options" data-tip-pos="below-end" data-kebab-trigger>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/><circle cx="5" cy="12" r="1.5"/></svg>
+        </button>
+        <div class="kebab-menu" id="acme-kebab-menu" role="menu" aria-labelledby="acme-kebab-btn" data-client-name="Acme Corporation">
+          <button class="kebab-menu-item" role="menuitem" data-kebab-action="duplicate">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+            <span>Duplicate client</span>
+          </button>
+          <button class="kebab-menu-item" role="menuitem" data-kebab-action="copy-link">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+            <span>Copy link</span>
+          </button>
+          <div class="kebab-menu-divider"></div>
+          <button class="kebab-menu-item" role="menuitem" data-kebab-action="audit">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            <span>View audit log</span>
+          </button>
+          <div class="kebab-menu-divider"></div>
+          <button class="kebab-menu-item" role="menuitem" data-kebab-action="pause">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg>
+            <span>Pause client</span>
+          </button>
+          <button class="kebab-menu-item" role="menuitem" data-kebab-action="archive">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="5" rx="1"/><path d="M4 9v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9"/><line x1="10" y1="13" x2="14" y2="13"/></svg>
+            <span>Archive client</span>
+          </button>
+          <div class="kebab-menu-divider"></div>
+          <button class="kebab-menu-item danger" role="menuitem" data-kebab-action="delete">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"/></svg>
+            <span>Delete client</span>
+          </button>
+        </div>
+      </div>
     </div>
 
     <!-- CLIENT TABS -->
@@ -19906,6 +20037,145 @@ window.OPS_TEAM = OPS_TEAM;
       });
     });
   }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+  else init();
+})();
+
+/* ── Hero kebab menu — popover + 6 client actions.
+   Copy link uses real clipboard. Delete shows confirm dialog then trash toast.
+   Others stub via showToast for now. */
+(function(){
+  var overlay, dialog, titleEl, bodyEl, cancelBtn, confirmBtn;
+  var resolver = null;
+
+  function ensureConfirmDialog(){
+    if (overlay) return;
+    overlay = document.createElement('div');
+    overlay.className = 'confirm-overlay';
+    overlay.setAttribute('role', 'dialog');
+    overlay.setAttribute('aria-modal', 'true');
+    overlay.innerHTML =
+      '<div class="confirm-dialog">' +
+        '<div class="confirm-title" data-confirm-title></div>' +
+        '<div class="confirm-body" data-confirm-body></div>' +
+        '<div class="confirm-actions">' +
+          '<button type="button" class="confirm-btn secondary" data-confirm-cancel>Cancel</button>' +
+          '<button type="button" class="confirm-btn danger" data-confirm-ok>Delete</button>' +
+        '</div>' +
+      '</div>';
+    document.body.appendChild(overlay);
+    dialog = overlay.querySelector('.confirm-dialog');
+    titleEl = overlay.querySelector('[data-confirm-title]');
+    bodyEl = overlay.querySelector('[data-confirm-body]');
+    cancelBtn = overlay.querySelector('[data-confirm-cancel]');
+    confirmBtn = overlay.querySelector('[data-confirm-ok]');
+    cancelBtn.addEventListener('click', function(){ resolveDialog(false); });
+    confirmBtn.addEventListener('click', function(){ resolveDialog(true); });
+    overlay.addEventListener('click', function(e){ if (e.target === overlay) resolveDialog(false); });
+    document.addEventListener('keydown', function(e){
+      if (e.key === 'Escape' && overlay.getAttribute('data-open') === 'true') resolveDialog(false);
+    });
+  }
+  function resolveDialog(result){
+    if (!overlay) return;
+    overlay.removeAttribute('data-open');
+    if (resolver) { var r = resolver; resolver = null; r(result); }
+  }
+  function openConfirm(opts){
+    ensureConfirmDialog();
+    titleEl.textContent = opts.title || 'Are you sure?';
+    bodyEl.textContent = opts.body || '';
+    confirmBtn.textContent = opts.confirmLabel || 'Delete';
+    return new Promise(function(resolve){
+      resolver = resolve;
+      overlay.setAttribute('data-open', 'true');
+      setTimeout(function(){ confirmBtn.focus(); }, 20);
+    });
+  }
+
+  function init(){
+    document.querySelectorAll('.hero-kebab-wrap').forEach(function(wrap){
+      var btn = wrap.querySelector('[data-kebab-trigger]');
+      var menu = wrap.querySelector('.kebab-menu');
+      if (!btn || !menu) return;
+      var clientName = menu.getAttribute('data-client-name') || 'Client';
+
+      function open(){
+        menu.setAttribute('data-open', 'true');
+        btn.setAttribute('aria-expanded', 'true');
+        setTimeout(function(){
+          document.addEventListener('click', onDocClick, true);
+          document.addEventListener('keydown', onKey, true);
+        }, 0);
+      }
+      function close(){
+        menu.removeAttribute('data-open');
+        btn.setAttribute('aria-expanded', 'false');
+        document.removeEventListener('click', onDocClick, true);
+        document.removeEventListener('keydown', onKey, true);
+      }
+      function onDocClick(e){ if (!wrap.contains(e.target)) close(); }
+      function onKey(e){ if (e.key === 'Escape') { close(); btn.focus(); } }
+
+      btn.addEventListener('click', function(e){
+        e.stopPropagation();
+        if (menu.getAttribute('data-open') === 'true') close(); else open();
+      });
+
+      menu.querySelectorAll('[data-kebab-action]').forEach(function(item){
+        item.addEventListener('click', function(){
+          var action = item.getAttribute('data-kebab-action');
+          close();
+          handleAction(action, clientName);
+        });
+      });
+    });
+  }
+
+  function handleAction(action, clientName){
+    var toast = (typeof window.showToast === 'function') ? window.showToast : function(){};
+    switch(action){
+      case 'duplicate':
+        toast(clientName + ' duplicated as "' + clientName + ' (Copy)"', { duration: 2400 });
+        return;
+      case 'copy-link':
+        var url = window.location.href;
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(url).then(function(){
+            toast('Link copied', { duration: 1800 });
+          }).catch(function(){
+            toast('Could not copy link', { duration: 2000 });
+          });
+        } else {
+          toast('Link copied', { duration: 1800 });
+        }
+        return;
+      case 'audit':
+        toast('Audit log — coming soon', { duration: 2000 });
+        return;
+      case 'pause':
+        toast(clientName + ' paused', { duration: 2400 });
+        return;
+      case 'archive':
+        toast(clientName + ' archived', { duration: 2400 });
+        return;
+      case 'delete':
+        openConfirm({
+          title: 'Delete ' + clientName + '?',
+          body: 'This client will be moved to Trash. You can restore within 30 days before it\u2019s permanently deleted.',
+          confirmLabel: 'Delete'
+        }).then(function(ok){
+          if (!ok) return;
+          toast(clientName + ' moved to Trash \u00b7 Restore within 30 days', {
+            duration: 6000,
+            action: 'Undo',
+            onAction: function(){ toast('Restored ' + clientName, { duration: 1800 }); }
+          });
+        });
+        return;
+    }
+  }
+
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
   else init();
 })();
