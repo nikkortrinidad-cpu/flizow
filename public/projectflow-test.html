@@ -6013,6 +6013,56 @@
     margin: 4px 6px;
   }
 
+  /* ── Client tabs — segmented control below hero ── */
+  .client-tabs {
+    display: inline-flex; gap: 3px;
+    padding: 4px;
+    background: var(--bg-soft);
+    border: 1px solid var(--hairline-soft);
+    border-radius: 11px;
+    margin: 4px 0 28px;
+  }
+  .client-tab {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 7px 14px;
+    border-radius: 8px;
+    background: transparent;
+    border: 0;
+    color: var(--text-muted);
+    font-size: 13px; font-weight: 500; letter-spacing: -0.005em;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s, box-shadow 0.15s;
+    white-space: nowrap;
+  }
+  .client-tab:hover { color: var(--text); }
+  .client-tab[data-active="true"] {
+    background: var(--bg-elev);
+    color: var(--text);
+    box-shadow: 0 1px 2px rgba(0,0,0,0.2), 0 0 0 1px var(--hairline-soft);
+  }
+  .client-tab-badge {
+    display: inline-flex; align-items: center;
+    padding: 1px 7px;
+    border-radius: 980px;
+    background: color-mix(in srgb, var(--text-faint) 22%, transparent);
+    color: var(--text-muted);
+    font-size: 11px; font-weight: 600;
+    font-feature-settings: "tnum";
+    letter-spacing: 0;
+  }
+  .client-tab[data-active="true"] .client-tab-badge {
+    background: color-mix(in srgb, var(--highlight) 18%, transparent);
+    color: var(--highlight);
+  }
+  .client-tab-badge.done {
+    background: color-mix(in srgb, var(--status-track) 20%, transparent);
+    color: var(--status-track);
+  }
+  /* Show/hide sections based on active tab. Sections with no data-tab
+     are treated as overview-only. */
+  .client-detail-page[data-active-tab="overview"] .detail-section[data-tab="onboarding"] { display: none; }
+  .client-detail-page[data-active-tab="onboarding"] .detail-section:not([data-tab="onboarding"]) { display: none; }
+
   /* Sections (reuse .block pattern for consistency) */
   .detail-section {
     margin-bottom: 36px;
@@ -7654,7 +7704,7 @@
 <div class="view view-client-detail" data-view="client-detail">
 
   <!-- ACME CORPORATION — full detail (featured on-fire client) -->
-  <section class="client-detail-page" data-client-panel="acme-corp">
+  <section class="client-detail-page" data-client-panel="acme-corp" data-active-tab="overview">
     <nav class="detail-breadcrumb" aria-label="Breadcrumb">
       <a href="#clients" data-view-target="clients">Clients</a>
       <span class="sep">/</span>
@@ -7755,6 +7805,17 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/><circle cx="5" cy="12" r="1.5"/></svg>
         </button>
       </div>
+    </div>
+
+    <!-- CLIENT TABS -->
+    <div class="client-tabs" role="tablist" aria-label="Client sections">
+      <button class="client-tab" role="tab" type="button" data-tab-target="overview" data-active="true" aria-selected="true">
+        Overview
+      </button>
+      <button class="client-tab" role="tab" type="button" data-tab-target="onboarding" aria-selected="false">
+        Onboarding
+        <span class="client-tab-badge done">12 / 12</span>
+      </button>
     </div>
 
     <!-- ATTENTION -->
@@ -8190,8 +8251,8 @@
       </div>
     </div>
 
-    <!-- ONBOARDING (complete — collapsed by default, archive reference) -->
-    <div class="detail-section" data-section-id="acme-onboarding" data-collapsed="true">
+    <!-- ONBOARDING (lives under the Onboarding tab) -->
+    <div class="detail-section" data-section-id="acme-onboarding" data-tab="onboarding">
       <div class="detail-section-header">
         <div class="detail-section-title">Onboarding</div>
         <div class="detail-section-sub">Completed Aug 24, 2023 · 12 / 12</div>
@@ -17029,6 +17090,49 @@ window.OPS_TEAM = OPS_TEAM;
   } else {
     init();
   }
+})();
+
+/* ── Client tabs — switch the active panel on a .client-detail-page.
+   Each tab has data-tab-target="X"; panel sets data-active-tab="X".
+   Active tab is persisted per-client in localStorage. */
+(function(){
+  var STORAGE_KEY = 'projectflow-client-tab';
+  function loadStored(){
+    try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}') || {}; }
+    catch (e) { return {}; }
+  }
+  function saveStored(obj){
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(obj)); } catch (e) {}
+  }
+  function init(){
+    var stored = loadStored();
+    document.querySelectorAll('.client-detail-page').forEach(function(panel){
+      var tabs = panel.querySelectorAll(':scope > .client-tabs .client-tab[data-tab-target]');
+      if (!tabs.length) return;
+      var clientId = panel.getAttribute('data-client-panel') || 'default';
+      var initial = stored[clientId] || panel.getAttribute('data-active-tab') || 'overview';
+      function activate(target){
+        panel.setAttribute('data-active-tab', target);
+        tabs.forEach(function(t){
+          var isActive = t.getAttribute('data-tab-target') === target;
+          if (isActive) t.setAttribute('data-active', 'true');
+          else t.removeAttribute('data-active');
+          t.setAttribute('aria-selected', String(isActive));
+        });
+        var s = loadStored();
+        s[clientId] = target;
+        saveStored(s);
+      }
+      activate(initial);
+      tabs.forEach(function(tab){
+        tab.addEventListener('click', function(){
+          activate(tab.getAttribute('data-tab-target'));
+        });
+      });
+    });
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+  else init();
 })();
 
 /* ── "+ New" menu — popover toggle + item dispatch.
