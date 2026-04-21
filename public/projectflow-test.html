@@ -22962,12 +22962,11 @@ window.OPS_TEAM = OPS_TEAM;
       }
       if (kind === 'service') {
         switchTab('overview');
-        setTimeout(function(){
-          scrollToSelector('[data-section-id$="-services"], .services-list');
-          if (typeof window.showToast === 'function') {
-            window.showToast('Service add — pick a template from the catalog', { duration: 2400 });
-          }
-        }, 80);
+        var panel = document.querySelector('[data-client-panel]:not([hidden])');
+        var clientId = panel && panel.getAttribute('data-client-panel');
+        if (clientId && typeof window.openAddServiceModal === 'function') {
+          window.openAddServiceModal(clientId);
+        }
         return;
       }
       if (typeof window.showToast === 'function') {
