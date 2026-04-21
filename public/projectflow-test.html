@@ -6546,6 +6546,142 @@
   .contact-add svg { width: 12px; height: 12px; }
   .contact-add:hover { text-decoration: underline; }
 
+  /* Manage contacts menu (compact dropdown anchored on the Manage button) */
+  .manage-menu-wrap { position: relative; display: inline-block; }
+  .manage-menu-btn {
+    background: transparent; border: 0;
+    display: inline-flex; align-items: center; gap: 2px;
+    padding: 2px 0;
+    font: inherit; color: var(--highlight);
+    font-size: 12px; font-weight: 500; letter-spacing: -0.005em;
+    cursor: pointer;
+  }
+  .manage-menu-btn:hover { text-decoration: underline; }
+  .manage-menu {
+    min-width: 200px;
+    top: calc(100% + 4px); right: 0;
+  }
+  .contact-edit-done {
+    background: var(--highlight);
+    color: #fff; border: 0;
+    padding: 4px 12px; border-radius: 980px;
+    font-size: 12px; font-weight: 600; letter-spacing: -0.005em;
+    cursor: pointer;
+    transition: filter 0.15s;
+  }
+  .contact-edit-done:hover { filter: brightness(1.08); text-decoration: none; }
+
+  /* Edit mode visual states */
+  .contact-edit-actions { display: none; align-items: center; gap: 2px; }
+  .contacts-list[data-edit="true"] [data-contact-view-actions] { display: none; }
+  .contacts-list[data-edit="true"] [data-contact-edit-actions] { display: inline-flex; }
+  .contacts-list[data-edit="true"] .contact-row {
+    padding: 8px;
+    margin: -8px -8px 0 -8px;
+    border-radius: 9px;
+    background: color-mix(in srgb, var(--highlight) 4%, transparent);
+    transition: background 0.15s;
+  }
+  .contacts-list[data-edit="true"] .contact-row + .contact-row {
+    border-top: 0; padding-top: 8px; margin-top: 4px;
+  }
+  .contact-primary-btn svg { color: var(--text-faint); fill: none; }
+  .contact-row[data-contact-primary="true"] .contact-primary-btn svg {
+    color: #ffb800; fill: #ffb800;
+  }
+  .contact-primary-btn:hover svg { color: #ffb800; }
+  .contact-delete-btn:hover { background: color-mix(in srgb, #ff453a 10%, transparent) !important; color: #ff453a !important; }
+
+  /* Contact edit/add modal inputs (reuse log-modal chrome) */
+  .contact-form-field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
+  .contact-form-field label {
+    font-size: 10.5px; font-weight: 600; color: var(--text-faint);
+    text-transform: uppercase; letter-spacing: 0.06em;
+  }
+  .contact-form-field input, .contact-form-field textarea {
+    width: 100%;
+    padding: 9px 12px; border-radius: 9px;
+    background: var(--bg-soft);
+    border: 1px solid var(--hairline-soft);
+    color: var(--text);
+    font: inherit; font-size: 13.5px; letter-spacing: -0.005em;
+    transition: border-color 0.12s, background 0.12s;
+  }
+  .contact-form-field input:focus, .contact-form-field textarea:focus {
+    outline: none;
+    border-color: color-mix(in srgb, var(--highlight) 55%, transparent);
+    background: var(--bg-elev);
+  }
+  .contact-form-field textarea { resize: vertical; min-height: 120px; font-family: inherit; }
+  .contact-form-field .contact-form-hint {
+    font-size: 11.5px; color: var(--text-faint);
+  }
+  .contact-form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+  /* Phone info modal */
+  .phone-modal {
+    width: 100%; max-width: 340px;
+    background: var(--bg-elev);
+    border: 1px solid var(--hairline);
+    border-radius: 14px;
+    padding: 22px 24px 18px;
+    box-shadow: 0 24px 64px -16px rgba(0, 0, 0, 0.65), 0 4px 16px rgba(0, 0, 0, 0.3);
+    transform: scale(0.96);
+    transition: transform 0.15s cubic-bezier(0.2, 0.8, 0.2, 1);
+    text-align: center;
+  }
+  .confirm-overlay[data-open="true"] .phone-modal { transform: scale(1); }
+  .phone-modal-avatar {
+    width: 52px; height: 52px; border-radius: 50%;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 18px; font-weight: 600; color: #fff;
+    margin-bottom: 10px;
+  }
+  .phone-modal-name {
+    font-size: 14px; font-weight: 600; color: var(--text);
+    letter-spacing: -0.012em;
+    margin-bottom: 2px;
+  }
+  .phone-modal-role {
+    font-size: 12px; color: var(--text-muted);
+    margin-bottom: 14px;
+  }
+  .phone-modal-number {
+    font-size: 20px; font-weight: 500; color: var(--text);
+    letter-spacing: -0.018em;
+    font-feature-settings: "tnum";
+    padding: 10px 14px;
+    background: var(--bg-soft);
+    border: 1px solid var(--hairline-soft);
+    border-radius: 10px;
+    margin-bottom: 14px;
+    user-select: all;
+  }
+  .phone-modal-actions {
+    display: flex; gap: 8px; justify-content: center;
+  }
+  .phone-modal-btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 8px 14px; border-radius: 980px;
+    font-size: 13px; font-weight: 500;
+    cursor: pointer;
+    border: 1px solid transparent;
+    transition: background 0.12s, border-color 0.12s;
+  }
+  .phone-modal-btn.secondary {
+    background: var(--bg-soft);
+    border-color: var(--hairline-soft);
+    color: var(--text);
+    text-decoration: none;
+  }
+  .phone-modal-btn.secondary:hover { background: var(--hover-tint); }
+  .phone-modal-btn.primary {
+    background: var(--highlight); border-color: var(--highlight); color: #fff;
+    text-decoration: none;
+  }
+  .phone-modal-btn.primary:hover { filter: brightness(1.08); }
+  .phone-modal-btn svg { width: 14px; height: 14px; }
+
   .last-meeting-date {
     font-size: 11px; font-weight: 600; color: var(--highlight);
     text-transform: uppercase; letter-spacing: 0.06em;
@@ -9076,56 +9212,112 @@
       <div class="relationship-grid">
 
         <!-- Client contacts -->
-        <div class="relationship-card">
+        <div class="relationship-card" data-contacts-card>
           <div class="relationship-card-head">
             <div class="relationship-card-label">Client contacts</div>
-            <a href="#" class="relationship-card-link">Manage</a>
-          </div>
-          <div class="contacts-list">
-            <div class="contact-row">
-              <div class="contact-avatar" style="background:#5e5ce6">HK</div>
-              <div class="contact-body">
-                <div class="contact-name">Harvey Kim</div>
-                <div class="contact-role">CEO · Primary</div>
+            <div class="manage-menu-wrap">
+              <button type="button" class="relationship-card-link manage-menu-btn" data-manage-trigger aria-haspopup="menu" aria-expanded="false">
+                Manage
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="width:10px;height:10px;margin-left:2px;"><polyline points="6 9 12 15 18 9"/></svg>
+              </button>
+              <div class="kebab-menu manage-menu" role="menu" aria-label="Manage contacts">
+                <button class="kebab-menu-item" role="menuitem" data-contact-action="add">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
+                  <span>Add new contact</span>
+                </button>
+                <button class="kebab-menu-item" role="menuitem" data-contact-action="import">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                  <span>Import contacts</span>
+                </button>
+                <div class="kebab-menu-divider"></div>
+                <button class="kebab-menu-item" role="menuitem" data-contact-action="edit">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                  <span>Edit contacts</span>
+                </button>
               </div>
-              <div class="contact-actions">
-                <a href="mailto:harvey@acme-corp.com" class="contact-icon-btn" aria-label="Email Harvey" data-tip="harvey@acme-corp.com" data-tip-pos="above-end">
+            </div>
+            <button type="button" class="relationship-card-link contact-edit-done" data-contact-edit-done style="display:none;">Done</button>
+          </div>
+          <div class="contacts-list" data-contacts-list>
+            <div class="contact-row" data-contact-id="c-harvey" data-contact-primary="true" data-contact-email="harvey@acme-corp.com" data-contact-phone="+14155550102">
+              <div class="contact-avatar" style="background:#5e5ce6" data-contact-initials>HK</div>
+              <div class="contact-body">
+                <div class="contact-name" data-contact-name>Harvey Kim</div>
+                <div class="contact-role" data-contact-role>CEO · Primary</div>
+              </div>
+              <div class="contact-actions" data-contact-view-actions>
+                <button type="button" class="contact-icon-btn" data-contact-email-btn aria-label="Email Harvey" data-tip="harvey@acme-corp.com" data-tip-pos="above-end">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
-                </a>
-                <a href="tel:+14155550102" class="contact-icon-btn" aria-label="Call Harvey" data-tip="+1 (415) 555-0102" data-tip-pos="above-end">
+                </button>
+                <button type="button" class="contact-icon-btn" data-contact-phone-btn aria-label="Call Harvey" data-tip="+1 (415) 555-0102" data-tip-pos="above-end">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
-                </a>
+                </button>
+              </div>
+              <div class="contact-edit-actions" data-contact-edit-actions>
+                <button type="button" class="contact-icon-btn contact-primary-btn" data-contact-primary-btn aria-label="Set as primary" data-tip="Primary contact" data-tip-pos="above-end">
+                  <svg viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                </button>
+                <button type="button" class="contact-icon-btn" data-contact-edit-btn aria-label="Edit Harvey" data-tip="Edit contact" data-tip-pos="above-end">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                </button>
+                <button type="button" class="contact-icon-btn contact-delete-btn" data-contact-delete-btn aria-label="Delete Harvey" data-tip="Delete contact" data-tip-pos="above-end">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"/></svg>
+                </button>
               </div>
             </div>
-            <div class="contact-row">
-              <div class="contact-avatar" style="background:#ff375f">JP</div>
+            <div class="contact-row" data-contact-id="c-jessica" data-contact-email="jessica@acme-corp.com" data-contact-phone="+14155550118">
+              <div class="contact-avatar" style="background:#ff375f" data-contact-initials>JP</div>
               <div class="contact-body">
-                <div class="contact-name">Jessica Park</div>
-                <div class="contact-role">CMO · Marketing lead</div>
+                <div class="contact-name" data-contact-name>Jessica Park</div>
+                <div class="contact-role" data-contact-role>CMO · Marketing lead</div>
               </div>
-              <div class="contact-actions">
-                <a href="mailto:jessica@acme-corp.com" class="contact-icon-btn" aria-label="Email Jessica" data-tip="jessica@acme-corp.com" data-tip-pos="above-end">
+              <div class="contact-actions" data-contact-view-actions>
+                <button type="button" class="contact-icon-btn" data-contact-email-btn aria-label="Email Jessica" data-tip="jessica@acme-corp.com" data-tip-pos="above-end">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
-                </a>
+                </button>
+                <button type="button" class="contact-icon-btn" data-contact-phone-btn aria-label="Call Jessica" data-tip="+1 (415) 555-0118" data-tip-pos="above-end">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+                </button>
+              </div>
+              <div class="contact-edit-actions" data-contact-edit-actions>
+                <button type="button" class="contact-icon-btn contact-primary-btn" data-contact-primary-btn aria-label="Set as primary" data-tip="Set as primary" data-tip-pos="above-end">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                </button>
+                <button type="button" class="contact-icon-btn" data-contact-edit-btn aria-label="Edit Jessica" data-tip="Edit contact" data-tip-pos="above-end">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                </button>
+                <button type="button" class="contact-icon-btn contact-delete-btn" data-contact-delete-btn aria-label="Delete Jessica" data-tip="Delete contact" data-tip-pos="above-end">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"/></svg>
+                </button>
               </div>
             </div>
-            <div class="contact-row">
-              <div class="contact-avatar" style="background:#30d158">RO</div>
+            <div class="contact-row" data-contact-id="c-ray" data-contact-email="ray@acme-corp.com" data-contact-phone="+14155550133">
+              <div class="contact-avatar" style="background:#30d158" data-contact-initials>RO</div>
               <div class="contact-body">
-                <div class="contact-name">Ray Ortiz</div>
-                <div class="contact-role">CFO · Billing</div>
+                <div class="contact-name" data-contact-name>Ray Ortiz</div>
+                <div class="contact-role" data-contact-role>CFO · Billing</div>
               </div>
-              <div class="contact-actions">
-                <a href="mailto:ray@acme-corp.com" class="contact-icon-btn" aria-label="Email Ray" data-tip="ray@acme-corp.com" data-tip-pos="above-end">
+              <div class="contact-actions" data-contact-view-actions>
+                <button type="button" class="contact-icon-btn" data-contact-email-btn aria-label="Email Ray" data-tip="ray@acme-corp.com" data-tip-pos="above-end">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
-                </a>
+                </button>
+                <button type="button" class="contact-icon-btn" data-contact-phone-btn aria-label="Call Ray" data-tip="+1 (415) 555-0133" data-tip-pos="above-end">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+                </button>
+              </div>
+              <div class="contact-edit-actions" data-contact-edit-actions>
+                <button type="button" class="contact-icon-btn contact-primary-btn" data-contact-primary-btn aria-label="Set as primary" data-tip="Set as primary" data-tip-pos="above-end">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                </button>
+                <button type="button" class="contact-icon-btn" data-contact-edit-btn aria-label="Edit Ray" data-tip="Edit contact" data-tip-pos="above-end">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                </button>
+                <button type="button" class="contact-icon-btn contact-delete-btn" data-contact-delete-btn aria-label="Delete Ray" data-tip="Delete contact" data-tip-pos="above-end">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"/></svg>
+                </button>
               </div>
             </div>
           </div>
-          <a href="#" class="contact-add">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-            Add contact
-          </a>
         </div>
 
         <!-- Quick links -->
@@ -11541,10 +11733,9 @@
           <input class="log-attendees-input" data-log-attendee-input type="text" placeholder="Type a name and hit Enter" autocomplete="off">
         </div>
         <div class="log-attendees-suggest">
-          <span>Quick add:</span>
-          <button type="button" class="log-suggest-chip" data-suggest-attendee="Harvey Kim">Harvey Kim</button>
-          <button type="button" class="log-suggest-chip" data-suggest-attendee="Jessica Park">Jessica Park</button>
-          <button type="button" class="log-suggest-chip" data-suggest-attendee="Ray Ortiz">Ray Ortiz</button>
+          <span data-suggest-client-label>Client contacts:</span>
+          <span data-suggest-client-slot></span>
+          <span data-suggest-team-label>Team:</span>
           <button type="button" class="log-suggest-chip" data-suggest-attendee="Elena Martinez">Elena Martinez</button>
           <button type="button" class="log-suggest-chip" data-suggest-attendee="Nikko Trinidad">Nikko Trinidad</button>
         </div>
@@ -11646,10 +11837,9 @@
           <input class="log-attendees-input" data-schedule-attendee-input type="text" placeholder="Type a name and hit Enter" autocomplete="off">
         </div>
         <div class="log-attendees-suggest">
-          <span>Quick add:</span>
-          <button type="button" class="log-suggest-chip" data-schedule-suggest="Harvey Kim">Harvey Kim</button>
-          <button type="button" class="log-suggest-chip" data-schedule-suggest="Jessica Park">Jessica Park</button>
-          <button type="button" class="log-suggest-chip" data-schedule-suggest="Ray Ortiz">Ray Ortiz</button>
+          <span data-schedule-suggest-client-label>Client contacts:</span>
+          <span data-schedule-suggest-client-slot></span>
+          <span data-schedule-suggest-team-label>Team:</span>
           <button type="button" class="log-suggest-chip" data-schedule-suggest="Elena Martinez">Elena Martinez</button>
           <button type="button" class="log-suggest-chip" data-schedule-suggest="Nikko Trinidad">Nikko Trinidad</button>
         </div>
@@ -11668,6 +11858,74 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;vertical-align:-2px;margin-right:6px;"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
         Open in Google Calendar
       </button>
+    </div>
+  </div>
+</div>
+
+<!-- Contact add/edit modal — shared between Add new and Edit flows -->
+<div class="log-modal-overlay" data-contact-modal aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="contactModalTitle">
+  <div class="log-modal" role="document">
+    <div class="log-modal-header">
+      <div>
+        <div class="log-modal-title" id="contactModalTitle">Add contact</div>
+      </div>
+      <button class="log-modal-close" data-contact-modal-close type="button" aria-label="Close">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <form class="log-modal-form" data-contact-form onsubmit="return false;">
+      <div class="contact-form-row">
+        <div class="contact-form-field">
+          <label for="contactFieldName">Name</label>
+          <input id="contactFieldName" data-contact-field="name" type="text" placeholder="Jane Doe" autocomplete="off">
+        </div>
+        <div class="contact-form-field">
+          <label for="contactFieldRole">Role · Function</label>
+          <input id="contactFieldRole" data-contact-field="role" type="text" placeholder="VP Marketing · Primary" autocomplete="off">
+        </div>
+      </div>
+      <div class="contact-form-row">
+        <div class="contact-form-field">
+          <label for="contactFieldEmail">Email</label>
+          <input id="contactFieldEmail" data-contact-field="email" type="email" placeholder="jane@acme-corp.com" autocomplete="off">
+        </div>
+        <div class="contact-form-field">
+          <label for="contactFieldPhone">Phone</label>
+          <input id="contactFieldPhone" data-contact-field="phone" type="tel" placeholder="+1 (415) 555-0100" autocomplete="off">
+        </div>
+      </div>
+    </form>
+    <div class="log-modal-footer">
+      <button type="button" class="log-modal-cancel" data-contact-modal-close>Cancel</button>
+      <button type="button" class="log-modal-save" data-contact-save>Save contact</button>
+    </div>
+  </div>
+</div>
+
+<!-- Import contacts modal — paste list, one per line -->
+<div class="log-modal-overlay" data-import-modal aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="importModalTitle">
+  <div class="log-modal" role="document">
+    <div class="log-modal-header">
+      <div>
+        <div class="log-modal-title" id="importModalTitle">Import contacts</div>
+      </div>
+      <button class="log-modal-close" data-import-close type="button" aria-label="Close">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="log-modal-subtitle">
+      Paste a list — one contact per line. Fields separated by commas: <strong>Name, Role, Email, Phone</strong>. Only name is required.
+    </div>
+    <form class="log-modal-form" data-import-form onsubmit="return false;">
+      <div class="contact-form-field">
+        <label for="importFieldBody">Contacts</label>
+        <textarea id="importFieldBody" data-import-body rows="8" placeholder="Harvey Kim, CEO · Primary, harvey@acme-corp.com, +1 415 555 0102&#10;Jessica Park, CMO, jessica@acme-corp.com&#10;Ray Ortiz, CFO · Billing, ray@acme-corp.com, +1 415 555 0133"></textarea>
+        <div class="contact-form-hint" data-import-hint>0 contacts ready to import</div>
+      </div>
+    </form>
+    <div class="log-modal-footer">
+      <button type="button" class="log-modal-cancel" data-import-close>Cancel</button>
+      <button type="button" class="log-modal-save" data-import-save>Import</button>
     </div>
   </div>
 </div>
@@ -20234,6 +20492,450 @@ window.OPS_TEAM = OPS_TEAM;
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
   else init();
+})();
+
+/* ── Client contacts manager — canonical source for About tab + attendee pickers.
+   Handles Manage menu (Add / Import / Edit), per-contact primary/edit/delete,
+   Gmail compose for email icon, phone number modal, and rebuilds the quick-add
+   attendee chips in the Log touchpoint and Schedule meeting modals. */
+(function(){
+  var PALETTE = ['#5e5ce6', '#ff375f', '#30d158', '#ff9f0a', '#bf5af2', '#0a84ff', '#ff9500', '#64d2ff'];
+
+  function getCard(){ return document.querySelector('[data-contacts-card]'); }
+  function getList(){ var c = getCard(); return c && c.querySelector('[data-contacts-list]'); }
+  function getRows(){ var l = getList(); return l ? Array.from(l.querySelectorAll('[data-contact-id]')) : []; }
+
+  function initialsFor(name){
+    var words = String(name || '').trim().split(/\s+/).filter(Boolean);
+    if (!words.length) return '?';
+    var i = words[0].charAt(0).toUpperCase();
+    if (words.length > 1) i += words[words.length - 1].charAt(0).toUpperCase();
+    return i;
+  }
+  function pickColor(){
+    var used = {};
+    getRows().forEach(function(r){ var a = r.querySelector('[data-contact-initials]'); if (a) used[a.style.background] = true; });
+    for (var i = 0; i < PALETTE.length; i++) if (!used[PALETTE[i]]) return PALETTE[i];
+    return PALETTE[Math.floor(Math.random() * PALETTE.length)];
+  }
+  function formatPhone(raw){
+    if (!raw) return '';
+    var digits = String(raw).replace(/\D/g, '');
+    if (digits.length === 11 && digits[0] === '1') {
+      return '+1 (' + digits.slice(1, 4) + ') ' + digits.slice(4, 7) + '-' + digits.slice(7);
+    }
+    if (digits.length === 10) {
+      return '(' + digits.slice(0, 3) + ') ' + digits.slice(3, 6) + '-' + digits.slice(6);
+    }
+    return raw;
+  }
+  function escapeHtml(s){
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function(c){
+      return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c];
+    });
+  }
+
+  function rebuildAttendeeChips(){
+    var rows = getRows();
+    var html = rows.map(function(r){
+      var name = r.querySelector('[data-contact-name]').textContent.trim();
+      return '<button type="button" class="log-suggest-chip" data-suggest-attendee="' + escapeHtml(name) + '" data-schedule-suggest="' + escapeHtml(name) + '">' + escapeHtml(name) + '</button>';
+    }).join('');
+    var logSlot = document.querySelector('[data-suggest-client-slot]');
+    var schedSlot = document.querySelector('[data-schedule-suggest-client-slot]');
+    if (logSlot) logSlot.innerHTML = html;
+    if (schedSlot) schedSlot.innerHTML = html;
+    var logLabel = document.querySelector('[data-suggest-client-label]');
+    var schedLabel = document.querySelector('[data-schedule-suggest-client-label]');
+    if (logLabel) logLabel.style.display = rows.length ? '' : 'none';
+    if (schedLabel) schedLabel.style.display = rows.length ? '' : 'none';
+  }
+
+  function setPrimary(row){
+    getRows().forEach(function(r){
+      r.removeAttribute('data-contact-primary');
+      var roleEl = r.querySelector('[data-contact-role]');
+      if (roleEl) {
+        var t = roleEl.textContent.trim();
+        roleEl.textContent = t.replace(/\s*·\s*Primary\s*$/i, '').replace(/^Primary\s*·\s*/i, '') || t;
+      }
+    });
+    row.setAttribute('data-contact-primary', 'true');
+    var roleEl = row.querySelector('[data-contact-role]');
+    if (roleEl) {
+      var t = roleEl.textContent.trim();
+      roleEl.textContent = t ? t + ' · Primary' : 'Primary';
+    }
+  }
+
+  function buildRow(contact){
+    var list = getList();
+    var existing = contact.id ? list.querySelector('[data-contact-id="' + contact.id + '"]') : null;
+    var id = contact.id || ('c-' + Date.now() + '-' + Math.floor(Math.random() * 999));
+    var color = contact.color || (existing && existing.querySelector('[data-contact-initials]').style.background) || pickColor();
+    var name = contact.name || '';
+    var role = contact.role || '';
+    var email = contact.email || '';
+    var phone = contact.phone || '';
+    var initials = initialsFor(name);
+    var tipPhone = formatPhone(phone);
+    var firstName = name.split(/\s+/)[0] || 'contact';
+    var html = ''
+      + '<div class="contact-actions" data-contact-view-actions>'
+      +   (email ? '<button type="button" class="contact-icon-btn" data-contact-email-btn aria-label="Email ' + escapeHtml(firstName) + '" data-tip="' + escapeHtml(email) + '" data-tip-pos="above-end"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg></button>' : '')
+      +   (phone ? '<button type="button" class="contact-icon-btn" data-contact-phone-btn aria-label="Call ' + escapeHtml(firstName) + '" data-tip="' + escapeHtml(tipPhone) + '" data-tip-pos="above-end"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg></button>' : '')
+      + '</div>'
+      + '<div class="contact-edit-actions" data-contact-edit-actions>'
+      +   '<button type="button" class="contact-icon-btn contact-primary-btn" data-contact-primary-btn aria-label="Set as primary" data-tip="Set as primary" data-tip-pos="above-end"><svg viewBox="0 0 24 24" fill="' + (contact.primary ? 'currentColor' : 'none') + '" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></button>'
+      +   '<button type="button" class="contact-icon-btn" data-contact-edit-btn aria-label="Edit ' + escapeHtml(firstName) + '" data-tip="Edit contact" data-tip-pos="above-end"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>'
+      +   '<button type="button" class="contact-icon-btn contact-delete-btn" data-contact-delete-btn aria-label="Delete ' + escapeHtml(firstName) + '" data-tip="Delete contact" data-tip-pos="above-end"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"/></svg></button>'
+      + '</div>';
+
+    var outer = '<div class="contact-avatar" style="background:' + color + '" data-contact-initials>' + escapeHtml(initials) + '</div>'
+      + '<div class="contact-body">'
+      +   '<div class="contact-name" data-contact-name>' + escapeHtml(name) + '</div>'
+      +   '<div class="contact-role" data-contact-role>' + escapeHtml(role) + '</div>'
+      + '</div>'
+      + html;
+
+    if (existing) {
+      existing.innerHTML = outer;
+      existing.setAttribute('data-contact-email', email);
+      existing.setAttribute('data-contact-phone', phone);
+      return existing;
+    }
+    var row = document.createElement('div');
+    row.className = 'contact-row';
+    row.setAttribute('data-contact-id', id);
+    if (contact.primary) row.setAttribute('data-contact-primary', 'true');
+    row.setAttribute('data-contact-email', email);
+    row.setAttribute('data-contact-phone', phone);
+    row.innerHTML = outer;
+    list.appendChild(row);
+    return row;
+  }
+
+  /* Manage dropdown */
+  function initManageMenu(){
+    var wrap = document.querySelector('.manage-menu-wrap');
+    if (!wrap) return;
+    var btn = wrap.querySelector('[data-manage-trigger]');
+    var menu = wrap.querySelector('.manage-menu');
+    function open(){ menu.setAttribute('data-open', 'true'); btn.setAttribute('aria-expanded', 'true'); setTimeout(function(){ document.addEventListener('click', onDoc, true); document.addEventListener('keydown', onKey, true); }, 0); }
+    function close(){ menu.removeAttribute('data-open'); btn.setAttribute('aria-expanded', 'false'); document.removeEventListener('click', onDoc, true); document.removeEventListener('keydown', onKey, true); }
+    function onDoc(e){ if (!wrap.contains(e.target)) close(); }
+    function onKey(e){ if (e.key === 'Escape') { close(); btn.focus(); } }
+    btn.addEventListener('click', function(e){ e.stopPropagation(); if (menu.getAttribute('data-open') === 'true') close(); else open(); });
+    menu.querySelectorAll('[data-contact-action]').forEach(function(item){
+      item.addEventListener('click', function(){
+        var action = item.getAttribute('data-contact-action');
+        close();
+        if (action === 'add') openContactModal();
+        else if (action === 'import') openImportModal();
+        else if (action === 'edit') toggleEditMode(true);
+      });
+    });
+    var doneBtn = document.querySelector('[data-contact-edit-done]');
+    if (doneBtn) doneBtn.addEventListener('click', function(){ toggleEditMode(false); });
+  }
+
+  function toggleEditMode(on){
+    var list = getList();
+    var doneBtn = document.querySelector('[data-contact-edit-done]');
+    var manageWrap = document.querySelector('.manage-menu-wrap');
+    if (on) {
+      list.setAttribute('data-edit', 'true');
+      if (manageWrap) manageWrap.style.display = 'none';
+      if (doneBtn) doneBtn.style.display = '';
+    } else {
+      list.removeAttribute('data-edit');
+      if (manageWrap) manageWrap.style.display = '';
+      if (doneBtn) doneBtn.style.display = 'none';
+    }
+  }
+
+  /* Per-contact actions — event delegation */
+  function initRowActions(){
+    var list = getList();
+    if (!list) return;
+    list.addEventListener('click', function(e){
+      var row = e.target.closest('[data-contact-id]');
+      if (!row) return;
+      if (e.target.closest('[data-contact-email-btn]')) {
+        var email = row.getAttribute('data-contact-email');
+        if (email) window.open('https://mail.google.com/mail/?view=cm&fs=1&to=' + encodeURIComponent(email), '_blank', 'noopener');
+        return;
+      }
+      if (e.target.closest('[data-contact-phone-btn]')) {
+        openPhoneModal(row);
+        return;
+      }
+      if (e.target.closest('[data-contact-primary-btn]')) {
+        setPrimary(row);
+        if (window.showToast) window.showToast(row.querySelector('[data-contact-name]').textContent.trim() + ' set as primary', { duration: 2000 });
+        return;
+      }
+      if (e.target.closest('[data-contact-edit-btn]')) {
+        openContactModal(row);
+        return;
+      }
+      if (e.target.closest('[data-contact-delete-btn]')) {
+        var name = row.querySelector('[data-contact-name]').textContent.trim();
+        window.openConfirm({
+          title: 'Delete ' + name + '?',
+          body: 'This contact will be removed from ' + name.split(/\s+/)[0] + '\u2019s row. You can add them back anytime.',
+          confirmLabel: 'Delete'
+        }).then(function(ok){
+          if (!ok) return;
+          row.remove();
+          rebuildAttendeeChips();
+          if (window.showToast) window.showToast(name + ' deleted', { duration: 2400 });
+        });
+        return;
+      }
+    });
+  }
+
+  /* Add/Edit contact modal */
+  function openContactModal(row){
+    var overlay = document.querySelector('[data-contact-modal]');
+    var titleEl = overlay.querySelector('#contactModalTitle');
+    var fields = {
+      name:  overlay.querySelector('[data-contact-field="name"]'),
+      role:  overlay.querySelector('[data-contact-field="role"]'),
+      email: overlay.querySelector('[data-contact-field="email"]'),
+      phone: overlay.querySelector('[data-contact-field="phone"]')
+    };
+    var editingId = row ? row.getAttribute('data-contact-id') : null;
+    titleEl.textContent = editingId ? 'Edit contact' : 'Add contact';
+    if (editingId) {
+      fields.name.value  = row.querySelector('[data-contact-name]').textContent.trim();
+      fields.role.value  = row.querySelector('[data-contact-role]').textContent.trim().replace(/\s*·\s*Primary\s*$/i, '');
+      fields.email.value = row.getAttribute('data-contact-email') || '';
+      fields.phone.value = row.getAttribute('data-contact-phone') || '';
+    } else {
+      fields.name.value = fields.role.value = fields.email.value = fields.phone.value = '';
+    }
+    overlay.setAttribute('data-open', 'true');
+    overlay.setAttribute('aria-hidden', 'false');
+    setTimeout(function(){ fields.name.focus(); }, 30);
+    overlay.__contactEditingId = editingId;
+  }
+  function closeContactModal(){
+    var overlay = document.querySelector('[data-contact-modal]');
+    overlay.removeAttribute('data-open');
+    overlay.setAttribute('aria-hidden', 'true');
+    overlay.__contactEditingId = null;
+  }
+  function saveContact(){
+    var overlay = document.querySelector('[data-contact-modal]');
+    var editingId = overlay.__contactEditingId;
+    var data = {
+      name:  overlay.querySelector('[data-contact-field="name"]').value.trim(),
+      role:  overlay.querySelector('[data-contact-field="role"]').value.trim(),
+      email: overlay.querySelector('[data-contact-field="email"]').value.trim(),
+      phone: overlay.querySelector('[data-contact-field="phone"]').value.trim()
+    };
+    if (!data.name) { overlay.querySelector('[data-contact-field="name"]').focus(); return; }
+    if (editingId) {
+      var row = getList().querySelector('[data-contact-id="' + editingId + '"]');
+      var wasPrimary = row.getAttribute('data-contact-primary') === 'true';
+      data.id = editingId;
+      data.primary = wasPrimary;
+      if (wasPrimary && !/\s*·\s*Primary\s*$/i.test(data.role)) {
+        data.role = data.role ? data.role + ' · Primary' : 'Primary';
+      }
+      buildRow(data);
+    } else {
+      buildRow(data);
+    }
+    rebuildAttendeeChips();
+    closeContactModal();
+    if (window.showToast) window.showToast(editingId ? 'Contact updated' : 'Added ' + data.name, { duration: 2200 });
+  }
+  function initContactModal(){
+    var overlay = document.querySelector('[data-contact-modal]');
+    if (!overlay) return;
+    overlay.querySelectorAll('[data-contact-modal-close]').forEach(function(b){ b.addEventListener('click', closeContactModal); });
+    overlay.querySelector('[data-contact-save]').addEventListener('click', saveContact);
+    overlay.addEventListener('click', function(e){ if (e.target === overlay) closeContactModal(); });
+    document.addEventListener('keydown', function(e){
+      if (e.key === 'Escape' && overlay.getAttribute('data-open') === 'true') closeContactModal();
+      if (e.key === 'Enter' && overlay.getAttribute('data-open') === 'true' && !e.shiftKey && e.target.tagName !== 'TEXTAREA') { saveContact(); }
+    });
+  }
+
+  /* Import modal */
+  function parseImport(text){
+    return String(text || '').split(/\r?\n/).map(function(line){ return line.trim(); }).filter(Boolean).map(function(line){
+      var parts = line.split(',').map(function(s){ return s.trim(); });
+      return { name: parts[0] || '', role: parts[1] || '', email: parts[2] || '', phone: parts[3] || '' };
+    }).filter(function(c){ return c.name; });
+  }
+  function openImportModal(){
+    var overlay = document.querySelector('[data-import-modal]');
+    overlay.querySelector('[data-import-body]').value = '';
+    overlay.querySelector('[data-import-hint]').textContent = '0 contacts ready to import';
+    overlay.setAttribute('data-open', 'true');
+    overlay.setAttribute('aria-hidden', 'false');
+    setTimeout(function(){ overlay.querySelector('[data-import-body]').focus(); }, 30);
+  }
+  function closeImportModal(){
+    var overlay = document.querySelector('[data-import-modal]');
+    overlay.removeAttribute('data-open');
+    overlay.setAttribute('aria-hidden', 'true');
+  }
+  function initImportModal(){
+    var overlay = document.querySelector('[data-import-modal]');
+    if (!overlay) return;
+    var body = overlay.querySelector('[data-import-body]');
+    var hint = overlay.querySelector('[data-import-hint]');
+    body.addEventListener('input', function(){
+      var n = parseImport(body.value).length;
+      hint.textContent = n + ' contact' + (n === 1 ? '' : 's') + ' ready to import';
+    });
+    overlay.querySelectorAll('[data-import-close]').forEach(function(b){ b.addEventListener('click', closeImportModal); });
+    overlay.querySelector('[data-import-save]').addEventListener('click', function(){
+      var list = parseImport(body.value);
+      if (!list.length) { body.focus(); return; }
+      list.forEach(function(c){ buildRow(c); });
+      rebuildAttendeeChips();
+      closeImportModal();
+      if (window.showToast) window.showToast('Imported ' + list.length + ' contact' + (list.length === 1 ? '' : 's'), { duration: 2400 });
+    });
+    overlay.addEventListener('click', function(e){ if (e.target === overlay) closeImportModal(); });
+    document.addEventListener('keydown', function(e){
+      if (e.key === 'Escape' && overlay.getAttribute('data-open') === 'true') closeImportModal();
+    });
+  }
+
+  /* Phone modal — small dialog with number, Copy + Call */
+  function openPhoneModal(row){
+    var overlay = document.querySelector('[data-phone-modal]');
+    if (!overlay) overlay = buildPhoneModal();
+    var name = row.querySelector('[data-contact-name]').textContent.trim();
+    var role = row.querySelector('[data-contact-role]').textContent.trim();
+    var phone = row.getAttribute('data-contact-phone') || '';
+    var avatar = row.querySelector('[data-contact-initials]');
+    overlay.querySelector('[data-phone-avatar]').style.background = avatar.style.background;
+    overlay.querySelector('[data-phone-avatar]').textContent = avatar.textContent.trim();
+    overlay.querySelector('[data-phone-name]').textContent = name;
+    overlay.querySelector('[data-phone-role]').textContent = role;
+    overlay.querySelector('[data-phone-number]').textContent = formatPhone(phone) || '—';
+    overlay.querySelector('[data-phone-call]').href = phone ? ('tel:' + phone.replace(/\s/g, '')) : '#';
+    overlay.setAttribute('data-open', 'true');
+  }
+  function closePhoneModal(){
+    var overlay = document.querySelector('[data-phone-modal]');
+    if (overlay) overlay.removeAttribute('data-open');
+  }
+  function buildPhoneModal(){
+    var overlay = document.createElement('div');
+    overlay.className = 'confirm-overlay';
+    overlay.setAttribute('data-phone-modal', '');
+    overlay.setAttribute('role', 'dialog');
+    overlay.setAttribute('aria-modal', 'true');
+    overlay.innerHTML =
+      '<div class="phone-modal">' +
+        '<div class="phone-modal-avatar" data-phone-avatar></div>' +
+        '<div class="phone-modal-name" data-phone-name></div>' +
+        '<div class="phone-modal-role" data-phone-role></div>' +
+        '<div class="phone-modal-number" data-phone-number></div>' +
+        '<div class="phone-modal-actions">' +
+          '<button type="button" class="phone-modal-btn secondary" data-phone-copy><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copy</button>' +
+          '<a class="phone-modal-btn primary" data-phone-call href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>Call</a>' +
+        '</div>' +
+      '</div>';
+    document.body.appendChild(overlay);
+    overlay.addEventListener('click', function(e){ if (e.target === overlay) closePhoneModal(); });
+    overlay.querySelector('[data-phone-copy]').addEventListener('click', function(){
+      var num = overlay.querySelector('[data-phone-number]').textContent.trim();
+      if (!num || num === '—') return;
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(num).then(function(){ if (window.showToast) window.showToast('Number copied', { duration: 1600 }); });
+      }
+    });
+    document.addEventListener('keydown', function(e){
+      if (e.key === 'Escape' && overlay.getAttribute('data-open') === 'true') closePhoneModal();
+    });
+    return overlay;
+  }
+
+  /* Expose openConfirm from the earlier IIFE — kebab handler already defined it globally?
+     If not present, define a lightweight fallback via native confirm. */
+  if (!window.openConfirm) {
+    (function(){
+      // Mirror the confirm dialog from the hero kebab IIFE so we don't rely on order.
+      var ov, resolver = null;
+      function ensure(){
+        if (ov) return;
+        ov = document.querySelector('.confirm-overlay') || null;
+        if (!ov || ov.hasAttribute('data-phone-modal')) {
+          ov = document.createElement('div');
+          ov.className = 'confirm-overlay';
+          ov.innerHTML = '<div class="confirm-dialog">' +
+            '<div class="confirm-title" data-confirm-title></div>' +
+            '<div class="confirm-body" data-confirm-body></div>' +
+            '<div class="confirm-actions">' +
+              '<button type="button" class="confirm-btn secondary" data-confirm-cancel>Cancel</button>' +
+              '<button type="button" class="confirm-btn danger" data-confirm-ok>Delete</button>' +
+            '</div></div>';
+          document.body.appendChild(ov);
+        }
+        ov.querySelector('[data-confirm-cancel]').addEventListener('click', function(){ resolve(false); });
+        ov.querySelector('[data-confirm-ok]').addEventListener('click', function(){ resolve(true); });
+        ov.addEventListener('click', function(e){ if (e.target === ov) resolve(false); });
+      }
+      function resolve(v){ if (ov) ov.removeAttribute('data-open'); if (resolver) { var r = resolver; resolver = null; r(v); } }
+      window.openConfirm = function(opts){
+        ensure();
+        ov.querySelector('[data-confirm-title]').textContent = opts.title || 'Are you sure?';
+        ov.querySelector('[data-confirm-body]').textContent  = opts.body  || '';
+        ov.querySelector('[data-confirm-ok]').textContent    = opts.confirmLabel || 'Delete';
+        return new Promise(function(res){ resolver = res; ov.setAttribute('data-open', 'true'); });
+      };
+    })();
+  }
+
+  function init(){
+    if (!getCard()) return;
+    initManageMenu();
+    initRowActions();
+    initContactModal();
+    initImportModal();
+    buildPhoneModal();
+    rebuildAttendeeChips();
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+  else init();
+})();
+
+/* ── Expose the hero-kebab confirm dialog globally so the contacts IIFE can reuse it.
+   This small bridge runs after both IIFEs have registered; it re-uses the DOM overlay
+   created by the kebab IIFE if present. Keeps a single confirm visual. */
+(function(){
+  // If the hero kebab IIFE already created `.confirm-overlay` (without data-phone-modal),
+  // expose it via window.openConfirm so we don't duplicate DOM.
+  var existing = document.querySelector('.confirm-overlay:not([data-phone-modal])');
+  if (existing && !window.openConfirm) {
+    // Read current dialog; rewire buttons via delegation
+    var resolver = null;
+    existing.addEventListener('click', function(e){
+      if (e.target === existing) { finish(false); return; }
+      if (e.target.closest('[data-confirm-cancel]')) { finish(false); return; }
+      if (e.target.closest('[data-confirm-ok]'))     { finish(true);  return; }
+    });
+    function finish(v){
+      existing.removeAttribute('data-open');
+      if (resolver) { var r = resolver; resolver = null; r(v); }
+    }
+    window.openConfirm = function(opts){
+      existing.querySelector('[data-confirm-title]').textContent = opts.title || 'Are you sure?';
+      existing.querySelector('[data-confirm-body]').textContent  = opts.body  || '';
+      existing.querySelector('[data-confirm-ok]').textContent    = opts.confirmLabel || 'Delete';
+      return new Promise(function(res){ resolver = res; existing.setAttribute('data-open', 'true'); });
+    };
+  }
 })();
 </script>
 
