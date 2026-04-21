@@ -381,8 +381,8 @@
   .filter-chip {
     display: inline-flex; align-items: center; gap: 6px;
     padding: 7px 12px;
-    background: var(--bg-elev);
-    border: 1px solid var(--hairline);
+    background: transparent;
+    border: 1px solid transparent;
     border-radius: 10px;
     color: var(--text-muted);
     font-size: 13px; font-weight: 500; line-height: 1.4;
@@ -394,7 +394,7 @@
   }
   .filter-chip:hover {
     color: var(--text);
-    border-color: var(--text-faint);
+    background: color-mix(in srgb, currentColor 6%, transparent);
   }
   .filter-chip svg { width: 13px; height: 13px; }
   .filter-chip .chev { opacity: 0.55; margin-left: 2px; }
@@ -1416,7 +1416,7 @@
     margin-left: -10px;
     font-size: 14px;
     color: var(--text);
-    line-height: 1.58;
+    line-height: 1.45;
     letter-spacing: -0.005em;
     min-height: 60px;
     cursor: text;
@@ -3645,7 +3645,7 @@
     border: 1px solid var(--hairline-soft);
     border-radius: 10px;
     font-size: 14px;
-    line-height: 1.55;
+    line-height: 1.45;
     color: var(--text-primary);
     margin-bottom: 18px;
     display: flex;
@@ -4625,7 +4625,7 @@
     text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px;
   }
   .page-title {
-    font-size: 34px; font-weight: 600; line-height: 1.15;
+    font-size: 32px; font-weight: 600; line-height: 1.15;
     margin-bottom: 6px; letter-spacing: -0.022em;
     color: var(--text);
   }
@@ -5741,7 +5741,7 @@
   .clients-header { display: flex; align-items: flex-end; justify-content: space-between; gap: 24px; margin-bottom: 28px; flex-wrap: wrap; }
   .clients-heading { display: flex; align-items: baseline; gap: 14px; }
   .clients-title {
-    font-size: 34px; font-weight: 600; letter-spacing: -0.022em; color: var(--text);
+    font-size: 32px; font-weight: 600; letter-spacing: -0.022em; color: var(--text);
     line-height: 1.1;
   }
   .clients-count {
@@ -7045,9 +7045,9 @@
   .meeting-recording svg { width: 10px; height: 10px; color: var(--highlight); }
 
   .meeting-tldr {
-    font-size: 13.5px; line-height: 1.55; color: var(--text);
+    font-size: 13px; line-height: 1.45; color: var(--text);
     letter-spacing: -0.003em;
-    max-width: 72ch;
+    max-width: 68ch;
   }
   .meeting-tldr--empty {
     color: var(--text-faint);
@@ -7074,7 +7074,7 @@
     min-height: 60px;
     max-height: 200px;
     font-family: inherit;
-    line-height: 1.55;
+    line-height: 1.45;
     padding: 4px 0;
   }
 
@@ -7295,7 +7295,7 @@
     border-color: var(--highlight);
     box-shadow: 0 0 0 3px color-mix(in srgb, var(--highlight) 22%, transparent);
   }
-  .log-field-textarea { resize: vertical; min-height: 72px; max-height: 200px; line-height: 1.55; }
+  .log-field-textarea { resize: vertical; min-height: 72px; max-height: 200px; line-height: 1.45; }
 
   .log-type-group {
     display: grid; grid-template-columns: repeat(5, 1fr);
@@ -8813,7 +8813,7 @@
     background: var(--bg-soft);
     border: 1px solid var(--hairline-soft);
     border-radius: 12px;
-    font-size: 13px; line-height: 1.55;
+    font-size: 13px; line-height: 1.45;
     color: var(--text-muted);
     white-space: pre-wrap;
   }
@@ -9893,7 +9893,7 @@
       </div>
       <button class="clients-primary-btn" data-new-client-btn data-tip="Add a new client" data-tip-pos="below-end">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-        New Client
+        Add client
       </button>
     </div>
   </div>
@@ -10466,7 +10466,7 @@
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
           </span>
           <span class="attention-chip-body">
-            <span class="attention-chip-value">1 draft waiting · 14d</span>
+            <span class="attention-chip-value">1 draft · waiting 14 days</span>
             <span class="attention-chip-label">Brand refresh copy · client review</span>
           </span>
         </a>
@@ -11936,9 +11936,9 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.5" y2="16.5"/></svg>
           <input type="search" placeholder="Search templates" data-template-search aria-label="Search templates">
         </label>
-        <button type="button" class="list-pane-add-btn" data-new-template-btn aria-label="New template">
+        <button type="button" class="list-pane-add-btn" data-new-template-btn aria-label="Add template">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-          <span>New template</span>
+          <span>Add template</span>
         </button>
       </div>
       <div class="templates-list" role="list">
@@ -14427,7 +14427,7 @@
   <div class="log-modal" role="document">
     <div class="log-modal-header">
       <div>
-        <div class="log-modal-title" id="newClientModalTitle">New client</div>
+        <div class="log-modal-title" id="newClientModalTitle">Add client</div>
       </div>
       <button class="log-modal-close" data-new-client-close type="button" aria-label="Close">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
