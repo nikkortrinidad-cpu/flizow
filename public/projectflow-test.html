@@ -5966,6 +5966,53 @@
   .hero-btn.primary:hover { opacity: 0.9; background: var(--highlight); border-color: var(--highlight); color: #fff; }
   .hero-btn.icon-only { padding: 8px; width: 36px; height: 36px; justify-content: center; }
 
+  /* ── "+ New" menu — popover launched from hero action ── */
+  .new-menu-wrap { position: relative; display: inline-block; }
+  .new-menu {
+    position: absolute; top: calc(100% + 8px); right: 0;
+    min-width: 260px;
+    background: var(--bg-elev);
+    border: 1px solid var(--hairline);
+    border-radius: 14px;
+    box-shadow: 0 18px 44px -14px rgba(0, 0, 0, 0.55), 0 2px 10px rgba(0, 0, 0, 0.2);
+    padding: 6px;
+    z-index: 1100;
+    display: none;
+    transform: translateY(-4px);
+    opacity: 0;
+    transition: opacity 0.12s ease, transform 0.12s ease;
+  }
+  .new-menu[data-open="true"] { display: block; opacity: 1; transform: translateY(0); }
+  .new-menu-section {
+    padding: 10px 10px 4px;
+    font-size: 10.5px; font-weight: 600; color: var(--text-faint);
+    text-transform: uppercase; letter-spacing: 0.06em;
+  }
+  .new-menu-item {
+    display: flex; align-items: center; gap: 12px;
+    padding: 9px 10px; border-radius: 9px;
+    background: transparent; border: 0;
+    width: 100%; text-align: left;
+    color: var(--text); cursor: pointer;
+    font-size: 13.5px; letter-spacing: -0.005em;
+    transition: background 0.1s;
+  }
+  .new-menu-item:hover, .new-menu-item:focus-visible { background: var(--bg-soft); outline: none; }
+  .new-menu-icon {
+    width: 30px; height: 30px; border-radius: 9px;
+    background: var(--bg-soft); color: var(--text-muted);
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .new-menu-icon svg { width: 15px; height: 15px; }
+  .new-menu-item-body { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+  .new-menu-item-label { font-weight: 500; color: var(--text); }
+  .new-menu-item-sub { font-size: 11.5px; color: var(--text-faint); letter-spacing: 0; }
+  .new-menu-divider {
+    height: 1px; background: var(--hairline-soft);
+    margin: 4px 6px;
+  }
+
   /* Sections (reuse .block pattern for consistency) */
   .detail-section {
     margin-bottom: 36px;
@@ -7645,6 +7692,62 @@
         </div>
       </div>
       <div class="hero-actions">
+        <div class="new-menu-wrap">
+          <button class="hero-btn primary" id="acme-new-btn" aria-haspopup="menu" aria-expanded="false" aria-controls="acme-new-menu" data-new-trigger>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            New
+          </button>
+          <div class="new-menu" id="acme-new-menu" role="menu" aria-labelledby="acme-new-btn">
+            <div class="new-menu-section">Add to this client</div>
+            <button class="new-menu-item" role="menuitem" data-new-kind="service" data-new-label="Service">
+              <span class="new-menu-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
+              </span>
+              <span class="new-menu-item-body">
+                <span class="new-menu-item-label">Service</span>
+                <span class="new-menu-item-sub">SEO, Content, Website, …</span>
+              </span>
+            </button>
+            <button class="new-menu-item" role="menuitem" data-new-kind="contact" data-new-label="Contact">
+              <span class="new-menu-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+              </span>
+              <span class="new-menu-item-body">
+                <span class="new-menu-item-label">Contact</span>
+                <span class="new-menu-item-sub">Client-side stakeholder</span>
+              </span>
+            </button>
+            <div class="new-menu-divider"></div>
+            <div class="new-menu-section">Log something</div>
+            <button class="new-menu-item" role="menuitem" data-new-kind="note" data-new-label="Note">
+              <span class="new-menu-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+              </span>
+              <span class="new-menu-item-body">
+                <span class="new-menu-item-label">Note</span>
+                <span class="new-menu-item-sub">Internal, pinned to this client</span>
+              </span>
+            </button>
+            <button class="new-menu-item" role="menuitem" data-new-kind="meeting" data-new-label="Meeting">
+              <span class="new-menu-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+              </span>
+              <span class="new-menu-item-body">
+                <span class="new-menu-item-label">Meeting</span>
+                <span class="new-menu-item-sub">Log past sync or schedule next</span>
+              </span>
+            </button>
+            <button class="new-menu-item" role="menuitem" data-new-kind="action" data-new-label="Action item">
+              <span class="new-menu-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              </span>
+              <span class="new-menu-item-body">
+                <span class="new-menu-item-label">Action item</span>
+                <span class="new-menu-item-sub">Follow-up or task</span>
+              </span>
+            </button>
+          </div>
+        </div>
         <button class="hero-btn icon-only" aria-label="Edit client" data-tip="Edit client" data-tip-pos="below-end">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
         </button>
@@ -16926,6 +17029,56 @@ window.OPS_TEAM = OPS_TEAM;
   } else {
     init();
   }
+})();
+
+/* ── "+ New" menu — popover toggle + item dispatch.
+   Menu items stub via showToast for now; real flows to come. */
+(function(){
+  function init(){
+    document.querySelectorAll('.new-menu-wrap').forEach(function(wrap){
+      var btn = wrap.querySelector('[data-new-trigger]');
+      var menu = wrap.querySelector('.new-menu');
+      if (!btn || !menu) return;
+
+      function open(){
+        menu.setAttribute('data-open', 'true');
+        btn.setAttribute('aria-expanded', 'true');
+        setTimeout(function(){
+          document.addEventListener('click', onDocClick, true);
+          document.addEventListener('keydown', onKey, true);
+        }, 0);
+      }
+      function close(){
+        menu.removeAttribute('data-open');
+        btn.setAttribute('aria-expanded', 'false');
+        document.removeEventListener('click', onDocClick, true);
+        document.removeEventListener('keydown', onKey, true);
+      }
+      function onDocClick(e){
+        if (!wrap.contains(e.target)) close();
+      }
+      function onKey(e){
+        if (e.key === 'Escape') { close(); btn.focus(); }
+      }
+
+      btn.addEventListener('click', function(e){
+        e.stopPropagation();
+        if (menu.getAttribute('data-open') === 'true') close(); else open();
+      });
+
+      menu.querySelectorAll('[data-new-kind]').forEach(function(item){
+        item.addEventListener('click', function(){
+          var label = item.getAttribute('data-new-label') || 'item';
+          close();
+          if (typeof window.showToast === 'function') {
+            window.showToast('Add ' + label + ' — flow coming soon', { duration: 2400 });
+          }
+        });
+      });
+    });
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+  else init();
 })();
 </script>
 
