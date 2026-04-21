@@ -6069,50 +6069,12 @@
   .client-detail-page[data-active-tab="onboarding"] .detail-section:not([data-tab~="onboarding"]) { display: none; }
 
   /* Sections (reuse .block pattern for consistency) */
-  .detail-section {
-    margin-bottom: 36px;
-    transition: margin-bottom 0.2s ease;
-  }
-  .detail-section[data-collapsed="true"] { margin-bottom: 14px; }
+  .detail-section { margin-bottom: 36px; }
   .detail-section-header {
     display: flex; align-items: center; gap: 10px;
-    padding: 6px 8px;
-    margin: -6px -8px 10px -8px;
-    border-radius: 8px;
-    transition: background 0.15s;
+    margin-bottom: 10px;
   }
-  .detail-section[data-section-id] > .detail-section-header {
-    cursor: pointer;
-    user-select: none;
-  }
-  .detail-section[data-section-id] > .detail-section-header:hover { background: var(--bg-soft); }
-  .detail-section[data-section-id] > .detail-section-header:focus-visible {
-    outline: none;
-    background: var(--bg-soft);
-    box-shadow: 0 0 0 2px var(--highlight-soft);
-  }
-  .detail-section[data-section-id] > .detail-section-header::before {
-    content: "";
-    width: 11px; height: 11px;
-    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2386868b' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'/></svg>");
-    background-size: contain;
-    background-repeat: no-repeat;
-    background-position: center;
-    flex-shrink: 0;
-    transition: transform 0.2s ease, opacity 0.15s;
-    opacity: 0.55;
-  }
-  .detail-section[data-section-id] > .detail-section-header:hover::before { opacity: 1; }
-  .detail-section[data-collapsed="true"] > .detail-section-header::before {
-    transform: rotate(-90deg);
-  }
-  .detail-section[data-section-id] > .detail-section-header > *:last-child {
-    margin-left: auto;
-  }
-  .detail-section[data-collapsed="true"] > *:not(.detail-section-header) {
-    display: none;
-  }
-  .detail-section[data-collapsed="true"] > .detail-section-header { margin-bottom: 0; }
+  .detail-section-header > *:last-child { margin-left: auto; }
   .detail-section-title {
     font-size: 13px; font-weight: 600; color: var(--text);
     text-transform: uppercase; letter-spacing: 0.08em;
@@ -17042,73 +17004,6 @@ window.OPS_TEAM = OPS_TEAM;
 </script>
 
 <script>
-/* Collapsible client-detail sections. Any .detail-section with a
-   data-section-id is wired up; state persists per-section in localStorage.
-   Initial state honors the HTML data-collapsed attribute (e.g. completed
-   Onboarding starts collapsed). Inner <a> or <button> clicks don't toggle. */
-(function(){
-  var STORAGE_KEY = 'projectflow-section-state';
-  function loadStored(){
-    try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}') || {}; }
-    catch (e) { return {}; }
-  }
-  function saveStored(obj){
-    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(obj)); } catch (e) {}
-  }
-  function init(){
-    var stored = loadStored();
-    var sections = document.querySelectorAll('.detail-section[data-section-id]');
-    sections.forEach(function(section){
-      var id = section.getAttribute('data-section-id');
-      var header = section.querySelector(':scope > .detail-section-header');
-      if (!header || !id) return;
-
-      var collapsed = (id in stored)
-        ? !!stored[id]
-        : section.getAttribute('data-collapsed') === 'true';
-
-      if (collapsed) section.setAttribute('data-collapsed', 'true');
-      else section.removeAttribute('data-collapsed');
-
-      header.setAttribute('role', 'button');
-      header.setAttribute('tabindex', '0');
-      header.setAttribute('aria-expanded', String(!collapsed));
-      header.setAttribute('aria-label',
-        (collapsed ? 'Expand' : 'Collapse') + ' ' + (section.querySelector('.detail-section-title')?.textContent || 'section')
-      );
-
-      function toggle(){
-        var nowCollapsed = section.getAttribute('data-collapsed') !== 'true';
-        if (nowCollapsed) section.setAttribute('data-collapsed', 'true');
-        else section.removeAttribute('data-collapsed');
-        header.setAttribute('aria-expanded', String(!nowCollapsed));
-        var title = section.querySelector('.detail-section-title')?.textContent || 'section';
-        header.setAttribute('aria-label', (nowCollapsed ? 'Expand' : 'Collapse') + ' ' + title);
-        var s = loadStored();
-        s[id] = nowCollapsed;
-        saveStored(s);
-      }
-
-      header.addEventListener('click', function(e){
-        // Let inner action links/buttons do their thing without toggling.
-        if (e.target.closest('a, button')) return;
-        toggle();
-      });
-      header.addEventListener('keydown', function(e){
-        if (e.key === 'Enter' || e.key === ' ') {
-          e.preventDefault();
-          toggle();
-        }
-      });
-    });
-  }
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', init);
-  } else {
-    init();
-  }
-})();
-
 /* ── Client tabs — switch the active panel on a .client-detail-page.
    Each tab has data-tab-target="X"; panel sets data-active-tab="X".
    Active tab is persisted per-client in localStorage. */
