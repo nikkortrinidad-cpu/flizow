@@ -5915,7 +5915,35 @@
     display: flex; align-items: center; justify-content: center;
     font-size: 24px; font-weight: 600; letter-spacing: -0.02em;
     color: #fff; flex-shrink: 0;
+    background-size: cover; background-position: center;
   }
+  /* Editable logo — click to upload company image. */
+  .hero-logo[data-editable="true"] {
+    position: relative; cursor: pointer;
+    transition: box-shadow 0.15s, transform 0.15s;
+  }
+  .hero-logo[data-editable="true"]:hover {
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--highlight) 32%, transparent);
+  }
+  .hero-logo[data-editable="true"] .hero-logo-overlay {
+    position: absolute; inset: 0;
+    border-radius: inherit;
+    background: rgba(0,0,0,0.55);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 3px;
+    color: #fff;
+    opacity: 0;
+    transition: opacity 0.15s;
+    pointer-events: none;
+  }
+  .hero-logo[data-editable="true"]:hover .hero-logo-overlay { opacity: 1; }
+  .hero-logo-overlay svg { width: 20px; height: 20px; }
+  .hero-logo-overlay-label {
+    font-size: 10px; font-weight: 600; letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+  .hero-logo[data-has-image="true"] .hero-logo-initials { display: none; }
+  .hero-logo[data-has-image="true"] { background-image: none; }
   .hero-body { min-width: 0; display: flex; flex-direction: column; gap: 8px; }
   .hero-name-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
   .hero-name {
@@ -8154,7 +8182,14 @@
     </nav>
 
     <div class="client-hero">
-      <div class="hero-logo logo-indigo">AC</div>
+      <div class="hero-logo logo-indigo" data-editable="true" data-logo-client="acme-corp" tabindex="0" role="button" aria-label="Upload company logo">
+        <span class="hero-logo-initials">AC</span>
+        <span class="hero-logo-overlay" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+          <span class="hero-logo-overlay-label">Change</span>
+        </span>
+        <input type="file" class="hero-logo-input" accept="image/*" hidden>
+      </div>
       <div class="hero-body">
         <div class="hero-name-row">
           <span class="inline-edit inline-edit--name" data-inline-field="name" data-kind="text" tabindex="0" role="button" aria-label="Edit client name">
@@ -18078,6 +18113,53 @@ window.OPS_TEAM = OPS_TEAM;
         }
       });
     });
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+  else init();
+})();
+
+/* ── Company logo upload — click the hero logo to pick a local image.
+   FileReader → dataURL → background-image. Image replaces initials. */
+(function(){
+  function wire(logo){
+    if (logo.getAttribute('data-logo-wired') === 'true') return;
+    logo.setAttribute('data-logo-wired', 'true');
+    var input = logo.querySelector('.hero-logo-input');
+    if (!input) return;
+    function openPicker(){
+      try { input.value = ''; } catch(e){}
+      input.click();
+    }
+    logo.addEventListener('click', function(e){
+      if (e.target === input) return;
+      openPicker();
+    });
+    logo.addEventListener('keydown', function(e){
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        openPicker();
+      }
+    });
+    input.addEventListener('click', function(e){ e.stopPropagation(); });
+    input.addEventListener('change', function(){
+      var file = input.files && input.files[0];
+      if (!file) return;
+      if (!/^image\//.test(file.type)) {
+        if (window.showToast) window.showToast('Please choose an image file', { duration: 2000 });
+        return;
+      }
+      var reader = new FileReader();
+      reader.onload = function(ev){
+        var url = ev.target.result;
+        logo.style.backgroundImage = 'url(' + JSON.stringify(url) + ')';
+        logo.setAttribute('data-has-image', 'true');
+        if (window.showToast) window.showToast('Company logo updated', { duration: 1800 });
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+  function init(){
+    document.querySelectorAll('.hero-logo[data-editable="true"]').forEach(wire);
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
   else init();
