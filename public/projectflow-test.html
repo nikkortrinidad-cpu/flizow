@@ -9061,6 +9061,228 @@
     }
     .clients-split-wrapper .client-detail-page { padding: 20px; }
   }
+
+  /* ═══════ TEMPLATES VIEW ═══════ */
+  body[data-active-view="templates"] .templates-split-wrapper { display: flex; }
+  .templates-split-wrapper {
+    display: none; flex: 1; min-height: 0; flex-direction: row;
+    background: var(--bg); overflow: hidden;
+  }
+  .templates-list-pane {
+    flex: 0 0 360px;
+    display: flex; flex-direction: column;
+    border-right: 1px solid var(--hairline);
+    background: var(--bg-elev);
+    overflow: hidden; min-height: 0;
+  }
+  .templates-list-header {
+    padding: 20px 20px 12px;
+  }
+  .templates-list-title {
+    font-size: 17px; font-weight: 600; letter-spacing: -0.012em;
+    color: var(--text);
+  }
+  .templates-list-subtitle {
+    font-size: 12.5px; color: var(--text-soft); margin-top: 3px;
+    line-height: 1.4;
+  }
+  .templates-list-toolbar {
+    display: flex; align-items: center; gap: 10px;
+    padding: 12px 16px 14px;
+    border-bottom: 1px solid var(--hairline-soft);
+    flex-shrink: 0;
+  }
+  .templates-list {
+    flex: 1; overflow-y: auto; min-height: 0;
+    padding: 6px 8px;
+  }
+  .template-row {
+    display: flex; align-items: center; gap: 12px;
+    padding: 10px 12px; cursor: pointer;
+    border-radius: 8px;
+    border: 1px solid transparent;
+    text-decoration: none;
+    color: inherit;
+    transition: background 0.1s ease, border-color 0.1s ease;
+  }
+  .template-row:hover { background: var(--hover-tint); }
+  .template-row.selected {
+    background: color-mix(in srgb, var(--highlight) 10%, transparent);
+    border-color: color-mix(in srgb, var(--highlight) 28%, transparent);
+  }
+  .template-row:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 2px var(--highlight-soft);
+  }
+  .template-icon {
+    width: 36px; height: 36px; border-radius: 9px;
+    display: inline-flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    background: var(--bg-soft); color: var(--text-muted);
+  }
+  .template-icon svg { width: 18px; height: 18px; stroke-width: 1.8; }
+  .template-row.selected .template-icon {
+    background: color-mix(in srgb, var(--highlight) 16%, transparent);
+    color: var(--highlight);
+  }
+  .template-row-body { flex: 1; min-width: 0; }
+  .template-row-name {
+    font-size: 13.5px; font-weight: 500; letter-spacing: -0.005em;
+    color: var(--text);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .template-row-meta {
+    font-size: 11.5px; color: var(--text-soft); margin-top: 2px;
+    font-feature-settings: "tnum";
+  }
+
+  .templates-detail-pane {
+    flex: 1; min-width: 0; min-height: 0;
+    overflow-y: auto; background: var(--bg);
+  }
+  .template-detail-page {
+    padding: 36px 44px 80px; max-width: 820px; margin: 0 auto;
+  }
+  .template-detail-page[hidden] { display: none; }
+  .template-hero {
+    display: flex; align-items: center; gap: 18px;
+    padding-bottom: 22px;
+    border-bottom: 1px solid var(--hairline-soft);
+    margin-bottom: 32px;
+  }
+  .template-hero-icon {
+    width: 56px; height: 56px; border-radius: 14px;
+    display: inline-flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    background: var(--bg-soft); color: var(--text-muted);
+  }
+  .template-hero-icon svg { width: 26px; height: 26px; stroke-width: 1.6; }
+  .template-hero-body { flex: 1; min-width: 0; }
+  .template-hero-title {
+    font-size: 26px; font-weight: 600; letter-spacing: -0.018em;
+    color: var(--text); line-height: 1.15;
+  }
+  .template-hero-meta {
+    display: flex; align-items: center; gap: 10px;
+    margin-top: 8px;
+    font-size: 12.5px; color: var(--text-soft);
+  }
+  .template-category-chip {
+    padding: 3px 10px; border-radius: 980px;
+    background: var(--bg-soft);
+    font-size: 11.5px; font-weight: 500;
+    color: var(--text-muted);
+    letter-spacing: 0.005em;
+  }
+  .template-hero-meta .sep {
+    width: 3px; height: 3px; border-radius: 50%;
+    background: var(--text-faint);
+    display: inline-block;
+  }
+  .template-section { margin-bottom: 36px; }
+  .template-section:last-child { margin-bottom: 0; }
+  .template-section-header {
+    display: flex; align-items: baseline; gap: 10px;
+    margin-bottom: 14px; flex-wrap: wrap;
+  }
+  .template-section-title {
+    font-size: 11px; font-weight: 600; letter-spacing: 0.08em;
+    color: var(--text-muted);
+    text-transform: uppercase;
+  }
+  .template-section-sub {
+    font-size: 12.5px; color: var(--text-faint);
+    font-weight: 400; line-height: 1.4;
+  }
+
+  /* Phases */
+  .template-phase-list {
+    display: flex; flex-direction: column; gap: 6px;
+  }
+  .template-phase {
+    display: grid;
+    grid-template-columns: 28px 1fr;
+    align-items: center; gap: 12px;
+    padding: 10px 14px; border-radius: 10px;
+    background: var(--bg-soft);
+    border: 1px solid var(--hairline-soft);
+  }
+  .template-phase-num {
+    width: 22px; height: 22px; border-radius: 6px;
+    display: inline-flex; align-items: center; justify-content: center;
+    background: var(--bg-elev); border: 1px solid var(--hairline);
+    font-size: 11.5px; font-weight: 600;
+    color: var(--text-muted);
+    font-feature-settings: "tnum";
+  }
+  .template-phase-name {
+    font-size: 13.5px; font-weight: 500; letter-spacing: -0.005em;
+    color: var(--text);
+  }
+
+  /* Checklist */
+  .template-checklist-group { margin-bottom: 16px; }
+  .template-checklist-group:last-child { margin-bottom: 0; }
+  .template-checklist-owner {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 11px; font-weight: 600; letter-spacing: 0.05em;
+    color: var(--text-faint);
+    text-transform: uppercase;
+    margin-bottom: 8px;
+    padding: 3px 9px; border-radius: 980px;
+    background: var(--bg-soft);
+  }
+  .template-checklist-owner.from-client {
+    color: color-mix(in srgb, var(--status-risk) 85%, var(--text-muted));
+    background: color-mix(in srgb, var(--status-risk) 14%, transparent);
+  }
+  .template-checklist-owner.from-us {
+    color: color-mix(in srgb, var(--status-track) 80%, var(--text-muted));
+    background: color-mix(in srgb, var(--status-track) 12%, transparent);
+  }
+  .template-checklist {
+    display: flex; flex-direction: column; gap: 2px;
+  }
+  .template-checklist-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 7px 12px; border-radius: 8px;
+    transition: background 0.1s;
+  }
+  .template-checklist-item:hover { background: var(--bg-soft); }
+  .template-checklist-item .dot {
+    width: 5px; height: 5px; border-radius: 50%;
+    background: var(--text-faint);
+    flex-shrink: 0;
+  }
+  .template-checklist-item-label {
+    font-size: 13px; color: var(--text-muted);
+    letter-spacing: -0.003em;
+    line-height: 1.4;
+  }
+
+  /* Brief fields */
+  .template-brief-fields {
+    display: flex; flex-wrap: wrap; gap: 6px;
+  }
+  .template-brief-field {
+    padding: 5px 11px; border-radius: 6px;
+    background: var(--bg-soft);
+    border: 1px solid var(--hairline-soft);
+    font-size: 12.5px; color: var(--text-muted);
+    letter-spacing: -0.003em;
+  }
+
+  /* Responsive: collapse templates to single pane below 860px */
+  @media (max-width: 860px) {
+    body[data-active-view="templates"] .templates-split-wrapper {
+      flex-direction: column;
+    }
+    body[data-active-view="templates"] .templates-list-pane {
+      flex: 0 0 auto; max-height: 40vh;
+      border-right: 0; border-bottom: 1px solid var(--hairline);
+    }
+    .template-detail-page { padding: 24px 20px 60px; }
+  }
   </style>
 </head>
 <body>
@@ -11124,6 +11346,421 @@
 </div>
 <!-- ═══════ END CLIENTS SPLIT VIEW ═══════ -->
 
+<!-- ═══════ TEMPLATES VIEW ═══════ -->
+<div class="view view-templates" data-view="templates">
+  <div class="templates-split-wrapper">
+    <!-- LEFT: Templates list -->
+    <aside class="templates-list-pane" aria-label="Service templates">
+      <div class="templates-list-header">
+        <div class="templates-list-title">Service Templates</div>
+        <div class="templates-list-subtitle">Reusable blueprints for onboarding and kanban boards</div>
+      </div>
+      <div class="templates-list-toolbar">
+        <label class="list-pane-search">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.5" y2="16.5"/></svg>
+          <input type="search" placeholder="Search templates" data-template-search aria-label="Search templates">
+        </label>
+        <button type="button" class="list-pane-add-btn" data-new-template-btn aria-label="New template">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          <span>New template</span>
+        </button>
+      </div>
+      <div class="templates-list" role="list">
+
+        <a class="template-row selected" data-template-id="web-design-full-stack" role="listitem" tabindex="0" href="#templates/web-design-full-stack">
+          <div class="template-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="14" rx="2"/><line x1="2" y1="9" x2="22" y2="9"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="18" x2="12" y2="21"/></svg>
+          </div>
+          <div class="template-row-body">
+            <div class="template-row-name">Web Design — Full Stack</div>
+            <div class="template-row-meta">6 phases · 7 onboarding items</div>
+          </div>
+        </a>
+
+        <a class="template-row" data-template-id="seo-retainer-monthly" role="listitem" tabindex="0" href="#templates/seo-retainer-monthly">
+          <div class="template-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+          </div>
+          <div class="template-row-body">
+            <div class="template-row-name">SEO Retainer — Monthly</div>
+            <div class="template-row-meta">6 phases · 6 onboarding items</div>
+          </div>
+        </a>
+
+        <a class="template-row" data-template-id="content-8-articles" role="listitem" tabindex="0" href="#templates/content-8-articles">
+          <div class="template-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="16" y2="17"/></svg>
+          </div>
+          <div class="template-row-body">
+            <div class="template-row-name">Content — 8 articles/mo</div>
+            <div class="template-row-meta">7 phases · 6 onboarding items</div>
+          </div>
+        </a>
+
+        <a class="template-row" data-template-id="brand-refresh" role="listitem" tabindex="0" href="#templates/brand-refresh">
+          <div class="template-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="13.5" cy="6.5" r=".5" fill="currentColor"/><circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/><circle cx="8.5" cy="7.5" r=".5" fill="currentColor"/><circle cx="6.5" cy="12.5" r=".5" fill="currentColor"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"/></svg>
+          </div>
+          <div class="template-row-body">
+            <div class="template-row-name">Brand Refresh</div>
+            <div class="template-row-meta">6 phases · 6 onboarding items</div>
+          </div>
+        </a>
+
+        <a class="template-row" data-template-id="paid-media" role="listitem" tabindex="0" href="#templates/paid-media">
+          <div class="template-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
+          </div>
+          <div class="template-row-body">
+            <div class="template-row-name">Paid Media</div>
+            <div class="template-row-meta">6 phases · 7 onboarding items</div>
+          </div>
+        </a>
+
+      </div>
+    </aside>
+
+    <!-- RIGHT: Template detail -->
+    <div class="templates-detail-pane">
+
+      <section class="template-detail-page" data-template-panel="web-design-full-stack">
+        <div class="template-hero">
+          <div class="template-hero-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="14" rx="2"/><line x1="2" y1="9" x2="22" y2="9"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="18" x2="12" y2="21"/></svg>
+          </div>
+          <div class="template-hero-body">
+            <div class="template-hero-title">Web Design — Full Stack</div>
+            <div class="template-hero-meta">
+              <span class="template-category-chip">Web Development</span>
+              <span class="sep"></span>
+              <span>Last edited Apr 12</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="template-section">
+          <div class="template-section-header">
+            <div class="template-section-title">Phases</div>
+            <div class="template-section-sub">Auto-populate into the To Do column when onboarding completes</div>
+          </div>
+          <div class="template-phase-list">
+            <div class="template-phase"><div class="template-phase-num">1</div><div class="template-phase-name">Discovery</div></div>
+            <div class="template-phase"><div class="template-phase-num">2</div><div class="template-phase-name">IA &amp; Wireframes</div></div>
+            <div class="template-phase"><div class="template-phase-num">3</div><div class="template-phase-name">Visual Design</div></div>
+            <div class="template-phase"><div class="template-phase-num">4</div><div class="template-phase-name">Development</div></div>
+            <div class="template-phase"><div class="template-phase-num">5</div><div class="template-phase-name">QA</div></div>
+            <div class="template-phase"><div class="template-phase-num">6</div><div class="template-phase-name">Launch</div></div>
+          </div>
+        </div>
+
+        <div class="template-section">
+          <div class="template-section-header">
+            <div class="template-section-title">Onboarding checklist</div>
+            <div class="template-section-sub">Added to client detail when this service is selected</div>
+          </div>
+          <div class="template-checklist-group">
+            <div class="template-checklist-owner from-client">From client</div>
+            <div class="template-checklist">
+              <div class="template-checklist-item"><span class="dot"></span><div class="template-checklist-item-label">Domain registrar credentials</div></div>
+              <div class="template-checklist-item"><span class="dot"></span><div class="template-checklist-item-label">Hosting or CDN access</div></div>
+              <div class="template-checklist-item"><span class="dot"></span><div class="template-checklist-item-label">Brand kit — logos, fonts, colors</div></div>
+              <div class="template-checklist-item"><span class="dot"></span><div class="template-checklist-item-label">Content inventory spreadsheet</div></div>
+            </div>
+          </div>
+          <div class="template-checklist-group">
+            <div class="template-checklist-owner from-us">From us</div>
+            <div class="template-checklist">
+              <div class="template-checklist-item"><span class="dot"></span><div class="template-checklist-item-label">Provision staging environment</div></div>
+              <div class="template-checklist-item"><span class="dot"></span><div class="template-checklist-item-label">Create GitHub repository</div></div>
+              <div class="template-checklist-item"><span class="dot"></span><div class="template-checklist-item-label">Install Analytics &amp; Tag Manager</div></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="template-section">
+          <div class="template-section-header">
+            <div class="template-section-title">Project brief fields</div>
+            <div class="template-section-sub">Prompts shown in the brief panel on the kanban board</div>
+          </div>
+          <div class="template-brief-fields">
+            <div class="template-brief-field">Goals</div>
+            <div class="template-brief-field">Target audience</div>
+            <div class="template-brief-field">Success metrics</div>
+            <div class="template-brief-field">Competitors</div>
+            <div class="template-brief-field">Must-keep features</div>
+            <div class="template-brief-field">Out of scope</div>
+            <div class="template-brief-field">Timeline milestones</div>
+          </div>
+        </div>
+      </section>
+
+      <section class="template-detail-page" data-template-panel="seo-retainer-monthly" hidden>
+        <div class="template-hero">
+          <div class="template-hero-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+          </div>
+          <div class="template-hero-body">
+            <div class="template-hero-title">SEO Retainer — Monthly</div>
+            <div class="template-hero-meta">
+              <span class="template-category-chip">SEO</span>
+              <span class="sep"></span>
+              <span>Last edited Apr 9</span>
+            </div>
+          </div>
+        </div>
+        <div class="template-section">
+          <div class="template-section-header">
+            <div class="template-section-title">Phases</div>
+            <div class="template-section-sub">Repeats every month after the first cycle</div>
+          </div>
+          <div class="template-phase-list">
+            <div class="template-phase"><div class="template-phase-num">1</div><div class="template-phase-name">Audit</div></div>
+            <div class="template-phase"><div class="template-phase-num">2</div><div class="template-phase-name">Keyword plan</div></div>
+            <div class="template-phase"><div class="template-phase-num">3</div><div class="template-phase-name">On-page</div></div>
+            <div class="template-phase"><div class="template-phase-num">4</div><div class="template-phase-name">Content calendar</div></div>
+            <div class="template-phase"><div class="template-phase-num">5</div><div class="template-phase-name">Link building</div></div>
+            <div class="template-phase"><div class="template-phase-num">6</div><div class="template-phase-name">Monthly report</div></div>
+          </div>
+        </div>
+        <div class="template-section">
+          <div class="template-section-header">
+            <div class="template-section-title">Onboarding checklist</div>
+            <div class="template-section-sub">Added to client detail when this service is selected</div>
+          </div>
+          <div class="template-checklist-group">
+            <div class="template-checklist-owner from-client">From client</div>
+            <div class="template-checklist">
+              <div class="template-checklist-item"><span class="dot"></span><div class="template-checklist-item-label">Google Search Console access</div></div>
+              <div class="template-checklist-item"><span class="dot"></span><div class="template-checklist-item-label">Google Analytics 4 access</div></div>
+              <div class="template-checklist-item"><span class="dot"></span><div class="template-checklist-item-label">CMS admin access</div></div>
+            </div>
+          </div>
+          <div class="template-checklist-group">
+            <div class="template-checklist-owner from-us">From us</div>
+            <div class="template-checklist">
+              <div class="template-checklist-item"><span class="dot"></span><div class="template-checklist-item-label">Configure rank tracker</div></div>
+              <div class="template-checklist-item"><span class="dot"></span><div class="template-checklist-item-label">Run baseline audit</div></div>
+              <div class="template-checklist-item"><span class="dot"></span><div class="template-checklist-item-label">Map keyword universe</div></div>
+            </div>
+          </div>
+        </div>
+        <div class="template-section">
+          <div class="template-section-header">
+            <div class="template-section-title">Project brief fields</div>
+            <div class="template-section-sub">Prompts shown in the brief panel on the kanban board</div>
+          </div>
+          <div class="template-brief-fields">
+            <div class="template-brief-field">Business goals</div>
+            <div class="template-brief-field">Target geographies</div>
+            <div class="template-brief-field">Priority keywords</div>
+            <div class="template-brief-field">Competitors to monitor</div>
+            <div class="template-brief-field">Reporting cadence</div>
+          </div>
+        </div>
+      </section>
+
+      <section class="template-detail-page" data-template-panel="content-8-articles" hidden>
+        <div class="template-hero">
+          <div class="template-hero-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="16" y2="17"/></svg>
+          </div>
+          <div class="template-hero-body">
+            <div class="template-hero-title">Content — 8 articles/mo</div>
+            <div class="template-hero-meta">
+              <span class="template-category-chip">Content</span>
+              <span class="sep"></span>
+              <span>Last edited Apr 7</span>
+            </div>
+          </div>
+        </div>
+        <div class="template-section">
+          <div class="template-section-header">
+            <div class="template-section-title">Phases</div>
+            <div class="template-section-sub">One batch of 8 cards per month</div>
+          </div>
+          <div class="template-phase-list">
+            <div class="template-phase"><div class="template-phase-num">1</div><div class="template-phase-name">Topic planning</div></div>
+            <div class="template-phase"><div class="template-phase-num">2</div><div class="template-phase-name">Outlining</div></div>
+            <div class="template-phase"><div class="template-phase-num">3</div><div class="template-phase-name">Drafting</div></div>
+            <div class="template-phase"><div class="template-phase-num">4</div><div class="template-phase-name">Editing</div></div>
+            <div class="template-phase"><div class="template-phase-num">5</div><div class="template-phase-name">Design &amp; imagery</div></div>
+            <div class="template-phase"><div class="template-phase-num">6</div><div class="template-phase-name">Publishing</div></div>
+            <div class="template-phase"><div class="template-phase-num">7</div><div class="template-phase-name">Distribution</div></div>
+          </div>
+        </div>
+        <div class="template-section">
+          <div class="template-section-header">
+            <div class="template-section-title">Onboarding checklist</div>
+            <div class="template-section-sub">Added to client detail when this service is selected</div>
+          </div>
+          <div class="template-checklist-group">
+            <div class="template-checklist-owner from-client">From client</div>
+            <div class="template-checklist">
+              <div class="template-checklist-item"><span class="dot"></span><div class="template-checklist-item-label">Editorial voice &amp; tone guide</div></div>
+              <div class="template-checklist-item"><span class="dot"></span><div class="template-checklist-item-label">CMS publishing access</div></div>
+              <div class="template-checklist-item"><span class="dot"></span><div class="template-checklist-item-label">Subject-matter expert intros</div></div>
+            </div>
+          </div>
+          <div class="template-checklist-group">
+            <div class="template-checklist-owner from-us">From us</div>
+            <div class="template-checklist">
+              <div class="template-checklist-item"><span class="dot"></span><div class="template-checklist-item-label">Set up editorial calendar</div></div>
+              <div class="template-checklist-item"><span class="dot"></span><div class="template-checklist-item-label">Load style guide</div></div>
+              <div class="template-checklist-item"><span class="dot"></span><div class="template-checklist-item-label">Prep AI-assisted outline workflow</div></div>
+            </div>
+          </div>
+        </div>
+        <div class="template-section">
+          <div class="template-section-header">
+            <div class="template-section-title">Project brief fields</div>
+            <div class="template-section-sub">Prompts shown in the brief panel on the kanban board</div>
+          </div>
+          <div class="template-brief-fields">
+            <div class="template-brief-field">Audience personas</div>
+            <div class="template-brief-field">Tone &amp; voice</div>
+            <div class="template-brief-field">Key topics</div>
+            <div class="template-brief-field">Distribution channels</div>
+            <div class="template-brief-field">SEO targets</div>
+          </div>
+        </div>
+      </section>
+
+      <section class="template-detail-page" data-template-panel="brand-refresh" hidden>
+        <div class="template-hero">
+          <div class="template-hero-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="13.5" cy="6.5" r=".5" fill="currentColor"/><circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/><circle cx="8.5" cy="7.5" r=".5" fill="currentColor"/><circle cx="6.5" cy="12.5" r=".5" fill="currentColor"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"/></svg>
+          </div>
+          <div class="template-hero-body">
+            <div class="template-hero-title">Brand Refresh</div>
+            <div class="template-hero-meta">
+              <span class="template-category-chip">Brand</span>
+              <span class="sep"></span>
+              <span>Last edited Mar 28</span>
+            </div>
+          </div>
+        </div>
+        <div class="template-section">
+          <div class="template-section-header">
+            <div class="template-section-title">Phases</div>
+            <div class="template-section-sub">One-time engagement, roughly 8–12 weeks</div>
+          </div>
+          <div class="template-phase-list">
+            <div class="template-phase"><div class="template-phase-num">1</div><div class="template-phase-name">Discovery interviews</div></div>
+            <div class="template-phase"><div class="template-phase-num">2</div><div class="template-phase-name">Moodboards</div></div>
+            <div class="template-phase"><div class="template-phase-num">3</div><div class="template-phase-name">Logo concepts</div></div>
+            <div class="template-phase"><div class="template-phase-num">4</div><div class="template-phase-name">System design</div></div>
+            <div class="template-phase"><div class="template-phase-num">5</div><div class="template-phase-name">Guidelines</div></div>
+            <div class="template-phase"><div class="template-phase-num">6</div><div class="template-phase-name">Rollout kit</div></div>
+          </div>
+        </div>
+        <div class="template-section">
+          <div class="template-section-header">
+            <div class="template-section-title">Onboarding checklist</div>
+            <div class="template-section-sub">Added to client detail when this service is selected</div>
+          </div>
+          <div class="template-checklist-group">
+            <div class="template-checklist-owner from-client">From client</div>
+            <div class="template-checklist">
+              <div class="template-checklist-item"><span class="dot"></span><div class="template-checklist-item-label">Existing brand history &amp; assets</div></div>
+              <div class="template-checklist-item"><span class="dot"></span><div class="template-checklist-item-label">Leadership interviews scheduled</div></div>
+              <div class="template-checklist-item"><span class="dot"></span><div class="template-checklist-item-label">Reference brands &amp; inspirations</div></div>
+            </div>
+          </div>
+          <div class="template-checklist-group">
+            <div class="template-checklist-owner from-us">From us</div>
+            <div class="template-checklist">
+              <div class="template-checklist-item"><span class="dot"></span><div class="template-checklist-item-label">Set up moodboard workspace</div></div>
+              <div class="template-checklist-item"><span class="dot"></span><div class="template-checklist-item-label">Run naming audit (if applicable)</div></div>
+              <div class="template-checklist-item"><span class="dot"></span><div class="template-checklist-item-label">Draft brand positioning doc</div></div>
+            </div>
+          </div>
+        </div>
+        <div class="template-section">
+          <div class="template-section-header">
+            <div class="template-section-title">Project brief fields</div>
+            <div class="template-section-sub">Prompts shown in the brief panel on the kanban board</div>
+          </div>
+          <div class="template-brief-fields">
+            <div class="template-brief-field">Brand positioning</div>
+            <div class="template-brief-field">Audience shift</div>
+            <div class="template-brief-field">Competitive landscape</div>
+            <div class="template-brief-field">Must-preserve elements</div>
+            <div class="template-brief-field">Rollout timeline</div>
+          </div>
+        </div>
+      </section>
+
+      <section class="template-detail-page" data-template-panel="paid-media" hidden>
+        <div class="template-hero">
+          <div class="template-hero-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
+          </div>
+          <div class="template-hero-body">
+            <div class="template-hero-title">Paid Media</div>
+            <div class="template-hero-meta">
+              <span class="template-category-chip">Paid Media</span>
+              <span class="sep"></span>
+              <span>Last edited Mar 22</span>
+            </div>
+          </div>
+        </div>
+        <div class="template-section">
+          <div class="template-section-header">
+            <div class="template-section-title">Phases</div>
+            <div class="template-section-sub">Runs on a monthly optimize-and-report cadence after launch</div>
+          </div>
+          <div class="template-phase-list">
+            <div class="template-phase"><div class="template-phase-num">1</div><div class="template-phase-name">Account audit</div></div>
+            <div class="template-phase"><div class="template-phase-num">2</div><div class="template-phase-name">Account setup</div></div>
+            <div class="template-phase"><div class="template-phase-num">3</div><div class="template-phase-name">Creative brief</div></div>
+            <div class="template-phase"><div class="template-phase-num">4</div><div class="template-phase-name">Launch</div></div>
+            <div class="template-phase"><div class="template-phase-num">5</div><div class="template-phase-name">Optimize</div></div>
+            <div class="template-phase"><div class="template-phase-num">6</div><div class="template-phase-name">Monthly report</div></div>
+          </div>
+        </div>
+        <div class="template-section">
+          <div class="template-section-header">
+            <div class="template-section-title">Onboarding checklist</div>
+            <div class="template-section-sub">Added to client detail when this service is selected</div>
+          </div>
+          <div class="template-checklist-group">
+            <div class="template-checklist-owner from-client">From client</div>
+            <div class="template-checklist">
+              <div class="template-checklist-item"><span class="dot"></span><div class="template-checklist-item-label">Google Ads / Meta admin access</div></div>
+              <div class="template-checklist-item"><span class="dot"></span><div class="template-checklist-item-label">Pixel &amp; server-side tagging confirmation</div></div>
+              <div class="template-checklist-item"><span class="dot"></span><div class="template-checklist-item-label">Brand assets &amp; creative library</div></div>
+              <div class="template-checklist-item"><span class="dot"></span><div class="template-checklist-item-label">Monthly budget confirmation</div></div>
+            </div>
+          </div>
+          <div class="template-checklist-group">
+            <div class="template-checklist-owner from-us">From us</div>
+            <div class="template-checklist">
+              <div class="template-checklist-item"><span class="dot"></span><div class="template-checklist-item-label">Establish UTM taxonomy</div></div>
+              <div class="template-checklist-item"><span class="dot"></span><div class="template-checklist-item-label">Validate conversion tracking</div></div>
+              <div class="template-checklist-item"><span class="dot"></span><div class="template-checklist-item-label">Connect Looker dashboard</div></div>
+            </div>
+          </div>
+        </div>
+        <div class="template-section">
+          <div class="template-section-header">
+            <div class="template-section-title">Project brief fields</div>
+            <div class="template-section-sub">Prompts shown in the brief panel on the kanban board</div>
+          </div>
+          <div class="template-brief-fields">
+            <div class="template-brief-field">Target CPA / ROAS</div>
+            <div class="template-brief-field">Audiences</div>
+            <div class="template-brief-field">Creative pillars</div>
+            <div class="template-brief-field">Exclusions</div>
+            <div class="template-brief-field">Budget pacing rules</div>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </div>
+</div>
+<!-- ═══════ END TEMPLATES VIEW ═══════ -->
+
 <!-- ═══════ BOARD VIEW ═══════ -->
 <div class="view view-board" data-view="board">
 
@@ -12742,8 +13379,10 @@ function toggleTheme() {
   localStorage.setItem('refined-theme', next);
 }
 function openTemplates() {
-  /* Templates manager — full UI comes in a later sweep. */
-  alert('Service Templates manager — coming in a later sweep.');
+  if (window.location.hash !== '#templates') {
+    history.pushState(null, '', '#templates');
+  }
+  if (typeof window.routeToView === 'function') window.routeToView('templates');
 }
 function openCmdK() {
   document.getElementById('cmdkOverlay').classList.add('open');
@@ -18307,9 +18946,10 @@ window.OPS_TEAM = OPS_TEAM;
 
 /* ── View routing (overview · clients · client-detail · board) ── */
 (function() {
-  var VALID = { overview: 1, board: 1, clients: 1, 'client-detail': 1 };
+  var VALID = { overview: 1, board: 1, clients: 1, 'client-detail': 1, templates: 1 };
 
   var DEFAULT_CLIENT = 'acme-corp';
+  var DEFAULT_TEMPLATE = 'web-design-full-stack';
 
   // Expose for external callers (keyboard nav in split-view script)
   window.routeToView = function(t, id) { routeToView(t, id); };
@@ -18360,6 +19000,23 @@ window.OPS_TEAM = OPS_TEAM;
         r.classList.toggle('selected', r.getAttribute('data-client-id') === id);
       });
     }
+
+    if (target === 'templates') {
+      var tid = clientId || DEFAULT_TEMPLATE;
+      var panels = document.querySelectorAll('[data-template-panel]');
+      var matched = false;
+      panels.forEach(function(p) {
+        var on = p.getAttribute('data-template-panel') === tid;
+        p.hidden = !on;
+        if (on) matched = true;
+      });
+      if (!matched && panels[0]) { panels[0].hidden = false; tid = panels[0].getAttribute('data-template-panel'); }
+      document.querySelectorAll('.template-row').forEach(function(r) {
+        r.classList.toggle('selected', r.getAttribute('data-template-id') === tid);
+      });
+      var detailPane = document.querySelector('.templates-detail-pane');
+      if (detailPane) detailPane.scrollTo({ top: 0 });
+    }
   }
 
   function parseHash() {
@@ -18369,6 +19026,8 @@ window.OPS_TEAM = OPS_TEAM;
     if (h === 'clients' || h === '') return { view: h || 'overview' };
     var m = h.match(/^clients\/(.+)$/);
     if (m) return { view: 'client-detail', id: m[1] };
+    var t = h.match(/^templates(?:\/(.+))?$/);
+    if (t) return { view: 'templates', id: t[1] || null };
     if (h === 'overview') return { view: 'overview' };
     return { view: 'overview' };
   }
@@ -18417,6 +19076,19 @@ window.OPS_TEAM = OPS_TEAM;
       history.pushState(null, '', newHash);
     }
     routeToView('client-detail', id);
+  });
+
+  // Template row clicks — swap visible detail panel
+  document.addEventListener('click', function(e) {
+    var row = e.target.closest('.template-row[data-template-id]');
+    if (!row) return;
+    e.preventDefault();
+    var id = row.getAttribute('data-template-id');
+    var newHash = '#templates/' + id;
+    if (window.location.hash !== newHash) {
+      history.pushState(null, '', newHash);
+    }
+    routeToView('templates', id);
   });
 
   window.addEventListener('hashchange', function() {
