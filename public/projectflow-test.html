@@ -753,6 +753,63 @@
     background: var(--hover-tint);
   }
 
+  /* Swimlanes — applied only when the board is in .has-swimlanes mode
+     (retainer services). Stacks horizontal swimlane rows vertically, each
+     with its own label + column row. Project boards keep the flat layout. */
+  .board.has-swimlanes {
+    flex-direction: column;
+    gap: 14px;
+    padding: 20px 32px 32px;
+  }
+  .swimlane { display: flex; flex-direction: column; gap: 10px; }
+  .swimlane-header {
+    display: flex; align-items: center; gap: 12px;
+    padding: 10px 16px;
+    background: var(--bg-elev);
+    border: 1px solid var(--hairline-soft);
+    border-radius: 10px;
+    cursor: pointer; user-select: none;
+    position: sticky; left: 0;
+    z-index: 3;
+  }
+  .swimlane-header:hover { background: var(--bg-soft); }
+  .swimlane-title {
+    font-size: 13px; font-weight: 600; color: var(--text);
+    letter-spacing: -0.005em;
+  }
+  .swimlane-count {
+    font-size: 11px; color: var(--text-muted);
+    font-feature-settings: "tnum";
+    padding: 2px 8px; border-radius: 10px;
+    background: var(--bg-soft);
+  }
+  .swimlane-sub {
+    font-size: 11px; color: var(--text-faint);
+    margin-left: auto;
+  }
+  .swimlane-chevron {
+    width: 16px; height: 16px; color: var(--text-muted);
+    transition: transform 0.2s;
+    flex-shrink: 0;
+  }
+  .swimlane.collapsed .swimlane-chevron { transform: rotate(-90deg); }
+  .swimlane-body {
+    display: flex; gap: 20px;
+    overflow-x: auto;
+    padding-bottom: 4px;
+  }
+  .swimlane.collapsed .swimlane-body { display: none; }
+  /* Inside swimlanes, let columns shrink vertically — the row itself
+     limits the per-cycle scope so columns stay shorter than the flat layout. */
+  .swimlane-body .column { max-height: none; }
+  /* Status tints on the header so "This Month" feels live vs. backlog. */
+  .swimlane[data-swimlane-id="this-month"] .swimlane-header {
+    border-color: rgba(10,132,255,0.25);
+    background: rgba(10,132,255,0.06);
+  }
+  .swimlane[data-swimlane-id="this-month"] .swimlane-title { color: var(--highlight); }
+  .swimlane[data-swimlane-id="backlog"] .swimlane-header { opacity: 0.85; }
+
   /* Empty-column placeholder: appears only when a column has no visible cards.
      Soft cue so filtered/empty lists don't read as broken dead space. */
   .column-cards:not(:has(.card)):not(:has(.add-card-form))::before {
@@ -21645,6 +21702,51 @@ window.OPS_TEAM = OPS_TEAM;
     '</div>';
   }
 
+  // Cache the original 5-column skeleton on first render. Stored as HTML
+  // so we can stamp it into multiple swimlane rows or back into a flat
+  // layout without maintaining a parallel template in JS.
+  var COLUMN_SKELETON = null;
+  function captureColumnSkeleton(boardEl){
+    if (COLUMN_SKELETON) return;
+    var cols = boardEl.querySelectorAll(':scope > .column, :scope > .add-column');
+    var parts = [];
+    cols.forEach(function(el){
+      var clone = el.cloneNode(true);
+      var wrap = clone.querySelector('.column-cards');
+      if (wrap) {
+        var addBtn = wrap.querySelector('.add-card-btn');
+        wrap.innerHTML = '';
+        if (addBtn) wrap.appendChild(addBtn);
+      }
+      parts.push(clone.outerHTML);
+    });
+    COLUMN_SKELETON = parts.join('');
+  }
+
+  // Retainer swimlanes: This Month / Next Month / Backlog. Derived from
+  // D.today (current reference date) and each task's dueDate. Tasks with
+  // no dueDate fall to Backlog. Overdue items surface inside This Month
+  // (the card's own due badge already calls out overdue days in red).
+  var RETAINER_SWIMLANES = [
+    { id: 'this-month', title: 'This Month' },
+    { id: 'next-month', title: 'Next Month' },
+    { id: 'backlog',    title: 'Backlog'    }
+  ];
+  function monthKey(d){ return d.getFullYear() * 12 + d.getMonth(); }
+  function swimlaneOf(task, today){
+    var d = toDate(task.dueDate);
+    if (!d || isNaN(d)) return 'backlog';
+    var diff = monthKey(d) - monthKey(today);
+    if (diff <= 0) return 'this-month'; // includes overdue
+    if (diff === 1) return 'next-month';
+    return 'backlog';
+  }
+  function fmtMonthLabel(d, offset){
+    var M = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+    var m = new Date(d.getFullYear(), d.getMonth() + (offset||0), 1);
+    return M[m.getMonth()] + ' ' + m.getFullYear();
+  }
+
   function renderBoard(){
     var service = pickService();
     if (!service) return;
@@ -21657,28 +21759,86 @@ window.OPS_TEAM = OPS_TEAM;
       crumbs[2].innerHTML = '<span aria-current="page">' + esc(service.name) + '</span>';
     }
 
-    var byCol = { todo: [], inprogress: [], blocked: [], review: [], done: [] };
-    D.tasks.forEach(function(t){
-      if (t.serviceId === service.id && byCol[t.columnId]) byCol[t.columnId].push(t);
-    });
+    var boardEl = document.querySelector('.view-board .board');
+    if (!boardEl) return;
+    captureColumnSkeleton(boardEl);
 
-    Object.keys(COL_TO_DOT).forEach(function(colKey){
-      var col = document.querySelector('.view-board .column[data-dot="' + COL_TO_DOT[colKey] + '"]');
-      if (!col) return;
-      var cardsWrap = col.querySelector('.column-cards');
-      if (!cardsWrap) return;
-      var addBtn = cardsWrap.querySelector('.add-card-btn');
-      cardsWrap.innerHTML = '';
-      byCol[colKey].forEach(function(t){
-        cardsWrap.insertAdjacentHTML('beforeend', buildCard(t, service, client, D.today));
+    var tasksForService = D.tasks.filter(function(t){ return t.serviceId === service.id; });
+    var today = D.today || new Date();
+    var isRetainer = service.type === 'retainer';
+
+    // Rebuild DOM so we can flip between flat and swimlane layouts cleanly.
+    if (isRetainer) {
+      boardEl.classList.add('has-swimlanes');
+      var rows = RETAINER_SWIMLANES.map(function(sl, idx){
+        var subLabel = sl.id === 'this-month' ? fmtMonthLabel(today, 0)
+          : sl.id === 'next-month' ? fmtMonthLabel(today, 1)
+          : 'Unscheduled · drag in when ready';
+        return ''
+          + '<section class="swimlane" data-swimlane-id="' + sl.id + '"' + (sl.id === 'backlog' ? ' ' : '') + '>'
+          +   '<div class="swimlane-header" data-swimlane-toggle role="button" tabindex="0" aria-expanded="true">'
+          +     '<svg class="swimlane-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>'
+          +     '<span class="swimlane-title">' + esc(sl.title) + '</span>'
+          +     '<span class="swimlane-count" data-swimlane-count>0</span>'
+          +     '<span class="swimlane-sub">' + esc(subLabel) + '</span>'
+          +   '</div>'
+          +   '<div class="swimlane-body">' + COLUMN_SKELETON + '</div>'
+          + '</section>';
+      }).join('');
+      boardEl.innerHTML = rows;
+    } else {
+      boardEl.classList.remove('has-swimlanes');
+      boardEl.innerHTML = COLUMN_SKELETON;
+    }
+
+    // Bucket tasks: for retainers, (swimlane × column); for projects, just column.
+    function populate(scope, tasks){
+      var byCol = { todo: [], inprogress: [], blocked: [], review: [], done: [] };
+      tasks.forEach(function(t){ if (byCol[t.columnId]) byCol[t.columnId].push(t); });
+      Object.keys(COL_TO_DOT).forEach(function(colKey){
+        var col = scope.querySelector('.column[data-dot="' + COL_TO_DOT[colKey] + '"]');
+        if (!col) return;
+        var cardsWrap = col.querySelector('.column-cards');
+        if (!cardsWrap) return;
+        var addBtn = cardsWrap.querySelector('.add-card-btn');
+        cardsWrap.innerHTML = '';
+        byCol[colKey].forEach(function(t){
+          cardsWrap.insertAdjacentHTML('beforeend', buildCard(t, service, client, today));
+        });
+        if (addBtn) cardsWrap.appendChild(addBtn);
+        var countEl = col.querySelector('.column-count');
+        if (countEl) countEl.textContent = String(byCol[colKey].length);
       });
-      if (addBtn) cardsWrap.appendChild(addBtn);
-      var countEl = col.querySelector('.column-count');
-      if (countEl) countEl.textContent = String(byCol[colKey].length);
-    });
+    }
+
+    if (isRetainer) {
+      var bySwim = { 'this-month': [], 'next-month': [], 'backlog': [] };
+      tasksForService.forEach(function(t){
+        var k = swimlaneOf(t, today);
+        bySwim[k].push(t);
+      });
+      boardEl.querySelectorAll('.swimlane').forEach(function(slEl){
+        var id = slEl.getAttribute('data-swimlane-id');
+        populate(slEl, bySwim[id] || []);
+        var countEl = slEl.querySelector('[data-swimlane-count]');
+        if (countEl) countEl.textContent = String((bySwim[id] || []).length);
+      });
+    } else {
+      populate(boardEl, tasksForService);
+    }
 
     if (typeof initCardTiles === 'function') initCardTiles();
   }
+
+  // Click-to-collapse for swimlane rows. Scoped to the board view.
+  document.addEventListener('click', function(e){
+    var toggle = e.target.closest('[data-swimlane-toggle]');
+    if (!toggle) return;
+    var sl = toggle.closest('.swimlane');
+    if (!sl) return;
+    var collapsed = sl.classList.toggle('collapsed');
+    toggle.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+  });
 
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', renderBoard);
