@@ -404,6 +404,51 @@
     color: var(--hover-blue);
   }
   .filter-spacer { flex: 1 1 auto; min-width: 12px; }
+
+  /* Group by chip — view-shaping control. Holds its own popover so the
+     swimlane strategy can be swapped without leaving the board. */
+  .filter-group-wrap { position: relative; flex-shrink: 0; }
+  .filter-group-menu {
+    display: none;
+    position: absolute;
+    top: calc(100% + 6px);
+    right: 0;
+    background: var(--bg-elev);
+    border: 1px solid var(--hairline);
+    border-radius: 12px;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.4);
+    padding: 6px;
+    min-width: 200px;
+    z-index: 30;
+  }
+  .filter-group-menu.open { display: block; }
+  .filter-group-item {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 10px;
+    padding: 8px 12px;
+    border-radius: 8px;
+    font-size: 13px;
+    color: var(--text);
+    cursor: pointer;
+    letter-spacing: -0.01em;
+    white-space: nowrap;
+    transition: background 0.12s, color 0.12s;
+    background: none; border: 0; width: 100%; text-align: left;
+    font-family: inherit;
+  }
+  .filter-group-item:hover { background: var(--hover-tint); color: var(--hover-blue); }
+  .filter-group-item .check {
+    width: 14px; height: 14px; flex-shrink: 0;
+    opacity: 0; stroke: var(--hover-blue);
+  }
+  .filter-group-item[data-active="true"] .check { opacity: 1; }
+  .filter-group-item[data-active="true"] { color: var(--hover-blue); font-weight: 600; }
+  .filter-group-divider { height: 1px; background: var(--hairline-soft); margin: 4px 0; }
+  .filter-group-heading {
+    font-size: 11px; color: var(--text-muted);
+    padding: 6px 12px 4px; letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
   .filter-reset {
     background: transparent; border: none;
     color: var(--text-soft);
@@ -12820,6 +12865,33 @@
     <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
   </button>
   <div class="filter-spacer"></div>
+  <div class="filter-group-wrap">
+    <button class="filter-chip" type="button" id="groupByChip" aria-haspopup="menu" aria-expanded="false" data-tip="Group cards into swimlanes" data-tip-pos="below">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      Group by: <strong id="groupByLabel" style="font-weight:600; color:var(--text);">None</strong>
+      <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
+    </button>
+    <div class="filter-group-menu" id="groupByMenu" role="menu" aria-labelledby="groupByChip">
+      <div class="filter-group-heading">Group swimlanes by</div>
+      <button type="button" class="filter-group-item" role="menuitemradio" data-groupby="duemonth">
+        <span>Due month</span>
+        <svg class="check" viewBox="0 0 24 24" fill="none" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+      </button>
+      <button type="button" class="filter-group-item" role="menuitemradio" data-groupby="assignee">
+        <span>Assignee</span>
+        <svg class="check" viewBox="0 0 24 24" fill="none" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+      </button>
+      <button type="button" class="filter-group-item" role="menuitemradio" data-groupby="priority">
+        <span>Priority</span>
+        <svg class="check" viewBox="0 0 24 24" fill="none" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+      </button>
+      <div class="filter-group-divider"></div>
+      <button type="button" class="filter-group-item" role="menuitemradio" data-groupby="none">
+        <span>None (flat board)</span>
+        <svg class="check" viewBox="0 0 24 24" fill="none" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+      </button>
+    </div>
+  </div>
   <button class="filter-chip" type="button" aria-haspopup="listbox" data-tip="Sort cards" data-tip-pos="below">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18"/><path d="M6 12h12"/><path d="M10 18h4"/></svg>
     Sort: <strong style="font-weight:600; color:var(--text);">Manual</strong>
@@ -21886,28 +21958,124 @@ window.OPS_TEAM = OPS_TEAM;
     COLUMN_SKELETON = parts.join('');
   }
 
-  // Retainer swimlanes: This Month / Next Month / Backlog. Derived from
-  // D.today (current reference date) and each task's dueDate. Tasks with
-  // no dueDate fall to Backlog. Overdue items surface inside This Month
-  // (the card's own due badge already calls out overdue days in red).
-  var RETAINER_SWIMLANES = [
-    { id: 'this-month', title: 'This Month' },
-    { id: 'next-month', title: 'Next Month' },
-    { id: 'backlog',    title: 'Backlog'    }
-  ];
+  // Month bucketing helpers — shared by the Due month strategy and any
+  // future calendar views that need "this month / next month / later".
   function monthKey(d){ return d.getFullYear() * 12 + d.getMonth(); }
-  function swimlaneOf(task, today){
-    var d = toDate(task.dueDate);
-    if (!d || isNaN(d)) return 'backlog';
-    var diff = monthKey(d) - monthKey(today);
-    if (diff <= 0) return 'this-month'; // includes overdue
-    if (diff === 1) return 'next-month';
-    return 'backlog';
-  }
   function fmtMonthLabel(d, offset){
     var M = ['January','February','March','April','May','June','July','August','September','October','November','December'];
     var m = new Date(d.getFullYear(), d.getMonth() + (offset||0), 1);
     return M[m.getMonth()] + ' ' + m.getFullYear();
+  }
+
+  // Group-by strategies. Each strategy takes the list of tasks for a
+  // service and returns an ordered array of lanes, where each lane is
+  // { id, title, sub?, tasks }. Lanes with no tasks are emitted only when
+  // the strategy asks for them (Due month always shows all three so the
+  // user feels the pacing even on a quiet week).
+  function bucketMap(items, keyFn){
+    var out = {};
+    items.forEach(function(x){
+      var k = keyFn(x);
+      if (!out[k]) out[k] = [];
+      out[k].push(x);
+    });
+    return out;
+  }
+
+  var GROUP_STRATEGIES = {
+    duemonth: {
+      label: 'Due month',
+      build: function(tasks, ctx){
+        var today = ctx.today;
+        var buckets = { 'this-month': [], 'next-month': [], 'backlog': [] };
+        tasks.forEach(function(t){
+          var d = toDate(t.dueDate);
+          if (!d || isNaN(d)) { buckets.backlog.push(t); return; }
+          var diff = monthKey(d) - monthKey(today);
+          if (diff <= 0) buckets['this-month'].push(t);
+          else if (diff === 1) buckets['next-month'].push(t);
+          else buckets.backlog.push(t);
+        });
+        return [
+          { id: 'this-month', title: 'This Month', sub: fmtMonthLabel(today, 0),   tasks: buckets['this-month'] },
+          { id: 'next-month', title: 'Next Month', sub: fmtMonthLabel(today, 1),   tasks: buckets['next-month'] },
+          { id: 'backlog',    title: 'Backlog',    sub: 'Unscheduled · drag in when ready', tasks: buckets.backlog }
+        ];
+      }
+    },
+    assignee: {
+      label: 'Assignee',
+      build: function(tasks, ctx){
+        var memberById = {};
+        (ctx.members || []).forEach(function(m){ memberById[m.id] = m; });
+        var buckets = bucketMap(tasks, function(t){ return t.assigneeId || '__unassigned__'; });
+        var keys = Object.keys(buckets).sort(function(a, b){
+          if (a === '__unassigned__') return 1;
+          if (b === '__unassigned__') return -1;
+          return buckets[b].length - buckets[a].length;
+        });
+        return keys.map(function(k){
+          if (k === '__unassigned__') {
+            return { id: 'assignee-none', title: 'Unassigned', sub: 'Needs an owner', tasks: buckets[k] };
+          }
+          var m = memberById[k];
+          var name = m ? m.name : k;
+          var role = m ? (m.role || '') : '';
+          return { id: 'assignee-' + k, title: name, sub: role, tasks: buckets[k] };
+        });
+      }
+    },
+    priority: {
+      label: 'Priority',
+      build: function(tasks){
+        var order = [
+          { id: 'urgent', title: 'Urgent', sub: 'Highest pressure — clear these first' },
+          { id: 'high',   title: 'High',   sub: 'Priority work for this week' },
+          { id: 'medium', title: 'Medium', sub: 'Standard cadence' },
+          { id: 'low',    title: 'Low',    sub: 'Nice to have · pick up with bandwidth' }
+        ];
+        var buckets = bucketMap(tasks, function(t){ return t.priority || 'medium'; });
+        return order.map(function(o){
+          return { id: 'priority-' + o.id, title: o.title, sub: o.sub, tasks: buckets[o.id] || [] };
+        }).filter(function(lane){ return lane.tasks.length > 0; });
+      }
+    },
+    none: {
+      label: 'None',
+      build: function(){ return null; }
+    }
+  };
+
+  // Storage + defaults — retainers lean into Due month because their work
+  // repeats monthly; projects default to a flat board because phases and
+  // columns already do the heavy lifting.
+  var GROUPBY_STORAGE_PREFIX = 'pf-groupby-';
+  function defaultGroupFor(service){
+    return service.type === 'retainer' ? 'duemonth' : 'none';
+  }
+  function getGroupBy(service){
+    try {
+      var stored = localStorage.getItem(GROUPBY_STORAGE_PREFIX + service.id);
+      if (stored && GROUP_STRATEGIES[stored]) return stored;
+    } catch (e) {}
+    return defaultGroupFor(service);
+  }
+  function setGroupBy(service, id){
+    if (!GROUP_STRATEGIES[id]) return;
+    try { localStorage.setItem(GROUPBY_STORAGE_PREFIX + service.id, id); } catch (e) {}
+  }
+
+  function updateGroupByChip(activeId){
+    var label = document.getElementById('groupByLabel');
+    if (label) label.textContent = GROUP_STRATEGIES[activeId] ? GROUP_STRATEGIES[activeId].label : 'None';
+    var menu = document.getElementById('groupByMenu');
+    if (menu) {
+      menu.querySelectorAll('.filter-group-item').forEach(function(btn){
+        btn.setAttribute('data-active', btn.getAttribute('data-groupby') === activeId ? 'true' : 'false');
+      });
+    }
+    var chip = document.getElementById('groupByChip');
+    if (chip) chip.classList.toggle('active', activeId !== 'none');
   }
 
   function renderBoard(){
@@ -21928,33 +22096,12 @@ window.OPS_TEAM = OPS_TEAM;
 
     var tasksForService = D.tasks.filter(function(t){ return t.serviceId === service.id; });
     var today = D.today || new Date();
-    var isRetainer = service.type === 'retainer';
 
-    // Rebuild DOM so we can flip between flat and swimlane layouts cleanly.
-    if (isRetainer) {
-      boardEl.classList.add('has-swimlanes');
-      var rows = RETAINER_SWIMLANES.map(function(sl, idx){
-        var subLabel = sl.id === 'this-month' ? fmtMonthLabel(today, 0)
-          : sl.id === 'next-month' ? fmtMonthLabel(today, 1)
-          : 'Unscheduled · drag in when ready';
-        return ''
-          + '<section class="swimlane" data-swimlane-id="' + sl.id + '"' + (sl.id === 'backlog' ? ' ' : '') + '>'
-          +   '<div class="swimlane-header" data-swimlane-toggle role="button" tabindex="0" aria-expanded="true">'
-          +     '<svg class="swimlane-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>'
-          +     '<span class="swimlane-title">' + esc(sl.title) + '</span>'
-          +     '<span class="swimlane-count" data-swimlane-count>0</span>'
-          +     '<span class="swimlane-sub">' + esc(subLabel) + '</span>'
-          +   '</div>'
-          +   '<div class="swimlane-body">' + COLUMN_SKELETON + '</div>'
-          + '</section>';
-      }).join('');
-      boardEl.innerHTML = rows;
-    } else {
-      boardEl.classList.remove('has-swimlanes');
-      boardEl.innerHTML = COLUMN_SKELETON;
-    }
+    var groupById = getGroupBy(service);
+    var strategy = GROUP_STRATEGIES[groupById] || GROUP_STRATEGIES.none;
+    var lanes = strategy.build(tasksForService, { today: today, members: D.members, service: service });
 
-    // Bucket tasks: for retainers, (swimlane × column); for projects, just column.
+    // Bucket tasks per column inside a scope (flat board or a single lane).
     function populate(scope, tasks){
       var byCol = { todo: [], inprogress: [], blocked: [], review: [], done: [] };
       tasks.forEach(function(t){ if (byCol[t.columnId]) byCol[t.columnId].push(t); });
@@ -21974,21 +22121,32 @@ window.OPS_TEAM = OPS_TEAM;
       });
     }
 
-    if (isRetainer) {
-      var bySwim = { 'this-month': [], 'next-month': [], 'backlog': [] };
-      tasksForService.forEach(function(t){
-        var k = swimlaneOf(t, today);
-        bySwim[k].push(t);
-      });
-      boardEl.querySelectorAll('.swimlane').forEach(function(slEl){
-        var id = slEl.getAttribute('data-swimlane-id');
-        populate(slEl, bySwim[id] || []);
-        var countEl = slEl.querySelector('[data-swimlane-count]');
-        if (countEl) countEl.textContent = String((bySwim[id] || []).length);
-      });
-    } else {
+    if (!lanes || !lanes.length) {
+      boardEl.classList.remove('has-swimlanes');
+      boardEl.innerHTML = COLUMN_SKELETON;
       populate(boardEl, tasksForService);
+    } else {
+      boardEl.classList.add('has-swimlanes');
+      var rows = lanes.map(function(sl){
+        return ''
+          + '<section class="swimlane" data-swimlane-id="' + esc(sl.id) + '">'
+          +   '<div class="swimlane-header" data-swimlane-toggle role="button" tabindex="0" aria-expanded="true">'
+          +     '<svg class="swimlane-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>'
+          +     '<span class="swimlane-title">' + esc(sl.title) + '</span>'
+          +     '<span class="swimlane-count" data-swimlane-count>' + sl.tasks.length + '</span>'
+          +     (sl.sub ? '<span class="swimlane-sub">' + esc(sl.sub) + '</span>' : '')
+          +   '</div>'
+          +   '<div class="swimlane-body">' + COLUMN_SKELETON + '</div>'
+          + '</section>';
+      }).join('');
+      boardEl.innerHTML = rows;
+      var laneEls = boardEl.querySelectorAll('.swimlane');
+      laneEls.forEach(function(slEl, i){
+        populate(slEl, lanes[i].tasks);
+      });
     }
+
+    updateGroupByChip(groupById);
 
     if (typeof initCardTiles === 'function') initCardTiles();
   }
@@ -22001,6 +22159,34 @@ window.OPS_TEAM = OPS_TEAM;
     if (!sl) return;
     var collapsed = sl.classList.toggle('collapsed');
     toggle.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+  });
+
+  // Group by chip: toggle popover, pick strategy, close on outside click.
+  document.addEventListener('click', function(e){
+    var chip = e.target.closest('#groupByChip');
+    var menu = document.getElementById('groupByMenu');
+    if (chip && menu) {
+      var willOpen = !menu.classList.contains('open');
+      menu.classList.toggle('open', willOpen);
+      chip.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
+      return;
+    }
+    var item = e.target.closest('.filter-group-item[data-groupby]');
+    if (item) {
+      var choice = item.getAttribute('data-groupby');
+      var svc = pickService();
+      if (svc) setGroupBy(svc, choice);
+      if (menu) menu.classList.remove('open');
+      var chipBtn = document.getElementById('groupByChip');
+      if (chipBtn) chipBtn.setAttribute('aria-expanded', 'false');
+      renderBoard();
+      return;
+    }
+    if (menu && menu.classList.contains('open') && !e.target.closest('.filter-group-menu')) {
+      menu.classList.remove('open');
+      var chipBtn2 = document.getElementById('groupByChip');
+      if (chipBtn2) chipBtn2.setAttribute('aria-expanded', 'false');
+    }
   });
 
   if (document.readyState === 'loading') {
