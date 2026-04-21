@@ -2812,8 +2812,9 @@
     color: var(--hover-blue);
   }
   .settings-nav-item.active {
-    background: #0a84ff;
-    color: #fff;
+    background: color-mix(in srgb, var(--highlight) 12%, transparent);
+    color: var(--highlight);
+    font-weight: 600;
   }
   .settings-nav-item svg {
     width: 14px; height: 14px;
@@ -4891,12 +4892,25 @@
   .dp-combo-item * { pointer-events: none; }
   .dp-combo-item:first-child { border-radius: 10px 10px 0 0; }
   .dp-combo-item:last-child { border-radius: 0 0 10px 10px; }
-  .dp-combo-item:hover { background: var(--highlight); color: #fff; }
-  .dp-combo-item:hover .dp-combo-avatar { background: #fff; color: var(--highlight); }
-  .dp-combo-item:hover .dp-combo-role { color: rgba(255,255,255,0.7); }
-  .dp-combo-item.selected { background: var(--highlight); color: #fff; }
-  .dp-combo-item.selected .dp-combo-avatar { background: #fff; color: var(--highlight); }
-  .dp-combo-item.selected .dp-combo-role { color: rgba(255,255,255,0.7); }
+  .dp-combo-item:hover {
+    background: color-mix(in srgb, var(--highlight) 10%, transparent);
+    color: var(--highlight);
+  }
+  .dp-combo-item:hover .dp-combo-avatar {
+    background: color-mix(in srgb, var(--highlight) 18%, transparent);
+    color: var(--highlight);
+  }
+  .dp-combo-item:hover .dp-combo-role { color: var(--highlight); opacity: 0.7; }
+  .dp-combo-item.selected {
+    background: color-mix(in srgb, var(--highlight) 14%, transparent);
+    color: var(--highlight);
+    font-weight: 600;
+  }
+  .dp-combo-item.selected .dp-combo-avatar {
+    background: color-mix(in srgb, var(--highlight) 20%, transparent);
+    color: var(--highlight);
+  }
+  .dp-combo-item.selected .dp-combo-role { color: var(--highlight); opacity: 0.7; }
   .dp-combo-avatar {
     width: 24px; height: 24px; border-radius: 50%;
     background: var(--avatar-bg); color: var(--avatar-fg);
@@ -5121,11 +5135,12 @@
     box-shadow: 0 0 0 1px var(--highlight), var(--shadow);
   }
   .week-col.is-today .week-col-header {
-    background: var(--highlight);
+    background: color-mix(in srgb, var(--highlight) 12%, transparent);
   }
   .week-col.is-today .week-col-day,
   .week-col.is-today .week-col-date {
-    color: #fff;
+    color: var(--highlight);
+    font-weight: 600;
   }
   .week-col.is-today::before {
     content: "";
@@ -6313,11 +6328,12 @@
     transition: background 0.15s, color 0.15s, box-shadow 0.15s;
     white-space: nowrap;
   }
-  .client-tab:hover { color: var(--text); }
+  .client-tab:hover { color: var(--highlight); background: color-mix(in srgb, var(--highlight) 7%, transparent); }
   .client-tab[data-active="true"] {
-    background: var(--bg-elev);
-    color: var(--text);
-    box-shadow: 0 1px 2px rgba(0,0,0,0.2), 0 0 0 1px var(--hairline-soft);
+    background: color-mix(in srgb, var(--highlight) 12%, transparent);
+    color: var(--highlight);
+    font-weight: 600;
+    box-shadow: 0 0 0 1px color-mix(in srgb, var(--highlight) 20%, transparent);
   }
   .client-tab-badge {
     display: inline-flex; align-items: center;
@@ -8577,7 +8593,9 @@
   }
   :root[data-theme="dark"] .view-chip-count { background: rgba(255,255,255,0.1); }
   .view-chip.active .view-chip-count {
-    background: rgba(255,255,255,0.2); opacity: 1;
+    background: color-mix(in srgb, var(--highlight) 18%, transparent);
+    color: var(--highlight);
+    opacity: 1;
   }
   .view-chip.new-view .view-chip-count { display: none; }
   .view-chip {
@@ -8596,10 +8614,15 @@
     box-shadow: 0 0 0 3px var(--highlight-soft), 0 0 0 4px var(--highlight);
   }
   .view-chip.active {
-    background: var(--highlight); color: #fff;
-    border-color: var(--highlight);
+    background: color-mix(in srgb, var(--highlight) 12%, transparent);
+    color: var(--highlight);
+    border-color: color-mix(in srgb, var(--highlight) 22%, transparent);
+    font-weight: 600;
   }
-  .view-chip.active:hover { background: var(--hover-blue-dark); color: #fff; }
+  .view-chip.active:hover {
+    background: color-mix(in srgb, var(--highlight) 16%, transparent);
+    color: var(--highlight);
+  }
   .view-chip.new-view {
     background: transparent; color: var(--text-faint);
     border: 1px dashed var(--hairline);
