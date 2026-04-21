@@ -6527,8 +6527,41 @@
   }
   .meetings-log-btn:hover { background: var(--bg-soft); border-color: var(--hairline-strong); }
   .meetings-log-btn svg { width: 14px; height: 14px; }
+  .meetings-header-actions { display: inline-flex; align-items: center; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+  .meetings-log-btn--primary {
+    background: var(--highlight);
+    border-color: var(--highlight);
+    color: #fff;
+    font-weight: 600;
+  }
+  .meetings-log-btn--primary:hover { filter: brightness(1.08); background: var(--highlight); border-color: var(--highlight); }
 
   .meetings-list { display: flex; flex-direction: column; gap: 12px; }
+
+  /* Scheduled (upcoming) entry variant — same layout, subtle left accent + pill. */
+  .meeting-entry[data-scheduled="true"] {
+    box-shadow: inset 3px 0 0 color-mix(in srgb, var(--highlight) 55%, transparent), var(--shadow);
+    background: color-mix(in srgb, var(--highlight) 3%, var(--bg-elev));
+  }
+  .meeting-scheduled-pill {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 3px 9px;
+    background: color-mix(in srgb, var(--highlight) 14%, transparent);
+    color: var(--highlight);
+    border-radius: 999px;
+    font-size: 10px; font-weight: 700;
+    letter-spacing: 0.06em; text-transform: uppercase;
+    flex-shrink: 0;
+  }
+  .meeting-scheduled-pill svg { width: 10px; height: 10px; }
+  .meeting-calendar-link {
+    display: inline-flex; align-items: center; gap: 5px;
+    font-size: 11.5px; color: var(--text-muted);
+    text-decoration: none;
+    transition: color 0.12s;
+  }
+  .meeting-calendar-link:hover { color: var(--highlight); }
+  .meeting-calendar-link svg { width: 11px; height: 11px; }
 
   .meeting-entry {
     background: var(--bg-elev);
@@ -6814,6 +6847,9 @@
   .log-field-row {
     display: grid; grid-template-columns: 1fr 140px;
     gap: 14px;
+  }
+  .log-field-row--schedule {
+    grid-template-columns: 1fr 120px 130px;
   }
   .log-field-label {
     font-size: 11px; font-weight: 600;
@@ -8990,13 +9026,41 @@
               12 touchpoints this quarter · 4 open action items
             </span>
           </div>
-          <button class="meetings-log-btn" data-log-meeting type="button">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-            Log touchpoint
-          </button>
+          <div class="meetings-header-actions">
+            <button class="meetings-log-btn" data-log-meeting type="button">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              Log touchpoint
+            </button>
+            <button class="meetings-log-btn meetings-log-btn--primary" data-schedule-meeting type="button">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+              Schedule meeting
+            </button>
+          </div>
         </div>
 
         <div class="meetings-list">
+
+          <!-- Upcoming 1: scheduled via Google Calendar -->
+          <div class="meeting-entry" data-scheduled="true">
+            <div class="meeting-top">
+              <span class="meeting-type-icon" data-type="meeting" data-tip="Video meeting" data-tip-pos="above"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg></span>
+              <span class="meeting-scheduled-pill"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>In 1 day</span>
+              <span class="meeting-date">Tomorrow · 10:00 AM</span>
+              <div class="meeting-topic">Homepage launch review</div>
+              <div class="meeting-attendees">
+                <span class="attendee" style="background:#5e5ce6" data-tip="Harvey Kim · CEO" data-tip-pos="above">HK</span>
+                <span class="attendee" style="background:#ff375f" data-tip="Jessica Park · CMO" data-tip-pos="above">JP</span>
+                <span class="attendee" style="background:#0a84ff" data-tip="Nikko Trinidad · AM" data-tip-pos="above">NT</span>
+              </div>
+              <a href="https://calendar.google.com/calendar" class="meeting-calendar-link" target="_blank" rel="noopener">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                Open in Calendar
+              </a>
+            </div>
+            <div class="meeting-tldr inline-edit inline-edit--name" data-kind="text" data-inline-field="agenda" data-multiline="true" tabindex="0" aria-label="Agenda">
+              <span data-inline-display>Walk through final homepage before launch. Review last accessibility pass, copy edits from Jessica, and timeline for push to prod.</span>
+            </div>
+          </div>
 
           <!-- Meeting 1: fresh, no TL;DR yet -->
           <div class="meeting-entry">
@@ -11343,6 +11407,105 @@
     <div class="log-modal-footer">
       <button type="button" class="log-modal-cancel" data-log-close>Cancel</button>
       <button type="button" class="log-modal-save" data-log-save>Save touchpoint</button>
+    </div>
+  </div>
+</div>
+
+<!-- Schedule meeting modal — opens Google Calendar with pre-filled event -->
+<div class="log-modal-overlay" data-schedule-modal aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="scheduleModalTitle">
+  <div class="log-modal" role="document">
+    <div class="log-modal-header">
+      <div>
+        <div class="log-modal-title" id="scheduleModalTitle">Schedule a meeting</div>
+      </div>
+      <button class="log-modal-close" data-schedule-close type="button" aria-label="Close">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="log-modal-subtitle">
+      Opens a pre-filled event in Google Calendar — attendees get the invite once you hit Save there. The upcoming meeting also appears in this Touchpoints list.
+    </div>
+
+    <form class="log-modal-form" data-schedule-form onsubmit="return false;">
+
+      <div class="log-field">
+        <div class="log-field-label">Type</div>
+        <div class="log-type-group" role="radiogroup" aria-label="Meeting type">
+          <button type="button" class="log-type-chip" data-schedule-type="meeting" data-selected="true" role="radio" aria-checked="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
+            Video
+          </button>
+          <button type="button" class="log-type-chip" data-schedule-type="call" role="radio" aria-checked="false">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+            Call
+          </button>
+          <button type="button" class="log-type-chip" data-schedule-type="in-person" role="radio" aria-checked="false">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+            In-person
+          </button>
+        </div>
+      </div>
+
+      <div class="log-field">
+        <label class="log-field-label" for="scheduleTopicInput">Topic</label>
+        <input id="scheduleTopicInput" class="log-field-input" data-schedule-topic type="text" placeholder="Homepage launch review" autocomplete="off">
+      </div>
+
+      <div class="log-field-row log-field-row--schedule">
+        <div class="log-field">
+          <label class="log-field-label" for="scheduleDateInput">Date</label>
+          <input id="scheduleDateInput" class="log-field-input" data-schedule-date type="date">
+        </div>
+        <div class="log-field">
+          <label class="log-field-label" for="scheduleTimeInput">Start time</label>
+          <input id="scheduleTimeInput" class="log-field-input" data-schedule-time type="time" value="10:00">
+        </div>
+        <div class="log-field">
+          <label class="log-field-label" for="scheduleDurationInput">Duration</label>
+          <select id="scheduleDurationInput" class="log-field-select" data-schedule-duration>
+            <option value="15">15 min</option>
+            <option value="30" selected>30 min</option>
+            <option value="45">45 min</option>
+            <option value="60">1 hour</option>
+            <option value="90">1h 30m</option>
+            <option value="120">2 hours</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="log-field" data-schedule-location-wrap style="display:none;">
+        <label class="log-field-label" for="scheduleLocationInput">Location</label>
+        <input id="scheduleLocationInput" class="log-field-input" data-schedule-location type="text" placeholder="Acme HQ · 42 Market St, SF" autocomplete="off">
+      </div>
+
+      <div class="log-field">
+        <div class="log-field-label">Attendees</div>
+        <div class="log-attendees" data-schedule-attendees>
+          <input class="log-attendees-input" data-schedule-attendee-input type="text" placeholder="Type a name and hit Enter" autocomplete="off">
+        </div>
+        <div class="log-attendees-suggest">
+          <span>Quick add:</span>
+          <button type="button" class="log-suggest-chip" data-schedule-suggest="Harvey Kim">Harvey Kim</button>
+          <button type="button" class="log-suggest-chip" data-schedule-suggest="Jessica Park">Jessica Park</button>
+          <button type="button" class="log-suggest-chip" data-schedule-suggest="Ray Ortiz">Ray Ortiz</button>
+          <button type="button" class="log-suggest-chip" data-schedule-suggest="Elena Martinez">Elena Martinez</button>
+          <button type="button" class="log-suggest-chip" data-schedule-suggest="Nikko Trinidad">Nikko Trinidad</button>
+        </div>
+      </div>
+
+      <div class="log-field">
+        <label class="log-field-label" for="scheduleAgendaInput">Agenda</label>
+        <textarea id="scheduleAgendaInput" class="log-field-textarea" data-schedule-agenda rows="3" placeholder="What you plan to cover. Gets copied into the calendar invite."></textarea>
+      </div>
+
+    </form>
+
+    <div class="log-modal-footer">
+      <button type="button" class="log-modal-cancel" data-schedule-close>Cancel</button>
+      <button type="button" class="log-modal-save" data-schedule-save>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;vertical-align:-2px;margin-right:6px;"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+        Open in Google Calendar
+      </button>
     </div>
   </div>
 </div>
@@ -19337,6 +19500,322 @@ window.OPS_TEAM = OPS_TEAM;
     bindModal();
   }
 
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+  else init();
+})();
+
+/* ── Schedule meeting modal — opens Google Calendar with a pre-filled event
+   (quick path, no OAuth). Also adds an upcoming entry to the Touchpoints list. */
+(function(){
+  var TYPES = {
+    meeting:     { label: 'Video meeting',   svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>' },
+    call:        { label: 'Phone call',      svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>' },
+    'in-person': { label: 'In-person visit', svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>' }
+  };
+  var TEAM = [
+    { name: 'Harvey Kim',      initials: 'HK', color: '#5e5ce6', email: 'harvey@acmecorp.example' },
+    { name: 'Jessica Park',    initials: 'JP', color: '#ff375f', email: 'jessica@acmecorp.example' },
+    { name: 'Ray Ortiz',       initials: 'RO', color: '#30d158', email: 'ray@acmecorp.example' },
+    { name: 'Elena Martinez',  initials: 'EM', color: '#bf5af2', email: 'elena@acmecorp.example' },
+    { name: 'Nikko Trinidad',  initials: 'NT', color: '#0a84ff', email: 'nikko@projectflow.example' },
+    { name: 'Marcus Alvarado', initials: 'MA', color: '#ff9f0a', email: 'marcus@projectflow.example' },
+    { name: 'Kenji Chen',      initials: 'KC', color: '#5e5ce6', email: 'kenji@projectflow.example' }
+  ];
+  var FALLBACK_COLORS = ['#0a84ff', '#5e5ce6', '#30d158', '#ff9f0a', '#bf5af2', '#ff375f'];
+  var MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+  function escapeHtml(s){
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function(c){
+      return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c];
+    });
+  }
+  function pad2(n){ return n < 10 ? '0' + n : '' + n; }
+  function toYMD(d){ return d.getFullYear() + '-' + pad2(d.getMonth()+1) + '-' + pad2(d.getDate()); }
+  function parseYMD(s){
+    if (!s) return null;
+    var p = s.split('-').map(Number);
+    if (p.length !== 3) return null;
+    return new Date(p[0], p[1]-1, p[2]);
+  }
+  function findPerson(name){
+    var lower = String(name || '').toLowerCase().trim();
+    if (!lower) return null;
+    for (var i = 0; i < TEAM.length; i++) {
+      if (TEAM[i].name.toLowerCase() === lower) return TEAM[i];
+    }
+    var words = String(name).trim().split(/\s+/);
+    var initials = (words[0] || '?').charAt(0).toUpperCase();
+    if (words.length > 1) initials += words[words.length - 1].charAt(0).toUpperCase();
+    var color = FALLBACK_COLORS[Math.abs(name.length) % FALLBACK_COLORS.length];
+    return { name: String(name).trim(), initials: initials, color: color, email: null };
+  }
+  function formatTime(hh, mm){
+    var h = hh % 12; if (h === 0) h = 12;
+    var ampm = hh < 12 ? 'AM' : 'PM';
+    return h + ':' + pad2(mm) + ' ' + ampm;
+  }
+  function countdownLabel(startDate){
+    var now = new Date(); now.setHours(0,0,0,0);
+    var d = new Date(startDate); d.setHours(0,0,0,0);
+    var diff = Math.round((d - now) / 86400000);
+    if (diff === 0) return 'Today';
+    if (diff === 1) return 'In 1 day';
+    if (diff < 7)   return 'In ' + diff + ' days';
+    if (diff < 14)  return 'Next week';
+    return 'In ' + Math.round(diff/7) + ' weeks';
+  }
+  function absoluteDateLabel(startDate){
+    var now = new Date(); now.setHours(0,0,0,0);
+    var d = new Date(startDate);
+    var ddOnly = new Date(d); ddOnly.setHours(0,0,0,0);
+    var diff = Math.round((ddOnly - now) / 86400000);
+    var prefix;
+    if (diff === 0) prefix = 'Today';
+    else if (diff === 1) prefix = 'Tomorrow';
+    else prefix = MONTHS[d.getMonth()] + ' ' + d.getDate();
+    return prefix + ' · ' + formatTime(d.getHours(), d.getMinutes());
+  }
+  function gcalDateStamp(d){
+    return d.getFullYear() + pad2(d.getMonth()+1) + pad2(d.getDate()) + 'T' +
+           pad2(d.getHours()) + pad2(d.getMinutes()) + '00';
+  }
+
+  var overlay, topicEl, dateEl, timeEl, durationEl, locationWrap, locationEl, agendaEl, attendeesEl, attendeeInput;
+  var selectedType = 'meeting';
+  var attendees = [];
+
+  function renderAttendees(){
+    Array.prototype.forEach.call(attendeesEl.querySelectorAll('.log-attendee-chip'), function(n){ n.remove(); });
+    attendees.forEach(function(p, idx){
+      var chip = document.createElement('span');
+      chip.className = 'log-attendee-chip';
+      chip.innerHTML =
+        '<span class="log-attendee-chip-avatar" style="background:' + p.color + '">' + escapeHtml(p.initials) + '</span>' +
+        '<span>' + escapeHtml(p.name) + '</span>' +
+        '<button type="button" class="log-attendee-chip-remove" aria-label="Remove" data-remove-index="' + idx + '">' +
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>' +
+        '</button>';
+      attendeesEl.insertBefore(chip, attendeeInput);
+    });
+  }
+  function addAttendee(name){
+    var p = findPerson(name); if (!p) return;
+    var dup = attendees.some(function(a){ return a.name.toLowerCase() === p.name.toLowerCase(); });
+    if (!dup) { attendees.push(p); renderAttendees(); }
+  }
+  function removeAttendeeAt(idx){ attendees.splice(idx, 1); renderAttendees(); }
+
+  function updateLocationVisibility(){
+    locationWrap.style.display = selectedType === 'in-person' ? '' : 'none';
+  }
+
+  function resetForm(){
+    selectedType = 'meeting';
+    overlay.querySelectorAll('[data-schedule-type]').forEach(function(b){
+      var isSel = b.getAttribute('data-schedule-type') === 'meeting';
+      b.setAttribute('data-selected', isSel ? 'true' : 'false');
+      b.setAttribute('aria-checked', isSel ? 'true' : 'false');
+    });
+    updateLocationVisibility();
+    topicEl.value = '';
+    agendaEl.value = '';
+    locationEl.value = '';
+    attendees = []; renderAttendees(); attendeeInput.value = '';
+    var tomorrow = new Date(); tomorrow.setDate(tomorrow.getDate() + 1);
+    dateEl.min = toYMD(new Date());
+    dateEl.value = toYMD(tomorrow);
+    timeEl.value = '10:00';
+    durationEl.value = '30';
+  }
+
+  function open(){
+    overlay.setAttribute('data-open', 'true');
+    overlay.setAttribute('aria-hidden', 'false');
+    resetForm();
+    document.body.style.overflow = 'hidden';
+    setTimeout(function(){ topicEl.focus(); }, 80);
+  }
+  function close(){
+    overlay.setAttribute('data-open', 'false');
+    overlay.setAttribute('aria-hidden', 'true');
+    document.body.style.overflow = '';
+  }
+
+  function bumpCadenceCount(){
+    var cadence = document.querySelector('.meetings-cadence');
+    if (!cadence) return;
+    cadence.innerHTML = cadence.innerHTML.replace(/(^|>|\s)(\d+)(\s+touchpoints)/, function(m, pre, n, rest){
+      return pre + (parseInt(n, 10) + 1) + rest;
+    });
+  }
+
+  function buildScheduledEntry(data){
+    var entry = document.createElement('div');
+    entry.className = 'meeting-entry';
+    entry.setAttribute('data-scheduled', 'true');
+
+    var typeInfo = TYPES[data.type] || TYPES.meeting;
+    var top = document.createElement('div');
+    top.className = 'meeting-top';
+    var topHTML =
+      '<span class="meeting-type-icon" data-type="' + escapeHtml(data.type) + '" data-tip="' + escapeHtml(typeInfo.label) + '" data-tip-pos="above">' + typeInfo.svg + '</span>' +
+      '<span class="meeting-scheduled-pill"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>' + escapeHtml(data.countdown) + '</span>' +
+      '<span class="meeting-date">' + escapeHtml(data.dateLabel) + '</span>' +
+      '<div class="meeting-topic">' + escapeHtml(data.topic) + '</div>';
+    if (data.attendees.length) {
+      topHTML += '<div class="meeting-attendees">';
+      data.attendees.forEach(function(p){
+        topHTML += '<span class="attendee" style="background:' + p.color + '" data-tip="' + escapeHtml(p.name) + '" data-tip-pos="above">' + escapeHtml(p.initials) + '</span>';
+      });
+      topHTML += '</div>';
+    }
+    topHTML += '<a href="' + escapeHtml(data.calendarUrl) + '" class="meeting-calendar-link" target="_blank" rel="noopener">' +
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>' +
+      'Open in Calendar</a>';
+    top.innerHTML = topHTML;
+    entry.appendChild(top);
+
+    var agenda = document.createElement('div');
+    agenda.className = 'meeting-tldr inline-edit inline-edit--name';
+    agenda.setAttribute('data-kind', 'text');
+    agenda.setAttribute('data-inline-field', 'agenda');
+    agenda.setAttribute('data-multiline', 'true');
+    agenda.setAttribute('tabindex', '0');
+    agenda.setAttribute('aria-label', 'Agenda');
+    if (data.agenda) {
+      agenda.innerHTML = '<span data-inline-display>' + escapeHtml(data.agenda) + '</span>';
+    } else {
+      agenda.classList.add('meeting-tldr--empty');
+      agenda.innerHTML = '<span data-inline-display data-empty="true" data-placeholder="Add agenda — what you plan to cover.">Add agenda — what you plan to cover.</span>';
+    }
+    entry.appendChild(agenda);
+
+    return entry;
+  }
+
+  function buildCalendarUrl(params){
+    var qs = [
+      'action=TEMPLATE',
+      'text=' + encodeURIComponent(params.text),
+      'dates=' + gcalDateStamp(params.start) + '/' + gcalDateStamp(params.end)
+    ];
+    if (params.details) qs.push('details=' + encodeURIComponent(params.details));
+    if (params.location) qs.push('location=' + encodeURIComponent(params.location));
+    if (params.emails && params.emails.length) qs.push('add=' + encodeURIComponent(params.emails.join(',')));
+    return 'https://calendar.google.com/calendar/render?' + qs.join('&');
+  }
+
+  function save(){
+    var topic = topicEl.value.trim();
+    if (!topic) {
+      topicEl.focus();
+      if (window.showToast) window.showToast('Topic is required', { duration: 1600 });
+      return;
+    }
+    var d = parseYMD(dateEl.value);
+    if (!d) { dateEl.focus(); if (window.showToast) window.showToast('Pick a date', { duration: 1600 }); return; }
+    var today = new Date(); today.setHours(0,0,0,0);
+    var dStart = new Date(d); dStart.setHours(0,0,0,0);
+    if (dStart < today) { if (window.showToast) window.showToast('Pick a future date', { duration: 1600 }); return; }
+
+    var timeStr = timeEl.value || '10:00';
+    var timeParts = timeStr.split(':').map(Number);
+    var start = new Date(d);
+    start.setHours(timeParts[0] || 0, timeParts[1] || 0, 0, 0);
+    var end = new Date(start.getTime() + (parseInt(durationEl.value, 10) || 30) * 60000);
+
+    var agenda = agendaEl.value.trim();
+    var location = selectedType === 'in-person' ? locationEl.value.trim() : '';
+    if (selectedType === 'meeting' && !location) location = 'Google Meet (link auto-added)';
+
+    var emails = [];
+    attendees.forEach(function(a){ if (a.email) emails.push(a.email); });
+
+    var calendarUrl = buildCalendarUrl({
+      text: topic,
+      start: start,
+      end: end,
+      details: agenda,
+      location: location,
+      emails: emails
+    });
+
+    window.open(calendarUrl, '_blank', 'noopener');
+
+    var entry = buildScheduledEntry({
+      type: selectedType,
+      countdown: countdownLabel(start),
+      dateLabel: absoluteDateLabel(start),
+      topic: topic,
+      attendees: attendees.slice(),
+      agenda: agenda,
+      calendarUrl: calendarUrl
+    });
+    var list = document.querySelector('.meetings-list');
+    if (list) list.insertBefore(entry, list.firstChild);
+    bumpCadenceCount();
+
+    if (window.showToast) window.showToast('Opening Google Calendar in a new tab…', { duration: 2000 });
+    close();
+  }
+
+  function bindModal(){
+    overlay.addEventListener('click', function(e){
+      var chip = e.target.closest('[data-schedule-type]');
+      if (chip) {
+        selectedType = chip.getAttribute('data-schedule-type');
+        overlay.querySelectorAll('[data-schedule-type]').forEach(function(b){
+          var isSel = b === chip;
+          b.setAttribute('data-selected', isSel ? 'true' : 'false');
+          b.setAttribute('aria-checked', isSel ? 'true' : 'false');
+        });
+        updateLocationVisibility();
+        return;
+      }
+      if (e.target.closest('[data-schedule-close]')) { close(); return; }
+      if (e.target.closest('[data-schedule-save]'))  { save();  return; }
+      var rem = e.target.closest('.log-attendee-chip-remove');
+      if (rem) { removeAttendeeAt(parseInt(rem.getAttribute('data-remove-index'), 10)); return; }
+      var sug = e.target.closest('[data-schedule-suggest]');
+      if (sug) { addAttendee(sug.getAttribute('data-schedule-suggest')); return; }
+      if (e.target === overlay) { close(); return; }
+    });
+
+    attendeeInput.addEventListener('keydown', function(e){
+      if (e.key === 'Enter' || e.key === ',') {
+        e.preventDefault();
+        var name = attendeeInput.value.trim().replace(/,$/, '');
+        if (name) { addAttendee(name); attendeeInput.value = ''; }
+      } else if (e.key === 'Backspace' && !attendeeInput.value && attendees.length) {
+        attendees.pop(); renderAttendees();
+      }
+    });
+
+    document.addEventListener('keydown', function(e){
+      if (overlay.getAttribute('data-open') !== 'true') return;
+      if (e.key === 'Escape') { e.preventDefault(); close(); }
+    });
+
+    document.addEventListener('click', function(e){
+      var btn = e.target.closest('[data-schedule-meeting]');
+      if (btn) { e.preventDefault(); open(); }
+    });
+  }
+
+  function init(){
+    overlay = document.querySelector('[data-schedule-modal]');
+    if (!overlay) return;
+    topicEl       = overlay.querySelector('[data-schedule-topic]');
+    dateEl        = overlay.querySelector('[data-schedule-date]');
+    timeEl        = overlay.querySelector('[data-schedule-time]');
+    durationEl    = overlay.querySelector('[data-schedule-duration]');
+    locationWrap  = overlay.querySelector('[data-schedule-location-wrap]');
+    locationEl    = overlay.querySelector('[data-schedule-location]');
+    agendaEl      = overlay.querySelector('[data-schedule-agenda]');
+    attendeesEl   = overlay.querySelector('[data-schedule-attendees]');
+    attendeeInput = overlay.querySelector('[data-schedule-attendee-input]');
+    bindModal();
+  }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
   else init();
 })();
