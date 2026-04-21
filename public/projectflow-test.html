@@ -6059,9 +6059,11 @@
     color: var(--status-track);
   }
   /* Show/hide sections based on active tab. Sections with no data-tab
-     are treated as overview-only. */
-  .client-detail-page[data-active-tab="overview"] .detail-section[data-tab="onboarding"] { display: none; }
-  .client-detail-page[data-active-tab="onboarding"] .detail-section:not([data-tab="onboarding"]) { display: none; }
+     are treated as overview-only. data-tab supports space-separated
+     values, e.g. data-tab="overview about" to appear in both. */
+  .client-detail-page[data-active-tab="overview"] .detail-section[data-tab]:not([data-tab~="overview"]) { display: none; }
+  .client-detail-page[data-active-tab="about"] .detail-section:not([data-tab~="about"]) { display: none; }
+  .client-detail-page[data-active-tab="onboarding"] .detail-section:not([data-tab~="onboarding"]) { display: none; }
 
   /* Sections (reuse .block pattern for consistency) */
   .detail-section {
@@ -7812,6 +7814,9 @@
       <button class="client-tab" role="tab" type="button" data-tab-target="overview" data-active="true" aria-selected="true">
         Overview
       </button>
+      <button class="client-tab" role="tab" type="button" data-tab-target="about" aria-selected="false">
+        About
+      </button>
       <button class="client-tab" role="tab" type="button" data-tab-target="onboarding" aria-selected="false">
         Onboarding
         <span class="client-tab-badge done">12 / 12</span>
@@ -7865,7 +7870,7 @@
     </div>
 
     <!-- ABOUT -->
-    <div class="detail-section" data-section-id="acme-relationship">
+    <div class="detail-section" data-section-id="acme-relationship" data-tab="about">
       <div class="detail-section-header">
         <div class="detail-section-title">About</div>
         <div class="detail-section-sub">Last touch Apr 14 · Next sync Apr 22</div>
