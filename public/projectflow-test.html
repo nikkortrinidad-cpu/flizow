@@ -6064,6 +6064,7 @@
   .client-detail-page[data-active-tab="overview"] .detail-section[data-tab]:not([data-tab~="overview"]) { display: none; }
   .client-detail-page[data-active-tab="about"] .detail-section:not([data-tab~="about"]) { display: none; }
   .client-detail-page[data-active-tab="notes"] .detail-section:not([data-tab~="notes"]) { display: none; }
+  .client-detail-page[data-active-tab="team"] .detail-section:not([data-tab~="team"]) { display: none; }
   .client-detail-page[data-active-tab="stats"] .detail-section:not([data-tab~="stats"]) { display: none; }
   .client-detail-page[data-active-tab="onboarding"] .detail-section:not([data-tab~="onboarding"]) { display: none; }
 
@@ -7822,6 +7823,9 @@
       <button class="client-tab" role="tab" type="button" data-tab-target="notes" aria-selected="false">
         Notes
       </button>
+      <button class="client-tab" role="tab" type="button" data-tab-target="team" aria-selected="false">
+        Team
+      </button>
       <button class="client-tab" role="tab" type="button" data-tab-target="stats" aria-selected="false">
         Stats
       </button>
@@ -7991,7 +7995,7 @@
     </div>
 
     <!-- TEAM -->
-    <div class="detail-section" data-section-id="acme-team">
+    <div class="detail-section" data-section-id="acme-team" data-tab="team">
       <div class="detail-section-header">
         <div class="detail-section-title">Team</div>
         <div class="detail-section-sub">6 people assigned</div>
