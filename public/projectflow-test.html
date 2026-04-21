@@ -5687,11 +5687,15 @@
   .wl-sc-dot.quarter { background: #f59e0b; }
   .wl-sc-dot.quick { background: var(--text-faint); }
 
-  /* Reduced motion */
+  /* Reduced motion — HIG principle 8. Kill decorative motion for users
+     who asked the system to reduce it. Structural transitions still run
+     instantly (0.01ms) instead of 0 so the property change still fires. */
   @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after {
-      transition-duration: 0.01ms !important;
       animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
     }
     .back-to-top { transition: none; }
   }
@@ -9757,6 +9761,16 @@
     }
     .template-detail-page { padding: 24px 20px 60px; }
   }
+
+  /* Global focus-ring fallback — WCAG 2.4.7.
+     Low specificity (0,1,0) so any element with a custom
+     .class:focus-visible ring (0,2,0+) still wins. Only
+     un-styled interactive elements pick up this default. */
+  :focus-visible {
+    outline: 2px solid var(--highlight);
+    outline-offset: 2px;
+    border-radius: inherit;
+  }
   </style>
 </head>
 <body>
@@ -9797,7 +9811,7 @@
   <div class="cmdk-modal" onclick="event.stopPropagation()">
     <div class="cmdk-input-wrap">
       <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85zm-5.242.656a5 5 0 1 1 0-10 5 5 0 0 1 0 10z"/></svg>
-      <input type="text" class="cmdk-input" placeholder="Search clients, tasks, people, or commands…">
+      <input type="text" class="cmdk-input" placeholder="Search clients, tasks, people, or commands…" aria-label="Search clients, tasks, people, or commands">
       <span class="cmdk-esc">ESC</span>
     </div>
     <div class="cmdk-results" id="cmdkResults">
@@ -10312,7 +10326,7 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
           <span class="hero-logo-overlay-label">Change</span>
         </span>
-        <input type="file" class="hero-logo-input" accept="image/*" hidden>
+        <input type="file" class="hero-logo-input" accept="image/*" hidden aria-label="Upload client logo">
       </div>
       <div class="hero-body">
         <div class="hero-name-row">
@@ -11037,13 +11051,13 @@
               <button type="button" data-notes-format="italic" class="notes-fmt-btn" data-tip="Italic" data-tip-pos="below"><em>I</em></button>
               <button type="button" data-notes-format="underline" class="notes-fmt-btn" data-tip="Underline" data-tip-pos="below"><span style="text-decoration:underline">U</span></button>
               <span class="notes-toolbar-divider"></span>
-              <button type="button" data-notes-format="bullet" class="notes-fmt-btn" data-tip="Bulleted list" data-tip-pos="below">
+              <button type="button" data-notes-format="bullet" class="notes-fmt-btn" data-tip="Bulleted list" data-tip-pos="below" aria-label="Bulleted list">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><circle cx="3.5" cy="6" r="1.2"/><circle cx="3.5" cy="12" r="1.2"/><circle cx="3.5" cy="18" r="1.2"/></svg>
               </button>
-              <button type="button" data-notes-format="checklist" class="notes-fmt-btn" data-tip="Checklist" data-tip-pos="below">
+              <button type="button" data-notes-format="checklist" class="notes-fmt-btn" data-tip="Checklist" data-tip-pos="below" aria-label="Checklist">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
               </button>
-              <button type="button" data-notes-format="link" class="notes-fmt-btn" data-tip="Insert link" data-tip-pos="below">
+              <button type="button" data-notes-format="link" class="notes-fmt-btn" data-tip="Insert link" data-tip-pos="below" aria-label="Insert link">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.72"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.72-1.72"/></svg>
               </button>
             </div>
@@ -13220,14 +13234,14 @@
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
               Start date
             </div>
-            <div class="meta-value"><input type="date" class="meta-date" id="startDateInput" value="2026-03-01"></div>
+            <div class="meta-value"><input type="date" class="meta-date" id="startDateInput" value="2026-03-01" aria-label="Start date"></div>
           </div>
           <div class="meta-row">
             <div class="meta-label">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
               Due date
             </div>
-            <div class="meta-value"><input type="date" class="meta-date" id="dueDateInput" value="2026-03-15"></div>
+            <div class="meta-value"><input type="date" class="meta-date" id="dueDateInput" value="2026-03-15" aria-label="Due date"></div>
           </div>
         </div>
 
@@ -13813,7 +13827,7 @@
     </header>
 
     <div class="members-invite">
-      <input type="email" class="members-invite-input" placeholder="Invite by email address">
+      <input type="email" class="members-invite-input" placeholder="Invite by email address" aria-label="Invite by email address">
       <select class="members-invite-role" aria-label="Invite role">
         <option>Editor</option>
         <option>Viewer</option>
@@ -13977,7 +13991,7 @@
 
         <div class="settings-field">
           <label class="settings-field-label">Board name</label>
-          <input class="settings-input" type="text" value="Website Redesign">
+          <input class="settings-input" type="text" value="Website Redesign" aria-label="Board name">
         </div>
 
         <div class="settings-field">
@@ -14031,10 +14045,10 @@
           <div class="settings-list-row" data-dot="todo">
             <span class="settings-drag-handle" aria-label="Drag to reorder"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="5" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="9" cy="19" r="1"/><circle cx="15" cy="5" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="19" r="1"/></svg></span>
             <span class="settings-list-dot" data-tip="Color: Blue"></span>
-            <input class="settings-row-input" type="text" value="To Do">
+            <input class="settings-row-input" type="text" aria-label="Name" value="To Do">
             <div class="settings-wip">
               <span class="settings-wip-label">WIP</span>
-              <input class="settings-wip-input" type="number" value="5" min="0">
+              <input class="settings-wip-input" type="number" aria-label="WIP limit" value="5" min="0">
             </div>
             <button class="settings-row-action warn" type="button" data-tip="Archive list" aria-label="Archive list"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/></svg></button>
             <button class="settings-row-action danger" type="button" data-tip="Delete list" aria-label="Delete list"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg></button>
@@ -14042,10 +14056,10 @@
           <div class="settings-list-row" data-dot="progress">
             <span class="settings-drag-handle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="5" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="9" cy="19" r="1"/><circle cx="15" cy="5" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="19" r="1"/></svg></span>
             <span class="settings-list-dot"></span>
-            <input class="settings-row-input" type="text" value="In Progress">
+            <input class="settings-row-input" type="text" aria-label="Name" value="In Progress">
             <div class="settings-wip">
               <span class="settings-wip-label">WIP</span>
-              <input class="settings-wip-input" type="number" value="3" min="0">
+              <input class="settings-wip-input" type="number" aria-label="WIP limit" value="3" min="0">
             </div>
             <button class="settings-row-action warn" type="button" data-tip="Archive list" aria-label="Archive list"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/></svg></button>
             <button class="settings-row-action danger" type="button" data-tip="Delete list" aria-label="Delete list"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg></button>
@@ -14053,10 +14067,10 @@
           <div class="settings-list-row" data-dot="blocked">
             <span class="settings-drag-handle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="5" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="9" cy="19" r="1"/><circle cx="15" cy="5" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="19" r="1"/></svg></span>
             <span class="settings-list-dot" data-tip="Color: Red"></span>
-            <input class="settings-row-input" type="text" value="Blocked">
+            <input class="settings-row-input" type="text" aria-label="Name" value="Blocked">
             <div class="settings-wip">
               <span class="settings-wip-label">WIP</span>
-              <input class="settings-wip-input" type="number" value="2" min="0">
+              <input class="settings-wip-input" type="number" aria-label="WIP limit" value="2" min="0">
             </div>
             <button class="settings-row-action warn" type="button" data-tip="Archive list" aria-label="Archive list"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/></svg></button>
             <button class="settings-row-action danger" type="button" data-tip="Delete list" aria-label="Delete list"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg></button>
@@ -14064,10 +14078,10 @@
           <div class="settings-list-row" data-dot="review">
             <span class="settings-drag-handle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="5" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="9" cy="19" r="1"/><circle cx="15" cy="5" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="19" r="1"/></svg></span>
             <span class="settings-list-dot"></span>
-            <input class="settings-row-input" type="text" value="Needs Review">
+            <input class="settings-row-input" type="text" aria-label="Name" value="Needs Review">
             <div class="settings-wip">
               <span class="settings-wip-label">WIP</span>
-              <input class="settings-wip-input" type="number" value="2" min="0">
+              <input class="settings-wip-input" type="number" aria-label="WIP limit" value="2" min="0">
             </div>
             <button class="settings-row-action warn" type="button" data-tip="Archive list" aria-label="Archive list"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/></svg></button>
             <button class="settings-row-action danger" type="button" data-tip="Delete list" aria-label="Delete list"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg></button>
@@ -14075,10 +14089,10 @@
           <div class="settings-list-row" data-dot="done">
             <span class="settings-drag-handle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="5" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="9" cy="19" r="1"/><circle cx="15" cy="5" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="19" r="1"/></svg></span>
             <span class="settings-list-dot"></span>
-            <input class="settings-row-input" type="text" value="Done">
+            <input class="settings-row-input" type="text" aria-label="Name" value="Done">
             <div class="settings-wip">
               <span class="settings-wip-label">WIP</span>
-              <input class="settings-wip-input" type="number" value="0" min="0" placeholder="—">
+              <input class="settings-wip-input" type="number" aria-label="WIP limit" value="0" min="0" placeholder="—">
             </div>
             <button class="settings-row-action warn" type="button" data-tip="Archive list" aria-label="Archive list"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/></svg></button>
             <button class="settings-row-action danger" type="button" data-tip="Delete list" aria-label="Delete list"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg></button>
@@ -14094,32 +14108,32 @@
         <div class="settings-list">
           <div class="settings-list-row">
             <span class="settings-label-color" style="background: #ff453a" data-tip="Change color" role="button" tabindex="0" aria-label="Change color"></span>
-            <input class="settings-row-input" type="text" value="Bug">
+            <input class="settings-row-input" type="text" aria-label="Name" value="Bug">
             <button class="settings-row-action danger" type="button" data-tip="Delete label" aria-label="Delete label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg></button>
           </div>
           <div class="settings-list-row">
             <span class="settings-label-color" style="background: #0a84ff" data-tip="Change color" role="button" tabindex="0" aria-label="Change color"></span>
-            <input class="settings-row-input" type="text" value="Feature">
+            <input class="settings-row-input" type="text" aria-label="Name" value="Feature">
             <button class="settings-row-action danger" type="button" data-tip="Delete label" aria-label="Delete label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg></button>
           </div>
           <div class="settings-list-row">
             <span class="settings-label-color" style="background: #30d158" data-tip="Change color" role="button" tabindex="0" aria-label="Change color"></span>
-            <input class="settings-row-input" type="text" value="Improvement">
+            <input class="settings-row-input" type="text" aria-label="Name" value="Improvement">
             <button class="settings-row-action danger" type="button" data-tip="Delete label" aria-label="Delete label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg></button>
           </div>
           <div class="settings-list-row">
             <span class="settings-label-color" style="background: #ff9f0a" data-tip="Change color" role="button" tabindex="0" aria-label="Change color"></span>
-            <input class="settings-row-input" type="text" value="Urgent">
+            <input class="settings-row-input" type="text" aria-label="Name" value="Urgent">
             <button class="settings-row-action danger" type="button" data-tip="Delete label" aria-label="Delete label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg></button>
           </div>
           <div class="settings-list-row">
             <span class="settings-label-color" style="background: #ff6b9d" data-tip="Change color" role="button" tabindex="0" aria-label="Change color"></span>
-            <input class="settings-row-input" type="text" value="Design">
+            <input class="settings-row-input" type="text" aria-label="Name" value="Design">
             <button class="settings-row-action danger" type="button" data-tip="Delete label" aria-label="Delete label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg></button>
           </div>
           <div class="settings-list-row">
             <span class="settings-label-color" style="background: #bf5af2" data-tip="Change color" role="button" tabindex="0" aria-label="Change color"></span>
-            <input class="settings-row-input" type="text" value="Research">
+            <input class="settings-row-input" type="text" aria-label="Name" value="Research">
             <button class="settings-row-action danger" type="button" data-tip="Delete label" aria-label="Delete label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg></button>
           </div>
         </div>
@@ -14189,7 +14203,7 @@
       <div class="log-field">
         <div class="log-field-label">Attendees</div>
         <div class="log-attendees" data-log-attendees>
-          <input class="log-attendees-input" data-log-attendee-input type="text" placeholder="Type a name and hit Enter" autocomplete="off">
+          <input class="log-attendees-input" data-log-attendee-input type="text" placeholder="Type a name and hit Enter" autocomplete="off" aria-label="Add attendee by name">
         </div>
         <div class="log-attendees-suggest">
           <span data-suggest-client-label>Client contacts:</span>
@@ -14293,7 +14307,7 @@
       <div class="log-field">
         <div class="log-field-label">Attendees</div>
         <div class="log-attendees" data-schedule-attendees>
-          <input class="log-attendees-input" data-schedule-attendee-input type="text" placeholder="Type a name and hit Enter" autocomplete="off">
+          <input class="log-attendees-input" data-schedule-attendee-input type="text" placeholder="Type a name and hit Enter" autocomplete="off" aria-label="Add attendee by name">
         </div>
         <div class="log-attendees-suggest">
           <span data-schedule-suggest-client-label>Client contacts:</span>
