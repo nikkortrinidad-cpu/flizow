@@ -7866,6 +7866,86 @@
   .team-member-name { font-size: 13px; font-weight: 500; color: var(--text); letter-spacing: -0.005em; }
   .team-member-role { font-size: 11px; color: var(--text-soft); }
 
+  .team-add-btn {
+    flex-shrink: 0;
+    width: 34px; height: 34px;
+    border-radius: 50%;
+    display: inline-flex; align-items: center; justify-content: center;
+    background: transparent;
+    border: 1.5px dashed var(--hairline);
+    color: var(--text-faint);
+    cursor: pointer;
+    padding: 0;
+    align-self: center;
+    transition: color 0.12s ease, border-color 0.12s ease, background 0.12s ease;
+  }
+  .team-add-btn svg { width: 14px; height: 14px; }
+  .team-add-btn:hover {
+    color: var(--highlight);
+    border-color: var(--highlight);
+    background: color-mix(in srgb, var(--highlight) 9%, transparent);
+    border-style: solid;
+  }
+  .team-add-btn:focus-visible {
+    outline: none;
+    border-color: var(--highlight);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--highlight) 25%, transparent);
+  }
+
+  /* Team header right-side actions */
+  .team-head-right {
+    display: inline-flex; align-items: center; gap: 12px;
+  }
+  .team-manage-btn {
+    font-size: 13px; font-weight: 500;
+    color: var(--highlight);
+    background: transparent; border: 0;
+    cursor: pointer; padding: 4px 6px;
+    border-radius: 6px;
+    letter-spacing: -0.005em;
+  }
+  .team-manage-btn:hover { background: color-mix(in srgb, var(--highlight) 9%, transparent); }
+  .team-edit-done {
+    background: var(--highlight); color: #fff;
+    border: 0; padding: 4px 12px;
+    border-radius: 980px;
+    font-size: 12px; font-weight: 500;
+    cursor: pointer;
+    letter-spacing: -0.005em;
+  }
+  .team-edit-done:hover { filter: brightness(1.05); }
+
+  /* Per-card × remove button — shown in edit mode only */
+  .team-member-card { position: relative; }
+  .team-remove-btn {
+    position: absolute;
+    top: -6px; right: -6px;
+    width: 22px; height: 22px;
+    display: none;
+    align-items: center; justify-content: center;
+    border-radius: 50%;
+    background: var(--bg-elev);
+    border: 1px solid color-mix(in srgb, #ff453a 40%, var(--hairline));
+    color: #ff453a;
+    cursor: pointer;
+    padding: 0;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+    transition: background 0.12s ease, transform 0.12s ease;
+  }
+  .team-remove-btn svg { width: 10px; height: 10px; }
+  .team-remove-btn:hover {
+    background: #ff453a;
+    color: #fff;
+    transform: scale(1.08);
+  }
+  [data-team-section][data-edit="true"] .team-remove-btn { display: inline-flex; }
+  [data-team-section][data-edit="true"] .team-member-card[data-team-member] {
+    background: color-mix(in srgb, var(--highlight) 4%, transparent);
+    border-radius: 10px;
+    padding: 6px;
+    margin: -6px;
+  }
+
   /* Timeline / activity */
   .activity-list {
     background: var(--bg-elev);
@@ -7960,6 +8040,37 @@
     display: flex; flex-direction: column;
     flex: 1; min-height: 0;
   }
+
+  /* Split-view collapse: list pane hides, a slim rail with an expand button stays */
+  body[data-list-collapsed="true"] .clients-split-wrapper .view-clients {
+    flex: 0 0 0 !important;
+    min-width: 0;
+    overflow: hidden;
+    border-right: 0;
+  }
+  .list-pane-toggle {
+    position: absolute;
+    top: 18px;
+    left: 14px;
+    width: 28px; height: 28px;
+    display: inline-flex;
+    align-items: center; justify-content: center;
+    background: var(--bg-elev);
+    border: 1px solid var(--hairline);
+    color: var(--text-soft);
+    border-radius: 8px;
+    cursor: pointer;
+    padding: 0;
+    z-index: 5;
+    transition: background 0.12s ease, color 0.12s ease, border-color 0.12s ease;
+  }
+  .list-pane-toggle:hover {
+    background: color-mix(in srgb, var(--highlight) 9%, transparent);
+    color: var(--highlight);
+    border-color: color-mix(in srgb, var(--highlight) 35%, var(--hairline));
+  }
+  .list-pane-toggle svg { width: 14px; height: 14px; stroke-width: 2.3; }
+  .clients-split-wrapper .view-client-detail { position: relative; }
 
   /* Cross-fade detail pane on client swap */
   .clients-split-wrapper .view-client-detail {
@@ -8117,24 +8228,49 @@
   .pinned-strip::-webkit-scrollbar { display: none; }
   .pinned-nav {
     position: absolute;
-    top: 30px;
-    width: 28px; height: 64px;
+    top: 28px;
+    bottom: 10px;
+    width: 34px;
     display: none;
-    align-items: center; justify-content: center;
-    background: linear-gradient(to left, var(--bg-elev) 45%, rgba(255,255,255,0) 100%);
+    align-items: center;
+    justify-content: flex-end;
+    background: linear-gradient(to left, var(--bg-elev) 35%, transparent 100%);
     border: none;
     color: var(--text-soft);
     cursor: pointer;
-    padding: 0;
+    padding: 0 4px 0 0;
     z-index: 2;
+    transition: color 0.12s ease;
   }
-  .pinned-nav svg { width: 14px; height: 14px; }
-  .pinned-nav:hover { color: var(--text); }
+  .pinned-nav::after {
+    content: '';
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    background: var(--bg);
+    border: 1px solid var(--hairline);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    display: block;
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    right: 4px;
+    z-index: -1;
+    transition: border-color 0.12s ease, box-shadow 0.12s ease;
+  }
+  .pinned-nav svg { width: 12px; height: 12px; stroke-width: 2.6; }
+  .pinned-nav:hover { color: var(--highlight); }
+  .pinned-nav:hover::after {
+    border-color: var(--highlight);
+    box-shadow: 0 2px 6px rgba(0,0,0,0.14);
+  }
   .pinned-nav.right { right: 0; }
   .pinned-nav.left {
     left: 0;
-    background: linear-gradient(to right, var(--bg-elev) 45%, rgba(255,255,255,0) 100%);
+    justify-content: flex-start;
+    padding: 0 0 0 4px;
+    background: linear-gradient(to right, var(--bg-elev) 35%, transparent 100%);
   }
+  .pinned-nav.left::after { right: auto; left: 4px; }
   .pinned-wrap.has-overflow-right .pinned-nav.right { display: flex; }
   .pinned-wrap.has-overflow-left  .pinned-nav.left  { display: flex; }
 
@@ -8974,6 +9110,10 @@
 
 <!-- ═══════ CLIENT DETAIL VIEW ═══════ -->
 <div class="view view-client-detail" data-view="client-detail">
+  <button type="button" class="list-pane-toggle" data-list-pane-toggle aria-label="Collapse clients list" data-tip="Toggle clients list" data-tip-pos="below-start">
+    <svg data-icon-collapse viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+    <svg data-icon-expand viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" style="display:none"><polyline points="9 18 15 12 9 6"/></svg>
+  </button>
 
   <!-- ACME CORPORATION — full detail (featured on-fire client) -->
   <section class="client-detail-page" data-client-panel="acme-corp" data-active-tab="overview">
@@ -9582,10 +9722,14 @@
     </div>
 
     <!-- TEAM (lives under About tab) -->
-    <div class="detail-section" data-section-id="acme-team" data-tab="about">
+    <div class="detail-section" data-section-id="acme-team" data-tab="about" data-team-section>
       <div class="detail-section-header">
         <div class="detail-section-title">Team</div>
-        <div class="detail-section-sub">6 people assigned</div>
+        <div class="team-head-right">
+          <span class="detail-section-sub" data-team-count>6 people assigned</span>
+          <button type="button" class="team-manage-btn" data-team-manage-btn>Manage</button>
+          <button type="button" class="team-edit-done" data-team-edit-done style="display:none">Done</button>
+        </div>
       </div>
       <div class="team-section-grid">
         <div class="team-group">
@@ -9604,41 +9748,59 @@
         <div class="team-group">
           <div class="team-group-label">Project team</div>
           <div class="team-group-row">
-            <div class="team-member-card">
+            <div class="team-member-card" data-team-member>
               <div class="team-member-avatar" style="background:#ff9f0a">MA</div>
               <div class="team-member-body">
                 <div class="team-member-name">Marcus Aldrin</div>
                 <div class="team-member-role">Lead Designer</div>
               </div>
+              <button type="button" class="team-remove-btn" data-team-remove aria-label="Remove Marcus Aldrin">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              </button>
             </div>
-            <div class="team-member-card">
+            <div class="team-member-card" data-team-member>
               <div class="team-member-avatar" style="background:#30d158">EV</div>
               <div class="team-member-body">
                 <div class="team-member-name">Elena Vasquez</div>
                 <div class="team-member-role">Developer</div>
               </div>
+              <button type="button" class="team-remove-btn" data-team-remove aria-label="Remove Elena Vasquez">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              </button>
             </div>
-            <div class="team-member-card">
+            <div class="team-member-card" data-team-member>
               <div class="team-member-avatar" style="background:#bf5af2">JC</div>
               <div class="team-member-body">
                 <div class="team-member-name">James Chen</div>
                 <div class="team-member-role">SEO Specialist</div>
               </div>
+              <button type="button" class="team-remove-btn" data-team-remove aria-label="Remove James Chen">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              </button>
             </div>
-            <div class="team-member-card">
+            <div class="team-member-card" data-team-member>
               <div class="team-member-avatar" style="background:#ff375f">SP</div>
               <div class="team-member-body">
                 <div class="team-member-name">Sophie Park</div>
                 <div class="team-member-role">Content Writer</div>
               </div>
+              <button type="button" class="team-remove-btn" data-team-remove aria-label="Remove Sophie Park">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              </button>
             </div>
-            <div class="team-member-card">
+            <div class="team-member-card" data-team-member>
               <div class="team-member-avatar" style="background:#64d2ff">RM</div>
               <div class="team-member-body">
                 <div class="team-member-name">Ravi Mehta</div>
                 <div class="team-member-role">Developer</div>
               </div>
+              <button type="button" class="team-remove-btn" data-team-remove aria-label="Remove Ravi Mehta">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              </button>
             </div>
+            <button type="button" class="team-add-btn" data-team-add-btn aria-label="Add team member" data-tip="Add team member" data-tip-pos="above">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            </button>
           </div>
         </div>
       </div>
@@ -11898,6 +12060,36 @@
     <div class="log-modal-footer">
       <button type="button" class="log-modal-cancel" data-contact-modal-close>Cancel</button>
       <button type="button" class="log-modal-save" data-contact-save>Save contact</button>
+    </div>
+  </div>
+</div>
+
+<!-- Team member add modal — appends to Project team row -->
+<div class="log-modal-overlay" data-team-modal aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="teamModalTitle">
+  <div class="log-modal" role="document">
+    <div class="log-modal-header">
+      <div>
+        <div class="log-modal-title" id="teamModalTitle">Add team member</div>
+      </div>
+      <button class="log-modal-close" data-team-modal-close type="button" aria-label="Close">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <form class="log-modal-form" data-team-form onsubmit="return false;">
+      <div class="contact-form-row">
+        <div class="contact-form-field">
+          <label for="teamFieldName">Name</label>
+          <input id="teamFieldName" data-team-field="name" type="text" placeholder="Alex Rivera" autocomplete="off">
+        </div>
+        <div class="contact-form-field">
+          <label for="teamFieldRole">Role</label>
+          <input id="teamFieldRole" data-team-field="role" type="text" placeholder="Developer" autocomplete="off">
+        </div>
+      </div>
+    </form>
+    <div class="log-modal-footer">
+      <button type="button" class="log-modal-cancel" data-team-modal-close>Cancel</button>
+      <button type="button" class="log-modal-save" data-team-save>Add to team</button>
     </div>
   </div>
 </div>
@@ -20936,6 +21128,145 @@ window.OPS_TEAM = OPS_TEAM;
       return new Promise(function(res){ resolver = res; existing.setAttribute('data-open', 'true'); });
     };
   }
+})();
+
+/* ═══════ Team member add / edit-mode / remove ═══════ */
+(function(){
+  var PALETTE = ['#5e5ce6', '#ff375f', '#30d158', '#ff9f0a', '#bf5af2', '#0a84ff', '#ff9500', '#64d2ff'];
+  function initials(name){
+    var parts = String(name).trim().split(/\s+/);
+    return ((parts[0] || '?').charAt(0) + (parts[1] ? parts[1].charAt(0) : '')).toUpperCase();
+  }
+  function pickColor(){
+    var used = [].slice.call(document.querySelectorAll('.team-member-avatar')).map(function(a){ return (a.getAttribute('style') || '').match(/background:\s*([^;]+)/); }).map(function(m){ return m ? m[1].trim() : ''; });
+    for (var i = 0; i < PALETTE.length; i++) {
+      if (used.indexOf(PALETTE[i]) === -1) return PALETTE[i];
+    }
+    return PALETTE[Math.floor(Math.random() * PALETTE.length)];
+  }
+  function section(){ return document.querySelector('[data-team-section]'); }
+  function updateCount(){
+    var sec = section(); if (!sec) return;
+    var n = sec.querySelectorAll('.team-member-card').length;
+    var el = sec.querySelector('[data-team-count]');
+    if (el) el.textContent = n + ' ' + (n === 1 ? 'person' : 'people') + ' assigned';
+  }
+  function openModal(){
+    var ov = document.querySelector('[data-team-modal]');
+    if (!ov) return;
+    ov.querySelector('[data-team-field="name"]').value = '';
+    ov.querySelector('[data-team-field="role"]').value = '';
+    ov.setAttribute('data-open', 'true');
+    ov.setAttribute('aria-hidden', 'false');
+    setTimeout(function(){ ov.querySelector('[data-team-field="name"]').focus(); }, 30);
+  }
+  function closeModal(){
+    var ov = document.querySelector('[data-team-modal]');
+    if (!ov) return;
+    ov.removeAttribute('data-open');
+    ov.setAttribute('aria-hidden', 'true');
+  }
+  function save(){
+    var ov = document.querySelector('[data-team-modal]');
+    var name = ov.querySelector('[data-team-field="name"]').value.trim();
+    var role = ov.querySelector('[data-team-field="role"]').value.trim();
+    if (!name) { ov.querySelector('[data-team-field="name"]').focus(); return; }
+    var row = document.querySelector('[data-team-section] .team-group:last-of-type .team-group-row');
+    if (!row) { closeModal(); return; }
+    var addBtn = row.querySelector('[data-team-add-btn]');
+    var card = document.createElement('div');
+    card.className = 'team-member-card';
+    card.setAttribute('data-team-member', '');
+    card.innerHTML = '<div class="team-member-avatar" style="background:' + pickColor() + '">' + initials(name) + '</div>' +
+      '<div class="team-member-body">' +
+        '<div class="team-member-name"></div>' +
+        '<div class="team-member-role"></div>' +
+      '</div>' +
+      '<button type="button" class="team-remove-btn" data-team-remove aria-label="Remove ' + name + '">' +
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>' +
+      '</button>';
+    card.querySelector('.team-member-name').textContent = name;
+    card.querySelector('.team-member-role').textContent = role || 'Team member';
+    if (addBtn) row.insertBefore(card, addBtn);
+    else row.appendChild(card);
+    closeModal();
+    updateCount();
+    if (window.showToast) window.showToast(name + ' added to team', { duration: 2200 });
+  }
+  function toggleEdit(on){
+    var sec = section(); if (!sec) return;
+    if (on) sec.setAttribute('data-edit', 'true');
+    else sec.removeAttribute('data-edit');
+    var manage = sec.querySelector('[data-team-manage-btn]');
+    var done = sec.querySelector('[data-team-edit-done]');
+    if (manage) manage.style.display = on ? 'none' : '';
+    if (done)   done.style.display   = on ? '' : 'none';
+  }
+  function removeMember(card){
+    var name = card.querySelector('.team-member-name').textContent.trim();
+    window.openConfirm({
+      title: 'Remove ' + name + '?',
+      body: 'They will be unassigned from this client. You can add them back anytime.',
+      confirmLabel: 'Remove'
+    }).then(function(ok){
+      if (!ok) return;
+      card.remove();
+      updateCount();
+      if (window.showToast) window.showToast(name + ' removed from team', { duration: 2400 });
+    });
+  }
+  document.addEventListener('click', function(e){
+    if (e.target.closest('[data-team-add-btn]')) { openModal(); return; }
+    if (e.target.closest('[data-team-modal-close]')) { closeModal(); return; }
+    if (e.target.closest('[data-team-save]')) { save(); return; }
+    if (e.target.closest('[data-team-manage-btn]')) { toggleEdit(true); return; }
+    if (e.target.closest('[data-team-edit-done]')) { toggleEdit(false); return; }
+    var rm = e.target.closest('[data-team-remove]');
+    if (rm) {
+      var card = rm.closest('.team-member-card');
+      if (card) removeMember(card);
+      return;
+    }
+    var ov = e.target.closest('[data-team-modal]');
+    if (ov && e.target === ov) closeModal();
+  });
+  document.addEventListener('keydown', function(e){
+    var ov = document.querySelector('[data-team-modal][data-open="true"]');
+    if (ov) {
+      if (e.key === 'Escape') { closeModal(); return; }
+      if (e.key === 'Enter' && e.target && e.target.closest && e.target.closest('[data-team-modal]')) { e.preventDefault(); save(); return; }
+    }
+    if (e.key === 'Escape') {
+      var sec = section();
+      if (sec && sec.getAttribute('data-edit') === 'true') toggleEdit(false);
+    }
+  });
+})();
+
+/* ═══════ Clients split-view list-pane collapse toggle ═══════ */
+(function(){
+  var STORAGE_KEY = 'projectflow-list-pane-collapsed';
+  function apply(collapsed){
+    document.body.setAttribute('data-list-collapsed', collapsed ? 'true' : 'false');
+    var btn = document.querySelector('[data-list-pane-toggle]');
+    if (!btn) return;
+    var iconCollapse = btn.querySelector('[data-icon-collapse]');
+    var iconExpand   = btn.querySelector('[data-icon-expand]');
+    if (iconCollapse) iconCollapse.style.display = collapsed ? 'none'  : '';
+    if (iconExpand)   iconExpand.style.display   = collapsed ? ''      : 'none';
+    btn.setAttribute('aria-label', collapsed ? 'Show clients list' : 'Collapse clients list');
+    btn.setAttribute('data-tip', collapsed ? 'Show clients list' : 'Hide clients list');
+  }
+  var saved;
+  try { saved = localStorage.getItem(STORAGE_KEY) === 'true'; } catch (e) { saved = false; }
+  apply(saved);
+  document.addEventListener('click', function(e){
+    var btn = e.target.closest('[data-list-pane-toggle]');
+    if (!btn) return;
+    var next = document.body.getAttribute('data-list-collapsed') !== 'true';
+    apply(next);
+    try { localStorage.setItem(STORAGE_KEY, next ? 'true' : 'false'); } catch (err) {}
+  });
 })();
 </script>
 
