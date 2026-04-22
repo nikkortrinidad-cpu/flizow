@@ -9514,6 +9514,63 @@
   .view { display: none; }
   .view.active { display: flex; flex-direction: column; flex: 1; min-height: 0; }
   .view-overview.active { overflow-y: auto; }
+
+  /* ═══════════════════════════════════════════════════════════════
+   * OPS VIEW — internal team kanban. Reuses .board/.column/.card
+   * styling; adds only a top header-bar unique to this view.
+   * ═══════════════════════════════════════════════════════════════ */
+  .ops-header-bar {
+    padding: 28px 40px 20px;
+    border-bottom: 1px solid var(--hairline-soft);
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 24px;
+    flex-shrink: 0;
+    background: var(--bg-elev);
+  }
+  .ops-header-eyebrow {
+    font-size: 11px; font-weight: 500; color: var(--text-muted);
+    text-transform: uppercase; letter-spacing: 0.08em;
+    margin: 0 0 6px;
+  }
+  .ops-header-title {
+    font-size: 26px; font-weight: 700;
+    letter-spacing: -0.02em;
+    color: var(--text);
+    margin: 0 0 6px;
+    line-height: 1.15;
+  }
+  .ops-header-sub {
+    font-size: 13px;
+    color: var(--text-muted);
+    margin: 0;
+    letter-spacing: -0.005em;
+    max-width: 560px;
+    line-height: 1.45;
+  }
+  .ops-header-stats {
+    display: flex; gap: 28px;
+    align-items: baseline;
+  }
+  .ops-header-stat {
+    display: inline-flex; gap: 6px; align-items: baseline;
+    font-size: 12px; color: var(--text-muted);
+    letter-spacing: -0.005em;
+  }
+  .ops-header-stat strong {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--text);
+    letter-spacing: -0.02em;
+    line-height: 1;
+  }
+  .ops-header-stat--blocked strong { color: #c92a1e; }
+  :root[data-theme="dark"] .ops-header-stat--blocked strong { color: #ff6961; }
+  @media (max-width: 720px) {
+    .ops-header-bar { flex-direction: column; align-items: flex-start; padding: 20px 24px 16px; }
+    .ops-header-stats { gap: 20px; }
+  }
   .view-clients.active,
   .view-client-detail.active { overflow-y: auto; }
 
@@ -12663,6 +12720,7 @@
     <nav class="header-nav">
       <a href="#overview" data-view-target="overview" class="on" aria-current="page">Home</a>
       <a href="#clients" data-view-target="clients">Clients</a>
+      <a href="#ops" data-view-target="ops">Ops</a>
       <a href="#analytics" data-view-target="analytics">Analytics</a>
       <a href="#wip/agenda" data-view-target="wip">Weekly WIP</a>
     </nav>
@@ -16782,6 +16840,264 @@
 
 </div>
 
+<!-- ═══════ OPS VIEW (internal team kanban) ═══════
+     Reuses the .board/.column/.card classes from the per-client board
+     so the visual language stays identical. Add-card and column-menu
+     handlers are context-free and work here for free. Drag-and-drop
+     is wired by a scoped IIFE at the bottom of the file. Card-detail
+     modal integration is intentionally NOT wired — the modal's status
+     change uses a global column lookup that'd collide with the
+     per-client board; deferring that to a follow-up. -->
+<div class="view view-ops" data-view="ops">
+
+  <div class="ops-header-bar">
+    <div class="ops-header-text">
+      <div class="ops-header-eyebrow">Internal work</div>
+      <h1 class="ops-header-title">Ops board</h1>
+      <p class="ops-header-sub">Work the team is doing for the business itself — hiring, finance, process, tooling. Client deliverables stay inside each client profile.</p>
+    </div>
+    <div class="ops-header-stats" role="group" aria-label="Board summary">
+      <div class="ops-header-stat"><strong>12</strong> tasks</div>
+      <div class="ops-header-stat"><strong>3</strong> in progress</div>
+      <div class="ops-header-stat ops-header-stat--blocked"><strong>1</strong> blocked</div>
+    </div>
+  </div>
+
+  <div class="board" id="opsBoard">
+
+    <!-- To Do -->
+    <div class="column" data-dot="todo">
+      <div class="column-header">
+        <div class="column-title-group">
+          <span class="column-dot"></span>
+          <div class="column-title">To Do</div>
+          <div class="column-count">3</div>
+        </div>
+        <div class="column-menu-wrap"><button class="column-menu" onclick="toggleColMenu(event)" aria-label="List options" data-tip="List options" data-tip-pos="below">⋯</button></div>
+      </div>
+      <div class="column-cards">
+        <div class="card" data-priority="high" data-assignees="kl">
+          <div class="card-top">
+            <div class="card-labels"><span class="card-label">Hiring</span></div>
+            <div class="card-due"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>Apr 24</div>
+          </div>
+          <div class="card-title">Post Social Media Manager listing on LinkedIn and WeWorkRemotely</div>
+          <div class="card-footer">
+            <div class="card-meta">
+              <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>2</span>
+            </div>
+            <div class="card-assignee">KL</div>
+          </div>
+        </div>
+        <div class="card" data-priority="medium" data-assignees="rc">
+          <div class="card-top">
+            <div class="card-labels"><span class="card-label">Legal</span></div>
+            <div class="card-due"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>Apr 28</div>
+          </div>
+          <div class="card-title">Review Q2 retainer contracts — Acme, Summit, Cascade</div>
+          <div class="card-footer">
+            <div class="card-meta">
+              <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>1</span>
+              <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>3</span>
+            </div>
+            <div class="card-assignee">RC</div>
+          </div>
+        </div>
+        <div class="card" data-priority="medium" data-assignees="rc">
+          <div class="card-top">
+            <div class="card-labels"><span class="card-label">Process</span></div>
+          </div>
+          <div class="card-title">Draft team offsite agenda — June in Tahoe</div>
+          <div class="card-footer">
+            <div class="card-meta">
+              <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>4</span>
+            </div>
+            <div class="card-assignee">RC</div>
+          </div>
+        </div>
+        <button class="add-card-btn" onclick="addCardStart(this)">＋ Add Card</button>
+      </div>
+    </div>
+
+    <!-- In Progress -->
+    <div class="column" data-dot="progress">
+      <div class="column-header">
+        <div class="column-title-group">
+          <span class="column-dot"></span>
+          <div class="column-title">In Progress</div>
+          <div class="column-count">3</div>
+        </div>
+        <div class="column-menu-wrap"><button class="column-menu" onclick="toggleColMenu(event)" aria-label="List options" data-tip="List options" data-tip-pos="below">⋯</button></div>
+      </div>
+      <div class="column-cards">
+        <div class="card" data-priority="high" data-assignees="kl">
+          <div class="card-top">
+            <div class="card-labels"><span class="card-label">Hiring</span></div>
+            <div class="card-due due-soon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>Apr 26</div>
+          </div>
+          <div class="card-title">Build internal hiring pipeline in Ashby ATS</div>
+          <div class="card-footer">
+            <div class="card-meta">
+              <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>6</span>
+              <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>2</span>
+            </div>
+            <div class="card-assignee">KL</div>
+          </div>
+        </div>
+        <div class="card" data-priority="high" data-assignees="rc">
+          <div class="card-top">
+            <div class="card-labels"><span class="card-label">Finance</span></div>
+            <div class="card-due"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>May 1</div>
+          </div>
+          <div class="card-title">Migrate invoicing from Wave to QuickBooks Online</div>
+          <div class="card-footer">
+            <div class="card-meta">
+              <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>4</span>
+              <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>1</span>
+            </div>
+            <div class="card-assignee">RC</div>
+          </div>
+        </div>
+        <div class="card" data-priority="medium" data-assignees="cc">
+          <div class="card-top">
+            <div class="card-labels"><span class="card-label">Brand</span></div>
+          </div>
+          <div class="card-title">Refresh agency pricing sheet for 2026 retainers</div>
+          <div class="card-footer">
+            <div class="card-meta">
+              <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>2</span>
+            </div>
+            <div class="card-assignee">CC</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Blocked -->
+    <div class="column" data-dot="blocked">
+      <div class="column-header">
+        <div class="column-title-group">
+          <span class="column-dot"></span>
+          <div class="column-title">Blocked</div>
+          <div class="column-count">1</div>
+        </div>
+        <div class="column-menu-wrap"><button class="column-menu" onclick="toggleColMenu(event)" aria-label="List options" data-tip="List options" data-tip-pos="below">⋯</button></div>
+      </div>
+      <div class="column-cards">
+        <div class="card" data-priority="high" data-assignees="rc">
+          <div class="card-top">
+            <div class="card-labels"><span class="card-label">Legal</span></div>
+            <div class="card-due due-blocked"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>Blocked · 2d</div>
+          </div>
+          <div class="card-title">Sign new office lease — waiting on landlord redlines</div>
+          <div class="card-footer">
+            <div class="card-meta">
+              <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>3</span>
+              <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>2</span>
+            </div>
+            <div class="card-assignee">RC</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Needs Review -->
+    <div class="column" data-dot="review">
+      <div class="column-header">
+        <div class="column-title-group">
+          <span class="column-dot"></span>
+          <div class="column-title">Needs Review</div>
+          <div class="column-count">2</div>
+        </div>
+        <div class="column-menu-wrap"><button class="column-menu" onclick="toggleColMenu(event)" aria-label="List options" data-tip="List options" data-tip-pos="below">⋯</button></div>
+      </div>
+      <div class="column-cards">
+        <div class="card" data-priority="medium" data-assignees="kl">
+          <div class="card-top">
+            <div class="card-labels"><span class="card-label">Process</span></div>
+            <div class="card-due due-waiting"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>Waiting · 3d</div>
+          </div>
+          <div class="card-title">Employee handbook v2 — final draft for legal review</div>
+          <div class="card-footer">
+            <div class="card-meta">
+              <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>8</span>
+              <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>1</span>
+            </div>
+            <div class="card-assignee">KL</div>
+          </div>
+        </div>
+        <div class="card" data-priority="medium" data-assignees="hs">
+          <div class="card-top">
+            <div class="card-labels"><span class="card-label">Brand</span></div>
+            <div class="card-due due-waiting"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>Waiting · 1d</div>
+          </div>
+          <div class="card-title">Portfolio case studies — 3 new drafts for site relaunch</div>
+          <div class="card-footer">
+            <div class="card-meta">
+              <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>5</span>
+              <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>3</span>
+            </div>
+            <div class="card-assignee">HS</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Done -->
+    <div class="column" data-dot="done">
+      <div class="column-header">
+        <div class="column-title-group">
+          <span class="column-dot"></span>
+          <div class="column-title">Done</div>
+          <div class="column-count">3</div>
+        </div>
+        <div class="column-menu-wrap"><button class="column-menu" onclick="toggleColMenu(event)" aria-label="List options" data-tip="List options" data-tip-pos="below">⋯</button></div>
+      </div>
+      <div class="column-cards">
+        <div class="card is-done" data-priority="medium" data-assignees="rc">
+          <div class="card-top">
+            <div class="card-labels"><span class="card-label">Hiring</span></div>
+          </div>
+          <div class="card-title">Onboard Michael Potts — Paid Social Manager</div>
+          <div class="card-footer">
+            <div class="card-meta">
+              <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>9</span>
+            </div>
+            <div class="card-assignee">RC</div>
+          </div>
+        </div>
+        <div class="card is-done" data-priority="low" data-assignees="cc">
+          <div class="card-top">
+            <div class="card-labels"><span class="card-label">Tools</span></div>
+          </div>
+          <div class="card-title">Upgrade Notion workspace to Business plan</div>
+          <div class="card-footer">
+            <div class="card-meta">
+              <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>1</span>
+            </div>
+            <div class="card-assignee">CC</div>
+          </div>
+        </div>
+        <div class="card is-done" data-priority="medium" data-assignees="rc">
+          <div class="card-top">
+            <div class="card-labels"><span class="card-label">Process</span></div>
+          </div>
+          <div class="card-title">Q1 retro slide deck and action items</div>
+          <div class="card-footer">
+            <div class="card-meta">
+              <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>6</span>
+              <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>2</span>
+            </div>
+            <div class="card-assignee">RC</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+<!-- ═══════ END OPS VIEW ═══════ -->
+
 <!-- Card Detail Modal -->
 <div class="card-modal-overlay" id="cardModalOverlay" role="dialog" aria-modal="true" aria-labelledby="cardModalTitle" onclick="closeCardPanel(event)">
   <div class="card-modal" onclick="event.stopPropagation()">
@@ -20136,6 +20452,141 @@ document.querySelector('.board').addEventListener('click', function(e){
   var card = e.target.closest('.card');
   if(card) openCardPanel(card);
 });
+
+/* ───── Ops board: drag & drop (scoped parallel of the per-client
+   board DnD IIFE above). Isolated so moves never bleed between the
+   two surfaces. The card-click → detail modal wiring is intentionally
+   NOT replicated here — the shared detail modal's status-change
+   handler does a global `document.querySelector('.column[data-dot=X]')`
+   which would wrongly target the per-client board; detail integration
+   is a separate follow-up. ───── */
+(function(){
+  var board = document.getElementById('opsBoard');
+  if(!board) return;
+
+  /* ---------- Live stats in the header. Recomputed from the DOM so
+       add-card and drag-moves don't leave the summary out of sync. */
+  function updateStats(){
+    var view = board.closest('.view-ops');
+    if (!view) return;
+    var total = board.querySelectorAll('.column-cards > .card').length;
+    var inProg = board.querySelectorAll('.column[data-dot="progress"] .column-cards > .card').length;
+    var blocked = board.querySelectorAll('.column[data-dot="blocked"] .column-cards > .card').length;
+    var stats = view.querySelectorAll('.ops-header-stat strong');
+    if (stats[0]) stats[0].textContent = total;
+    if (stats[1]) stats[1].textContent = inProg;
+    if (stats[2]) stats[2].textContent = blocked;
+  }
+
+  function markDraggable(root){
+    (root || board).querySelectorAll('.card').forEach(function(c){
+      if(!c.hasAttribute('draggable')) c.setAttribute('draggable', 'true');
+    });
+  }
+  markDraggable();
+  updateStats();
+  var mo = new MutationObserver(function(muts){
+    var touched = false;
+    muts.forEach(function(m){
+      m.addedNodes.forEach(function(n){
+        if(n.nodeType !== 1) return;
+        if(n.classList && n.classList.contains('card')){
+          if(!n.hasAttribute('draggable')) n.setAttribute('draggable', 'true');
+          touched = true;
+        } else {
+          markDraggable(n);
+          if (n.querySelector && n.querySelector('.card')) touched = true;
+        }
+      });
+      if (m.removedNodes && m.removedNodes.length) {
+        for (var i = 0; i < m.removedNodes.length; i++) {
+          var rn = m.removedNodes[i];
+          if (rn.nodeType === 1 && rn.classList && rn.classList.contains('card')) { touched = true; break; }
+        }
+      }
+    });
+    if (touched) updateStats();
+  });
+  mo.observe(board, { childList: true, subtree: true });
+
+  var dragged = null;
+  var lastOver = null;
+
+  board.addEventListener('dragstart', function(e){
+    var card = e.target.closest && e.target.closest('.card');
+    if(!card) return;
+    dragged = card;
+    card.classList.add('dragging');
+    e.dataTransfer.effectAllowed = 'move';
+    try { e.dataTransfer.setData('text/plain', 'card'); } catch(_){}
+  });
+
+  board.addEventListener('dragend', function(){
+    if(dragged) dragged.classList.remove('dragging');
+    dragged = null;
+    if(lastOver){ lastOver.classList.remove('drag-over'); lastOver = null; }
+  });
+
+  board.addEventListener('dragover', function(e){
+    if(!dragged) return;
+    var cards = e.target.closest && e.target.closest('.column-cards');
+    if(!cards) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    if(lastOver && lastOver !== cards) lastOver.classList.remove('drag-over');
+    cards.classList.add('drag-over');
+    lastOver = cards;
+  });
+
+  board.addEventListener('dragleave', function(e){
+    var cards = e.target.closest && e.target.closest('.column-cards');
+    if(cards && !cards.contains(e.relatedTarget)){
+      cards.classList.remove('drag-over');
+      if(lastOver === cards) lastOver = null;
+    }
+  });
+
+  board.addEventListener('drop', function(e){
+    if(!dragged) return;
+    var cards = e.target.closest && e.target.closest('.column-cards');
+    if(!cards) return;
+    e.preventDefault();
+    var srcCol = dragged.closest('.column');
+    var overCard = null;
+    var y = e.clientY;
+    var allCards = cards.querySelectorAll(':scope > .card');
+    for(var i = 0; i < allCards.length; i++){
+      var c = allCards[i];
+      if(c === dragged) continue;
+      var r = c.getBoundingClientRect();
+      if(y < r.top + r.height / 2){ overCard = c; break; }
+    }
+    if(overCard){
+      cards.insertBefore(dragged, overCard);
+    } else {
+      var anchor = cards.querySelector('.add-card-form') || cards.querySelector('.add-card-btn');
+      if(anchor) cards.insertBefore(dragged, anchor);
+      else cards.appendChild(dragged);
+    }
+    cards.classList.remove('drag-over');
+    lastOver = null;
+    [srcCol, cards.closest('.column')].forEach(function(col){
+      if(!col) return;
+      var countEl = col.querySelector('.column-count');
+      var n = col.querySelectorAll('.column-cards > .card').length;
+      if(countEl) countEl.textContent = n;
+    });
+    // Cards dropped into Done gain the muted "done" treatment; removing
+    // from Done restores them. Matches the visual cue on seeded items.
+    var destCol = cards.closest('.column');
+    if(destCol && destCol.getAttribute('data-dot') === 'done') {
+      dragged.classList.add('is-done');
+    } else {
+      dragged.classList.remove('is-done');
+    }
+    updateStats();
+  });
+})();
 
 /* close menu when clicking elsewhere inside modal */
 document.querySelector('.card-modal').addEventListener('click', function(e){
@@ -23960,7 +24411,7 @@ window.OPS_TEAM = OPS_TEAM;
 
 /* ── View routing (overview · clients · client-detail · board) ── */
 (function() {
-  var VALID = { overview: 1, board: 1, clients: 1, 'client-detail': 1, templates: 1, analytics: 1, wip: 1 };
+  var VALID = { overview: 1, board: 1, clients: 1, 'client-detail': 1, templates: 1, analytics: 1, wip: 1, ops: 1 };
 
   var DEFAULT_CLIENT = 'acme-corp';
   var DEFAULT_TEMPLATE = 'web-design-full-stack';
@@ -24069,6 +24520,7 @@ window.OPS_TEAM = OPS_TEAM;
     var w = h.match(/^wip(?:\/([a-z-]+))?(?:\/(.+))?$/);
     if (w) return { view: 'wip', sub: w[1] || 'agenda', id: w[2] || null };
     if (h === 'analytics') return { view: 'analytics' };
+    if (h === 'ops') return { view: 'ops' };
     if (h === 'overview') return { view: 'overview' };
     return { view: 'overview' };
   }
