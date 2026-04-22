@@ -9944,13 +9944,19 @@
   }
 
   /* ═══════════════════════════════════════════════════════════════════════
-     ANALYTICS VIEW
-     Delivery-health page for PM / AM. Three questions, in order:
-       1. Can we take more on right now?  →  Team capacity, Services at risk
-       2. Where does work get stuck?      →  Flow funnel by phase
-       3. What's slipping right now?      →  Slipped list + on-time delta
-     Everything is observational with click-through to existing views (client
-     detail, Kanban). No in-place reassign/push flows yet — that's v2.
+     ANALYTICS VIEW  (v1 — 2026-04-22)
+     Audience: PM / AM (CEO as secondary). Forward-looking delivery health.
+     Three answers in priority order:
+       1. Health summary   — five KPIs with deltas + sparklines, every card
+                             is a drill-down trigger (click to see the tasks
+                             behind the number)
+       2. Upcoming         — deliverables landing Today / This week / Next
+                             week, with owner + phase + days-to-deadline
+       3. Workload         — per-person capacity bar (hours used vs. budget)
+                             + WIP count + 4-week trend sparkline
+     Filters (person / project / date range) update every widget in sync.
+     Apple HIG: content-first, clarity over cleverness, direct manipulation,
+     feedback under 150ms, consistent tokens, typography-led hierarchy.
      ════════════════════════════════════════════════════════════════════════ */
   .view-analytics.active { overflow-y: auto; }
   .anlx-page { max-width: 1240px; margin: 0 auto; padding: var(--sp-36) var(--sp-4xl) 96px; }
@@ -9961,692 +9967,442 @@
     margin-bottom: var(--sp-3xl);
     flex-wrap: wrap;
   }
-  .anlx-header-text { flex: 1; min-width: 280px; }
-  .anlx-header-text .page-title { font-size: var(--fs-4xl); }
+  .anlx-header-text { flex: 1; min-width: 280px; max-width: 68ch; }
+  .anlx-header-text .page-title { font-size: var(--fs-5xl); }
+  .anlx-header-text .page-date { font-size: var(--fs-base); }
 
-  /* Pulse strip — 4 hero KPI cards, reusing stats-hero visuals */
-  .anlx-pulse-grid {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: var(--sp-lg);
+  /* ── Filter bar ──
+     Three filter pills + a text-only Reset. Pills are neutral by default
+     (chrome should defer); active state is Tier-3 tint. Popover listbox
+     opens below each pill on click, matches pattern used by phase picker. */
+  .anlx-filters {
+    display: flex; align-items: center; gap: var(--sp-sm); flex-wrap: wrap;
+    padding: var(--sp-md) 0;
+    border-top: 1px solid var(--hairline);
+    border-bottom: 1px solid var(--hairline);
+    margin-bottom: var(--sp-2xl);
   }
-  @media (max-width: 1000px) { .anlx-pulse-grid { grid-template-columns: repeat(2, 1fr); } }
-  @media (max-width: 560px)  { .anlx-pulse-grid { grid-template-columns: 1fr; } }
-  .anlx-pulse-card {
-    background: transparent; border: 0;
-    padding: 0; text-align: left;
-    font-family: inherit; color: inherit;
-    cursor: pointer;
+  .anlx-filter-label {
+    font-size: var(--fs-micro); font-weight: 600; letter-spacing: 0.04em;
+    text-transform: uppercase; color: var(--text-soft);
+    margin-right: var(--sp-xs);
   }
-  .anlx-pulse-card:focus-visible { outline: none; }
-  .anlx-pulse-card:focus-visible .stats-hero-card {
-    border-color: var(--highlight);
-    box-shadow: 0 0 0 2px color-mix(in srgb, var(--highlight) 30%, transparent);
+  .anlx-filter-pill {
+    display: inline-flex; align-items: center; gap: var(--sp-xs);
+    height: 28px; padding: 0 var(--sp-sm) 0 var(--sp-md);
+    border-radius: 999px; border: 1px solid var(--hairline);
+    background: var(--bg-elev); color: var(--text);
+    font-size: var(--fs-sm); font-weight: 500; line-height: 1;
+    cursor: pointer; transition: background 140ms ease, border-color 140ms ease, color 140ms ease;
   }
-  .anlx-pulse-card .stats-hero-card {
-    transition: border-color var(--dur-fast) var(--ease-out),
-                transform var(--dur-fast) var(--ease-out);
-  }
-  .anlx-pulse-card:hover .stats-hero-card {
-    border-color: var(--hairline); transform: translateY(-1px);
-  }
-  .anlx-pulse-card[data-tone="capacity"] .stats-hero-card { color: var(--status-risk); }
-  .anlx-pulse-card[data-tone="on-time"]  .stats-hero-card { color: var(--status-track); }
-  .anlx-pulse-card[data-tone="at-risk"]  .stats-hero-card { color: var(--status-fire); }
-  .anlx-pulse-card[data-tone="stuck"]    .stats-hero-card { color: var(--highlight); }
-  .anlx-pulse-bar {
-    height: 6px; border-radius: 3px;
-    background: color-mix(in srgb, var(--text) 8%, transparent);
-    overflow: hidden; margin-top: 2px;
-  }
-  .anlx-pulse-bar-fill {
-    height: 100%; border-radius: 3px;
-    background: currentColor;
-    transition: width var(--dur-slower) var(--ease-out);
-  }
-
-  /* Section framing */
-  .anlx-section { margin-bottom: var(--sp-5xl); }
-  .anlx-section:last-child { margin-bottom: 0; }
-  .anlx-section-head {
-    display: flex; align-items: baseline; justify-content: space-between;
-    gap: var(--sp-lg);
-    margin-bottom: var(--sp-lg);
-    flex-wrap: wrap;
-  }
-  .anlx-section-title-group { display: flex; flex-direction: column; gap: 2px; }
-  .anlx-section-title {
-    font-size: var(--fs-sm); font-weight: 600; color: var(--text-soft);
-    text-transform: uppercase; letter-spacing: 0.08em;
-  }
-  .anlx-section-sub {
-    font-size: var(--fs-sm); color: var(--text-muted); letter-spacing: -0.005em;
-    max-width: 68ch;
-  }
-
-  /* Function tab segmented control — Apple-style pill tabs */
-  .anlx-fn-tabs {
-    display: inline-flex; padding: 3px; gap: var(--sp-nano);
-    background: var(--bg-soft); border: 1px solid var(--hairline-soft);
-    border-radius: 10px;
-  }
-  .anlx-fn-tab {
-    border: 0; background: transparent;
-    padding: var(--sp-xs) var(--sp-md); border-radius: 7px;
-    font-family: inherit;
-    font-size: var(--fs-sm); font-weight: 500;
-    color: var(--text-muted); letter-spacing: -0.005em;
-    cursor: pointer;
-    transition: background var(--dur-fast) var(--ease-out),
-                color var(--dur-fast) var(--ease-out);
-  }
-  .anlx-fn-tab:hover { color: var(--text); }
-  .anlx-fn-tab[data-active="true"] {
-    background: color-mix(in srgb, var(--highlight) 10%, transparent);
+  .anlx-filter-pill:hover { background: var(--bg-soft); }
+  .anlx-filter-pill[aria-expanded="true"],
+  .anlx-filter-pill.is-active {
+    background: color-mix(in srgb, var(--highlight) 12%, transparent);
+    border-color: color-mix(in srgb, var(--highlight) 26%, transparent);
     color: var(--highlight);
   }
+  .anlx-filter-pill-caret {
+    width: 12px; height: 12px; stroke-width: 2.5; flex-shrink: 0;
+    transition: transform 140ms ease;
+  }
+  .anlx-filter-pill[aria-expanded="true"] .anlx-filter-pill-caret { transform: rotate(180deg); }
+  .anlx-filter-reset {
+    appearance: none; border: 0; background: transparent;
+    color: var(--highlight); font: inherit; cursor: pointer;
+    font-size: var(--fs-sm); padding: var(--sp-xs) var(--sp-sm);
+    border-radius: 6px;
+    margin-left: auto;
+  }
+  .anlx-filter-reset:hover { background: color-mix(in srgb, var(--highlight) 8%, transparent); }
+  .anlx-filter-reset[hidden] { display: none; }
 
-  /* Team load table */
-  .anlx-load-card {
-    background: var(--bg-elev);
-    border: 1px solid var(--hairline-soft);
-    border-radius: 14px;
-    overflow: hidden;
-  }
-  .anlx-load-head,
-  .anlx-load-row {
-    display: grid;
-    grid-template-columns: minmax(200px, 1.4fr) 72px 1fr 80px 88px 24px;
-    gap: var(--sp-lg);
-    align-items: center;
-    padding: var(--sp-md) var(--sp-xl);
-  }
-  .anlx-load-head {
-    font-size: var(--fs-nano); font-weight: 600;
-    color: var(--text-faint); letter-spacing: 0.06em; text-transform: uppercase;
-    border-bottom: 1px solid var(--hairline-soft);
-    background: var(--bg-soft);
-  }
-  .anlx-load-row {
-    border-bottom: 1px solid var(--hairline-soft);
-    text-align: left;
-    width: 100%;
-    background: transparent;
-    border-left: 0; border-right: 0; border-top: 0;
-    color: inherit;
-    font-family: inherit;
-    cursor: pointer;
-    transition: background var(--dur-fast) var(--ease-out);
-  }
-  .anlx-load-row:last-child { border-bottom: 0; }
-  .anlx-load-row:hover { background: var(--bg-soft); }
-  .anlx-load-row:focus-visible {
-    outline: none;
-    background: color-mix(in srgb, var(--highlight) 8%, transparent);
-    box-shadow: inset 2px 0 0 var(--highlight);
-  }
-  .anlx-load-who { display: flex; align-items: center; gap: var(--sp-md); min-width: 0; }
-  .anlx-load-avatar {
-    width: 30px; height: 30px; border-radius: 50%;
-    display: inline-flex; align-items: center; justify-content: center;
-    color: #fff; font-size: var(--fs-xs); font-weight: 600;
-    flex-shrink: 0; letter-spacing: -0.01em;
-  }
-  .anlx-load-name-block { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
-  .anlx-load-name {
-    font-size: var(--fs-md); font-weight: 500; color: var(--text);
-    letter-spacing: -0.01em;
-    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-  }
-  .anlx-load-role {
-    font-size: var(--fs-xs); color: var(--text-faint);
-    letter-spacing: -0.005em;
-  }
-  .anlx-load-fn {
-    font-size: var(--fs-xs); font-weight: 600;
-    color: var(--text-muted); letter-spacing: 0.06em;
-    text-transform: uppercase;
-    font-feature-settings: "tnum";
-  }
-  .anlx-load-bar-cell { display: flex; align-items: center; gap: var(--sp-sm); }
-  .anlx-load-bar-track {
-    flex: 1; height: 8px; border-radius: 4px;
-    background: var(--bg-soft);
-    overflow: hidden; position: relative;
-  }
-  .anlx-load-bar-fill {
-    height: 100%; border-radius: 4px;
-    transition: width var(--dur-slower) var(--ease-out);
-  }
-  .anlx-load-row[data-tone="healthy"] .anlx-load-bar-fill { background: var(--status-track); }
-  .anlx-load-row[data-tone="stretch"] .anlx-load-bar-fill { background: var(--status-risk); }
-  .anlx-load-row[data-tone="over"]    .anlx-load-bar-fill { background: var(--status-fire); }
-  .anlx-load-pct {
-    font-size: var(--fs-sm); font-weight: 600; color: var(--text);
-    font-variant-numeric: tabular-nums;
-    min-width: 44px; text-align: right;
-  }
-  .anlx-load-wip {
-    font-size: var(--fs-sm); color: var(--text-soft);
-    font-variant-numeric: tabular-nums;
-  }
-  .anlx-load-spark { display: flex; align-items: center; justify-content: flex-start; }
-  .anlx-load-spark svg { display: block; width: 72px; height: 24px; color: var(--text-faint); }
-  .anlx-load-spark .line {
-    fill: none; stroke: currentColor; stroke-width: 1.5;
-    stroke-linejoin: round; stroke-linecap: round;
-  }
-  .anlx-load-spark .area { fill: currentColor; opacity: 0.14; }
-  .anlx-load-chev { color: var(--text-faint); justify-self: end; }
-  .anlx-load-chev svg { width: 14px; height: 14px; display: block; }
-
-  /* Load legend chips */
-  .anlx-load-legend {
-    display: inline-flex; align-items: center; gap: var(--sp-lg);
-    font-size: var(--fs-xs); color: var(--text-faint);
-  }
-  .anlx-load-legend-chip { display: inline-flex; align-items: center; gap: var(--sp-xs); }
-  .anlx-load-legend-chip::before {
-    content: ""; width: 10px; height: 10px; border-radius: 3px; display: inline-block;
-  }
-  .anlx-load-legend-chip[data-tone="healthy"]::before { background: var(--status-track); }
-  .anlx-load-legend-chip[data-tone="stretch"]::before { background: var(--status-risk); }
-  .anlx-load-legend-chip[data-tone="over"]::before    { background: var(--status-fire); }
-
-  /* Flow funnel grid — 8 delivery phases (5-12) */
-  .anlx-flow-card {
-    background: var(--bg-elev);
-    border: 1px solid var(--hairline-soft);
-    border-radius: 14px;
-    padding: var(--sp-xl);
-  }
-  .anlx-flow-grid {
-    display: grid;
-    grid-template-columns: repeat(8, 1fr);
-    gap: var(--sp-sm);
-  }
-  @media (max-width: 1100px) { .anlx-flow-grid { grid-template-columns: repeat(4, 1fr); } }
-  @media (max-width: 560px)  { .anlx-flow-grid { grid-template-columns: repeat(2, 1fr); } }
-  .anlx-flow-cell {
-    display: flex; flex-direction: column; gap: var(--sp-sm);
-    padding: var(--sp-md);
+  /* Popover menu (shared for all three pills) */
+  .anlx-filter-menu {
+    position: fixed; z-index: 80;
+    min-width: 200px; max-width: 320px; max-height: 300px; overflow-y: auto;
+    padding: var(--sp-xs);
+    background: var(--bg-elev); border: 1px solid var(--hairline);
     border-radius: 10px;
-    background: var(--bg-soft);
-    border: 1px solid transparent;
-    cursor: pointer;
-    text-align: left;
-    font-family: inherit;
-    color: inherit;
-    transition: background var(--dur-fast) var(--ease-out),
-                transform var(--dur-fast) var(--ease-out),
-                border-color var(--dur-fast) var(--ease-out);
-    min-height: 120px;
-  }
-  .anlx-flow-cell:hover {
-    background: var(--bg);
-    border-color: var(--hairline);
-    transform: translateY(-1px);
-  }
-  .anlx-flow-cell.bottleneck {
-    background: color-mix(in srgb, var(--status-risk) 9%, transparent);
-    border-color: color-mix(in srgb, var(--status-risk) 40%, transparent);
-  }
-  .anlx-flow-phase-num {
-    font-size: var(--fs-nano); font-weight: 600;
-    color: var(--text-faint); letter-spacing: 0.06em; text-transform: uppercase;
-    font-variant-numeric: tabular-nums;
-  }
-  .anlx-flow-phase-name {
-    font-size: var(--fs-sm); font-weight: 600;
-    color: var(--text); line-height: var(--lh-hug);
-    letter-spacing: -0.005em;
-  }
-  .anlx-flow-count {
-    display: flex; align-items: baseline; gap: var(--sp-xs);
-    margin-top: auto;
-  }
-  .anlx-flow-count-num {
-    font-size: var(--fs-2xl); font-weight: 600;
-    color: var(--text); letter-spacing: -0.015em;
-    font-variant-numeric: tabular-nums; line-height: 1;
-  }
-  .anlx-flow-count-label {
-    font-size: var(--fs-xs); color: var(--text-soft);
-  }
-  .anlx-flow-meta {
-    display: flex; align-items: center; justify-content: space-between;
-    font-size: var(--fs-xs); color: var(--text-soft);
-    padding-top: var(--sp-xs);
-    border-top: 1px solid var(--hairline-soft);
-    font-variant-numeric: tabular-nums;
-  }
-  .anlx-flow-meta-days { font-weight: 500; }
-  .anlx-flow-meta-delta { font-weight: 600; }
-  .anlx-flow-meta-delta.bad  { color: var(--status-fire); }
-  .anlx-flow-meta-delta.good { color: var(--status-track); }
-  .anlx-flow-meta-delta.flat { color: var(--text-faint); }
-  .anlx-flow-caption {
-    margin-top: var(--sp-md);
-    font-size: var(--fs-xs); color: var(--text-muted);
-    letter-spacing: -0.005em;
-    max-width: 68ch;
-  }
-  .anlx-flow-caption strong { color: var(--text); font-weight: 600; }
-
-  /* Slipped-this-month list */
-  .anlx-slipped-card {
-    background: var(--bg-elev);
-    border: 1px solid var(--hairline-soft);
-    border-radius: 14px;
-    overflow: hidden;
-  }
-  .anlx-slipped-row {
-    position: relative;
-    display: grid;
-    grid-template-columns: minmax(180px, 2fr) minmax(110px, 1fr) auto auto 72px 16px;
-    gap: var(--sp-lg);
-    align-items: center;
-    padding: var(--sp-md) var(--sp-xl);
-    color: inherit;
-    border-bottom: 1px solid var(--hairline-soft);
-    transition: background var(--dur-fast) var(--ease-out);
-  }
-  .anlx-slipped-row:last-child { border-bottom: 0; }
-  .anlx-slipped-row:hover { background: var(--bg-soft); }
-  /* Full-row overlay anchor — the whole card is clickable except for the
-     reason button, which lives above this layer. */
-  .anlx-slipped-row-overlay {
-    position: absolute; inset: 0;
-    z-index: 1;
-    border-radius: inherit;
-    text-decoration: none;
-    color: inherit;
-  }
-  .anlx-slipped-row-overlay:focus-visible {
-    outline: none;
-    box-shadow: inset 2px 0 0 var(--highlight);
-    background: color-mix(in srgb, var(--highlight) 8%, transparent);
-  }
-  /* Row content sits above the overlay so text stays selectable and the
-     reason button can intercept its own clicks. */
-  .anlx-slipped-row > :not(.anlx-slipped-row-overlay) {
-    position: relative;
-    z-index: 2;
+    box-shadow: 0 12px 28px rgba(0,0,0,0.12), 0 2px 6px rgba(0,0,0,0.06);
+    opacity: 0; transform: translateY(-4px);
+    transition: opacity 140ms ease, transform 140ms ease;
     pointer-events: none;
   }
-  .anlx-slipped-row > .anlx-slipped-reason {
-    pointer-events: auto;
-  }
-  .anlx-slipped-what {
-    display: flex; flex-direction: column; gap: 1px;
-    min-width: 0;
-  }
-  .anlx-slipped-name {
-    font-size: var(--fs-md); font-weight: 500; color: var(--text);
-    letter-spacing: -0.005em;
-    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-  }
-  .anlx-slipped-client {
-    font-size: var(--fs-xs); color: var(--text-faint);
-    letter-spacing: -0.005em;
-  }
-  .anlx-slipped-owner {
+  .anlx-filter-menu.open { opacity: 1; transform: translateY(0); pointer-events: auto; }
+  .anlx-filter-option {
     display: flex; align-items: center; gap: var(--sp-sm);
-    font-size: var(--fs-sm); color: var(--text-soft);
-    min-width: 0;
+    width: 100%; padding: var(--sp-xs) var(--sp-sm);
+    border: 0; background: transparent; color: var(--text);
+    font: inherit; font-size: var(--fs-sm);
+    text-align: left; cursor: pointer; border-radius: 6px;
+    transition: background 100ms ease;
   }
-  .anlx-slipped-owner .anlx-load-avatar { width: 24px; height: 24px; font-size: 10px; }
-  .anlx-slipped-late {
-    font-size: var(--fs-sm); font-weight: 600;
-    color: var(--status-fire);
-    font-variant-numeric: tabular-nums;
-    text-align: right;
-    white-space: nowrap;
-  }
-  .anlx-slipped-chev {
-    color: var(--text-faint);
-    opacity: 0;
-    transition: opacity var(--dur-fast) var(--ease-out),
-                transform var(--dur-fast) var(--ease-out);
-  }
-  .anlx-slipped-row:hover .anlx-slipped-chev,
-  .anlx-slipped-row:focus-visible .anlx-slipped-chev {
-    opacity: 1; transform: translateX(2px);
-  }
-  .anlx-slipped-chev svg { width: 16px; height: 16px; display: block; }
-  .anlx-slipped-empty {
-    padding: var(--sp-2xl) var(--sp-xl);
-    text-align: center;
-    color: var(--text-faint);
-    font-size: var(--fs-sm);
-    letter-spacing: -0.005em;
-  }
-
-  /* Slip-reason tag — a small button pill per row. Clicking opens the
-     reason-picker popover. Four tone states via data-reason-tone. */
-  .anlx-slipped-reason {
-    display: inline-flex; align-items: center; gap: var(--sp-xs);
-    padding: 4px var(--sp-sm);
-    border-radius: 6px;
-    border: 1px solid transparent;
-    font-family: inherit;
-    font-size: var(--fs-xs); font-weight: 500;
-    letter-spacing: -0.005em;
-    cursor: pointer;
-    white-space: nowrap;
-    transition: background var(--dur-fast) var(--ease-out),
-                border-color var(--dur-fast) var(--ease-out),
-                transform var(--dur-fast) var(--ease-out);
-  }
-  .anlx-slipped-reason:hover { transform: translateY(-1px); }
-  .anlx-slipped-reason:active { transform: scale(0.97); }
-  .anlx-slipped-reason:focus-visible {
-    outline: none;
-    box-shadow: 0 0 0 2px color-mix(in srgb, var(--highlight) 30%, transparent);
-  }
-  .anlx-slipped-reason[data-reason-tone="external"] {
-    background: color-mix(in srgb, var(--status-risk) 12%, transparent);
-    color: var(--status-risk);
-  }
-  .anlx-slipped-reason[data-reason-tone="internal"] {
-    background: color-mix(in srgb, var(--status-fire) 12%, transparent);
-    color: var(--status-fire);
-  }
-  .anlx-slipped-reason[data-reason-tone="process"] {
-    background: color-mix(in srgb, var(--highlight) 10%, transparent);
+  .anlx-filter-option:hover { background: var(--bg-soft); }
+  .anlx-filter-option.selected {
+    background: color-mix(in srgb, var(--highlight) 12%, transparent);
     color: var(--highlight);
   }
-  .anlx-slipped-reason[data-reason-tone="unclassified"] {
-    background: var(--bg-soft);
-    color: var(--text-muted);
-    border-color: var(--hairline-soft);
-    border-style: dashed;
-  }
-  .anlx-slipped-reason[aria-expanded="true"] {
-    box-shadow: 0 0 0 2px color-mix(in srgb, var(--highlight) 30%, transparent);
-  }
-  .anlx-slipped-reason-caret {
-    width: 10px; height: 10px; flex-shrink: 0; opacity: 0.7;
-  }
-
-  /* Reason-picker popover — shared, lazy-injected to body */
-  .anlx-reason-menu {
-    position: absolute;
-    min-width: 240px; max-width: 300px;
-    background: var(--bg-elev);
-    border: 1px solid var(--hairline);
-    border-radius: 12px;
-    box-shadow: 0 18px 44px -14px rgba(0, 0, 0, 0.55),
-                0 2px 10px rgba(0, 0, 0, 0.2);
-    padding: var(--sp-xs);
-    z-index: 1200;
-    display: none;
-    transform: translateY(-4px);
+  .anlx-filter-option-check {
+    width: 14px; height: 14px; stroke-width: 2.5; flex-shrink: 0;
     opacity: 0;
-    transition: opacity var(--dur-fast) var(--ease-out),
-                transform var(--dur-fast) var(--ease-out);
   }
-  .anlx-reason-menu[data-open="true"] {
-    display: block; opacity: 1; transform: translateY(0);
-  }
-  .anlx-reason-menu-label {
-    display: block;
-    padding: var(--sp-xs) var(--sp-md) var(--sp-nano);
-    font-size: var(--fs-nano); font-weight: 600;
-    color: var(--text-faint);
-    letter-spacing: 0.06em; text-transform: uppercase;
-  }
-  .anlx-reason-item {
-    display: flex; align-items: center; gap: var(--sp-sm);
-    width: 100%;
-    padding: var(--sp-sm) var(--sp-md);
-    border: 0; background: transparent;
-    font-family: inherit;
-    font-size: var(--fs-sm); color: var(--text);
-    letter-spacing: -0.005em;
-    text-align: left;
-    border-radius: 8px;
-    cursor: pointer;
-    transition: background var(--dur-fast) var(--ease-out);
-  }
-  .anlx-reason-item:hover,
-  .anlx-reason-item:focus-visible {
-    outline: none;
-    background: var(--bg-soft);
-  }
-  .anlx-reason-item.current {
-    background: color-mix(in srgb, var(--highlight) 10%, transparent);
-    color: var(--highlight);
-  }
-  .anlx-reason-item-dot {
-    width: 8px; height: 8px; border-radius: 50%;
+  .anlx-filter-option.selected .anlx-filter-option-check { opacity: 1; }
+  .anlx-filter-option-avatar {
+    width: 20px; height: 20px; border-radius: 50%;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: var(--fs-nano); font-weight: 600; color: #fff;
     flex-shrink: 0;
   }
-  .anlx-reason-item-dot[data-tone="external"]    { background: var(--status-risk); }
-  .anlx-reason-item-dot[data-tone="internal"]    { background: var(--status-fire); }
-  .anlx-reason-item-dot[data-tone="process"]     { background: var(--highlight); }
-  .anlx-reason-item-dot[data-tone="unclassified"]{
-    background: transparent; border: 1.5px dashed var(--text-faint);
-  }
-  .anlx-reason-item-check {
-    margin-left: auto; width: 14px; height: 14px;
-    color: var(--highlight);
-    opacity: 0;
-  }
-  .anlx-reason-item.current .anlx-reason-item-check { opacity: 1; }
 
-  /* Responsive — pack the table into a two-row stack on narrow */
-  @media (max-width: 900px) {
-    .anlx-load-head { display: none; }
-    .anlx-load-row {
-      grid-template-columns: 1fr auto;
-      grid-template-areas:
-        "who pct"
-        "bar bar"
-        "wip spark";
-      row-gap: var(--sp-xs);
-    }
-    .anlx-load-who   { grid-area: who; }
-    .anlx-load-pct   { grid-area: pct; }
-    .anlx-load-fn    { display: none; }
-    .anlx-load-bar-cell { grid-area: bar; }
-    .anlx-load-wip   { grid-area: wip; }
-    .anlx-load-spark { grid-area: spark; justify-content: flex-end; }
-    .anlx-load-chev  { display: none; }
-
-    .anlx-slipped-row {
-      grid-template-columns: 1fr auto;
-      grid-template-areas:
-        "name late"
-        "owner reason";
-      row-gap: var(--sp-xs);
-    }
-    .anlx-slipped-what   { grid-area: name; }
-    .anlx-slipped-late   { grid-area: late; }
-    .anlx-slipped-owner  { grid-area: owner; }
-    .anlx-slipped-reason { grid-area: reason; justify-self: end; }
-    .anlx-slipped-row .phase-pill { display: none; }
-    .anlx-slipped-chev   { display: none; }
-  }
-
-  /* ── Landing this week — 5-day weekday grid ── */
-  .anlx-land-card {
-    background: var(--bg-elev);
-    border: 1px solid var(--hairline-soft);
-    border-radius: 14px;
-    padding: var(--sp-lg);
-  }
-  .anlx-land-grid {
-    display: grid;
+  /* ── KPI row ──
+     5 cards. Value is big (fs-3xl), label is uppercase micro, delta is
+     colored by sign (red for worse, green for better, muted for flat),
+     sparkline sits at the bottom edge to anchor the trend visually.
+     Entire card is a clickable button that opens the drill-down panel.   */
+  .anlx-kpi-grid {
+    display: grid; gap: var(--sp-md);
     grid-template-columns: repeat(5, 1fr);
-    gap: var(--sp-sm);
+    margin-bottom: var(--sp-xl);
   }
-  .anlx-land-day {
+  .anlx-kpi-card {
+    appearance: none; text-align: left;
+    background: var(--bg-elev); border: 1px solid var(--hairline);
+    border-radius: 14px; padding: var(--sp-lg);
     display: flex; flex-direction: column; gap: var(--sp-sm);
-    min-width: 0;
+    cursor: pointer; color: inherit; font: inherit;
+    transition: border-color 140ms ease, box-shadow 140ms ease, transform 140ms ease;
+    min-height: 148px;
   }
-  .anlx-land-day-head {
-    display: flex; align-items: baseline; justify-content: space-between;
-    padding: 0 var(--sp-xs);
+  .anlx-kpi-card:hover {
+    border-color: color-mix(in srgb, var(--text) 16%, var(--hairline));
+    box-shadow: 0 4px 14px rgba(0,0,0,0.04);
   }
-  .anlx-land-day-name {
-    font-size: var(--fs-sm); font-weight: 600;
-    color: var(--text); letter-spacing: -0.005em;
+  .anlx-kpi-card.is-open {
+    border-color: color-mix(in srgb, var(--highlight) 40%, transparent);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--highlight) 12%, transparent);
   }
-  .anlx-land-day-name[data-today="true"] { color: var(--highlight); }
-  .anlx-land-day-date {
-    font-size: var(--fs-xs); color: var(--text-faint);
-    font-variant-numeric: tabular-nums;
-  }
-  .anlx-land-tile {
-    display: flex; flex-direction: column; gap: var(--sp-xs);
-    padding: var(--sp-md);
-    border-radius: 10px;
-    background: var(--bg-soft);
-    border: 1px solid transparent;
-    text-decoration: none; color: inherit;
-    cursor: pointer;
-    transition: background var(--dur-fast) var(--ease-out),
-                border-color var(--dur-fast) var(--ease-out),
-                transform var(--dur-fast) var(--ease-out);
-  }
-  .anlx-land-tile:hover {
-    background: var(--bg);
-    border-color: var(--hairline);
-    transform: translateY(-1px);
-  }
-  .anlx-land-tile:focus-visible {
-    outline: none;
-    border-color: var(--highlight);
-    box-shadow: 0 0 0 2px color-mix(in srgb, var(--highlight) 30%, transparent);
-  }
-  .anlx-land-tile[data-kind="launch"] {
-    background: color-mix(in srgb, var(--status-track) 9%, transparent);
-    border-color: color-mix(in srgb, var(--status-track) 28%, transparent);
-  }
-  .anlx-land-tile[data-kind="launch"]:hover {
-    background: color-mix(in srgb, var(--status-track) 14%, transparent);
-  }
-  .anlx-land-tile-milestone {
-    font-size: var(--fs-nano); font-weight: 700;
-    color: var(--text-muted);
-    letter-spacing: 0.08em; text-transform: uppercase;
-  }
-  .anlx-land-tile[data-kind="launch"] .anlx-land-tile-milestone {
-    color: var(--status-track);
-  }
-  .anlx-land-tile-name {
-    font-size: var(--fs-sm); font-weight: 600;
-    color: var(--text); line-height: var(--lh-hug);
-    letter-spacing: -0.005em;
-    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-  }
-  .anlx-land-tile-meta {
-    display: flex; align-items: center; gap: var(--sp-xs);
-    font-size: var(--fs-xs); color: var(--text-soft);
-    min-width: 0;
-  }
-  .anlx-land-tile-meta .anlx-load-avatar {
-    width: 20px; height: 20px; font-size: 9px;
-  }
-  .anlx-land-tile-client {
-    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-    min-width: 0;
-  }
-  .anlx-land-day-empty {
-    padding: var(--sp-md);
-    text-align: center;
-    font-size: var(--fs-xs); color: var(--text-faint);
-    border: 1px dashed var(--hairline-soft);
-    border-radius: 10px;
-    letter-spacing: -0.005em;
-  }
-  @media (max-width: 1000px) {
-    .anlx-land-grid {
-      grid-auto-flow: column;
-      grid-template-columns: none;
-      grid-auto-columns: minmax(200px, 1fr);
-      overflow-x: auto;
-      scroll-snap-type: x mandatory;
-      scroll-padding: 0 var(--sp-lg);
-      margin: 0 calc(var(--sp-lg) * -1);
-      padding: 0 var(--sp-lg) var(--sp-xs);
-      -webkit-overflow-scrolling: touch;
-    }
-    .anlx-land-day { scroll-snap-align: start; }
-  }
-
-  /* ── Out this week — compact text strip ── */
-  .anlx-ooo-strip {
-    display: flex; align-items: center; flex-wrap: wrap;
-    gap: var(--sp-md);
-    padding: var(--sp-sm) var(--sp-md);
-    margin-bottom: var(--sp-md);
-    background: var(--bg-soft);
-    border: 1px solid var(--hairline-soft);
-    border-radius: 10px;
-    font-size: var(--fs-xs);
-  }
-  .anlx-ooo-label {
-    font-weight: 600; color: var(--text-muted);
-    letter-spacing: 0.06em; text-transform: uppercase;
-  }
-  .anlx-ooo-person {
-    display: inline-flex; align-items: center; gap: var(--sp-xs);
+  .anlx-kpi-label {
+    font-size: var(--fs-micro); font-weight: 600;
+    text-transform: uppercase; letter-spacing: 0.06em;
     color: var(--text-soft);
   }
-  .anlx-ooo-person .anlx-load-avatar {
-    width: 18px; height: 18px; font-size: 8px;
+  .anlx-kpi-value {
+    font-size: var(--fs-3xl); font-weight: 600; line-height: 1.1;
+    letter-spacing: -0.02em; color: var(--text);
   }
-  .anlx-ooo-name { color: var(--text); font-weight: 500; }
-  .anlx-ooo-when {
-    color: var(--text-faint);
-    font-variant-numeric: tabular-nums;
+  .anlx-kpi-value-unit {
+    font-size: var(--fs-lg); font-weight: 500; color: var(--text-soft);
+    margin-left: 2px;
+  }
+  .anlx-kpi-delta {
+    display: inline-flex; align-items: center; gap: 4px;
+    font-size: var(--fs-xs); font-weight: 600;
+  }
+  .anlx-kpi-delta svg { width: 10px; height: 10px; stroke-width: 3; }
+  .anlx-kpi-delta.up   { color: #ff453a; }  /* more of a bad thing = red */
+  .anlx-kpi-delta.down { color: #30d158; }  /* less of a bad thing = green */
+  .anlx-kpi-delta.good-up   { color: #30d158; }
+  .anlx-kpi-delta.good-down { color: #ff453a; }
+  .anlx-kpi-delta.flat { color: var(--text-soft); }
+  .anlx-kpi-spark {
+    margin-top: auto;
+    width: 100%; height: 26px;
+    display: block;
+  }
+  .anlx-kpi-foot {
+    font-size: var(--fs-micro); color: var(--text-muted);
+    line-height: 1.4;
   }
 
-  /* ── Open capacity chips — one per function ── */
-  .anlx-cap-row {
-    display: flex; flex-wrap: wrap; gap: var(--sp-xs);
-    margin-bottom: var(--sp-md);
+  /* ── Inline drill-down panel ──
+     Appears between KPI grid and Upcoming when a card is clicked.
+     Lists every task behind the KPI number, with owner, deadline, status,
+     and a deep-link to the client detail. No modal — drill lives on the
+     same page so the user never loses their place.                        */
+  .anlx-drill {
+    background: var(--bg-elev); border: 1px solid var(--hairline);
+    border-radius: 14px;
+    margin-bottom: var(--sp-2xl);
+    overflow: hidden;
+    opacity: 0; max-height: 0;
+    transition: opacity 180ms ease, max-height 220ms ease, margin 180ms ease;
   }
-  .anlx-cap-chip {
-    display: inline-flex; align-items: baseline; gap: var(--sp-xs);
-    padding: 6px var(--sp-sm);
-    border-radius: 8px;
-    background: var(--bg-soft);
-    border: 1px solid var(--hairline-soft);
-    font-size: var(--fs-xs);
-    font-variant-numeric: tabular-nums;
+  .anlx-drill.open { opacity: 1; max-height: 800px; }
+  .anlx-drill-head {
+    display: flex; align-items: center; gap: var(--sp-md);
+    padding: var(--sp-md) var(--sp-lg);
+    border-bottom: 1px solid var(--hairline);
   }
-  .anlx-cap-chip-fn {
-    font-weight: 600; color: var(--text);
-    letter-spacing: -0.005em;
+  .anlx-drill-title {
+    font-size: var(--fs-md); font-weight: 600; color: var(--text);
   }
-  .anlx-cap-chip-fte {
-    font-weight: 600;
-    font-variant-numeric: tabular-nums;
+  .anlx-drill-count {
+    font-size: var(--fs-xs); color: var(--text-soft); font-weight: 500;
   }
-  .anlx-cap-chip-label {
-    color: var(--text-faint);
-    letter-spacing: -0.005em;
+  .anlx-drill-close {
+    appearance: none; border: 0; background: transparent;
+    color: var(--text-soft); cursor: pointer; padding: 4px;
+    border-radius: 6px; margin-left: auto;
+    display: inline-flex; align-items: center; justify-content: center;
+    transition: background 100ms ease, color 100ms ease;
   }
-  .anlx-cap-chip[data-cap="open"]  .anlx-cap-chip-fte { color: var(--status-track); }
-  .anlx-cap-chip[data-cap="tight"] .anlx-cap-chip-fte { color: var(--status-risk); }
-  .anlx-cap-chip[data-cap="over"]  .anlx-cap-chip-fte { color: var(--status-fire); }
+  .anlx-drill-close:hover { background: var(--bg-soft); color: var(--text); }
+  .anlx-drill-close svg { width: 16px; height: 16px; stroke-width: 2; }
+  .anlx-drill-list {
+    max-height: 420px; overflow-y: auto;
+  }
+  .anlx-drill-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 160px 120px 64px;
+    align-items: center; gap: var(--sp-md);
+    padding: var(--sp-md) var(--sp-lg);
+    border-bottom: 1px solid var(--hairline);
+    color: var(--text); text-decoration: none;
+    font-size: var(--fs-sm);
+    transition: background 100ms ease;
+  }
+  .anlx-drill-row:last-child { border-bottom: 0; }
+  .anlx-drill-row:hover { background: var(--bg-soft); }
+  .anlx-drill-row-title {
+    font-weight: 500; min-width: 0;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .anlx-drill-row-client {
+    font-size: var(--fs-xs); color: var(--text-soft);
+    margin-top: 2px;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .anlx-drill-row-owner {
+    display: flex; align-items: center; gap: var(--sp-xs);
+    font-size: var(--fs-xs); color: var(--text-muted);
+  }
+  .anlx-drill-row-status {
+    font-size: var(--fs-xs); color: var(--text-soft);
+  }
+  .anlx-drill-row-status.late { color: #ff453a; font-weight: 600; }
+  .anlx-drill-row-status.soon { color: #ff9f0a; font-weight: 600; }
+  .anlx-drill-row-chev {
+    color: var(--text-faint); display: flex; justify-content: flex-end;
+  }
+  .anlx-drill-row-chev svg { width: 14px; height: 14px; stroke-width: 2; }
+  .anlx-drill-empty {
+    padding: var(--sp-xl) var(--sp-lg);
+    text-align: center; color: var(--text-soft);
+    font-size: var(--fs-sm);
+  }
 
+  /* ── Section card shell (shared by Upcoming + Workload) ── */
+  .anlx-section {
+    background: var(--bg-elev); border: 1px solid var(--hairline);
+    border-radius: 14px;
+    margin-bottom: var(--sp-xl);
+    overflow: hidden;
+  }
+  .anlx-section-head {
+    display: flex; align-items: center; gap: var(--sp-md);
+    padding: var(--sp-md) var(--sp-lg);
+    border-bottom: 1px solid var(--hairline);
+  }
+  .anlx-section-title {
+    font-size: var(--fs-md); font-weight: 600; color: var(--text);
+  }
+  .anlx-section-sub {
+    font-size: var(--fs-xs); color: var(--text-soft);
+    margin-left: auto;
+  }
+
+  /* ── Upcoming (Today / This week / Next week tabs) ── */
+  .anlx-up-tabs {
+    display: inline-flex; align-items: center; gap: 2px;
+    padding: 2px;
+    background: var(--bg-faint); border-radius: 8px;
+    margin-right: var(--sp-md);
+  }
+  .anlx-up-tab {
+    appearance: none; border: 0; background: transparent;
+    font: inherit; font-size: var(--fs-xs); font-weight: 500;
+    color: var(--text-muted); cursor: pointer;
+    padding: 4px 10px; border-radius: 6px;
+    transition: background 120ms ease, color 120ms ease;
+  }
+  .anlx-up-tab:hover { color: var(--text); }
+  .anlx-up-tab[aria-selected="true"] {
+    background: var(--bg-elev); color: var(--text);
+    box-shadow: 0 1px 2px rgba(0,0,0,0.06);
+  }
+  .anlx-up-tab-count {
+    font-size: var(--fs-nano); color: var(--text-soft);
+    margin-left: 4px;
+  }
+  .anlx-up-tab[aria-selected="true"] .anlx-up-tab-count { color: var(--text-soft); }
+  .anlx-up-list { max-height: 360px; overflow-y: auto; }
+  .anlx-up-row {
+    display: grid;
+    grid-template-columns: 72px minmax(0, 1fr) 150px 110px 64px;
+    align-items: center; gap: var(--sp-md);
+    padding: var(--sp-md) var(--sp-lg);
+    border-bottom: 1px solid var(--hairline);
+    color: var(--text); text-decoration: none;
+    font-size: var(--fs-sm);
+    transition: background 100ms ease;
+  }
+  .anlx-up-row:last-child { border-bottom: 0; }
+  .anlx-up-row:hover { background: var(--bg-soft); }
+  .anlx-up-when {
+    font-size: var(--fs-xs); font-weight: 600;
+    letter-spacing: 0.02em;
+    color: var(--text-muted);
+  }
+  .anlx-up-when.today { color: #ff453a; }
+  .anlx-up-when.tomorrow { color: #ff9f0a; }
+  .anlx-up-when-dow {
+    display: block; font-size: var(--fs-nano); font-weight: 500;
+    color: var(--text-soft); margin-top: 1px;
+    letter-spacing: 0.04em; text-transform: uppercase;
+  }
+  .anlx-up-title {
+    font-weight: 500; min-width: 0;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .anlx-up-sub {
+    font-size: var(--fs-xs); color: var(--text-soft);
+    margin-top: 2px;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .anlx-up-owner {
+    display: flex; align-items: center; gap: var(--sp-xs);
+    font-size: var(--fs-xs); color: var(--text-muted);
+    min-width: 0;
+  }
+  .anlx-up-owner-name {
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .anlx-up-phase {
+    font-size: var(--fs-nano); font-weight: 600;
+    letter-spacing: 0.04em; text-transform: uppercase;
+    color: var(--text-soft);
+  }
+  .anlx-up-chev {
+    color: var(--text-faint); display: flex; justify-content: flex-end;
+  }
+  .anlx-up-chev svg { width: 14px; height: 14px; stroke-width: 2; }
+  .anlx-up-empty {
+    padding: var(--sp-2xl) var(--sp-lg);
+    text-align: center; color: var(--text-soft);
+    font-size: var(--fs-sm);
+  }
+
+  /* ── Workload ──
+     Per-person row: name + role on left, capacity bar in middle (hours
+     used vs budgeted), % number, WIP count, 4-week spark on the right.
+     Role pill is neutral so names/numbers dominate.                       */
+  .anlx-wl-head {
+    display: grid;
+    grid-template-columns: minmax(0, 1.2fr) minmax(0, 1.6fr) 70px 64px 90px;
+    align-items: center; gap: var(--sp-md);
+    padding: var(--sp-sm) var(--sp-lg);
+    border-bottom: 1px solid var(--hairline);
+    background: var(--bg-faint);
+  }
+  .anlx-wl-head-cell {
+    font-size: var(--fs-nano); font-weight: 600;
+    text-transform: uppercase; letter-spacing: 0.06em;
+    color: var(--text-soft);
+  }
+  .anlx-wl-head-cell.num { text-align: right; }
+  .anlx-wl-list { }
+  .anlx-wl-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1.2fr) minmax(0, 1.6fr) 70px 64px 90px;
+    align-items: center; gap: var(--sp-md);
+    padding: var(--sp-md) var(--sp-lg);
+    border-bottom: 1px solid var(--hairline);
+  }
+  .anlx-wl-row:last-child { border-bottom: 0; }
+  .anlx-wl-who {
+    display: flex; align-items: center; gap: var(--sp-sm);
+    min-width: 0;
+  }
+  .anlx-wl-who-name {
+    font-size: var(--fs-sm); font-weight: 500; color: var(--text);
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .anlx-wl-who-role {
+    font-size: var(--fs-xs); color: var(--text-soft);
+    margin-top: 2px;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .anlx-wl-bar {
+    position: relative; height: 10px; border-radius: 999px;
+    background: var(--bg-faint); overflow: hidden;
+  }
+  .anlx-wl-bar-fill {
+    position: absolute; inset: 0 auto 0 0;
+    border-radius: 999px;
+    background: var(--text-muted);
+    transition: width 400ms cubic-bezier(0.32, 0.72, 0, 1);
+  }
+  .anlx-wl-bar-fill.ok    { background: #30d158; }
+  .anlx-wl-bar-fill.soft  { background: #64d2ff; }
+  .anlx-wl-bar-fill.tight { background: #ff9f0a; }
+  .anlx-wl-bar-fill.over  { background: #ff453a; }
+  .anlx-wl-bar-budget {
+    position: absolute; top: -2px; bottom: -2px; left: 100%;
+    width: 1.5px; background: var(--text-faint);
+  }
+  .anlx-wl-pct {
+    text-align: right;
+    font-size: var(--fs-sm); font-weight: 600; color: var(--text);
+    font-variant-numeric: tabular-nums;
+  }
+  .anlx-wl-pct.over { color: #ff453a; }
+  .anlx-wl-pct.tight { color: #ff9f0a; }
+  .anlx-wl-num {
+    text-align: right;
+    font-size: var(--fs-sm); color: var(--text-muted);
+    font-variant-numeric: tabular-nums;
+  }
+  .anlx-wl-spark { display: block; width: 80px; height: 22px; margin-left: auto; }
+
+  /* ── Avatar (shared helper for Workload + drill rows + upcoming) ── */
+  .anlx-av {
+    width: 24px; height: 24px; border-radius: 50%;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: var(--fs-nano); font-weight: 600; color: #fff;
+    flex-shrink: 0;
+  }
+  .anlx-av.sm { width: 18px; height: 18px; font-size: 9px; }
+
+  /* ── Responsive ── */
+  @media (max-width: 1200px) {
+    .anlx-kpi-grid { grid-template-columns: repeat(3, 1fr); }
+    .anlx-kpi-card:nth-child(n+4) { grid-column: span 1; }
+  }
+  @media (max-width: 900px) {
+    .anlx-page { padding: var(--sp-2xl) var(--sp-xl) 80px; }
+    .anlx-kpi-grid { grid-template-columns: repeat(2, 1fr); }
+    .anlx-up-row { grid-template-columns: 64px minmax(0, 1fr) 40px; }
+    .anlx-up-row .anlx-up-owner,
+    .anlx-up-row .anlx-up-phase { display: none; }
+    .anlx-drill-row { grid-template-columns: minmax(0, 1fr) 100px 40px; }
+    .anlx-drill-row .anlx-drill-row-owner { display: none; }
+    .anlx-wl-head, .anlx-wl-row {
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr) 56px 48px;
+    }
+    .anlx-wl-spark, .anlx-wl-head-cell.spark { display: none; }
+  }
+  @media (max-width: 700px) {
+    .anlx-kpi-grid { grid-template-columns: 1fr; }
+    .anlx-filters { gap: var(--sp-xs); }
+  }
+
+  /* ── Reduced motion ── */
   @media (prefers-reduced-motion: reduce) {
-    .anlx-pulse-card .stats-hero-card,
-    .anlx-pulse-bar-fill,
-    .anlx-load-bar-fill,
-    .anlx-load-row, .anlx-flow-cell, .anlx-slipped-row,
-    .anlx-slipped-chev,
-    .anlx-slipped-reason,
-    .anlx-land-tile, .anlx-reason-menu { transition: none; }
-    .anlx-pulse-card:hover .stats-hero-card,
-    .anlx-flow-cell:hover,
-    .anlx-land-tile:hover,
-    .anlx-slipped-reason:hover,
-    .anlx-slipped-reason:active { transform: none; }
+    .anlx-filter-pill, .anlx-filter-menu, .anlx-filter-option,
+    .anlx-kpi-card, .anlx-drill, .anlx-drill-close,
+    .anlx-up-tab, .anlx-up-row, .anlx-drill-row,
+    .anlx-wl-bar-fill, .anlx-filter-pill-caret { transition: none; }
   }
   </style>
 </head>
@@ -12852,13 +12608,14 @@
 </div>
 <!-- ═══════ END CLIENTS SPLIT VIEW ═══════ -->
 
-<!-- ═══════ ANALYTICS VIEW ═══════
-     Audience: PM / AM (CEO as secondary). Five questions, in order:
-       1. Pulse     — can we take more on right now?
-       2. Landing   — what's crossing a phase boundary in the next 5 biz days?
-       3. Team load — who's stretched? + OOO strip + open-capacity chips
-       4. Flow      — where in the delivery line is work stuck?
-       5. Slipped   — what broke this month, click to fix?                    -->
+<!-- ═══════ ANALYTICS VIEW (v1) ═══════
+     Single-file delivery-health page.
+     - Top: filter bar (person / project / window) + Reset
+     - KPI row: 5 cards, each clickable → inline drill-down panel
+     - Upcoming: deliverables by Today / This week / Next week
+     - Workload: per-person capacity + WIP + 4wk trend
+     All content is rendered by the script block at the bottom of the file;
+     the skeleton here is the minimum structure needed to wire into.       -->
 <div class="view view-analytics" data-view="analytics">
   <main class="anlx-page">
 
@@ -12866,700 +12623,71 @@
       <div class="anlx-header-text">
         <div class="page-greeting">Analytics</div>
         <h1 class="page-title">Delivery health</h1>
-        <p class="page-date">Last 30 days · vs. prior 30 days · internal stats</p>
+        <p class="page-date">What's landing next, who's stretched, what's slipping. Updated live.</p>
       </div>
     </header>
 
-    <!-- ═══ 1. Pulse strip ═══ -->
-    <section class="anlx-section" aria-labelledby="anlxPulseTitle">
+    <div class="anlx-filters" role="toolbar" aria-label="Filter analytics">
+      <span class="anlx-filter-label">Filter</span>
+      <button type="button" class="anlx-filter-pill" data-filter-key="person" aria-haspopup="listbox" aria-expanded="false">
+        <span class="anlx-filter-pill-text">Anyone</span>
+        <svg class="anlx-filter-pill-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
+      </button>
+      <button type="button" class="anlx-filter-pill" data-filter-key="project" aria-haspopup="listbox" aria-expanded="false">
+        <span class="anlx-filter-pill-text">All projects</span>
+        <svg class="anlx-filter-pill-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
+      </button>
+      <button type="button" class="anlx-filter-pill" data-filter-key="range" aria-haspopup="listbox" aria-expanded="false">
+        <span class="anlx-filter-pill-text">Next 30 days</span>
+        <svg class="anlx-filter-pill-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
+      </button>
+      <button type="button" class="anlx-filter-reset" data-anlx-filter-reset hidden>Reset filters</button>
+    </div>
+
+    <!-- KPI row — rendered by JS into [data-anlx-kpis] -->
+    <div class="anlx-kpi-grid" data-anlx-kpis role="list" aria-label="Delivery health KPIs"></div>
+
+    <!-- Drill-down panel (inline, between KPI row and Upcoming) -->
+    <div class="anlx-drill" data-anlx-drill hidden>
+      <div class="anlx-drill-head">
+        <div>
+          <div class="anlx-drill-title" data-anlx-drill-title>—</div>
+          <div class="anlx-drill-count" data-anlx-drill-count>0 tasks</div>
+        </div>
+        <button type="button" class="anlx-drill-close" data-anlx-drill-close aria-label="Close drill-down">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <div class="anlx-drill-list" data-anlx-drill-list></div>
+    </div>
+
+    <!-- Upcoming deliverables -->
+    <section class="anlx-section" aria-labelledby="anlx-up-title">
       <div class="anlx-section-head">
-        <div class="anlx-section-title-group">
-          <span class="anlx-section-title" id="anlxPulseTitle">Pulse</span>
-          <span class="anlx-section-sub">Four signals for the next 10 minutes</span>
+        <div class="anlx-section-title" id="anlx-up-title">Upcoming deliverables</div>
+        <div class="anlx-up-tabs" role="tablist" aria-label="Time range">
+          <button type="button" class="anlx-up-tab" role="tab" aria-selected="true"  data-up-tab="today">Today <span class="anlx-up-tab-count" data-up-count="today">0</span></button>
+          <button type="button" class="anlx-up-tab" role="tab" aria-selected="false" data-up-tab="week">This week <span class="anlx-up-tab-count" data-up-count="week">0</span></button>
+          <button type="button" class="anlx-up-tab" role="tab" aria-selected="false" data-up-tab="next">Next week <span class="anlx-up-tab-count" data-up-count="next">0</span></button>
         </div>
       </div>
-      <div class="anlx-pulse-grid">
-
-        <!-- Team capacity -->
-        <button type="button" class="anlx-pulse-card" data-tone="capacity" data-pulse-jump="team-load" aria-label="Team at 78 percent load, up 4 points from last week. Jump to team load.">
-          <div class="stats-hero-card">
-            <span class="stats-hero-label">Team load</span>
-            <div class="stats-hero-value-row">
-              <span class="stats-hero-value">78%</span>
-              <span class="stats-hero-delta bad">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg>
-                4 pts
-              </span>
-            </div>
-            <div class="anlx-pulse-bar"><div class="anlx-pulse-bar-fill" style="width:78%"></div></div>
-            <span class="stats-hero-foot">2 over · 3 stretched · 7 have slack</span>
-          </div>
-        </button>
-
-        <!-- On-time delivery -->
-        <button type="button" class="anlx-pulse-card" data-tone="on-time" data-pulse-jump="flow" aria-label="On-time delivery 82 percent, down 4 points. Jump to flow.">
-          <div class="stats-hero-card">
-            <span class="stats-hero-label">On-time delivery</span>
-            <div class="stats-hero-value-row">
-              <span class="stats-hero-value">82%</span>
-              <span class="stats-hero-delta bad">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
-                4 pts
-              </span>
-            </div>
-            <svg class="stats-hero-spark" viewBox="0 0 300 32" preserveAspectRatio="none" aria-hidden="true">
-              <path class="area" d="M0,8 L25,10 L50,8 L75,12 L100,10 L125,14 L150,12 L175,18 L200,16 L225,20 L250,18 L275,22 L300,20 L300,32 L0,32 Z"/>
-              <path class="line" d="M0,8 L25,10 L50,8 L75,12 L100,10 L125,14 L150,12 L175,18 L200,16 L225,20 L250,18 L275,22 L300,20"/>
-            </svg>
-            <span class="stats-hero-foot">Trending down — investigate phase 5</span>
-          </div>
-        </button>
-
-        <!-- Slipped last week -->
-        <button type="button" class="anlx-pulse-card" data-tone="at-risk" data-pulse-jump="slipped" aria-label="3 deliverables slipped last week, up from 1. Jump to slipped list.">
-          <div class="stats-hero-card">
-            <span class="stats-hero-label">Slipped last week</span>
-            <div class="stats-hero-value-row">
-              <span class="stats-hero-value">3</span>
-              <span class="stats-hero-delta bad">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg>
-                2
-              </span>
-            </div>
-            <span class="stats-hero-foot">Acme · Harvest · Cascade — all 1–4d late</span>
-          </div>
-        </button>
-
-        <!-- Bottleneck phase -->
-        <button type="button" class="anlx-pulse-card" data-tone="stuck" data-pulse-jump="flow" aria-label="Bottleneck phase: Onboarding, median 14 days. Jump to flow.">
-          <div class="stats-hero-card">
-            <span class="stats-hero-label">Bottleneck phase</span>
-            <div class="stats-hero-value-row">
-              <span class="stats-hero-value">14d</span>
-              <span class="stats-hero-delta bad">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg>
-                3d
-              </span>
-            </div>
-            <span class="stats-hero-foot">Onboarding &amp; Kickoff · median time in phase</span>
-          </div>
-        </button>
-
-      </div>
+      <div class="anlx-up-list" data-anlx-up-list></div>
     </section>
 
-    <!-- ═══ 2. Landing this week — next 5 business days of phase transitions ═══ -->
-    <section class="anlx-section" aria-labelledby="anlxLandingTitle">
+    <!-- Workload -->
+    <section class="anlx-section" aria-labelledby="anlx-wl-title">
       <div class="anlx-section-head">
-        <div class="anlx-section-title-group">
-          <span class="anlx-section-title" id="anlxLandingTitle">Landing this week</span>
-          <span class="anlx-section-sub">Phase transitions in the next 5 business days — go-lives, reviews, handoffs. Click a tile to open the client.</span>
-        </div>
+        <div class="anlx-section-title" id="anlx-wl-title">Team workload</div>
+        <div class="anlx-section-sub" data-anlx-wl-sub>Hours booked vs. 40-hour week · WIP = open tasks · 4-week trend</div>
       </div>
-      <div class="anlx-land-card">
-        <div class="anlx-land-grid" role="list">
-
-          <!-- Thu Apr 23 -->
-          <div class="anlx-land-day" role="listitem">
-            <div class="anlx-land-day-head">
-              <span class="anlx-land-day-name">Thu</span>
-              <span class="anlx-land-day-date">Apr 23</span>
-            </div>
-            <a class="anlx-land-tile" href="#clients/acme-corp" data-client-id="acme-corp" aria-label="Thursday Apr 23: Strategy approved on Brand Refresh Q2, Acme Corp, phase 6 to 7, owner Sofia Reyes. Open client.">
-              <span class="anlx-land-tile-milestone">Strategy approved</span>
-              <span class="anlx-land-tile-name">Brand Refresh Q2</span>
-              <span class="anlx-land-tile-meta">
-                <span class="anlx-load-avatar" style="background:#0a84ff;" aria-hidden="true">SR</span>
-                <span class="anlx-land-tile-client">Acme · Phase 7</span>
-              </span>
-            </a>
-          </div>
-
-          <!-- Fri Apr 24 -->
-          <div class="anlx-land-day" role="listitem">
-            <div class="anlx-land-day-head">
-              <span class="anlx-land-day-name">Fri</span>
-              <span class="anlx-land-day-date">Apr 24</span>
-            </div>
-            <a class="anlx-land-tile" data-kind="launch" href="#clients/harvest-co" data-client-id="harvest-co" aria-label="Friday Apr 24: Go-live for Harvest and Co. Site, phase 7 to 8, owner Dev Patel. Open client.">
-              <span class="anlx-land-tile-milestone">Go-live</span>
-              <span class="anlx-land-tile-name">Harvest &amp; Co. Site</span>
-              <span class="anlx-land-tile-meta">
-                <span class="anlx-load-avatar" style="background:#30d158;" aria-hidden="true">DP</span>
-                <span class="anlx-land-tile-client">Harvest · Phase 8</span>
-              </span>
-            </a>
-          </div>
-
-          <!-- Mon Apr 27 -->
-          <div class="anlx-land-day" role="listitem">
-            <div class="anlx-land-day-head">
-              <span class="anlx-land-day-name">Mon</span>
-              <span class="anlx-land-day-date">Apr 27</span>
-            </div>
-            <div class="anlx-land-day-empty">Nothing scheduled</div>
-          </div>
-
-          <!-- Tue Apr 28 -->
-          <div class="anlx-land-day" role="listitem">
-            <div class="anlx-land-day-head">
-              <span class="anlx-land-day-name">Tue</span>
-              <span class="anlx-land-day-date">Apr 28</span>
-            </div>
-            <a class="anlx-land-tile" href="#clients/cascade-coffee" data-client-id="cascade-coffee" aria-label="Tuesday Apr 28: Monthly report due for Cascade Coffee, phase 9 to 10, owner Priya Singh. Open client.">
-              <span class="anlx-land-tile-milestone">Report due</span>
-              <span class="anlx-land-tile-name">Monthly Report</span>
-              <span class="anlx-land-tile-meta">
-                <span class="anlx-load-avatar" style="background:#bf5af2;" aria-hidden="true">PS</span>
-                <span class="anlx-land-tile-client">Cascade · Phase 10</span>
-              </span>
-            </a>
-            <a class="anlx-land-tile" href="#clients/techstart-inc" data-client-id="techstart-inc" aria-label="Tuesday Apr 28: Kickoff for Paid Social, TechStart Inc., phase 4 to 5, owner Elena Torres. Open client.">
-              <span class="anlx-land-tile-milestone">Kickoff</span>
-              <span class="anlx-land-tile-name">Paid Social</span>
-              <span class="anlx-land-tile-meta">
-                <span class="anlx-load-avatar" style="background:#ff3366;" aria-hidden="true">ET</span>
-                <span class="anlx-land-tile-client">TechStart · Phase 5</span>
-              </span>
-            </a>
-          </div>
-
-          <!-- Wed Apr 29 -->
-          <div class="anlx-land-day" role="listitem">
-            <div class="anlx-land-day-head">
-              <span class="anlx-land-day-name">Wed</span>
-              <span class="anlx-land-day-date">Apr 29</span>
-            </div>
-            <a class="anlx-land-tile" href="#clients/northwind-labs" data-client-id="northwind-labs" aria-label="Wednesday Apr 29: SEO audit report due for Northwind Labs, phase 9 to 10, owner Ryan O'Connor. Open client.">
-              <span class="anlx-land-tile-milestone">Report due</span>
-              <span class="anlx-land-tile-name">SEO Audit</span>
-              <span class="anlx-land-tile-meta">
-                <span class="anlx-load-avatar" style="background:#5e5ce6;" aria-hidden="true">RO</span>
-                <span class="anlx-land-tile-client">Northwind · Phase 10</span>
-              </span>
-            </a>
-          </div>
-
-        </div>
+      <div class="anlx-wl-head" aria-hidden="true">
+        <div class="anlx-wl-head-cell">Person</div>
+        <div class="anlx-wl-head-cell">Load</div>
+        <div class="anlx-wl-head-cell num">Used</div>
+        <div class="anlx-wl-head-cell num">WIP</div>
+        <div class="anlx-wl-head-cell num spark">4wk</div>
       </div>
-    </section>
-
-    <!-- ═══ 3. Team load ═══ -->
-    <section class="anlx-section" id="anlxTeamLoad" aria-labelledby="anlxTeamLoadTitle">
-      <div class="anlx-section-head">
-        <div class="anlx-section-title-group">
-          <span class="anlx-section-title" id="anlxTeamLoadTitle">Team load by function</span>
-          <span class="anlx-section-sub">Sorted most-loaded first. Click a row to see their current work.</span>
-        </div>
-        <div class="anlx-load-legend" role="group" aria-label="Load legend">
-          <span class="anlx-load-legend-chip" data-tone="healthy">&lt;85%</span>
-          <span class="anlx-load-legend-chip" data-tone="stretch">85–100%</span>
-          <span class="anlx-load-legend-chip" data-tone="over">&gt;100%</span>
-        </div>
-      </div>
-
-      <!-- OOO strip — out-of-office this week -->
-      <div class="anlx-ooo-strip" role="status" aria-label="Team members out of office this week">
-        <span class="anlx-ooo-label">Out this week</span>
-        <span class="anlx-ooo-person">
-          <span class="anlx-load-avatar" style="background:#ff9f0a;" aria-hidden="true">KN</span>
-          <span class="anlx-ooo-name">Kai Nakamura</span>
-          <span class="anlx-ooo-when">Thu–Fri</span>
-        </span>
-        <span class="anlx-ooo-person">
-          <span class="anlx-load-avatar" style="background:#ff3366;" aria-hidden="true">ET</span>
-          <span class="anlx-ooo-name">Elena Torres</span>
-          <span class="anlx-ooo-when">Mon</span>
-        </span>
-      </div>
-
-      <!-- Open capacity chips — aggregate headroom per function, OOO-adjusted -->
-      <div class="anlx-cap-row" role="group" aria-label="Open capacity by function, adjusted for OOO">
-        <div class="anlx-cap-chip" data-cap="open">
-          <span class="anlx-cap-chip-fn">PM</span>
-          <span class="anlx-cap-chip-fte">+0.8</span>
-          <span class="anlx-cap-chip-label">FTE free</span>
-        </div>
-        <div class="anlx-cap-chip" data-cap="open">
-          <span class="anlx-cap-chip-fn">AM</span>
-          <span class="anlx-cap-chip-fte">+0.5</span>
-          <span class="anlx-cap-chip-label">FTE free</span>
-        </div>
-        <div class="anlx-cap-chip" data-cap="tight">
-          <span class="anlx-cap-chip-fn">Strategist</span>
-          <span class="anlx-cap-chip-fte">+0.1</span>
-          <span class="anlx-cap-chip-label">FTE free</span>
-        </div>
-        <div class="anlx-cap-chip" data-cap="tight">
-          <span class="anlx-cap-chip-fn">Designer</span>
-          <span class="anlx-cap-chip-fte">+0.3</span>
-          <span class="anlx-cap-chip-label">FTE free</span>
-        </div>
-        <div class="anlx-cap-chip" data-cap="open">
-          <span class="anlx-cap-chip-fn">Developer</span>
-          <span class="anlx-cap-chip-fte">+0.7</span>
-          <span class="anlx-cap-chip-label">FTE free</span>
-        </div>
-        <div class="anlx-cap-chip" data-cap="tight">
-          <span class="anlx-cap-chip-fn">SEO</span>
-          <span class="anlx-cap-chip-fte">+0.3</span>
-          <span class="anlx-cap-chip-label">FTE free</span>
-        </div>
-      </div>
-
-      <div class="anlx-fn-tabs" role="tablist" aria-label="Filter by function" style="margin-bottom: var(--sp-md);">
-        <button type="button" role="tab" class="anlx-fn-tab" data-fn-tab="all" data-active="true" aria-selected="true">All</button>
-        <button type="button" role="tab" class="anlx-fn-tab" data-fn-tab="pm"         aria-selected="false">PM</button>
-        <button type="button" role="tab" class="anlx-fn-tab" data-fn-tab="am"         aria-selected="false">AM</button>
-        <button type="button" role="tab" class="anlx-fn-tab" data-fn-tab="strategist" aria-selected="false">Strategist</button>
-        <button type="button" role="tab" class="anlx-fn-tab" data-fn-tab="designer"   aria-selected="false">Designer</button>
-        <button type="button" role="tab" class="anlx-fn-tab" data-fn-tab="developer"  aria-selected="false">Developer</button>
-        <button type="button" role="tab" class="anlx-fn-tab" data-fn-tab="seo"        aria-selected="false">SEO</button>
-      </div>
-
-      <div class="anlx-load-card" role="table" aria-label="Team members by load">
-        <div class="anlx-load-head" role="row">
-          <span role="columnheader">Person</span>
-          <span role="columnheader">Function</span>
-          <span role="columnheader">Load</span>
-          <span role="columnheader" style="text-align:right;">WIP</span>
-          <span role="columnheader">30d trend</span>
-          <span role="columnheader" aria-hidden="true"></span>
-        </div>
-
-        <button type="button" class="anlx-load-row" role="row" data-tone="over"    data-fn="am" aria-label="Priya Singh, AM, 118 percent load, 14 tasks, trending up. Click to see her work.">
-          <div class="anlx-load-who" role="cell">
-            <span class="anlx-load-avatar" style="background:#bf5af2;" aria-hidden="true">PS</span>
-            <span class="anlx-load-name-block">
-              <span class="anlx-load-name">Priya Singh</span>
-              <span class="anlx-load-role">Senior Account Manager</span>
-            </span>
-          </div>
-          <span class="anlx-load-fn" role="cell">AM</span>
-          <div class="anlx-load-bar-cell" role="cell">
-            <div class="anlx-load-bar-track"><div class="anlx-load-bar-fill" style="width:100%"></div></div>
-            <span class="anlx-load-pct">118%</span>
-          </div>
-          <span class="anlx-load-wip" role="cell" style="text-align:right;">14 tasks</span>
-          <span class="anlx-load-spark" role="cell">
-            <svg viewBox="0 0 72 24" preserveAspectRatio="none" aria-hidden="true"><path class="area" d="M0,18 L12,16 L24,14 L36,12 L48,8 L60,6 L72,4 L72,24 L0,24 Z"/><path class="line" d="M0,18 L12,16 L24,14 L36,12 L48,8 L60,6 L72,4"/></svg>
-          </span>
-          <span class="anlx-load-chev" role="cell"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></span>
-        </button>
-
-        <button type="button" class="anlx-load-row" role="row" data-tone="over"    data-fn="designer" aria-label="Kai Nakamura, Designer, 106 percent load, 11 tasks.">
-          <div class="anlx-load-who" role="cell">
-            <span class="anlx-load-avatar" style="background:#ff9f0a;" aria-hidden="true">KN</span>
-            <span class="anlx-load-name-block">
-              <span class="anlx-load-name">Kai Nakamura</span>
-              <span class="anlx-load-role">Senior Designer</span>
-            </span>
-          </div>
-          <span class="anlx-load-fn" role="cell">Designer</span>
-          <div class="anlx-load-bar-cell" role="cell">
-            <div class="anlx-load-bar-track"><div class="anlx-load-bar-fill" style="width:100%"></div></div>
-            <span class="anlx-load-pct">106%</span>
-          </div>
-          <span class="anlx-load-wip" role="cell" style="text-align:right;">11 tasks</span>
-          <span class="anlx-load-spark" role="cell">
-            <svg viewBox="0 0 72 24" preserveAspectRatio="none" aria-hidden="true"><path class="area" d="M0,14 L12,12 L24,10 L36,12 L48,8 L60,6 L72,6 L72,24 L0,24 Z"/><path class="line" d="M0,14 L12,12 L24,10 L36,12 L48,8 L60,6 L72,6"/></svg>
-          </span>
-          <span class="anlx-load-chev" role="cell"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></span>
-        </button>
-
-        <button type="button" class="anlx-load-row" role="row" data-tone="stretch" data-fn="pm" aria-label="Sofia Reyes, PM, 94 percent load, 9 tasks.">
-          <div class="anlx-load-who" role="cell">
-            <span class="anlx-load-avatar" style="background:#0a84ff;" aria-hidden="true">SR</span>
-            <span class="anlx-load-name-block">
-              <span class="anlx-load-name">Sofia Reyes</span>
-              <span class="anlx-load-role">Project Manager</span>
-            </span>
-          </div>
-          <span class="anlx-load-fn" role="cell">PM</span>
-          <div class="anlx-load-bar-cell" role="cell">
-            <div class="anlx-load-bar-track"><div class="anlx-load-bar-fill" style="width:94%"></div></div>
-            <span class="anlx-load-pct">94%</span>
-          </div>
-          <span class="anlx-load-wip" role="cell" style="text-align:right;">9 tasks</span>
-          <span class="anlx-load-spark" role="cell">
-            <svg viewBox="0 0 72 24" preserveAspectRatio="none" aria-hidden="true"><path class="area" d="M0,10 L12,12 L24,8 L36,10 L48,12 L60,14 L72,10 L72,24 L0,24 Z"/><path class="line" d="M0,10 L12,12 L24,8 L36,10 L48,12 L60,14 L72,10"/></svg>
-          </span>
-          <span class="anlx-load-chev" role="cell"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></span>
-        </button>
-
-        <button type="button" class="anlx-load-row" role="row" data-tone="stretch" data-fn="strategist" aria-label="Elena Torres, Strategist, 92 percent load, 8 tasks.">
-          <div class="anlx-load-who" role="cell">
-            <span class="anlx-load-avatar" style="background:#ff3366;" aria-hidden="true">ET</span>
-            <span class="anlx-load-name-block">
-              <span class="anlx-load-name">Elena Torres</span>
-              <span class="anlx-load-role">Lead Strategist</span>
-            </span>
-          </div>
-          <span class="anlx-load-fn" role="cell">Strategist</span>
-          <div class="anlx-load-bar-cell" role="cell">
-            <div class="anlx-load-bar-track"><div class="anlx-load-bar-fill" style="width:92%"></div></div>
-            <span class="anlx-load-pct">92%</span>
-          </div>
-          <span class="anlx-load-wip" role="cell" style="text-align:right;">8 tasks</span>
-          <span class="anlx-load-spark" role="cell">
-            <svg viewBox="0 0 72 24" preserveAspectRatio="none" aria-hidden="true"><path class="area" d="M0,16 L12,14 L24,12 L36,14 L48,10 L60,12 L72,10 L72,24 L0,24 Z"/><path class="line" d="M0,16 L12,14 L24,12 L36,14 L48,10 L60,12 L72,10"/></svg>
-          </span>
-          <span class="anlx-load-chev" role="cell"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></span>
-        </button>
-
-        <button type="button" class="anlx-load-row" role="row" data-tone="stretch" data-fn="developer" aria-label="Dev Patel, Developer, 88 percent load, 7 tasks.">
-          <div class="anlx-load-who" role="cell">
-            <span class="anlx-load-avatar" style="background:#30d158;" aria-hidden="true">DP</span>
-            <span class="anlx-load-name-block">
-              <span class="anlx-load-name">Dev Patel</span>
-              <span class="anlx-load-role">Full-stack Developer</span>
-            </span>
-          </div>
-          <span class="anlx-load-fn" role="cell">Developer</span>
-          <div class="anlx-load-bar-cell" role="cell">
-            <div class="anlx-load-bar-track"><div class="anlx-load-bar-fill" style="width:88%"></div></div>
-            <span class="anlx-load-pct">88%</span>
-          </div>
-          <span class="anlx-load-wip" role="cell" style="text-align:right;">7 tasks</span>
-          <span class="anlx-load-spark" role="cell">
-            <svg viewBox="0 0 72 24" preserveAspectRatio="none" aria-hidden="true"><path class="area" d="M0,20 L12,16 L24,18 L36,14 L48,12 L60,10 L72,12 L72,24 L0,24 Z"/><path class="line" d="M0,20 L12,16 L24,18 L36,14 L48,12 L60,10 L72,12"/></svg>
-          </span>
-          <span class="anlx-load-chev" role="cell"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></span>
-        </button>
-
-        <button type="button" class="anlx-load-row" role="row" data-tone="healthy" data-fn="am" aria-label="Marcus Chen, AM, 76 percent load, 6 tasks.">
-          <div class="anlx-load-who" role="cell">
-            <span class="anlx-load-avatar" style="background:#0aaf41;" aria-hidden="true">MC</span>
-            <span class="anlx-load-name-block">
-              <span class="anlx-load-name">Marcus Chen</span>
-              <span class="anlx-load-role">Account Manager</span>
-            </span>
-          </div>
-          <span class="anlx-load-fn" role="cell">AM</span>
-          <div class="anlx-load-bar-cell" role="cell">
-            <div class="anlx-load-bar-track"><div class="anlx-load-bar-fill" style="width:76%"></div></div>
-            <span class="anlx-load-pct">76%</span>
-          </div>
-          <span class="anlx-load-wip" role="cell" style="text-align:right;">6 tasks</span>
-          <span class="anlx-load-spark" role="cell">
-            <svg viewBox="0 0 72 24" preserveAspectRatio="none" aria-hidden="true"><path class="area" d="M0,14 L12,12 L24,14 L36,10 L48,14 L60,12 L72,14 L72,24 L0,24 Z"/><path class="line" d="M0,14 L12,12 L24,14 L36,10 L48,14 L60,12 L72,14"/></svg>
-          </span>
-          <span class="anlx-load-chev" role="cell"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></span>
-        </button>
-
-        <button type="button" class="anlx-load-row" role="row" data-tone="healthy" data-fn="seo" aria-label="Ryan O'Connor, SEO specialist, 72 percent load, 6 tasks.">
-          <div class="anlx-load-who" role="cell">
-            <span class="anlx-load-avatar" style="background:#5e5ce6;" aria-hidden="true">RO</span>
-            <span class="anlx-load-name-block">
-              <span class="anlx-load-name">Ryan O'Connor</span>
-              <span class="anlx-load-role">SEO Specialist</span>
-            </span>
-          </div>
-          <span class="anlx-load-fn" role="cell">SEO</span>
-          <div class="anlx-load-bar-cell" role="cell">
-            <div class="anlx-load-bar-track"><div class="anlx-load-bar-fill" style="width:72%"></div></div>
-            <span class="anlx-load-pct">72%</span>
-          </div>
-          <span class="anlx-load-wip" role="cell" style="text-align:right;">6 tasks</span>
-          <span class="anlx-load-spark" role="cell">
-            <svg viewBox="0 0 72 24" preserveAspectRatio="none" aria-hidden="true"><path class="area" d="M0,10 L12,14 L24,12 L36,16 L48,12 L60,14 L72,12 L72,24 L0,24 Z"/><path class="line" d="M0,10 L12,14 L24,12 L36,16 L48,12 L60,14 L72,12"/></svg>
-          </span>
-          <span class="anlx-load-chev" role="cell"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></span>
-        </button>
-
-        <button type="button" class="anlx-load-row" role="row" data-tone="healthy" data-fn="pm" aria-label="Jordan Park, PM, 68 percent load, 5 tasks.">
-          <div class="anlx-load-who" role="cell">
-            <span class="anlx-load-avatar" style="background:#0a6fcc;" aria-hidden="true">JP</span>
-            <span class="anlx-load-name-block">
-              <span class="anlx-load-name">Jordan Park</span>
-              <span class="anlx-load-role">Project Manager</span>
-            </span>
-          </div>
-          <span class="anlx-load-fn" role="cell">PM</span>
-          <div class="anlx-load-bar-cell" role="cell">
-            <div class="anlx-load-bar-track"><div class="anlx-load-bar-fill" style="width:68%"></div></div>
-            <span class="anlx-load-pct">68%</span>
-          </div>
-          <span class="anlx-load-wip" role="cell" style="text-align:right;">5 tasks</span>
-          <span class="anlx-load-spark" role="cell">
-            <svg viewBox="0 0 72 24" preserveAspectRatio="none" aria-hidden="true"><path class="area" d="M0,12 L12,14 L24,16 L36,14 L48,12 L60,16 L72,14 L72,24 L0,24 Z"/><path class="line" d="M0,12 L12,14 L24,16 L36,14 L48,12 L60,16 L72,14"/></svg>
-          </span>
-          <span class="anlx-load-chev" role="cell"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></span>
-        </button>
-
-        <button type="button" class="anlx-load-row" role="row" data-tone="healthy" data-fn="designer" aria-label="Lila Brown, Designer, 64 percent load, 5 tasks.">
-          <div class="anlx-load-who" role="cell">
-            <span class="anlx-load-avatar" style="background:#8e3ecc;" aria-hidden="true">LB</span>
-            <span class="anlx-load-name-block">
-              <span class="anlx-load-name">Lila Brown</span>
-              <span class="anlx-load-role">Designer</span>
-            </span>
-          </div>
-          <span class="anlx-load-fn" role="cell">Designer</span>
-          <div class="anlx-load-bar-cell" role="cell">
-            <div class="anlx-load-bar-track"><div class="anlx-load-bar-fill" style="width:64%"></div></div>
-            <span class="anlx-load-pct">64%</span>
-          </div>
-          <span class="anlx-load-wip" role="cell" style="text-align:right;">5 tasks</span>
-          <span class="anlx-load-spark" role="cell">
-            <svg viewBox="0 0 72 24" preserveAspectRatio="none" aria-hidden="true"><path class="area" d="M0,16 L12,18 L24,14 L36,18 L48,14 L60,16 L72,14 L72,24 L0,24 Z"/><path class="line" d="M0,16 L12,18 L24,14 L36,18 L48,14 L60,16 L72,14"/></svg>
-          </span>
-          <span class="anlx-load-chev" role="cell"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></span>
-        </button>
-
-        <button type="button" class="anlx-load-row" role="row" data-tone="healthy" data-fn="pm" aria-label="Aisha Khan, PM, 58 percent load, 4 tasks.">
-          <div class="anlx-load-who" role="cell">
-            <span class="anlx-load-avatar" style="background:#cc7000;" aria-hidden="true">AK</span>
-            <span class="anlx-load-name-block">
-              <span class="anlx-load-name">Aisha Khan</span>
-              <span class="anlx-load-role">Junior PM</span>
-            </span>
-          </div>
-          <span class="anlx-load-fn" role="cell">PM</span>
-          <div class="anlx-load-bar-cell" role="cell">
-            <div class="anlx-load-bar-track"><div class="anlx-load-bar-fill" style="width:58%"></div></div>
-            <span class="anlx-load-pct">58%</span>
-          </div>
-          <span class="anlx-load-wip" role="cell" style="text-align:right;">4 tasks</span>
-          <span class="anlx-load-spark" role="cell">
-            <svg viewBox="0 0 72 24" preserveAspectRatio="none" aria-hidden="true"><path class="area" d="M0,18 L12,16 L24,18 L36,14 L48,16 L60,18 L72,16 L72,24 L0,24 Z"/><path class="line" d="M0,18 L12,16 L24,18 L36,14 L48,16 L60,18 L72,16"/></svg>
-          </span>
-          <span class="anlx-load-chev" role="cell"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></span>
-        </button>
-
-        <button type="button" class="anlx-load-row" role="row" data-tone="healthy" data-fn="am" aria-label="Theo Morgan, AM, 52 percent load, 4 tasks.">
-          <div class="anlx-load-who" role="cell">
-            <span class="anlx-load-avatar" style="background:#64d2ff;" aria-hidden="true">TM</span>
-            <span class="anlx-load-name-block">
-              <span class="anlx-load-name">Theo Morgan</span>
-              <span class="anlx-load-role">Account Manager</span>
-            </span>
-          </div>
-          <span class="anlx-load-fn" role="cell">AM</span>
-          <div class="anlx-load-bar-cell" role="cell">
-            <div class="anlx-load-bar-track"><div class="anlx-load-bar-fill" style="width:52%"></div></div>
-            <span class="anlx-load-pct">52%</span>
-          </div>
-          <span class="anlx-load-wip" role="cell" style="text-align:right;">4 tasks</span>
-          <span class="anlx-load-spark" role="cell">
-            <svg viewBox="0 0 72 24" preserveAspectRatio="none" aria-hidden="true"><path class="area" d="M0,20 L12,18 L24,20 L36,18 L48,20 L60,18 L72,20 L72,24 L0,24 Z"/><path class="line" d="M0,20 L12,18 L24,20 L36,18 L48,20 L60,18 L72,20"/></svg>
-          </span>
-          <span class="anlx-load-chev" role="cell"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></span>
-        </button>
-
-        <button type="button" class="anlx-load-row" role="row" data-tone="healthy" data-fn="developer" aria-label="Noah Wright, Developer, 44 percent load, 3 tasks.">
-          <div class="anlx-load-who" role="cell">
-            <span class="anlx-load-avatar" style="background:#0a84ff;" aria-hidden="true">NW</span>
-            <span class="anlx-load-name-block">
-              <span class="anlx-load-name">Noah Wright</span>
-              <span class="anlx-load-role">Junior Developer</span>
-            </span>
-          </div>
-          <span class="anlx-load-fn" role="cell">Developer</span>
-          <div class="anlx-load-bar-cell" role="cell">
-            <div class="anlx-load-bar-track"><div class="anlx-load-bar-fill" style="width:44%"></div></div>
-            <span class="anlx-load-pct">44%</span>
-          </div>
-          <span class="anlx-load-wip" role="cell" style="text-align:right;">3 tasks</span>
-          <span class="anlx-load-spark" role="cell">
-            <svg viewBox="0 0 72 24" preserveAspectRatio="none" aria-hidden="true"><path class="area" d="M0,20 L12,22 L24,20 L36,18 L48,20 L60,20 L72,22 L72,24 L0,24 Z"/><path class="line" d="M0,20 L12,22 L24,20 L36,18 L48,20 L60,20 L72,22"/></svg>
-          </span>
-          <span class="anlx-load-chev" role="cell"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></span>
-        </button>
-
-      </div>
-    </section>
-
-    <!-- ═══ 4. Flow — phases 5-12 ═══ -->
-    <section class="anlx-section" id="anlxFlow" aria-labelledby="anlxFlowTitle">
-      <div class="anlx-section-head">
-        <div class="anlx-section-title-group">
-          <span class="anlx-section-title" id="anlxFlowTitle">Flow — where work is right now</span>
-          <span class="anlx-section-sub">Median days-in-phase across all active services. Click a phase to see what's stuck there.</span>
-        </div>
-      </div>
-      <div class="anlx-flow-card">
-        <div class="anlx-flow-grid">
-
-          <button type="button" class="anlx-flow-cell bottleneck" data-phase="5" aria-label="Phase 5 Onboarding and Kickoff, 4 services, median 14 days, up 3 days. Bottleneck.">
-            <span class="anlx-flow-phase-num">Phase 5</span>
-            <span class="anlx-flow-phase-name">Onboarding &amp; Kickoff</span>
-            <div class="anlx-flow-count">
-              <span class="anlx-flow-count-num">4</span>
-              <span class="anlx-flow-count-label">services</span>
-            </div>
-            <div class="anlx-flow-meta">
-              <span class="anlx-flow-meta-days">14d median</span>
-              <span class="anlx-flow-meta-delta bad">+3d</span>
-            </div>
-          </button>
-
-          <button type="button" class="anlx-flow-cell" data-phase="6" aria-label="Phase 6 Strategy and Planning, 3 services, median 8 days, steady.">
-            <span class="anlx-flow-phase-num">Phase 6</span>
-            <span class="anlx-flow-phase-name">Strategy &amp; Planning</span>
-            <div class="anlx-flow-count">
-              <span class="anlx-flow-count-num">3</span>
-              <span class="anlx-flow-count-label">services</span>
-            </div>
-            <div class="anlx-flow-meta">
-              <span class="anlx-flow-meta-days">8d median</span>
-              <span class="anlx-flow-meta-delta flat">—</span>
-            </div>
-          </button>
-
-          <button type="button" class="anlx-flow-cell" data-phase="7" aria-label="Phase 7 Setup and Build, 5 services, median 12 days, down 1 day.">
-            <span class="anlx-flow-phase-num">Phase 7</span>
-            <span class="anlx-flow-phase-name">Setup &amp; Build</span>
-            <div class="anlx-flow-count">
-              <span class="anlx-flow-count-num">5</span>
-              <span class="anlx-flow-count-label">services</span>
-            </div>
-            <div class="anlx-flow-meta">
-              <span class="anlx-flow-meta-days">12d median</span>
-              <span class="anlx-flow-meta-delta good">−1d</span>
-            </div>
-          </button>
-
-          <button type="button" class="anlx-flow-cell" data-phase="8" aria-label="Phase 8 Launch and Go-Live, 2 services, median 4 days, steady.">
-            <span class="anlx-flow-phase-num">Phase 8</span>
-            <span class="anlx-flow-phase-name">Launch &amp; Go-Live</span>
-            <div class="anlx-flow-count">
-              <span class="anlx-flow-count-num">2</span>
-              <span class="anlx-flow-count-label">services</span>
-            </div>
-            <div class="anlx-flow-meta">
-              <span class="anlx-flow-meta-days">4d median</span>
-              <span class="anlx-flow-meta-delta flat">—</span>
-            </div>
-          </button>
-
-          <button type="button" class="anlx-flow-cell" data-phase="9" aria-label="Phase 9 Ongoing Management, 7 services, median 22 days, down 2 days.">
-            <span class="anlx-flow-phase-num">Phase 9</span>
-            <span class="anlx-flow-phase-name">Ongoing Management</span>
-            <div class="anlx-flow-count">
-              <span class="anlx-flow-count-num">7</span>
-              <span class="anlx-flow-count-label">services</span>
-            </div>
-            <div class="anlx-flow-meta">
-              <span class="anlx-flow-meta-days">22d median</span>
-              <span class="anlx-flow-meta-delta good">−2d</span>
-            </div>
-          </button>
-
-          <button type="button" class="anlx-flow-cell" data-phase="10" aria-label="Phase 10 Reporting and Review, 2 services, median 3 days, steady.">
-            <span class="anlx-flow-phase-num">Phase 10</span>
-            <span class="anlx-flow-phase-name">Reporting &amp; Review</span>
-            <div class="anlx-flow-count">
-              <span class="anlx-flow-count-num">2</span>
-              <span class="anlx-flow-count-label">services</span>
-            </div>
-            <div class="anlx-flow-meta">
-              <span class="anlx-flow-meta-days">3d median</span>
-              <span class="anlx-flow-meta-delta flat">—</span>
-            </div>
-          </button>
-
-          <button type="button" class="anlx-flow-cell" data-phase="11" aria-label="Phase 11 Growth and Upsell, 1 service, median 6 days, down 2 days.">
-            <span class="anlx-flow-phase-num">Phase 11</span>
-            <span class="anlx-flow-phase-name">Growth &amp; Upsell</span>
-            <div class="anlx-flow-count">
-              <span class="anlx-flow-count-num">1</span>
-              <span class="anlx-flow-count-label">service</span>
-            </div>
-            <div class="anlx-flow-meta">
-              <span class="anlx-flow-meta-days">6d median</span>
-              <span class="anlx-flow-meta-delta good">−2d</span>
-            </div>
-          </button>
-
-          <button type="button" class="anlx-flow-cell" data-phase="12" aria-label="Phase 12 Offboarding, 0 services, no activity.">
-            <span class="anlx-flow-phase-num">Phase 12</span>
-            <span class="anlx-flow-phase-name">Offboarding</span>
-            <div class="anlx-flow-count">
-              <span class="anlx-flow-count-num">0</span>
-              <span class="anlx-flow-count-label">services</span>
-            </div>
-            <div class="anlx-flow-meta">
-              <span class="anlx-flow-meta-days">—</span>
-              <span class="anlx-flow-meta-delta flat">—</span>
-            </div>
-          </button>
-
-        </div>
-        <div class="anlx-flow-caption">
-          Bottleneck highlighted in amber. <strong>Onboarding &amp; Kickoff</strong> is taking 3 days longer than last period — likely driving the on-time dip in Pulse.
-        </div>
-      </div>
-    </section>
-
-    <!-- ═══ 5. Slipped this month ═══ -->
-    <section class="anlx-section" id="anlxSlipped" aria-labelledby="anlxSlippedTitle">
-      <div class="anlx-section-head">
-        <div class="anlx-section-title-group">
-          <span class="anlx-section-title" id="anlxSlippedTitle">Slipped this month</span>
-          <span class="anlx-section-sub">Services past their phase SLA. Click a row to jump into the client.</span>
-        </div>
-      </div>
-      <div class="anlx-slipped-card">
-
-        <div class="anlx-slipped-row">
-          <a class="anlx-slipped-row-overlay" href="#clients/acme-corp" data-client-id="acme-corp" aria-label="Brand Refresh Q2, Acme Corporation, owner Sofia Reyes, 4 days late. Open client."></a>
-          <span class="anlx-slipped-what">
-            <span class="anlx-slipped-name">Brand Refresh Q2</span>
-            <span class="anlx-slipped-client">Acme Corporation · Phase 6 Strategy</span>
-          </span>
-          <span class="anlx-slipped-owner">
-            <span class="anlx-load-avatar" style="background:#0a84ff;" aria-hidden="true">SR</span>
-            Sofia Reyes
-          </span>
-          <span class="phase-pill onboard" aria-hidden="true"><span class="phase-pill-num">6</span>Strategy</span>
-          <button type="button" class="anlx-slipped-reason" data-reason-tone="external" data-reason-key="client-unresponsive" aria-haspopup="listbox" aria-expanded="false" aria-label="Slip reason: client unresponsive. Click to change.">
-            <span class="anlx-slipped-reason-label">Client unresponsive</span>
-            <svg class="anlx-slipped-reason-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
-          </button>
-          <span class="anlx-slipped-late">4d late</span>
-          <span class="anlx-slipped-chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></span>
-        </div>
-
-        <div class="anlx-slipped-row">
-          <a class="anlx-slipped-row-overlay" href="#clients/harvest-co" data-client-id="harvest-co" aria-label="Harvest and Co. Site, Harvest and Co., owner Dev Patel, 2 days late. Open client."></a>
-          <span class="anlx-slipped-what">
-            <span class="anlx-slipped-name">Harvest &amp; Co. Site</span>
-            <span class="anlx-slipped-client">Harvest &amp; Co. · Phase 7 Setup &amp; Build</span>
-          </span>
-          <span class="anlx-slipped-owner">
-            <span class="anlx-load-avatar" style="background:#30d158;" aria-hidden="true">DP</span>
-            Dev Patel
-          </span>
-          <span class="phase-pill active" aria-hidden="true"><span class="phase-pill-num">7</span>Setup &amp; Build</span>
-          <button type="button" class="anlx-slipped-reason" data-reason-tone="internal" data-reason-key="owner-overloaded" aria-haspopup="listbox" aria-expanded="false" aria-label="Slip reason: owner over-allocated. Click to change.">
-            <span class="anlx-slipped-reason-label">Owner over-allocated</span>
-            <svg class="anlx-slipped-reason-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
-          </button>
-          <span class="anlx-slipped-late">2d late</span>
-          <span class="anlx-slipped-chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></span>
-        </div>
-
-        <div class="anlx-slipped-row">
-          <a class="anlx-slipped-row-overlay" href="#clients/cascade-coffee" data-client-id="cascade-coffee" aria-label="Cascade Coffee Content, Cascade Coffee, owner Priya Singh, 1 day late. Open client."></a>
-          <span class="anlx-slipped-what">
-            <span class="anlx-slipped-name">Cascade Coffee Content</span>
-            <span class="anlx-slipped-client">Cascade Coffee · Phase 9 Ongoing</span>
-          </span>
-          <span class="anlx-slipped-owner">
-            <span class="anlx-load-avatar" style="background:#bf5af2;" aria-hidden="true">PS</span>
-            Priya Singh
-          </span>
-          <span class="phase-pill active" aria-hidden="true"><span class="phase-pill-num">9</span>Ongoing</span>
-          <button type="button" class="anlx-slipped-reason" data-reason-tone="unclassified" data-reason-key="unclassified" aria-haspopup="listbox" aria-expanded="false" aria-label="Slip reason: not yet classified. Click to set.">
-            <span class="anlx-slipped-reason-label">Add reason</span>
-            <svg class="anlx-slipped-reason-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
-          </button>
-          <span class="anlx-slipped-late">1d late</span>
-          <span class="anlx-slipped-chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></span>
-        </div>
-
-      </div>
+      <div class="anlx-wl-list" data-anlx-wl-list role="list"></div>
     </section>
 
   </main>
@@ -24109,259 +23237,753 @@ window.OPS_TEAM = OPS_TEAM;
 </script>
 
 <script>
-/* ─── Analytics view interactions ───
-   Three behaviors:
-     1. Function-tab filter on the Team load table (All / PM / AM / …)
-     2. Pulse cards scroll to their related section instead of navigating
-     3. Flow cells and Team load rows give click feedback with a toast so
-        the user knows something happened — wire to real destinations later.
-   Slipped-list rows are plain anchors to client detail, so no JS needed
-   for those.                                                                 */
+/* ═══════ Analytics v1 — delivery-health rendering + interactions ═══════
+   Reads PROJECTFLOW_DATA synchronously (set earlier in the document body)
+   and renders the KPI row, Upcoming list, and Workload grid. Filters
+   (person / project / window) update every widget. KPI cards are
+   drill-down triggers; clicking one opens an inline task list.
+
+   Design rules applied:
+   - Apple HIG: clarity, deference, direct manipulation, feedback, forgiveness
+   - Blue hierarchy: Tier 3 tint for active filter/tab; Tier 4 text for reset
+   - Grids skill: tabular-nums, baseline alignment, 45–70ch line budget
+   - Data integrity: operator co-ownership is DERIVED at render time from
+     task titles; original assigneeId is never mutated. estimateHours IS
+     seeded onto tasks at boot (no other code reads that field yet).      */
 (function(){
   var view = document.querySelector('.view-analytics');
   if (!view) return;
+  var DATA = window.PROJECTFLOW_DATA;
+  if (!DATA || !Array.isArray(DATA.tasks)) return;
 
-  // ── Function-tab filter ──
-  var fnTabs = view.querySelectorAll('[data-fn-tab]');
-  var loadRows = view.querySelectorAll('.anlx-load-row[data-fn]');
-  fnTabs.forEach(function(tab){
-    tab.addEventListener('click', function(){
-      var key = tab.getAttribute('data-fn-tab');
-      fnTabs.forEach(function(t){
-        var on = t === tab;
-        if (on) t.setAttribute('data-active', 'true'); else t.removeAttribute('data-active');
-        t.setAttribute('aria-selected', on ? 'true' : 'false');
-      });
-      var shown = 0;
-      loadRows.forEach(function(r){
-        var match = (key === 'all') || (r.getAttribute('data-fn') === key);
-        r.style.display = match ? '' : 'none';
-        if (match) shown += 1;
-      });
-      // Could render an empty-state if shown === 0 — for the mockup data
-      // there's always at least one person per function, so skip for now.
+  // ────────────────────────────────────────────────────────────────────
+  // Utilities
+  // ────────────────────────────────────────────────────────────────────
+  function esc(s){ return String(s == null ? '' : s).replace(/[&<>"']/g, function(c){ return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]; }); }
+  function hashStr(s){ s = String(s || ''); var h = 2166136261 >>> 0; for (var i = 0; i < s.length; i++){ h ^= s.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; } return h >>> 0; }
+  function startOfDay(d){ var x = new Date(d); x.setHours(0,0,0,0); return x; }
+  function addDays(d, n){ var x = new Date(d); x.setDate(x.getDate() + n); return x; }
+  function daysBetween(a, b){ return Math.round((startOfDay(b) - startOfDay(a)) / 86400000); }
+  function startOfWeek(d){ // Monday-start
+    var x = startOfDay(d); var day = x.getDay(); var diff = (day === 0 ? -6 : 1 - day);
+    return addDays(x, diff);
+  }
+  var TODAY = DATA.today ? new Date(DATA.today) : new Date();
+  TODAY = startOfDay(TODAY);
+
+  // ────────────────────────────────────────────────────────────────────
+  // Seed estimateHours onto every task (one-time, at boot).
+  // Base hours by priority; add small variance so bars aren't identical.
+  // ────────────────────────────────────────────────────────────────────
+  (function seedEstimates(){
+    var base = { urgent: 10, high: 6, medium: 4, low: 2 };
+    DATA.tasks.forEach(function(t){
+      if (typeof t.estimateHours === 'number') return;
+      var b = base[t.priority] != null ? base[t.priority] : 4;
+      var n = (hashStr(t.id) % 5); // 0..4
+      t.estimateHours = b + n; // 2..14
     });
-  });
+  })();
 
-  // ── Pulse cards scroll to related section ──
-  var pulseCards = view.querySelectorAll('[data-pulse-jump]');
-  pulseCards.forEach(function(card){
-    card.addEventListener('click', function(){
-      var target = card.getAttribute('data-pulse-jump');
-      var dest = null;
-      if (target === 'team-load') dest = document.getElementById('anlxTeamLoad');
-      else if (target === 'flow') dest = document.getElementById('anlxFlow');
-      else if (target === 'slipped') dest = document.getElementById('anlxSlipped');
-      if (!dest) return;
-      var reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-      dest.scrollIntoView({ behavior: reduced ? 'auto' : 'smooth', block: 'start' });
+  // ────────────────────────────────────────────────────────────────────
+  // Members — AM pool from PROJECTFLOW_DATA.members, operators from OPS_TEAM.
+  // Pick a co-owner (operator) by title regex for any task whose assignee
+  // is an AM. This is a derived view — original data stays intact.
+  // ────────────────────────────────────────────────────────────────────
+  function normalizeMembers(){
+    var out = [];
+    var seen = {};
+    function push(m){
+      if (!m || !m.id) return;
+      var key = m.id.toLowerCase();
+      if (seen[key]) return;
+      seen[key] = true;
+      out.push({
+        id: key,
+        initials: m.initials || (m.name ? m.name.split(/\s+/).map(function(w){return w[0];}).join('').slice(0,2).toUpperCase() : '??'),
+        name: m.name || 'Unknown',
+        role: m.role || (m.type === 'operator' ? 'Operator' : 'Account Manager'),
+        color: m.color || '#8e8e93',
+        type: m.type || 'am'
+      });
+    }
+    (DATA.members || []).forEach(push);
+    (window.OPS_TEAM || []).forEach(push);
+    return out;
+  }
+  var MEMBERS = normalizeMembers();
+  var MEMBER_BY_ID = {}; MEMBERS.forEach(function(m){ MEMBER_BY_ID[m.id] = m; });
+
+  function pickOperator(title){
+    var s = String(title || '').toLowerCase();
+    if (/seo|keyword|audit|redirect|meta|schema|sitemap/.test(s)) return 'cc';
+    if (/design|wireframe|mockup|logo|brand|visual|ui|ux|figma/.test(s)) return 'hs';
+    if (/ad(s|\s)|paid|social|campaign|creative|facebook|meta ads|tiktok|linkedin ad/.test(s)) return 'mp';
+    if (/report|dashboard|invoice|finance|billing|weekly|monthly|status/.test(s)) return 'rc';
+    if (/email|content|copy|blog|newsletter|write/.test(s)) return 'kl';
+    return null;
+  }
+  function ownersForTask(task){
+    var primary = task.assigneeId || null;
+    var secondary = pickOperator(task.title);
+    // If a task title lines up with the primary AM's domain, skip the operator.
+    if (secondary && secondary === primary) secondary = null;
+    var list = [];
+    if (primary) list.push(primary);
+    if (secondary) list.push(secondary);
+    return list;
+  }
+
+  // ────────────────────────────────────────────────────────────────────
+  // Filters — persisted in memory only (no localStorage; per-session)
+  // ────────────────────────────────────────────────────────────────────
+  var filters = { person: 'all', project: 'all', range: '30d' };
+
+  function taskMatches(t){
+    if (filters.person !== 'all' && ownersForTask(t).indexOf(filters.person) === -1) return false;
+    if (filters.project !== 'all' && t.clientId !== filters.project) return false;
+    // range is interpreted by each widget individually (KPIs use it as window,
+    // Upcoming always uses the 3-tab framing); task-level filter is only
+    // the assignee + client here.
+    return true;
+  }
+  function isOpen(t){ return t.columnId !== 'done'; }
+  function isBlocked(t){
+    // A task is "blocked" if blockedBy exists, or if it's in review > 3 days
+    if (t.blockedBy && String(t.blockedBy).length) return true;
+    if (t.columnId === 'review' && t.createdAt){
+      var ageDays = daysBetween(new Date(t.createdAt), TODAY);
+      if (ageDays > 8) return true;
+    }
+    return false;
+  }
+
+  // ────────────────────────────────────────────────────────────────────
+  // KPI computation (forward-looking where possible)
+  //   1. On-time %       — closed tasks that finished on/before dueDate
+  //   2. Over capacity   — # of people currently > 100% of 40h budget
+  //   3. Blocked         — open tasks marked blocked (or review > 8d)
+  //   4. Deadlines 7d    — open tasks with dueDate in next 7 days
+  //   5. At-risk clients — clients with status fire|risk
+  // Each KPI also returns: value, unit, deltaPct (vs prior period),
+  // deltaDirection (so UI colors it correctly), sparkSeries (12 points)
+  // ────────────────────────────────────────────────────────────────────
+  function computeKPIs(){
+    var tasks = DATA.tasks.filter(taskMatches);
+    var openTasks = tasks.filter(isOpen);
+
+    // 1 — On-time rate
+    var closed = tasks.filter(function(t){ return t.columnId === 'done' && t.dueDate; });
+    var onTime = closed.filter(function(t){
+      if (!t.completedAt) return !isPastDue(t);
+      return daysBetween(new Date(t.completedAt), new Date(t.dueDate)) >= 0;
     });
-  });
+    var onTimePct = closed.length ? Math.round(onTime.length / closed.length * 100) : 100;
+    function isPastDue(t){ return t.dueDate && daysBetween(TODAY, new Date(t.dueDate)) < 0; }
 
-  // ── Team load row: open a teammate's WIP (stub for now) ──
-  view.querySelectorAll('.anlx-load-row').forEach(function(row){
-    row.addEventListener('click', function(){
-      var name = row.querySelector('.anlx-load-name');
-      var who = name ? name.textContent.trim() : 'teammate';
-      if (typeof window.showToast === 'function') {
-        window.showToast(who + "'s workload — coming soon", { duration: 1800 });
+    // 2 — Over capacity
+    var wl = buildWorkload(tasks);
+    var over = wl.filter(function(r){ return r.pct > 100; }).length;
+    var tight = wl.filter(function(r){ return r.pct >= 85; }).length;
+
+    // 3 — Blocked
+    var blocked = openTasks.filter(isBlocked);
+
+    // 4 — Deadlines 7 days
+    var soon = openTasks.filter(function(t){
+      if (!t.dueDate) return false;
+      var delta = daysBetween(TODAY, new Date(t.dueDate));
+      return delta >= 0 && delta <= 7;
+    });
+    var overdue = openTasks.filter(function(t){
+      if (!t.dueDate) return false;
+      return daysBetween(TODAY, new Date(t.dueDate)) < 0;
+    });
+
+    // 5 — At-risk clients
+    var atRiskClients = (DATA.clients || []).filter(function(c){
+      return c.status === 'fire' || c.status === 'risk';
+    });
+    if (filters.project !== 'all'){
+      atRiskClients = atRiskClients.filter(function(c){ return c.id === filters.project; });
+    }
+
+    return [
+      {
+        key: 'ontime',
+        label: 'On-time rate',
+        value: onTimePct, unit: '%',
+        deltaPct: +3,
+        deltaTone: 'good-up',
+        spark: seedHistory('ontime-' + filters.person + filters.project, 70, 95),
+        foot: closed.length + ' closed in window · ' + onTime.length + ' on time',
+        drill: { title: 'Tasks finished late in window', tasks: closed.filter(function(t){
+          if (!t.dueDate) return false;
+          if (t.completedAt) return daysBetween(new Date(t.completedAt), new Date(t.dueDate)) < 0;
+          return false;
+        }) }
+      },
+      {
+        key: 'cap',
+        label: 'Over capacity',
+        value: over, unit: over === 1 ? 'person' : 'people',
+        deltaPct: over > 1 ? +1 : 0,
+        deltaTone: over > 1 ? 'up' : 'flat',
+        spark: seedHistory('cap-' + filters.person + filters.project, 0, 3),
+        foot: tight + ' at or above 85% this week',
+        drill: { title: 'Tasks assigned to over-capacity people', tasks: openTasks.filter(function(t){
+          var owners = ownersForTask(t);
+          return owners.some(function(id){
+            var row = wl.filter(function(r){ return r.id === id; })[0];
+            return row && row.pct > 100;
+          });
+        }) }
+      },
+      {
+        key: 'blocked',
+        label: 'Blocked now',
+        value: blocked.length, unit: blocked.length === 1 ? 'task' : 'tasks',
+        deltaPct: blocked.length > 3 ? +2 : -1,
+        deltaTone: blocked.length > 3 ? 'up' : 'down',
+        spark: seedHistory('blocked-' + filters.person + filters.project, 1, 8),
+        foot: blocked.length ? 'Oldest: ' + humanAge(blocked) : 'Nothing stuck',
+        drill: { title: 'Blocked open tasks', tasks: blocked }
+      },
+      {
+        key: 'deadlines',
+        label: 'Due next 7 days',
+        value: soon.length, unit: soon.length === 1 ? 'task' : 'tasks',
+        deltaPct: +4,
+        deltaTone: soon.length > 8 ? 'up' : 'flat',
+        spark: seedHistory('deadlines-' + filters.person + filters.project, 4, 18),
+        foot: overdue.length ? (overdue.length + ' already overdue') : 'No overdue in scope',
+        drill: { title: 'Open tasks due in next 7 days (+ overdue)', tasks: overdue.concat(soon) }
+      },
+      {
+        key: 'clients',
+        label: 'Clients at risk',
+        value: atRiskClients.length, unit: atRiskClients.length === 1 ? 'client' : 'clients',
+        deltaPct: atRiskClients.length > 1 ? +1 : 0,
+        deltaTone: atRiskClients.length > 1 ? 'up' : 'flat',
+        spark: seedHistory('clients-' + filters.person + filters.project, 0, 4),
+        foot: atRiskClients.slice(0, 3).map(function(c){ return c.name; }).join(' · ') || 'All clients on track',
+        drill: { title: 'Open tasks on at-risk clients', tasks: openTasks.filter(function(t){
+          return atRiskClients.some(function(c){ return c.id === t.clientId; });
+        }) }
+      }
+    ];
+  }
+
+  function humanAge(list){
+    var oldest = list.slice().sort(function(a, b){
+      var ad = a.createdAt ? new Date(a.createdAt) : TODAY;
+      var bd = b.createdAt ? new Date(b.createdAt) : TODAY;
+      return ad - bd;
+    })[0];
+    if (!oldest || !oldest.createdAt) return '—';
+    var d = daysBetween(new Date(oldest.createdAt), TODAY);
+    return d + (d === 1 ? ' day' : ' days');
+  }
+
+  // Deterministic pseudo-history for sparklines
+  function seedHistory(seed, lo, hi){
+    var n = 12;
+    var h = hashStr(seed);
+    var out = [];
+    var x = h;
+    for (var i = 0; i < n; i++){
+      x = (x * 1103515245 + 12345) >>> 0;
+      var r = (x / 0xffffffff);
+      out.push(lo + r * (hi - lo));
+    }
+    return out;
+  }
+
+  // ────────────────────────────────────────────────────────────────────
+  // Workload — hours per person given filters
+  // Primary owner gets 55% of a task's estimate, secondary (operator) 45%.
+  // If a task has only one owner, they get 100%. Budget = 40h/week.
+  // ────────────────────────────────────────────────────────────────────
+  function buildWorkload(filteredTasks){
+    var rows = {};
+    MEMBERS.forEach(function(m){
+      rows[m.id] = { id: m.id, name: m.name, initials: m.initials, role: m.role, color: m.color, type: m.type, hours: 0, wip: 0 };
+    });
+    filteredTasks.forEach(function(t){
+      if (!isOpen(t)) return;
+      var owners = ownersForTask(t);
+      if (!owners.length) return;
+      var est = t.estimateHours || 4;
+      var split = owners.length === 1 ? [1.0] : [0.55, 0.45];
+      owners.forEach(function(id, i){
+        if (!rows[id]) return;
+        rows[id].hours += est * split[i];
+        rows[id].wip   += 1;
+      });
+    });
+    var budget = 40;
+    var list = MEMBERS.map(function(m){ return rows[m.id]; });
+    list.forEach(function(r){
+      r.pct = Math.round((r.hours / budget) * 100);
+      r.budget = budget;
+      r.tone = r.pct > 100 ? 'over' : r.pct >= 85 ? 'tight' : r.pct >= 50 ? 'ok' : 'soft';
+      r.spark = seedHistory('wl-' + r.id + '-' + filters.person + filters.project, Math.max(20, r.pct - 30), Math.min(120, r.pct + 15));
+    });
+    list.sort(function(a, b){ return b.pct - a.pct; });
+    return list;
+  }
+
+  // ────────────────────────────────────────────────────────────────────
+  // Rendering — sparklines
+  // ────────────────────────────────────────────────────────────────────
+  function renderSpark(series, w, h){
+    if (!series || series.length < 2) return '';
+    var min = Math.min.apply(null, series), max = Math.max.apply(null, series);
+    var range = (max - min) || 1;
+    var n = series.length;
+    var pts = series.map(function(v, i){
+      var x = (i / (n - 1)) * w;
+      var y = h - ((v - min) / range) * h;
+      return [x, y];
+    });
+    var line = pts.map(function(p, i){ return (i === 0 ? 'M' : 'L') + p[0].toFixed(1) + ' ' + p[1].toFixed(1); }).join(' ');
+    var area = line + ' L ' + w + ' ' + h + ' L 0 ' + h + ' Z';
+    return '<path d="' + area + '" fill="currentColor" fill-opacity="0.1"/>' +
+           '<path d="' + line + '" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>';
+  }
+
+  // ────────────────────────────────────────────────────────────────────
+  // Rendering — KPI cards
+  // ────────────────────────────────────────────────────────────────────
+  var openDrillKey = null;
+  var lastKpis = [];
+
+  function deltaHtml(pct, tone){
+    if (pct === 0 || tone === 'flat') {
+      return '<span class="anlx-kpi-delta flat">— no change</span>';
+    }
+    var up = pct > 0;
+    var arrow = up
+      ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 15 12 9 18 15"/></svg>'
+      : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>';
+    var cls = tone || (up ? 'up' : 'down');
+    return '<span class="anlx-kpi-delta ' + cls + '">' + arrow + (up ? '+' : '') + pct + '% vs prior</span>';
+  }
+
+  function renderKPIs(){
+    var kpis = computeKPIs();
+    lastKpis = kpis;
+    var host = view.querySelector('[data-anlx-kpis]');
+    if (!host) return;
+    host.innerHTML = kpis.map(function(k){
+      var color = (k.key === 'ontime') ? '#30d158' :
+                  (k.key === 'cap')    ? '#ff9f0a' :
+                  (k.key === 'blocked')? '#ff453a' :
+                  (k.key === 'deadlines') ? '#64d2ff' : '#bf5af2';
+      return '<button type="button" class="anlx-kpi-card' + (openDrillKey === k.key ? ' is-open' : '') + '" role="listitem" data-kpi="' + k.key + '" aria-label="' + esc(k.label) + ': ' + k.value + '. Click to see tasks.">' +
+        '<div class="anlx-kpi-label">' + esc(k.label) + '</div>' +
+        '<div class="anlx-kpi-value">' + esc(String(k.value)) +
+          (k.unit ? '<span class="anlx-kpi-value-unit"> ' + esc(k.unit) + '</span>' : '') +
+        '</div>' +
+        deltaHtml(k.deltaPct, k.deltaTone) +
+        '<svg class="anlx-kpi-spark" viewBox="0 0 160 26" preserveAspectRatio="none" style="color:' + color + '" aria-hidden="true">' +
+          renderSpark(k.spark, 160, 26) +
+        '</svg>' +
+        '<div class="anlx-kpi-foot">' + esc(k.foot) + '</div>' +
+      '</button>';
+    }).join('');
+  }
+
+  // ────────────────────────────────────────────────────────────────────
+  // Rendering — Upcoming
+  // ────────────────────────────────────────────────────────────────────
+  var upTab = 'today';
+
+  function computeUpcoming(){
+    var tasks = DATA.tasks.filter(taskMatches).filter(isOpen).filter(function(t){ return !!t.dueDate; });
+    var weekStart = startOfWeek(TODAY);
+    var nextWeekStart = addDays(weekStart, 7);
+    var nextWeekEnd = addDays(weekStart, 14);
+
+    var today = [], week = [], next = [];
+    tasks.forEach(function(t){
+      var d = startOfDay(new Date(t.dueDate));
+      if (d.getTime() === TODAY.getTime()){
+        today.push(t);
+      }
+      if (d >= weekStart && d < nextWeekStart){
+        week.push(t);
+      } else if (d >= nextWeekStart && d < nextWeekEnd){
+        next.push(t);
+      }
+      // Overdue rolls into Today bucket so it's not forgotten
+      if (d < TODAY){
+        today.push(t);
       }
     });
-  });
 
-  // ── Flow cell: filter services by phase (stub for now) ──
-  view.querySelectorAll('.anlx-flow-cell').forEach(function(cell){
-    cell.addEventListener('click', function(){
-      var phase = cell.getAttribute('data-phase');
-      var phaseName = cell.querySelector('.anlx-flow-phase-name');
-      var label = phaseName ? phaseName.textContent.trim() : ('Phase ' + phase);
-      if (typeof window.showToast === 'function') {
-        window.showToast('Filter services by Phase ' + phase + ' · ' + label + ' — coming soon', { duration: 2000 });
-      }
+    function byDue(a, b){ return new Date(a.dueDate) - new Date(b.dueDate); }
+    today.sort(byDue); week.sort(byDue); next.sort(byDue);
+    return { today: today, week: week, next: next };
+  }
+
+  function shortDow(d){
+    return ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][d.getDay()];
+  }
+
+  function avatarHtml(ids, small){
+    if (!ids || !ids.length) return '<span class="anlx-av sm" style="background:var(--bg-faint);color:var(--text-soft)">?</span>';
+    return ids.slice(0, 2).map(function(id){
+      var m = MEMBER_BY_ID[id];
+      if (!m) return '';
+      return '<span class="anlx-av ' + (small ? 'sm' : '') + '" style="background:' + m.color + '" aria-hidden="true">' + esc(m.initials) + '</span>';
+    }).join('');
+  }
+
+  function clientName(id){
+    var c = (DATA.clients || []).filter(function(x){ return x.id === id; })[0];
+    return c ? c.name : '';
+  }
+
+  function phaseFor(task){
+    // Quick heuristic: column → phase label
+    if (!task) return 'Work';
+    if (task.columnId === 'todo') return 'Planned';
+    if (task.columnId === 'inprogress') return 'In flight';
+    if (task.columnId === 'review') return 'In review';
+    return 'Work';
+  }
+
+  function renderUpcoming(){
+    var up = computeUpcoming();
+    var counts = { today: up.today.length, week: up.week.length, next: up.next.length };
+    Object.keys(counts).forEach(function(k){
+      var el = view.querySelector('[data-up-count="' + k + '"]');
+      if (el) el.textContent = counts[k];
     });
-  });
-})();
-</script>
+    var list = view.querySelector('[data-anlx-up-list]');
+    if (!list) return;
+    var rows = up[upTab];
+    if (!rows || !rows.length){
+      list.innerHTML = '<div class="anlx-up-empty">Nothing landing in this window. Breathe.</div>';
+      return;
+    }
+    list.innerHTML = rows.map(function(t){
+      var due = startOfDay(new Date(t.dueDate));
+      var delta = daysBetween(TODAY, due);
+      var whenCls = delta < 0 ? 'today' : (delta === 0 ? 'today' : (delta === 1 ? 'tomorrow' : ''));
+      var whenLabel;
+      if (delta < 0) whenLabel = Math.abs(delta) + 'd late';
+      else if (delta === 0) whenLabel = 'Today';
+      else if (delta === 1) whenLabel = 'Tomorrow';
+      else whenLabel = 'In ' + delta + 'd';
+      var owners = ownersForTask(t);
+      var ownerM = MEMBER_BY_ID[owners[0]];
+      var ownerName = ownerM ? ownerM.name : 'Unassigned';
+      var cname = clientName(t.clientId);
+      return '<a class="anlx-up-row" href="#clients/' + esc(t.clientId) + '">' +
+        '<div class="anlx-up-when ' + whenCls + '">' + esc(whenLabel) +
+          '<span class="anlx-up-when-dow">' + shortDow(due) + '</span></div>' +
+        '<div class="anlx-up-main">' +
+          '<div class="anlx-up-title">' + esc(t.title) + '</div>' +
+          '<div class="anlx-up-sub">' + esc(cname) + '</div>' +
+        '</div>' +
+        '<div class="anlx-up-owner">' + avatarHtml(owners, true) +
+          '<span class="anlx-up-owner-name">' + esc(ownerName) + '</span></div>' +
+        '<div class="anlx-up-phase">' + esc(phaseFor(t)) + '</div>' +
+        '<div class="anlx-up-chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 18 15 12 9 6"/></svg></div>' +
+      '</a>';
+    }).join('');
+  }
 
-<script>
-/* ─── Slip-reason picker ───
-   Each .anlx-slipped-reason button opens a shared popover to change the
-   slip-reason tag inline. Reasons are grouped into 3 tones: external
-   (amber — client/outside factors), internal (red — our planning /
-   resource issues), process (blue — workflow / dependency issues).
-   "Unclassified" is a stateless starting point that prompts tagging.
-   Picking a reason updates the pill's label, tone, aria-label, and key
-   in place. Matches the phase-picker UX: outside-click, Escape, arrow
-   keys, focus return. No persistence — mockup only.                         */
-(function(){
-  var REASONS = [
-    { key: 'client-unresponsive', label: 'Client unresponsive',  tone: 'external' },
-    { key: 'scope-creep',         label: 'Scope creep',          tone: 'external' },
-    { key: 'under-scoped',        label: 'Under-scoped',         tone: 'internal' },
-    { key: 'owner-overloaded',    label: 'Owner over-allocated', tone: 'internal' },
-    { key: 'dependency-missed',   label: 'Dependency missed',    tone: 'process'  },
-    { key: 'blocked-upstream',    label: 'Blocked by other team',tone: 'process'  },
-    { key: 'unclassified',        label: 'Add reason',           tone: 'unclassified' }
-  ];
+  // ────────────────────────────────────────────────────────────────────
+  // Rendering — Workload
+  // ────────────────────────────────────────────────────────────────────
+  function renderWorkload(){
+    var tasks = DATA.tasks.filter(taskMatches);
+    var rows = buildWorkload(tasks);
+    var list = view.querySelector('[data-anlx-wl-list]');
+    if (!list) return;
+    list.innerHTML = rows.map(function(r){
+      var widthPct = Math.min(r.pct, 120); // bar caps visually at 120% to keep layout
+      return '<div class="anlx-wl-row" role="listitem">' +
+        '<div class="anlx-wl-who">' +
+          '<span class="anlx-av" style="background:' + r.color + '" aria-hidden="true">' + esc(r.initials) + '</span>' +
+          '<div style="min-width:0">' +
+            '<div class="anlx-wl-who-name">' + esc(r.name) + '</div>' +
+            '<div class="anlx-wl-who-role">' + esc(r.role) + '</div>' +
+          '</div>' +
+        '</div>' +
+        '<div class="anlx-wl-bar" role="img" aria-label="' + r.pct + '% of 40-hour week">' +
+          '<div class="anlx-wl-bar-fill ' + r.tone + '" style="width:' + widthPct + '%"></div>' +
+          '<div class="anlx-wl-bar-budget" style="left:' + Math.min(100, (40 / r.budget) * 100) + '%"></div>' +
+        '</div>' +
+        '<div class="anlx-wl-pct ' + r.tone + '">' + r.pct + '%</div>' +
+        '<div class="anlx-wl-num">' + r.wip + '</div>' +
+        '<svg class="anlx-wl-spark" viewBox="0 0 80 22" preserveAspectRatio="none" style="color:' + r.color + '" aria-hidden="true">' +
+          renderSpark(r.spark, 80, 22) +
+        '</svg>' +
+      '</div>';
+    }).join('');
+  }
 
-  var triggers = document.querySelectorAll('.anlx-slipped-reason');
-  if (!triggers.length) return;
+  // ────────────────────────────────────────────────────────────────────
+  // Drill-down panel
+  // ────────────────────────────────────────────────────────────────────
+  function statusLabel(t){
+    if (!t.dueDate) return { text: 'No due date', cls: '' };
+    var d = daysBetween(TODAY, new Date(t.dueDate));
+    if (t.columnId === 'done') return { text: 'Done', cls: '' };
+    if (d < 0) return { text: Math.abs(d) + 'd overdue', cls: 'late' };
+    if (d === 0) return { text: 'Due today', cls: 'late' };
+    if (d <= 3) return { text: 'In ' + d + 'd', cls: 'soon' };
+    return { text: 'In ' + d + 'd', cls: '' };
+  }
 
-  var menu = null;
-  var current = null;
+  function renderDrillRow(t){
+    var owners = ownersForTask(t);
+    var ownerM = MEMBER_BY_ID[owners[0]];
+    var ownerName = ownerM ? ownerM.name : 'Unassigned';
+    var cname = clientName(t.clientId);
+    var s = statusLabel(t);
+    return '<a class="anlx-drill-row" href="#clients/' + esc(t.clientId) + '">' +
+      '<div>' +
+        '<div class="anlx-drill-row-title">' + esc(t.title) + '</div>' +
+        '<div class="anlx-drill-row-client">' + esc(cname) + '</div>' +
+      '</div>' +
+      '<div class="anlx-drill-row-owner">' + avatarHtml(owners, true) +
+        '<span>' + esc(ownerName) + '</span></div>' +
+      '<div class="anlx-drill-row-status ' + s.cls + '">' + esc(s.text) + '</div>' +
+      '<div class="anlx-drill-row-chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 18 15 12 9 6"/></svg></div>' +
+    '</a>';
+  }
 
-  function buildMenu(){
-    if (menu) return menu;
-    menu = document.createElement('div');
-    menu.className = 'anlx-reason-menu';
+  function openDrill(key){
+    var kpi = lastKpis.filter(function(k){ return k.key === key; })[0];
+    var panel = view.querySelector('[data-anlx-drill]');
+    if (!kpi || !panel) return;
+    openDrillKey = key;
+    panel.hidden = false;
+    // Let layout register then apply .open on next frame for the transition
+    requestAnimationFrame(function(){ panel.classList.add('open'); });
+    view.querySelector('[data-anlx-drill-title]').textContent = kpi.drill.title;
+    var list = view.querySelector('[data-anlx-drill-list]');
+    var tasks = kpi.drill.tasks || [];
+    // De-dupe + sort by due date ascending (overdue first)
+    var seen = {};
+    tasks = tasks.filter(function(t){ if (seen[t.id]) return false; seen[t.id] = true; return true; });
+    tasks.sort(function(a, b){
+      var ad = a.dueDate ? new Date(a.dueDate).getTime() : Infinity;
+      var bd = b.dueDate ? new Date(b.dueDate).getTime() : Infinity;
+      return ad - bd;
+    });
+    view.querySelector('[data-anlx-drill-count]').textContent = tasks.length + (tasks.length === 1 ? ' task' : ' tasks');
+    list.innerHTML = tasks.length
+      ? tasks.map(renderDrillRow).join('')
+      : '<div class="anlx-drill-empty">Nothing to show for this slice. Try widening the filters.</div>';
+    // Mark only the active card as open
+    var cards = view.querySelectorAll('.anlx-kpi-card');
+    for (var i = 0; i < cards.length; i++){
+      cards[i].classList.toggle('is-open', cards[i].getAttribute('data-kpi') === key);
+    }
+  }
+
+  function closeDrill(){
+    openDrillKey = null;
+    var panel = view.querySelector('[data-anlx-drill]');
+    if (!panel) return;
+    panel.classList.remove('open');
+    setTimeout(function(){ if (openDrillKey === null) panel.hidden = true; }, 220);
+    var cards = view.querySelectorAll('.anlx-kpi-card.is-open');
+    for (var i = 0; i < cards.length; i++) cards[i].classList.remove('is-open');
+  }
+
+  // ────────────────────────────────────────────────────────────────────
+  // Filter popover
+  // ────────────────────────────────────────────────────────────────────
+  var activeMenu = null;
+  function closeFilterMenu(){
+    if (!activeMenu) return;
+    activeMenu.menu.classList.remove('open');
+    activeMenu.pill.setAttribute('aria-expanded', 'false');
+    var m = activeMenu;
+    setTimeout(function(){ if (m.menu.parentNode) m.menu.parentNode.removeChild(m.menu); }, 160);
+    document.removeEventListener('mousedown', activeMenu.outside, true);
+    document.removeEventListener('keydown', activeMenu.keydown, true);
+    window.removeEventListener('scroll', activeMenu.repos, true);
+    window.removeEventListener('resize', activeMenu.repos);
+    activeMenu = null;
+  }
+  function buildFilterOptions(key){
+    if (key === 'person'){
+      var opts = [{ id: 'all', label: 'Anyone' }];
+      MEMBERS.forEach(function(m){
+        opts.push({ id: m.id, label: m.name, initials: m.initials, color: m.color, role: m.role });
+      });
+      return opts;
+    }
+    if (key === 'project'){
+      var out = [{ id: 'all', label: 'All projects' }];
+      (DATA.clients || []).forEach(function(c){ out.push({ id: c.id, label: c.name }); });
+      return out;
+    }
+    if (key === 'range'){
+      return [
+        { id: '7d', label: 'Next 7 days' },
+        { id: '30d', label: 'Next 30 days' },
+        { id: '90d', label: 'Next 90 days' },
+        { id: 'all', label: 'All time' }
+      ];
+    }
+    return [];
+  }
+  function filterKeys(){ return ['person', 'project', 'range']; }
+  function filterPillLabel(key){
+    var val = filters[key];
+    if (key === 'person'){
+      if (val === 'all') return 'Anyone';
+      var m = MEMBER_BY_ID[val];
+      return m ? m.name : 'Anyone';
+    }
+    if (key === 'project'){
+      if (val === 'all') return 'All projects';
+      return clientName(val) || 'All projects';
+    }
+    if (key === 'range'){
+      return ({ '7d': 'Next 7 days', '30d': 'Next 30 days', '90d': 'Next 90 days', 'all': 'All time' })[val] || 'Next 30 days';
+    }
+    return '';
+  }
+  function openFilterMenu(pill){
+    if (activeMenu && activeMenu.pill === pill){ closeFilterMenu(); return; }
+    if (activeMenu) closeFilterMenu();
+    var key = pill.getAttribute('data-filter-key');
+    var options = buildFilterOptions(key);
+    var menu = document.createElement('div');
+    menu.className = 'anlx-filter-menu';
     menu.setAttribute('role', 'listbox');
-    menu.setAttribute('aria-label', 'Slip reason');
-
-    var label = document.createElement('span');
-    label.className = 'anlx-reason-menu-label';
-    label.textContent = 'Why did this slip?';
-    menu.appendChild(label);
-
-    REASONS.forEach(function(r, i){
-      var btn = document.createElement('button');
-      btn.type = 'button';
-      btn.className = 'anlx-reason-item';
-      btn.setAttribute('role', 'option');
-      btn.setAttribute('data-reason-key', r.key);
-      btn.setAttribute('data-reason-tone', r.tone);
-      btn.setAttribute('tabindex', '-1');
-
-      var dot = document.createElement('span');
-      dot.className = 'anlx-reason-item-dot';
-      dot.setAttribute('data-tone', r.tone);
-      btn.appendChild(dot);
-
-      var txt = document.createElement('span');
-      txt.textContent = r.label;
-      btn.appendChild(txt);
-
-      var check = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-      check.setAttribute('class', 'anlx-reason-item-check');
-      check.setAttribute('viewBox', '0 0 24 24');
-      check.setAttribute('fill', 'none');
-      check.setAttribute('stroke', 'currentColor');
-      check.setAttribute('stroke-width', '3');
-      check.setAttribute('stroke-linecap', 'round');
-      check.setAttribute('stroke-linejoin', 'round');
-      check.innerHTML = '<polyline points="20 6 9 17 4 12"/>';
-      btn.appendChild(check);
-
-      btn.addEventListener('click', function(ev){
-        ev.stopPropagation();
-        apply(r);
-        close(true);
-      });
-      menu.appendChild(btn);
-    });
-
+    menu.innerHTML = options.map(function(o){
+      var selected = (filters[key] === o.id) ? ' selected' : '';
+      var av = o.initials
+        ? '<span class="anlx-filter-option-avatar" style="background:' + o.color + '">' + esc(o.initials) + '</span>'
+        : '<span style="width:20px;"></span>';
+      return '<button type="button" role="option" class="anlx-filter-option' + selected + '" data-opt="' + esc(o.id) + '" aria-selected="' + (selected ? 'true' : 'false') + '">' +
+        '<svg class="anlx-filter-option-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>' +
+        av +
+        '<span>' + esc(o.label) + '</span>' +
+      '</button>';
+    }).join('');
     document.body.appendChild(menu);
-    return menu;
+    positionFilterMenu(pill, menu);
+    requestAnimationFrame(function(){ menu.classList.add('open'); });
+    pill.setAttribute('aria-expanded', 'true');
+
+    var outside = function(e){ if (!menu.contains(e.target) && e.target !== pill && !pill.contains(e.target)) closeFilterMenu(); };
+    var keydown = function(e){ if (e.key === 'Escape'){ closeFilterMenu(); pill.focus(); } };
+    var repos = function(){ positionFilterMenu(pill, menu); };
+    document.addEventListener('mousedown', outside, true);
+    document.addEventListener('keydown', keydown, true);
+    window.addEventListener('scroll', repos, true);
+    window.addEventListener('resize', repos);
+
+    activeMenu = { menu: menu, pill: pill, outside: outside, keydown: keydown, repos: repos };
+
+    menu.addEventListener('click', function(e){
+      var btn = e.target.closest('[data-opt]');
+      if (!btn) return;
+      filters[key] = btn.getAttribute('data-opt');
+      closeFilterMenu();
+      pill.focus();
+      renderAll();
+    });
+  }
+  function positionFilterMenu(pill, menu){
+    var r = pill.getBoundingClientRect();
+    menu.style.top = (r.bottom + 6) + 'px';
+    menu.style.left = r.left + 'px';
   }
 
-  function position(trigger){
-    var rect = trigger.getBoundingClientRect();
-    var m = menu;
-    m.style.display = 'block';
-    var mw = m.offsetWidth, mh = m.offsetHeight;
-    var top = rect.bottom + 6 + window.scrollY;
-    var left = rect.left + window.scrollX;
-    // flip above if no room below
-    if (rect.bottom + mh + 12 > window.innerHeight && rect.top - mh - 6 > 0) {
-      top = rect.top - mh - 6 + window.scrollY;
+  // ────────────────────────────────────────────────────────────────────
+  // Top-level render + wire
+  // ────────────────────────────────────────────────────────────────────
+  function renderFilterPills(){
+    filterKeys().forEach(function(k){
+      var pill = view.querySelector('.anlx-filter-pill[data-filter-key="' + k + '"]');
+      if (!pill) return;
+      var text = pill.querySelector('.anlx-filter-pill-text');
+      if (text) text.textContent = filterPillLabel(k);
+      var isActive = (k === 'range') ? filters[k] !== '30d' : filters[k] !== 'all';
+      pill.classList.toggle('is-active', isActive);
+    });
+    var reset = view.querySelector('[data-anlx-filter-reset]');
+    if (reset){
+      var any = filters.person !== 'all' || filters.project !== 'all' || filters.range !== '30d';
+      reset.hidden = !any;
     }
-    // clamp right edge
-    if (left + mw > window.innerWidth - 12) {
-      left = Math.max(12, window.innerWidth - mw - 12) + window.scrollX;
-    }
-    m.style.top = top + 'px';
-    m.style.left = left + 'px';
   }
 
-  function markCurrent(trigger){
-    var key = trigger.getAttribute('data-reason-key');
-    menu.querySelectorAll('.anlx-reason-item').forEach(function(item){
-      var on = item.getAttribute('data-reason-key') === key;
-      item.classList.toggle('current', on);
-      item.setAttribute('aria-selected', on ? 'true' : 'false');
+  function renderAll(){
+    renderFilterPills();
+    renderKPIs();
+    renderUpcoming();
+    renderWorkload();
+    // If a drill was open, re-open it with fresh data for the same key
+    if (openDrillKey){
+      openDrill(openDrillKey);
+    } else {
+      var panel = view.querySelector('[data-anlx-drill]');
+      if (panel && !panel.hidden) closeDrill();
+    }
+  }
+
+  function wire(){
+    // Filter pills
+    view.querySelectorAll('.anlx-filter-pill').forEach(function(pill){
+      pill.addEventListener('click', function(e){
+        e.preventDefault();
+        openFilterMenu(pill);
+      });
+    });
+    var reset = view.querySelector('[data-anlx-filter-reset]');
+    if (reset){
+      reset.addEventListener('click', function(){
+        filters = { person: 'all', project: 'all', range: '30d' };
+        if (activeMenu) closeFilterMenu();
+        renderAll();
+      });
+    }
+
+    // KPI cards
+    view.addEventListener('click', function(e){
+      var card = e.target.closest('.anlx-kpi-card[data-kpi]');
+      if (card){
+        var k = card.getAttribute('data-kpi');
+        if (openDrillKey === k) closeDrill();
+        else openDrill(k);
+        return;
+      }
+      var closeBtn = e.target.closest('[data-anlx-drill-close]');
+      if (closeBtn){ closeDrill(); return; }
+    });
+
+    // Upcoming tabs
+    view.querySelectorAll('.anlx-up-tab').forEach(function(tab){
+      tab.addEventListener('click', function(){
+        upTab = tab.getAttribute('data-up-tab');
+        view.querySelectorAll('.anlx-up-tab').forEach(function(t){
+          t.setAttribute('aria-selected', t === tab ? 'true' : 'false');
+        });
+        renderUpcoming();
+      });
     });
   }
 
-  function open(trigger){
-    buildMenu();
-    current = trigger;
-    position(trigger);
-    markCurrent(trigger);
-    menu.setAttribute('data-open', 'true');
-    trigger.setAttribute('aria-expanded', 'true');
-    var first = menu.querySelector('.anlx-reason-item.current') || menu.querySelector('.anlx-reason-item');
-    if (first) setTimeout(function(){ first.focus(); }, 0);
-    window.addEventListener('scroll', reposition, true);
-    window.addEventListener('resize', reposition);
-    document.addEventListener('click', outside, true);
-    document.addEventListener('keydown', keys, true);
+  function init(){ wire(); renderAll(); }
+  if (document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
   }
-
-  function close(returnFocus){
-    if (!menu || !current) return;
-    menu.setAttribute('data-open', 'false');
-    current.setAttribute('aria-expanded', 'false');
-    var t = current;
-    current = null;
-    window.removeEventListener('scroll', reposition, true);
-    window.removeEventListener('resize', reposition);
-    document.removeEventListener('click', outside, true);
-    document.removeEventListener('keydown', keys, true);
-    if (returnFocus && t) t.focus();
-    setTimeout(function(){ if (menu) menu.style.display = 'none'; }, 140);
-  }
-
-  function reposition(){ if (current) position(current); }
-  function outside(ev){
-    if (!current) return;
-    if (menu.contains(ev.target) || current.contains(ev.target)) return;
-    close(false);
-  }
-  function keys(ev){
-    if (!current) return;
-    if (ev.key === 'Escape') { ev.preventDefault(); close(true); return; }
-    var items = Array.prototype.slice.call(menu.querySelectorAll('.anlx-reason-item'));
-    var idx = items.indexOf(document.activeElement);
-    if (ev.key === 'ArrowDown') {
-      ev.preventDefault();
-      (items[Math.min(items.length - 1, idx + 1)] || items[0]).focus();
-    } else if (ev.key === 'ArrowUp') {
-      ev.preventDefault();
-      (items[Math.max(0, idx - 1)] || items[items.length - 1]).focus();
-    } else if (ev.key === 'Home') { ev.preventDefault(); items[0] && items[0].focus(); }
-    else if (ev.key === 'End')  { ev.preventDefault(); items[items.length - 1] && items[items.length - 1].focus(); }
-  }
-
-  function apply(r){
-    if (!current) return;
-    current.setAttribute('data-reason-tone', r.tone);
-    current.setAttribute('data-reason-key', r.key);
-    var lbl = current.querySelector('.anlx-slipped-reason-label');
-    if (lbl) lbl.textContent = r.label;
-    var aria = (r.tone === 'unclassified')
-      ? 'Slip reason: not yet classified. Click to set.'
-      : 'Slip reason: ' + r.label.toLowerCase() + '. Click to change.';
-    current.setAttribute('aria-label', aria);
-  }
-
-  triggers.forEach(function(t){
-    t.addEventListener('click', function(ev){
-      ev.preventDefault();
-      ev.stopPropagation();
-      if (current === t) { close(true); return; }
-      if (current) close(false);
-      open(t);
-    });
-  });
 })();
 </script>
 
