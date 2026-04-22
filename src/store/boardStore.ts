@@ -767,7 +767,29 @@ class BoardStore {
   }
 
   resetBoard() {
+    // Preserve the signed-in user's profile across the reset so they don't
+    // lose their name/email/avatar when wiping the board.
+    const currentMe = this.userId
+      ? this.state.members.find(m => m.id === this.userId)
+      : null;
+    const profileSnapshot = currentMe
+      ? { name: currentMe.name, email: currentMe.email, avatar: currentMe.avatar, role: currentMe.role }
+      : null;
+
     this.state = createDefaultState();
+
+    if (this.userId) {
+      this.migrateUser1ToUid(this.userId);
+      if (profileSnapshot) {
+        const me = this.state.members.find(m => m.id === this.userId);
+        if (me) {
+          me.name = profileSnapshot.name;
+          me.email = profileSnapshot.email;
+          me.avatar = profileSnapshot.avatar;
+          me.role = profileSnapshot.role;
+        }
+      }
+    }
     this.save();
   }
 

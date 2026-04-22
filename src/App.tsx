@@ -4,6 +4,7 @@ import { Filters } from './components/Filters';
 import { NotificationsPanel } from './components/NotificationsPanel';
 import { Analytics } from './components/Analytics';
 import { BoardSettings } from './components/BoardSettings';
+import { AccountModal } from './components/AccountModal';
 import { LoginPage } from './components/LoginPage';
 import { useBoard } from './store/useStore';
 import { useAuth } from './contexts/AuthContext';
@@ -16,6 +17,7 @@ function App() {
   const [showAnalytics, setShowAnalytics] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
+  const [showAccount, setShowAccount] = useState(false);
   const notifRef = useRef<HTMLDivElement>(null);
   const userMenuRef = useRef<HTMLDivElement>(null);
 
@@ -129,17 +131,82 @@ function App() {
             </button>
 
             {showUserMenu && (
-              <div className="absolute right-0 top-full mt-2 bg-white dark:bg-[#2c2c2e] border border-[#d2d2d7] dark:border-[#424245] rounded-xl shadow-lg shadow-black/10 z-50 py-2 w-56">
-                <div className="px-3 py-2 border-b border-[#d2d2d7] dark:border-[#424245]">
-                  <p className="text-xs font-medium text-[#1d1d1f] dark:text-white truncate">{user.displayName}</p>
-                  <p className="text-[10px] text-[#86868b] truncate">{user.email}</p>
+              <div
+                role="menu"
+                aria-label="Account menu"
+                className="absolute right-0 top-full mt-2 bg-white dark:bg-[#2c2c2e] border border-[#d2d2d7] dark:border-[#424245] rounded-2xl shadow-lg shadow-black/10 z-50 p-1.5 w-72"
+              >
+                {/* Identity card — read-only presence summary */}
+                <div className="flex items-center gap-3 px-3 py-3">
+                  <div className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0 ring-1 ring-black/5 dark:ring-white/10">
+                    {user.photoURL ? (
+                      <img src={user.photoURL} alt="" className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="w-full h-full bg-[#0071e3]/10 text-[#0071e3] text-sm font-bold flex items-center justify-center">
+                        {(user.displayName || user.email || 'U').charAt(0).toUpperCase()}
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-[#1d1d1f] dark:text-white truncate">{user.displayName || 'You'}</p>
+                    <p className="text-[11px] text-[#86868b] truncate">{user.email}</p>
+                  </div>
                 </div>
+
+                {/* Account settings */}
                 <button
-                  onClick={() => { logout(); setShowUserMenu(false); }}
-                  className="w-full flex items-center gap-2 px-3 py-2 text-xs text-[#ff3b30] hover:bg-[#ff3b30]/5 dark:hover:bg-[#ff3b30]/10 transition mt-1"
+                  role="menuitem"
+                  onClick={() => { setShowAccount(true); setShowUserMenu(false); }}
+                  className="w-full flex items-center justify-between gap-2 px-3 py-2 rounded-lg text-xs font-medium text-[#1d1d1f] dark:text-[#e5e5ea] hover:bg-black/5 dark:hover:bg-white/10 transition"
                 >
-                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                  <span className="flex items-center gap-2.5">
+                    <svg className="w-4 h-4 text-[#86868b]" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                    </svg>
+                    Account settings
+                  </span>
+                  <svg className="w-3.5 h-3.5 text-[#c7c7cc]" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                </button>
+
+                {/* Appearance — inline segmented (Tier 3 tint on active per Apple HIG) */}
+                <div className="px-3 py-2 flex items-center justify-between">
+                  <span className="text-[11px] font-medium text-[#86868b]">Appearance</span>
+                  <div className="flex items-center bg-[#e8e8ed] dark:bg-[#3a3a3c] rounded-full p-0.5">
+                    <button
+                      onClick={() => store.setTheme('light')}
+                      aria-pressed={state.theme === 'light'}
+                      aria-label="Light theme"
+                      className={`text-[11px] font-medium px-2.5 py-1 rounded-full transition ${
+                        state.theme === 'light' ? 'bg-white text-[#1d1d1f] shadow-sm' : 'text-[#86868b] hover:text-[#1d1d1f] dark:hover:text-[#e5e5ea]'
+                      }`}
+                    >
+                      Light
+                    </button>
+                    <button
+                      onClick={() => store.setTheme('dark')}
+                      aria-pressed={state.theme === 'dark'}
+                      aria-label="Dark theme"
+                      className={`text-[11px] font-medium px-2.5 py-1 rounded-full transition ${
+                        state.theme === 'dark' ? 'bg-[#1c1c1e] text-white shadow-sm' : 'text-[#86868b] hover:text-[#1d1d1f] dark:hover:text-[#e5e5ea]'
+                      }`}
+                    >
+                      Dark
+                    </button>
+                  </div>
+                </div>
+
+                <div className="h-px bg-[#e8e8ed] dark:bg-[#38383a] my-1 mx-3" />
+
+                {/* Sign out — NEUTRAL: signing out is not destructive, no data loss */}
+                <button
+                  role="menuitem"
+                  onClick={() => { logout(); setShowUserMenu(false); }}
+                  className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium text-[#1d1d1f] dark:text-[#e5e5ea] hover:bg-black/5 dark:hover:bg-white/10 transition"
+                >
+                  <svg className="w-4 h-4 text-[#86868b]" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                   </svg>
                   Sign out
                 </button>
@@ -160,6 +227,7 @@ function App() {
       {/* Modals */}
       {showAnalytics && <Analytics onClose={() => setShowAnalytics(false)} />}
       {showSettings && <BoardSettings onClose={() => setShowSettings(false)} />}
+      {showAccount && <AccountModal onClose={() => setShowAccount(false)} />}
     </div>
   );
 }
