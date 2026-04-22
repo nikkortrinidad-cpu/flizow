@@ -10301,7 +10301,7 @@
      Role pill is neutral so names/numbers dominate.                       */
   .anlx-wl-head {
     display: grid;
-    grid-template-columns: minmax(0, 1.2fr) minmax(0, 1.6fr) 70px 64px 90px;
+    grid-template-columns: minmax(0, 1.2fr) minmax(0, 1.6fr) 70px 64px 90px 20px;
     align-items: center; gap: var(--sp-md);
     padding: var(--sp-sm) var(--sp-lg);
     border-bottom: 1px solid var(--hairline);
@@ -10314,14 +10314,42 @@
   }
   .anlx-wl-head-cell.num { text-align: right; }
   .anlx-wl-list { }
+  /* Row is a <button> — drills into the person's open tasks in the shared
+     drill panel (same pattern as KPI cards). Reset button chrome so it
+     visually matches the non-interactive version it replaced.             */
   .anlx-wl-row {
     display: grid;
-    grid-template-columns: minmax(0, 1.2fr) minmax(0, 1.6fr) 70px 64px 90px;
+    grid-template-columns: minmax(0, 1.2fr) minmax(0, 1.6fr) 70px 64px 90px 20px;
     align-items: center; gap: var(--sp-md);
+    width: 100%;
     padding: var(--sp-md) var(--sp-lg);
-    border-bottom: 1px solid var(--hairline);
+    border: 0; border-bottom: 1px solid var(--hairline);
+    background: transparent;
+    font: inherit; color: inherit; text-align: left;
+    cursor: pointer;
+    transition: background 140ms ease;
   }
   .anlx-wl-row:last-child { border-bottom: 0; }
+  .anlx-wl-row:hover { background: var(--bg-soft); }
+  .anlx-wl-row:focus-visible {
+    outline: 2px solid var(--highlight);
+    outline-offset: -2px;
+  }
+  /* Tier 3 tint when this row's drill is open, matching the KPI card pattern */
+  .anlx-wl-row.is-open {
+    background: color-mix(in srgb, var(--highlight) 10%, transparent);
+  }
+  .anlx-wl-chev {
+    display: flex; align-items: center; justify-content: center;
+    color: var(--text-faint);
+    opacity: 0;
+    transition: opacity 140ms ease, color 140ms ease;
+  }
+  .anlx-wl-chev svg { width: 14px; height: 14px; stroke-width: 2; }
+  .anlx-wl-row:hover .anlx-wl-chev,
+  .anlx-wl-row:focus-visible .anlx-wl-chev,
+  .anlx-wl-row.is-open .anlx-wl-chev { opacity: 1; }
+  .anlx-wl-row.is-open .anlx-wl-chev { color: var(--highlight); }
   .anlx-wl-who {
     display: flex; align-items: center; gap: var(--sp-sm);
     min-width: 0;
@@ -10544,7 +10572,7 @@
     .anlx-drill-row .anlx-drill-row-owner,
     .anlx-drill-row .anlx-row-actions { display: none; }
     .anlx-wl-head, .anlx-wl-row {
-      grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr) 56px 48px;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr) 56px 48px 20px;
     }
     .anlx-wl-spark, .anlx-wl-head-cell.spark { display: none; }
   }
@@ -12854,8 +12882,9 @@
         <div class="anlx-wl-head-cell num">Used</div>
         <div class="anlx-wl-head-cell num">WIP</div>
         <div class="anlx-wl-head-cell num spark">4wk</div>
+        <div class="anlx-wl-head-cell"></div>
       </div>
-      <div class="anlx-wl-list" data-anlx-wl-list role="list"></div>
+      <div class="anlx-wl-list" data-anlx-wl-list></div>
     </section>
 
     <!-- Undo toast (fixed, bottom-center) -->
@@ -23946,9 +23975,14 @@ window.OPS_TEAM = OPS_TEAM;
     var rows = buildWorkload(tasks);
     var list = view.querySelector('[data-anlx-wl-list]');
     if (!list) return;
+    var currentKey = openDrillKey;
     list.innerHTML = rows.map(function(r){
       var widthPct = Math.min(r.pct, 120); // bar caps visually at 120% to keep layout
-      return '<div class="anlx-wl-row" role="listitem">' +
+      var isOpenRow = currentKey === 'wl:' + r.id;
+      return '<button type="button" class="anlx-wl-row' + (isOpenRow ? ' is-open' : '') + '"' +
+             ' data-wl-member="' + esc(r.id) + '"' +
+             ' aria-expanded="' + (isOpenRow ? 'true' : 'false') + '"' +
+             ' aria-label="See ' + esc(r.name) + '\u2019s ' + r.wip + ' open ' + (r.wip === 1 ? 'task' : 'tasks') + '">' +
         '<div class="anlx-wl-who">' +
           '<span class="anlx-av" style="background:' + r.color + '" aria-hidden="true">' + esc(r.initials) + '</span>' +
           '<div style="min-width:0">' +
@@ -23965,7 +23999,8 @@ window.OPS_TEAM = OPS_TEAM;
         '<svg class="anlx-wl-spark" viewBox="0 0 80 22" preserveAspectRatio="none" style="color:' + r.color + '" aria-hidden="true">' +
           renderSpark(r.spark, 80, 22) +
         '</svg>' +
-      '</div>';
+        '<div class="anlx-wl-chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 18 15 12 9 6"/></svg></div>' +
+      '</button>';
     }).join('');
   }
 
@@ -24004,18 +24039,43 @@ window.OPS_TEAM = OPS_TEAM;
     '</a>';
   }
 
+  // openDrill dispatches by key:
+  //   'ontime' / 'cap' / 'blocked' / 'deadlines' / 'clients' → KPI drill (static drill objs)
+  //   'wl:<memberId>' → workload drill (synthesized from that person's open tasks)
+  // Both paths feed through _showDrill which handles panel reveal, row render,
+  // and syncing is-open/aria-expanded state on the source element.
   function openDrill(key){
+    if (key && key.indexOf('wl:') === 0){
+      return openWorkloadDrill(key.slice(3));
+    }
     var kpi = lastKpis.filter(function(k){ return k.key === key; })[0];
+    if (!kpi) return;
+    _showDrill(key, kpi.drill);
+  }
+
+  function openWorkloadDrill(memberId){
+    var member = MEMBER_BY_ID[memberId];
+    if (!member) return;
+    var tasks = DATA.tasks.filter(taskMatches).filter(isOpen).filter(function(t){
+      return ownersForTask(t).indexOf(memberId) >= 0;
+    });
+    _showDrill('wl:' + memberId, {
+      title: member.name + ' — open tasks',
+      tasks: tasks
+    });
+  }
+
+  function _showDrill(key, drillObj){
     var panel = view.querySelector('[data-anlx-drill]');
-    if (!kpi || !panel) return;
+    if (!panel || !drillObj) return;
     openDrillKey = key;
     try { sessionStorage.setItem(DRILL_KEY, key); } catch(e){}
     panel.hidden = false;
     // Let layout register then apply .open on next frame for the transition
     requestAnimationFrame(function(){ panel.classList.add('open'); });
-    view.querySelector('[data-anlx-drill-title]').textContent = kpi.drill.title;
+    view.querySelector('[data-anlx-drill-title]').textContent = drillObj.title;
     var list = view.querySelector('[data-anlx-drill-list]');
-    var tasks = kpi.drill.tasks || [];
+    var tasks = drillObj.tasks || [];
     // De-dupe + sort by due date ascending (overdue first)
     var seen = {};
     tasks = tasks.filter(function(t){ if (seen[t.id]) return false; seen[t.id] = true; return true; });
@@ -24028,10 +24088,17 @@ window.OPS_TEAM = OPS_TEAM;
     list.innerHTML = tasks.length
       ? tasks.map(renderDrillRow).join('')
       : '<div class="anlx-drill-empty">Nothing to show for this slice. Try widening the filters.</div>';
-    // Mark only the active card as open
+    // Sync is-open state on KPI cards
     var cards = view.querySelectorAll('.anlx-kpi-card');
     for (var i = 0; i < cards.length; i++){
       cards[i].classList.toggle('is-open', cards[i].getAttribute('data-kpi') === key);
+    }
+    // Sync is-open + aria-expanded state on workload rows
+    var wlRows = view.querySelectorAll('.anlx-wl-row[data-wl-member]');
+    for (var j = 0; j < wlRows.length; j++){
+      var mine = key === 'wl:' + wlRows[j].getAttribute('data-wl-member');
+      wlRows[j].classList.toggle('is-open', mine);
+      wlRows[j].setAttribute('aria-expanded', mine ? 'true' : 'false');
     }
   }
 
@@ -24044,6 +24111,11 @@ window.OPS_TEAM = OPS_TEAM;
     setTimeout(function(){ if (openDrillKey === null) panel.hidden = true; }, 220);
     var cards = view.querySelectorAll('.anlx-kpi-card.is-open');
     for (var i = 0; i < cards.length; i++) cards[i].classList.remove('is-open');
+    var wlRows = view.querySelectorAll('.anlx-wl-row.is-open');
+    for (var j = 0; j < wlRows.length; j++){
+      wlRows[j].classList.remove('is-open');
+      wlRows[j].setAttribute('aria-expanded', 'false');
+    }
   }
 
   // ────────────────────────────────────────────────────────────────────
@@ -24455,6 +24527,23 @@ window.OPS_TEAM = OPS_TEAM;
       var closeBtn = e.target.closest('[data-anlx-drill-close]');
       if (closeBtn){ closeDrill(); return; }
 
+      // Workload row → drill into that person's open tasks.
+      // Uses the shared drill panel (same as KPIs), so we scroll to it after
+      // opening so the user doesn't have to hunt up the page.
+      var wlRow = e.target.closest('.anlx-wl-row[data-wl-member]');
+      if (wlRow){
+        var mid = wlRow.getAttribute('data-wl-member');
+        var wlKey = 'wl:' + mid;
+        if (openDrillKey === wlKey){
+          closeDrill();
+        } else {
+          openWorkloadDrill(mid);
+          var dPanel = view.querySelector('[data-anlx-drill]');
+          if (dPanel) dPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+        return;
+      }
+
       // Task row → open kanban card (goToBoardTask pattern).
       // Only intercept plain left-clicks — let ctrl/meta/middle-click fall
       // through to the href so users can open in a new tab if they want.
@@ -24513,9 +24602,14 @@ window.OPS_TEAM = OPS_TEAM;
   function init(){
     wire();
     renderAll();
-    // Restore drill state if it was open pre-navigation
-    if (initialDrillKey && lastKpis.some(function(k){ return k.key === initialDrillKey; })){
-      openDrill(initialDrillKey);
+    // Restore drill state if it was open pre-navigation (KPI or workload)
+    if (initialDrillKey){
+      if (initialDrillKey.indexOf('wl:') === 0){
+        var mid = initialDrillKey.slice(3);
+        if (MEMBER_BY_ID[mid]) openWorkloadDrill(mid);
+      } else if (lastKpis.some(function(k){ return k.key === initialDrillKey; })){
+        openDrill(initialDrillKey);
+      }
     }
   }
   if (document.readyState === 'loading'){
