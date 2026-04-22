@@ -6366,9 +6366,10 @@
   .hero-btn.icon-only { padding: var(--sp-sm); width: 36px; height: 36px; justify-content: center; }
 
   /* ═══ INLINE EDIT PATTERN ═══
-     Fields hint at editability via soft hover tint + pencil corner icon.
-     Click activates an inline editor (text) or picker popover (chip/manager)
-     or native date input (dates). No separate edit mode or button.
+     Editability is signaled by cursor change + soft blue hover tint + focus ring.
+     No pencil icons, no separate edit mode or button — the cursor tells you it's
+     editable, and clicking activates an inline editor (text), picker popover
+     (chip/manager), or native date input (dates).
      Apple UX: interface defers to content; indicator stays quiet until needed. */
   .inline-edit {
     position: relative;
@@ -10646,7 +10647,7 @@
   <div class="page-header">
     <div class="page-greeting" id="pageGreeting"></div>
     <div class="page-title" id="pageTitle"></div>
-    <div class="page-date" id="pageTagline">Here's what needs you today.</div>
+    <div class="page-date" id="pageTagline">Here's what needs your attention today.</div>
   </div>
 
   <!-- BLOCK 1: PORTFOLIO HEALTH STRIP -->
