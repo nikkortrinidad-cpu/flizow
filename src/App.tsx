@@ -119,15 +119,20 @@ function App() {
           <div ref={userMenuRef} className="relative ml-1">
             <button
               onClick={() => { setShowUserMenu(!showUserMenu); setShowNotifications(false); }}
-              className="w-8 h-8 rounded-full overflow-hidden ring-2 ring-transparent hover:ring-black/10 dark:hover:ring-white/20 transition"
+              aria-label="Open account menu"
+              aria-haspopup="menu"
+              aria-expanded={showUserMenu}
+              className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-black/5 dark:hover:bg-white/10 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-[#0071e3] focus-visible:ring-offset-2 dark:focus-visible:ring-offset-[#1d1d1f]"
             >
-              {user.photoURL ? (
-                <img src={user.photoURL} alt={user.displayName || ''} className="w-full h-full object-cover" />
-              ) : (
-                <div className="w-full h-full bg-[#f5f5f7] dark:bg-[#2c2c2e] text-[#1d1d1f] dark:text-white text-xs font-semibold flex items-center justify-center">
-                  {(user.displayName || user.email || 'U').charAt(0).toUpperCase()}
-                </div>
-              )}
+              <span className="w-8 h-8 rounded-full overflow-hidden ring-1 ring-black/5 dark:ring-white/10 block">
+                {user.photoURL ? (
+                  <img src={user.photoURL} alt={user.displayName || ''} className="w-full h-full object-cover" />
+                ) : (
+                  <span className="w-full h-full bg-[#f5f5f7] dark:bg-[#2c2c2e] text-[#1d1d1f] dark:text-white text-xs font-semibold flex items-center justify-center">
+                    {(user.displayName || user.email || 'U').charAt(0).toUpperCase()}
+                  </span>
+                )}
+              </span>
             </button>
 
             {showUserMenu && (
