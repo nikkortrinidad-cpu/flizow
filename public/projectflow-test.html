@@ -10478,9 +10478,9 @@
   .anlx-alert-chip {
     appearance: none; cursor: pointer;
     display: inline-flex; align-items: center; gap: var(--sp-sm);
-    padding: var(--sp-sm) var(--sp-md);
+    padding: 6px 12px;
     background: var(--bg-elev); border: 1px solid var(--hairline);
-    border-radius: 10px;
+    border-radius: 999px;
     font: inherit; font-size: var(--fs-sm); color: var(--text);
     transition: border-color 140ms ease, background 140ms ease;
   }
@@ -23701,7 +23701,7 @@ window.OPS_TEAM = OPS_TEAM;
         deltaPct: over > 1 ? +1 : 0,
         deltaTone: over > 1 ? 'up' : 'flat',
         spark: seedHistory('cap-' + filters.person + filters.project, 0, 3),
-        foot: tight + ' at or above 85% this week',
+        foot: wl.length ? 'of ' + wl.length + ' teammates this week' : 'No load this week',
         drill: { title: 'Tasks assigned to over-capacity people', tasks: openTasks.filter(function(t){
           var owners = ownersForTask(t);
           return owners.some(function(id){
@@ -24400,9 +24400,22 @@ window.OPS_TEAM = OPS_TEAM;
     renderAll();
   }
   function deleteSavedView(id){
-    savedViews = savedViews.filter(function(x){ return x.id !== id; });
+    var idx = -1;
+    for (var i = 0; i < savedViews.length; i++){
+      if (savedViews[i].id === id){ idx = i; break; }
+    }
+    if (idx < 0) return;
+    var removed = savedViews[idx];
+    savedViews.splice(idx, 1);
     persistSavedViews();
     renderSavedViews();
+    showToast('Deleted view "' + removed.name + '"', function(){
+      // Restore at original position if it still fits, else append.
+      var insertAt = Math.min(idx, savedViews.length);
+      savedViews.splice(insertAt, 0, removed);
+      persistSavedViews();
+      renderSavedViews();
+    });
   }
   function renderSavedViews(){
     var host = view.querySelector('[data-anlx-saved-views]');
@@ -24418,7 +24431,7 @@ window.OPS_TEAM = OPS_TEAM;
         var on = active && active.id === v.id;
         return '<span class="anlx-sv-chip-wrap' + (on ? ' is-active' : '') + '">' +
           '<button type="button" class="anlx-sv-chip" data-sv-apply="' + esc(v.id) + '">' + esc(v.name) + '</button>' +
-          '<button type="button" class="anlx-sv-del" data-sv-del="' + esc(v.id) + '" aria-label="Delete saved view">' +
+          '<button type="button" class="anlx-sv-del" data-sv-del="' + esc(v.id) + '" aria-label="Delete saved view &quot;' + esc(v.name) + '&quot;" data-tip="Delete view" data-tip-pos="below">' +
             '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>' +
           '</button>' +
         '</span>';
