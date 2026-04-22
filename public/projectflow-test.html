@@ -13593,9 +13593,9 @@
       <fieldset class="wip-field wip-field-severity">
         <span class="wip-field-label">Severity</span>
         <div class="wip-sev-row" role="radiogroup" aria-label="Severity">
-          <label class="wip-sev-opt"><input type="radio" name="wip-flag-sev" value="fire"><span class="wip-sev-chip fire">Needs decision</span></label>
-          <label class="wip-sev-opt"><input type="radio" name="wip-flag-sev" value="risk" checked><span class="wip-sev-chip risk">Heads up</span></label>
-          <label class="wip-sev-opt"><input type="radio" name="wip-flag-sev" value="track"><span class="wip-sev-chip track">FYI</span></label>
+          <label class="wip-sev-opt"><input type="radio" name="wip-flag-sev" value="fire"><span class="wip-sev-chip fire">On Fire</span></label>
+          <label class="wip-sev-opt"><input type="radio" name="wip-flag-sev" value="risk" checked><span class="wip-sev-chip risk">At Risk</span></label>
+          <label class="wip-sev-opt"><input type="radio" name="wip-flag-sev" value="track"><span class="wip-sev-chip track">On Track</span></label>
         </div>
       </fieldset>
     </div>
@@ -28667,19 +28667,26 @@ window.OPS_TEAM = OPS_TEAM;
   if (!view) return;
 
   var STORAGE_KEY = 'projectflow.wip.v1';
-  var STATE_VERSION = 1;
+  var STATE_VERSION = 2;
   var DEFAULT_MEETING_DAY  = 5;   // 0=Sun, 5=Fri
   var DEFAULT_MEETING_HOUR = 10;  // 10:00 local
 
+  // Each channel manager gets their own block (co-owners show side-by-side,
+  // not merged). Adam appears twice because he owns two distinct channels.
   var CHANNELS = [
-    { id: 'paid-social', name: 'Paid Social',   manager: 'Steven' },
-    { id: 'seo',         name: 'SEO',           manager: 'Michael' },
-    { id: 'email',       name: 'Email & CRM',   manager: 'Kate' },
-    { id: 'creative',    name: 'Creative',      manager: 'Chris' },
-    { id: 'web',         name: 'Web',           manager: 'Roxy & Zeke' },
-    { id: 'analytics',   name: 'Analytics',     manager: 'Scott & Adam' },
-    { id: 'internal-ops', name: 'Internal Ops', manager: 'Adam' }
+    { id: 'paid-social',     name: 'Paid Social',   manager: 'Steven' },
+    { id: 'seo',             name: 'SEO',           manager: 'Michael' },
+    { id: 'email',           name: 'Email & CRM',   manager: 'Kate' },
+    { id: 'creative',        name: 'Creative',      manager: 'Chris' },
+    { id: 'web-roxy',        name: 'Web',           manager: 'Roxy' },
+    { id: 'web-zeke',        name: 'Web',           manager: 'Zeke' },
+    { id: 'analytics-scott', name: 'Analytics',     manager: 'Scott' },
+    { id: 'analytics-adam',  name: 'Analytics',     manager: 'Adam' },
+    { id: 'internal-ops',    name: 'Internal Ops',  manager: 'Adam' }
   ];
+
+  // Severity vocabulary mirrors the app's .status-chip pills.
+  var SEV_LABEL = { fire: 'On Fire', risk: 'At Risk', track: 'On Track' };
 
   // ── Seed data ────────────────────────────────────────────────
   function seedState(){
@@ -28716,17 +28723,17 @@ window.OPS_TEAM = OPS_TEAM;
         { id: 'f-2', channelId: 'seo',         clientId: 'bloom-retail',   clientName: 'Bloom Retail',    title: 'Core Web Vitals failing on collection pages post-migration',        note: 'LCP 3.8s on /collections. Rank tracker showing slip in non-brand terms.', severity: 'risk',  createdAt: now -  5*hour, createdBy: 'Michael', scheduled: true  },
         { id: 'f-3', channelId: 'creative',    clientId: 'techstart-inc',  clientName: 'TechStart Inc',   title: 'Q2 brand refresh \u2014 legal review on tagline',                      note: 'Waiting on IP counsel since Tuesday. Blocks all new ad creative.',     severity: 'fire',  createdAt: now -  8*hour, createdBy: 'Chris',   scheduled: true  },
         { id: 'f-4', channelId: 'email',       clientId: 'harvest-co',     clientName: 'Harvest Co',      title: 'Klaviyo send reputation dropped \u2014 re-engagement flow scope',     note: 'Sunset ~40k cold subscribers. Client wants volume, we want deliverability.', severity: 'risk', createdAt: now - 12*hour, createdBy: 'Kate',    scheduled: false },
-        { id: 'f-5', channelId: 'web',         clientId: 'northwind-labs', clientName: 'Northwind Labs',  title: 'Staging env broken \u2014 product page template regression',          note: 'Fix likely a rollback. Need to confirm before re-pushing release branch.', severity: 'fire',  createdAt: now - 14*hour, createdBy: 'Roxy',    scheduled: false },
-        { id: 'f-6', channelId: 'analytics',   clientId: 'summit-outdoor', clientName: 'Summit Outdoor',  title: 'GA4 conversion imports into Ads are double-counting',                 note: 'Noticed in last attribution pull. Likely Tag Manager duplicate trigger.', severity: 'track', createdAt: now - 20*hour, createdBy: 'Scott',   scheduled: false },
+        { id: 'f-5', channelId: 'web-roxy',        clientId: 'northwind-labs', clientName: 'Northwind Labs',  title: 'Staging env broken \u2014 product page template regression',          note: 'Fix likely a rollback. Need to confirm before re-pushing release branch.', severity: 'fire',  createdAt: now - 14*hour, createdBy: 'Roxy',    scheduled: false },
+        { id: 'f-6', channelId: 'analytics-scott', clientId: 'summit-outdoor', clientName: 'Summit Outdoor',  title: 'GA4 conversion imports into Ads are double-counting',                 note: 'Noticed in last attribution pull. Likely Tag Manager duplicate trigger.', severity: 'track', createdAt: now - 20*hour, createdBy: 'Scott',   scheduled: false },
         { id: 'f-7', channelId: 'paid-social', clientId: 'cascade-coffee', clientName: 'Cascade Coffee',  title: 'Holiday planning \u2014 need sign-off on campaign brief',             note: 'Draft ready since Monday. No response yet; risks missing prep window.',   severity: 'risk',  createdAt: now - 26*hour, createdBy: 'Steven',  scheduled: false }
       ],
       actionItems: [
         { id: 'a-1', owner: 'Kate',    title: 'Send Klaviyo re-engagement plan to Harvest Co', dueAt: now +  2*day, clientId: 'harvest-co',     clientName: 'Harvest Co',     channelId: 'email',       status: 'in-progress',          createdAt: now -  7*day },
         { id: 'a-2', owner: 'Michael', title: 'Fix LCP regression on Bloom collection template',     dueAt: now +  5*day, clientId: 'bloom-retail',   clientName: 'Bloom Retail',   channelId: 'seo',         status: 'awaiting-confirmation',createdAt: now -  7*day },
         { id: 'a-3', owner: 'Chris',   title: 'Present Q2 brand refresh v2 to TechStart',            dueAt: now -  1*day, clientId: 'techstart-inc',  clientName: 'TechStart Inc',  channelId: 'creative',    status: 'blocked',              createdAt: now - 14*day },
-        { id: 'a-4', owner: 'Scott',   title: 'Resolve GA4 double-count in Ads',                     dueAt: now +  3*day, clientId: 'summit-outdoor', clientName: 'Summit Outdoor', channelId: 'analytics',   status: 'in-progress',          createdAt: now -  3*day },
+        { id: 'a-4', owner: 'Scott',   title: 'Resolve GA4 double-count in Ads',                     dueAt: now +  3*day, clientId: 'summit-outdoor', clientName: 'Summit Outdoor', channelId: 'analytics-scott', status: 'in-progress',          createdAt: now -  3*day },
         { id: 'a-5', owner: 'Steven',  title: 'Deliver Meta CPA reallocation analysis',              dueAt: now,          clientId: 'acme-corp',      clientName: 'Acme Corp',      channelId: 'paid-social', status: 'needs-attention',      createdAt: now -  2*day },
-        { id: 'a-6', owner: 'Roxy',    title: 'Rebuild staging env for Northwind',                   dueAt: now +  1*day, clientId: 'northwind-labs', clientName: 'Northwind Labs', channelId: 'web',         status: 'in-progress',          createdAt: now -  1*day },
+        { id: 'a-6', owner: 'Roxy',    title: 'Rebuild staging env for Northwind',                   dueAt: now +  1*day, clientId: 'northwind-labs', clientName: 'Northwind Labs', channelId: 'web-roxy',    status: 'in-progress',          createdAt: now -  1*day },
         { id: 'a-7', owner: 'Kate',    title: 'Draft welcome flow subject-line variants',            dueAt: now +  4*day, clientId: 'bloom-retail',   clientName: 'Bloom Retail',   channelId: 'email',       status: 'done',                 createdAt: now - 14*day },
         { id: 'a-8', owner: 'Adam',    title: 'Reconcile March invoicing against delivered scope',   dueAt: now +  6*day, clientId: 'acme-corp',      clientName: 'Acme Corp',      channelId: 'internal-ops',status: 'awaiting-files',       createdAt: now -  5*day }
       ]
@@ -28860,7 +28867,7 @@ window.OPS_TEAM = OPS_TEAM;
     card.setAttribute('draggable', 'true');
     card.setAttribute('data-flag-id', f.id);
     card.setAttribute('role', 'listitem');
-    var sevLabel = f.severity === 'fire' ? 'Needs decision' : (f.severity === 'risk' ? 'Heads up' : 'FYI');
+    var sevLabel = SEV_LABEL[f.severity] || 'At Risk';
     card.innerHTML =
       '<div class="wip-flag-head">' +
         '<span class="wip-flag-client">' +
@@ -29031,7 +29038,7 @@ window.OPS_TEAM = OPS_TEAM;
       itemsHtml = '<div class="wip-item-empty">No red flags \u2014 BAU only.</div>';
     } else {
       itemsHtml = '<ul class="wip-item-list">' + flags.map(function(f){
-        var sev = f.severity === 'fire' ? 'Needs decision' : (f.severity === 'risk' ? 'Heads up' : 'FYI');
+        var sev = SEV_LABEL[f.severity] || 'At Risk';
         return '<li class="wip-item has-flag">' +
           '<span class="wip-item-dot"></span>' +
           '<span class="wip-item-title"><strong>' + escapeHtml(f.clientName || 'Internal') + '</strong> \u2014 ' + escapeHtml(f.title || '') + '</span>' +
