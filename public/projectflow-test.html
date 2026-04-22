@@ -9990,10 +9990,10 @@
   .anlx-pulse-card:hover .stats-hero-card {
     border-color: var(--hairline); transform: translateY(-1px);
   }
-  .anlx-pulse-card[data-tone="capacity"] .stats-hero-card { color: #f9a825; }
-  .anlx-pulse-card[data-tone="on-time"]  .stats-hero-card { color: #30d158; }
-  .anlx-pulse-card[data-tone="at-risk"]  .stats-hero-card { color: #ff453a; }
-  .anlx-pulse-card[data-tone="stuck"]    .stats-hero-card { color: #0a84ff; }
+  .anlx-pulse-card[data-tone="capacity"] .stats-hero-card { color: var(--status-risk); }
+  .anlx-pulse-card[data-tone="on-time"]  .stats-hero-card { color: var(--status-track); }
+  .anlx-pulse-card[data-tone="at-risk"]  .stats-hero-card { color: var(--status-fire); }
+  .anlx-pulse-card[data-tone="stuck"]    .stats-hero-card { color: var(--highlight); }
   .anlx-pulse-bar {
     height: 6px; border-radius: 3px;
     background: color-mix(in srgb, var(--text) 8%, transparent);
@@ -10020,7 +10020,8 @@
     text-transform: uppercase; letter-spacing: 0.08em;
   }
   .anlx-section-sub {
-    font-size: var(--fs-sm); color: var(--text-faint); letter-spacing: -0.005em;
+    font-size: var(--fs-sm); color: var(--text-muted); letter-spacing: -0.005em;
+    max-width: 68ch;
   }
 
   /* Function tab segmented control — Apple-style pill tabs */
@@ -10117,9 +10118,9 @@
     height: 100%; border-radius: 4px;
     transition: width var(--dur-slower) var(--ease-out);
   }
-  .anlx-load-row[data-tone="healthy"] .anlx-load-bar-fill { background: #30d158; }
-  .anlx-load-row[data-tone="stretch"] .anlx-load-bar-fill { background: #f9a825; }
-  .anlx-load-row[data-tone="over"]    .anlx-load-bar-fill { background: #ff453a; }
+  .anlx-load-row[data-tone="healthy"] .anlx-load-bar-fill { background: var(--status-track); }
+  .anlx-load-row[data-tone="stretch"] .anlx-load-bar-fill { background: var(--status-risk); }
+  .anlx-load-row[data-tone="over"]    .anlx-load-bar-fill { background: var(--status-fire); }
   .anlx-load-pct {
     font-size: var(--fs-sm); font-weight: 600; color: var(--text);
     font-variant-numeric: tabular-nums;
@@ -10148,9 +10149,9 @@
   .anlx-load-legend-chip::before {
     content: ""; width: 10px; height: 10px; border-radius: 3px; display: inline-block;
   }
-  .anlx-load-legend-chip[data-tone="healthy"]::before { background: #30d158; }
-  .anlx-load-legend-chip[data-tone="stretch"]::before { background: #f9a825; }
-  .anlx-load-legend-chip[data-tone="over"]::before    { background: #ff453a; }
+  .anlx-load-legend-chip[data-tone="healthy"]::before { background: var(--status-track); }
+  .anlx-load-legend-chip[data-tone="stretch"]::before { background: var(--status-risk); }
+  .anlx-load-legend-chip[data-tone="over"]::before    { background: var(--status-fire); }
 
   /* Flow funnel grid — 8 delivery phases (5-12) */
   .anlx-flow-card {
@@ -10187,8 +10188,8 @@
     transform: translateY(-1px);
   }
   .anlx-flow-cell.bottleneck {
-    background: color-mix(in srgb, #f9a825 9%, transparent);
-    border-color: color-mix(in srgb, #f9a825 40%, transparent);
+    background: color-mix(in srgb, var(--status-risk) 9%, transparent);
+    border-color: color-mix(in srgb, var(--status-risk) 40%, transparent);
   }
   .anlx-flow-phase-num {
     font-size: var(--fs-nano); font-weight: 600;
@@ -10221,15 +10222,16 @@
   }
   .anlx-flow-meta-days { font-weight: 500; }
   .anlx-flow-meta-delta { font-weight: 600; }
-  .anlx-flow-meta-delta.bad  { color: #ff453a; }
-  .anlx-flow-meta-delta.good { color: #30d158; }
+  .anlx-flow-meta-delta.bad  { color: var(--status-fire); }
+  .anlx-flow-meta-delta.good { color: var(--status-track); }
   .anlx-flow-meta-delta.flat { color: var(--text-faint); }
   .anlx-flow-caption {
     margin-top: var(--sp-md);
-    font-size: var(--fs-xs); color: var(--text-faint);
+    font-size: var(--fs-xs); color: var(--text-muted);
     letter-spacing: -0.005em;
+    max-width: 68ch;
   }
-  .anlx-flow-caption strong { color: var(--text-muted); font-weight: 600; }
+  .anlx-flow-caption strong { color: var(--text); font-weight: 600; }
 
   /* Slipped-this-month list */
   .anlx-slipped-card {
@@ -10277,7 +10279,7 @@
   .anlx-slipped-owner .anlx-load-avatar { width: 24px; height: 24px; font-size: 10px; }
   .anlx-slipped-late {
     font-size: var(--fs-sm); font-weight: 600;
-    color: #ff453a;
+    color: var(--status-fire);
     font-variant-numeric: tabular-nums;
     text-align: right;
     white-space: nowrap;
@@ -10292,7 +10294,7 @@
   .anlx-slipped-row:focus-visible .anlx-slipped-chev {
     opacity: 1; transform: translateX(2px);
   }
-  .anlx-slipped-chev svg { width: 14px; height: 14px; display: block; }
+  .anlx-slipped-chev svg { width: 16px; height: 16px; display: block; }
   .anlx-slipped-empty {
     padding: var(--sp-2xl) var(--sp-xl);
     text-align: center;
@@ -12560,9 +12562,6 @@
         <div class="page-greeting">Analytics</div>
         <h1 class="page-title">Delivery health</h1>
         <p class="page-date">Last 30 days · vs. prior 30 days · internal stats</p>
-      </div>
-      <div class="stats-range" role="tablist" aria-label="Time range">
-        <button type="button" role="tab" aria-selected="true" data-active="true">30d</button>
       </div>
     </header>
 
