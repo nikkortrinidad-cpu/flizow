@@ -9875,6 +9875,331 @@
     border-color: transparent;
   }
 
+  /* ═══════ WEEKLY WIP — Live Meeting (Stage 2) ═══════
+     Core belief: the meeting is running. Show what we're on, capture
+     outcomes in one keystroke, never force the facilitator to read.
+     Blue hierarchy: Tier 1 = Next item. Tier 2 ring = Note/Decision/Action.
+     Tier 3 tint = current agenda row in timeline + focused flag in stage.
+     Tier 4 = timer/kbd hints. Neutral = End meeting (confirm-gated), Prev. */
+
+  .wip-live-root {
+    display: flex; flex-direction: column;
+    gap: var(--sp-xl);
+    min-height: 0;
+  }
+  .wip-live-topbar {
+    display: flex; align-items: center;
+    gap: var(--sp-lg);
+    padding: var(--sp-base) var(--sp-lg);
+    border: 1px solid var(--hairline);
+    border-radius: 14px;
+    background: var(--bg-elev);
+  }
+  .wip-live-topbar-kicker {
+    font-size: var(--fs-nano); font-weight: 700;
+    color: var(--text-muted);
+    letter-spacing: 0.08em; text-transform: uppercase;
+  }
+  .wip-live-topbar-date {
+    font-size: var(--fs-sm); color: var(--text-soft);
+  }
+  .wip-live-topbar-clock {
+    margin-left: auto;
+    font-family: 'SF Mono', Menlo, monospace;
+    font-size: var(--fs-md); font-weight: 600;
+    color: var(--text);
+    font-variant-numeric: tabular-nums;
+    padding: var(--sp-xs) var(--sp-base);
+    border: 1px solid var(--hairline); border-radius: 8px;
+    background: var(--bg);
+    min-width: 96px; text-align: center;
+  }
+  .wip-live-topbar-ctrls {
+    display: flex; gap: var(--sp-xs); align-items: center;
+  }
+
+  .wip-live-grid {
+    display: grid;
+    grid-template-columns: 280px minmax(0, 1fr);
+    gap: var(--sp-xl);
+    align-items: start;
+  }
+  .wip-live-timeline {
+    position: sticky; top: var(--sp-lg);
+    border: 1px solid var(--hairline);
+    border-radius: 14px;
+    background: var(--bg-elev);
+    padding: var(--sp-base) 0;
+    max-height: calc(100vh - 160px);
+    overflow-y: auto;
+  }
+  .wip-live-timeline-head {
+    padding: 0 var(--sp-lg) var(--sp-sm);
+    font-size: var(--fs-nano); font-weight: 700;
+    color: var(--text-faint);
+    letter-spacing: 0.08em; text-transform: uppercase;
+  }
+  .wip-live-tl-item {
+    display: grid;
+    grid-template-columns: 22px 1fr auto;
+    align-items: center; gap: var(--sp-sm);
+    padding: var(--sp-xs) var(--sp-lg);
+    cursor: pointer;
+    border-left: 3px solid transparent;
+    background: transparent;
+    border-top: 0; border-right: 0; border-bottom: 0;
+    width: 100%; text-align: left;
+    color: inherit; font: inherit;
+    transition: background-color var(--dur-fast) var(--ease-out), border-left-color var(--dur-fast) var(--ease-out);
+  }
+  .wip-live-tl-item:hover { background: color-mix(in srgb, var(--text) 4%, transparent); }
+  .wip-live-tl-item:focus-visible {
+    outline: 2px solid var(--highlight);
+    outline-offset: -2px;
+  }
+  .wip-live-tl-item.is-current {
+    background: color-mix(in srgb, var(--highlight) 12%, transparent);
+    border-left-color: var(--highlight);
+  }
+  .wip-live-tl-item.is-current .wip-live-tl-title { color: var(--text); font-weight: 600; }
+  .wip-live-tl-item.is-done .wip-live-tl-title { color: var(--text-faint); text-decoration: line-through; }
+  .wip-live-tl-state {
+    width: 18px; height: 18px; border-radius: 50%;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: var(--fs-nano); font-weight: 700;
+    color: var(--text-muted);
+    background: var(--bg-soft);
+    border: 1px solid var(--hairline);
+  }
+  .wip-live-tl-item.is-current .wip-live-tl-state {
+    background: var(--highlight); color: #fff; border-color: transparent;
+  }
+  .wip-live-tl-item.is-done .wip-live-tl-state {
+    background: color-mix(in srgb, var(--highlight) 16%, transparent);
+    color: var(--highlight); border-color: transparent;
+  }
+  .wip-live-tl-body { min-width: 0; }
+  .wip-live-tl-title {
+    font-size: var(--fs-sm); color: var(--text-soft);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .wip-live-tl-sub {
+    font-size: var(--fs-nano); color: var(--text-faint);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    margin-top: 1px;
+  }
+  .wip-live-tl-time {
+    font-family: 'SF Mono', Menlo, monospace;
+    font-size: var(--fs-nano); color: var(--text-faint);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .wip-live-stage {
+    display: flex; flex-direction: column; gap: var(--sp-lg);
+    border: 1px solid var(--hairline);
+    border-radius: 14px;
+    background: var(--bg-elev);
+    padding: var(--sp-xl) var(--sp-2xl) var(--sp-2xl);
+  }
+  .wip-live-stage-head {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: var(--sp-base);
+    align-items: flex-start;
+  }
+  .wip-live-stage-eyebrow {
+    font-size: var(--fs-nano); font-weight: 700;
+    color: var(--highlight);
+    letter-spacing: 0.08em; text-transform: uppercase;
+  }
+  .wip-live-stage-title {
+    font-size: var(--fs-3xl); font-weight: 700; letter-spacing: -0.02em;
+    color: var(--text); margin: 2px 0 0;
+    line-height: 1.2;
+  }
+  .wip-live-stage-meta {
+    font-size: var(--fs-sm); color: var(--text-soft);
+    display: flex; gap: var(--sp-xs); align-items: center; flex-wrap: wrap;
+    margin-top: var(--sp-xs);
+  }
+  .wip-live-stage-meta .sep { color: var(--text-faint); }
+  .wip-live-stage-meta .owner { font-weight: 600; color: var(--text); }
+  .wip-live-stage-timer {
+    font-family: 'SF Mono', Menlo, monospace;
+    font-size: var(--fs-2xl);
+    font-weight: 600; color: var(--text);
+    font-variant-numeric: tabular-nums;
+    padding: var(--sp-xs) var(--sp-base);
+    border: 1px solid var(--hairline); border-radius: 10px;
+    background: var(--bg);
+    min-width: 92px; text-align: center;
+    line-height: 1.2;
+  }
+  .wip-live-stage-timer.is-over {
+    color: var(--status-fire);
+    border-color: color-mix(in srgb, var(--status-fire) 50%, transparent);
+  }
+
+  .wip-live-section-label {
+    font-size: var(--fs-nano); font-weight: 700;
+    color: var(--text-faint);
+    letter-spacing: 0.08em; text-transform: uppercase;
+  }
+
+  .wip-live-flag {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: var(--sp-base);
+    align-items: center;
+    padding: var(--sp-base) var(--sp-lg);
+    border: 1px solid var(--hairline); border-radius: 10px;
+    background: var(--bg);
+    transition: background-color var(--dur-fast) var(--ease-out), opacity var(--dur-fast) var(--ease-out);
+  }
+  .wip-live-flag + .wip-live-flag { margin-top: var(--sp-xs); }
+  .wip-live-flag.is-focus {
+    background: color-mix(in srgb, var(--highlight) 8%, transparent);
+    border-color: color-mix(in srgb, var(--highlight) 30%, transparent);
+  }
+  .wip-live-flag.is-resolved { opacity: 0.5; }
+  .wip-live-flag.is-resolved .wip-live-flag-title { text-decoration: line-through; }
+  .wip-live-flag-sev {
+    display: inline-flex; align-items: center;
+    font-size: var(--fs-nano); font-weight: 700;
+    padding: 3px var(--sp-xs); border-radius: 6px;
+    white-space: nowrap;
+  }
+  .wip-live-flag-sev.fire { color: var(--status-fire); background: color-mix(in srgb, var(--status-fire) 12%, transparent); }
+  .wip-live-flag-sev.risk { color: var(--status-risk); background: color-mix(in srgb, var(--status-risk) 14%, transparent); }
+  .wip-live-flag-sev.track { color: var(--status-track); background: color-mix(in srgb, var(--status-track) 14%, transparent); }
+  .wip-live-flag-body { min-width: 0; }
+  .wip-live-flag-client { font-size: var(--fs-sm); font-weight: 600; color: var(--text); }
+  .wip-live-flag-title { font-size: var(--fs-base); color: var(--text); margin-top: 2px; line-height: 1.45; }
+  .wip-live-flag-note { font-size: var(--fs-sm); color: var(--text-soft); margin-top: 4px; line-height: 1.5; max-width: 72ch; }
+  .wip-live-flag-actions { display: flex; gap: var(--sp-xs); align-items: center; }
+
+  .wip-live-items {
+    border: 1px solid var(--hairline); border-radius: 10px;
+    background: var(--bg);
+    padding: var(--sp-sm) var(--sp-lg);
+  }
+  .wip-live-items-empty {
+    font-size: var(--fs-sm); color: var(--text-faint);
+    padding: var(--sp-xs) 0; font-style: italic;
+  }
+  .wip-live-items ul { list-style: none; margin: 0; padding: 0; }
+  .wip-live-items li {
+    padding: var(--sp-xs) 0;
+    display: grid; grid-template-columns: 1fr auto; gap: var(--sp-sm);
+    align-items: baseline;
+    font-size: var(--fs-sm); color: var(--text);
+  }
+  .wip-live-items li + li { border-top: 1px solid var(--hairline); }
+  .wip-live-items .item-meta { font-size: var(--fs-nano); color: var(--text-faint); }
+
+  .wip-live-capture {
+    border-top: 1px solid var(--hairline);
+    padding-top: var(--sp-base);
+    display: flex; flex-direction: column; gap: var(--sp-sm);
+  }
+  .wip-live-capture-head {
+    display: flex; gap: var(--sp-sm); align-items: center; justify-content: space-between;
+  }
+  .wip-live-capture-title { font-size: var(--fs-sm); font-weight: 600; color: var(--text); }
+  .wip-live-capture-hint {
+    font-size: var(--fs-nano); color: var(--text-faint);
+    display: inline-flex; gap: 4px; align-items: center; flex-wrap: wrap;
+  }
+  .wip-live-capture-btns { display: flex; gap: var(--sp-xs); flex-wrap: wrap; }
+
+  .wip-live-capture-form {
+    display: none;
+    border: 1px solid color-mix(in srgb, var(--highlight) 30%, transparent);
+    background: color-mix(in srgb, var(--highlight) 5%, transparent);
+    border-radius: 10px;
+    padding: var(--sp-sm) var(--sp-base);
+  }
+  .wip-live-capture-form.is-open { display: flex; flex-direction: column; gap: var(--sp-xs); }
+  .wip-live-capture-form-head {
+    font-size: var(--fs-nano); font-weight: 700;
+    color: var(--highlight);
+    letter-spacing: 0.08em; text-transform: uppercase;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .wip-live-capture-input {
+    width: 100%;
+    font: inherit; font-size: var(--fs-base);
+    padding: var(--sp-xs) 0;
+    background: transparent;
+    border: 0;
+    color: var(--text);
+    resize: none;
+    min-height: 54px;
+    line-height: 1.45;
+  }
+  .wip-live-capture-input:focus { outline: none; }
+  .wip-live-capture-form-foot {
+    display: flex; gap: var(--sp-xs); align-items: center; justify-content: flex-end;
+  }
+
+  .wip-live-log { display: flex; flex-direction: column; gap: var(--sp-xs); }
+  .wip-live-log-empty {
+    font-size: var(--fs-sm); color: var(--text-faint);
+    padding: var(--sp-sm) 0; font-style: italic;
+  }
+  .wip-live-log-entry {
+    display: grid; grid-template-columns: 92px 1fr auto; gap: var(--sp-sm);
+    align-items: baseline;
+    padding: var(--sp-xs) var(--sp-sm);
+    border-radius: 8px;
+    background: var(--bg);
+    border: 1px solid var(--hairline);
+    font-size: var(--fs-sm);
+  }
+  .wip-live-log-kind {
+    font-size: var(--fs-nano); font-weight: 700;
+    letter-spacing: 0.06em; text-transform: uppercase;
+    color: var(--text-faint);
+  }
+  .wip-live-log-entry.kind-decision .wip-live-log-kind { color: var(--highlight); }
+  .wip-live-log-entry.kind-action   .wip-live-log-kind { color: var(--status-risk); }
+  .wip-live-log-text { color: var(--text); word-break: break-word; line-height: 1.5; }
+  .wip-live-log-meta {
+    font-size: var(--fs-nano); color: var(--text-faint);
+    white-space: nowrap;
+    display: inline-flex; gap: var(--sp-xs); align-items: center;
+  }
+  .wip-live-log-del {
+    background: transparent; border: 0; cursor: pointer;
+    color: var(--text-faint); font-size: var(--fs-xs);
+    padding: 2px 6px; border-radius: 6px;
+  }
+  .wip-live-log-del:hover { color: var(--text); background: color-mix(in srgb, var(--text) 6%, transparent); }
+
+  .wip-live-footer-nav {
+    display: flex; gap: var(--sp-sm); align-items: center; justify-content: space-between;
+    padding-top: var(--sp-base);
+    border-top: 1px solid var(--hairline);
+    margin-top: var(--sp-sm);
+  }
+  .wip-live-footer-left { display: flex; gap: var(--sp-xs); align-items: center; }
+  .wip-live-footer-hint {
+    font-size: var(--fs-xs); color: var(--text-faint);
+    display: inline-flex; gap: var(--sp-xs); align-items: center; flex-wrap: wrap;
+  }
+
+  @media (max-width: 1024px) {
+    .wip-live-grid { grid-template-columns: 240px 1fr; }
+    .wip-live-stage { padding: var(--sp-lg) var(--sp-xl) var(--sp-xl); }
+  }
+  @media (max-width: 768px) {
+    .wip-live-grid { grid-template-columns: 1fr; }
+    .wip-live-timeline { position: static; max-height: 220px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .wip-live-tl-item, .wip-live-flag { transition: none; }
+  }
+
   /* Stubs for other tabs */
   .wip-stub {
     max-width: 520px; margin: 40px auto;
@@ -13525,15 +13850,140 @@
       </div>
     </section>
 
-    <!-- ── LIVE MEETING (stub for Stage 2) ── -->
-    <section class="wip-sub wip-stub-sub" data-wip-sub="live" aria-label="Live meeting" hidden>
-      <div class="wip-stub">
-        <div class="wip-stub-kbd" aria-hidden="true">
-          <span class="wip-kbd">A</span><span class="wip-kbd">D</span><span class="wip-kbd">U</span><span class="wip-kbd">F</span><span class="wip-kbd">N</span><span class="wip-kbd">P</span><span class="wip-kbd">B</span><span class="wip-kbd">Space</span>
+    <!-- ── LIVE MEETING ── -->
+    <section class="wip-sub" data-wip-sub="live" aria-label="Live meeting" hidden>
+      <div class="wip-live-root" data-wip-live-root>
+
+        <!-- Top bar: meeting clock + End meeting -->
+        <div class="wip-live-topbar">
+          <div>
+            <div class="wip-live-topbar-kicker">Live · Weekly WIP</div>
+            <div class="wip-live-topbar-date" data-wip-live-date>—</div>
+          </div>
+          <div class="wip-live-topbar-clock" data-wip-live-clock aria-label="Elapsed meeting time">00:00</div>
+          <div class="wip-live-topbar-ctrls">
+            <button class="wip-btn wip-btn-ghost" data-wip-live-pause type="button" aria-pressed="false" title="Pause timer (Space)">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>
+              <span data-wip-live-pause-label>Pause</span>
+            </button>
+            <button class="wip-btn wip-btn-ghost" data-wip-live-end type="button" title="End meeting">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="5" width="14" height="14" rx="2"/></svg>
+              End meeting
+            </button>
+          </div>
         </div>
-        <div class="wip-stub-title">Live meeting — builds in the next stage</div>
-        <div class="wip-stub-body">The in-meeting view (Fellow-style transcript, one-key capture, pacing timer, early-leave flags) lands after you sign off on the Agenda Builder.</div>
-        <a class="wip-stub-back" href="#wip/agenda">Back to agenda builder</a>
+
+        <!-- Main grid: timeline | stage -->
+        <div class="wip-live-grid">
+
+          <!-- LEFT: Timeline -->
+          <aside class="wip-live-timeline" aria-label="Meeting timeline">
+            <div class="wip-live-timeline-head">Run of show</div>
+            <div data-wip-live-timeline></div>
+          </aside>
+
+          <!-- RIGHT: Stage -->
+          <div class="wip-live-stage" data-wip-live-stage>
+
+            <header class="wip-live-stage-head">
+              <div>
+                <div class="wip-live-stage-eyebrow" data-wip-live-eyebrow>On now · 1 of 13</div>
+                <h1 class="wip-live-stage-title" data-wip-live-title>—</h1>
+                <div class="wip-live-stage-meta">
+                  <span class="owner" data-wip-live-owner>—</span>
+                  <span class="sep">·</span>
+                  <span data-wip-live-counts>—</span>
+                </div>
+              </div>
+              <div class="wip-live-stage-timer" data-wip-live-item-timer aria-label="Time on this item">00:00</div>
+            </header>
+
+            <!-- Flags / items body (varies by block kind) -->
+            <div data-wip-live-body></div>
+
+            <!-- Quick capture -->
+            <section class="wip-live-capture" aria-label="Quick capture">
+              <div class="wip-live-capture-head">
+                <div class="wip-live-capture-title">Quick capture</div>
+                <div class="wip-live-capture-hint">
+                  <span class="wip-kbd">N</span>ote
+                  <span class="wip-kbd">D</span>ecision
+                  <span class="wip-kbd">A</span>ction
+                </div>
+              </div>
+              <div class="wip-live-capture-btns">
+                <button class="wip-btn wip-btn-ring" data-wip-live-capture="note" type="button">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                  Add note
+                </button>
+                <button class="wip-btn wip-btn-ring" data-wip-live-capture="decision" type="button">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+                  Log decision
+                </button>
+                <button class="wip-btn wip-btn-ring" data-wip-live-capture="action" type="button">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 14"/></svg>
+                  Assign action
+                </button>
+              </div>
+
+              <form class="wip-live-capture-form" data-wip-live-capture-form autocomplete="off">
+                <div class="wip-live-capture-form-head">
+                  <span data-wip-live-capture-kind>Note</span>
+                  <span class="wip-live-capture-hint">
+                    <span class="wip-kbd">Enter</span> save · <span class="wip-kbd">Esc</span> cancel
+                  </span>
+                </div>
+                <textarea class="wip-live-capture-input" data-wip-live-capture-input rows="2" placeholder="Type the note, decision, or action — Enter saves."></textarea>
+                <div class="wip-live-capture-form-foot">
+                  <button class="wip-btn wip-btn-ghost" type="button" data-wip-live-capture-cancel>Cancel</button>
+                  <button class="wip-btn wip-btn-primary" type="submit" data-wip-live-capture-save>Save</button>
+                </div>
+              </form>
+
+              <!-- Captured log for the current item -->
+              <div data-wip-live-log></div>
+            </section>
+
+            <!-- Footer nav -->
+            <nav class="wip-live-footer-nav" aria-label="Meeting navigation">
+              <div class="wip-live-footer-hint">
+                <span class="wip-kbd">←</span> prev ·
+                <span class="wip-kbd">→</span> next ·
+                <span class="wip-kbd">Esc</span> end
+              </div>
+              <div class="wip-live-footer-left">
+                <button class="wip-btn wip-btn-ghost" data-wip-live-prev type="button">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15 18 9 12 15 6"/></svg>
+                  Prev
+                </button>
+                <button class="wip-btn wip-btn-primary" data-wip-live-next type="button">
+                  Next item
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 18 15 12 9 6"/></svg>
+                </button>
+              </div>
+            </nav>
+
+          </div><!-- /.wip-live-stage -->
+        </div><!-- /.wip-live-grid -->
+      </div><!-- /.wip-live-root -->
+
+      <!-- End meeting confirm modal -->
+      <div class="wip-modal-overlay" data-wip-live-end-modal hidden role="dialog" aria-modal="true" aria-labelledby="wip-live-end-title">
+        <div class="wip-modal">
+          <header class="wip-modal-head">
+            <h2 class="wip-modal-title" id="wip-live-end-title">End meeting?</h2>
+            <button class="wip-icon-btn" data-wip-live-end-close type="button" aria-label="Close">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+          </header>
+          <div class="wip-modal-body">
+            <p style="font-size: var(--fs-sm); color: var(--text-soft); line-height: 1.5; margin: 0;">We will save everything captured so far and hand you to the Recap view for edits before sending.</p>
+          </div>
+          <footer class="wip-modal-foot">
+            <button class="wip-btn wip-btn-ghost wip-btn-muted" data-wip-live-end-cancel type="button">Keep going</button>
+            <button class="wip-btn wip-btn-primary" data-wip-live-end-confirm type="button">End &amp; go to recap</button>
+          </footer>
+        </div>
       </div>
     </section>
 
@@ -29417,17 +29867,640 @@ window.OPS_TEAM = OPS_TEAM;
     }
   });
 
-  els.startMeetingBtn.addEventListener('click', function(){
+  // ══════════════════════════════════════════════════════════════
+  //  LIVE MEETING (Stage 2) — in-meeting screen
+  //  Belief: the meeting is running. Show what we are on, capture
+  //  outcomes in one keystroke, never make the facilitator read.
+  // ══════════════════════════════════════════════════════════════
+
+  // ── Live-meeting state helpers ──────────────────────────────
+  function ensureMeetingState(){
+    if (!state.meeting) {
+      state.meeting = {
+        active: false,
+        startedAt: null,
+        endedAt: null,
+        pausedAt: null,
+        pausedTotalMs: 0,
+        currentIndex: 0,
+        sequence: [],
+        itemStart: {},
+        itemElapsed: {},
+        itemDone: {},
+        notes: [],
+        flagResolutions: {}
+      };
+    }
+  }
+  ensureMeetingState();
+
+  function buildMeetingSequence(){
+    var seq = ['new-business', 'internal'];
+    state.channelOrder.forEach(function(cid){ seq.push(cid); });
+    seq.push('bau', 'action-review');
+    return seq;
+  }
+
+  function getBlockMeta(blockKey){
+    if (blockKey === 'new-business') {
+      return { title: 'New business', owner: 'Sales \u2192 AM', est: 5, kind: 'fixed', items: state.newBusinessItems };
+    }
+    if (blockKey === 'internal') {
+      return { title: 'Internal announcements', owner: 'HR / Ops', est: 5, kind: 'fixed', items: state.internalItems };
+    }
+    if (blockKey === 'bau') {
+      return { title: 'BAU summary', owner: 'All managers', est: 3, kind: 'bau' };
+    }
+    if (blockKey === 'action-review') {
+      return { title: 'Action items review', owner: 'You', est: 5, kind: 'action-review' };
+    }
+    var ch = channel(blockKey);
+    if (ch) {
+      var flags = state.redFlags.filter(function(f){ return f.channelId === blockKey; });
+      return { title: ch.name + ' \u2014 ' + ch.manager, owner: ch.manager, est: 6, kind: 'channel', channel: ch, flags: flags };
+    }
+    return null;
+  }
+
+  // ── Time formatting ─────────────────────────────────────────
+  function pad2(n){ return n < 10 ? '0' + n : '' + n; }
+  function fmtHMS(ms){
+    if (!ms || ms < 0) ms = 0;
+    var s = Math.floor(ms / 1000);
+    var h = Math.floor(s / 3600); s -= h * 3600;
+    var mm = Math.floor(s / 60); s -= mm * 60;
+    return (h > 0 ? h + ':' + pad2(mm) : pad2(mm)) + ':' + pad2(s);
+  }
+  function fmtDueShort(ms){
+    if (!ms) return '';
+    var d = new Date(ms); d.setHours(0,0,0,0);
+    var t = new Date(); t.setHours(0,0,0,0);
+    var diff = Math.round((d.getTime() - t.getTime()) / 86400000);
+    if (diff === 0) return 'due today';
+    if (diff === 1) return 'due tomorrow';
+    if (diff === -1) return '1 day late';
+    if (diff < 0) return Math.abs(diff) + ' days late';
+    return 'due in ' + diff + 'd';
+  }
+
+  // ── DOM refs for live view ──────────────────────────────────
+  var liveEls = null;
+  function getLiveEls(){
+    if (liveEls) return liveEls;
+    var sub = view.querySelector('[data-wip-sub="live"]');
+    if (!sub) return null;
+    liveEls = {
+      root:        sub.querySelector('[data-wip-live-root]'),
+      date:        sub.querySelector('[data-wip-live-date]'),
+      clock:       sub.querySelector('[data-wip-live-clock]'),
+      itemTimer:   sub.querySelector('[data-wip-live-item-timer]'),
+      eyebrow:     sub.querySelector('[data-wip-live-eyebrow]'),
+      title:       sub.querySelector('[data-wip-live-title]'),
+      owner:       sub.querySelector('[data-wip-live-owner]'),
+      counts:      sub.querySelector('[data-wip-live-counts]'),
+      timeline:    sub.querySelector('[data-wip-live-timeline]'),
+      body:        sub.querySelector('[data-wip-live-body]'),
+      log:         sub.querySelector('[data-wip-live-log]'),
+      form:        sub.querySelector('[data-wip-live-capture-form]'),
+      formKind:    sub.querySelector('[data-wip-live-capture-kind]'),
+      input:       sub.querySelector('[data-wip-live-capture-input]'),
+      pauseBtn:    sub.querySelector('[data-wip-live-pause]'),
+      pauseLabel:  sub.querySelector('[data-wip-live-pause-label]'),
+      endBtn:      sub.querySelector('[data-wip-live-end]'),
+      endModal:    sub.querySelector('[data-wip-live-end-modal]'),
+      prevBtn:     sub.querySelector('[data-wip-live-prev]'),
+      nextBtn:     sub.querySelector('[data-wip-live-next]'),
+      stage:       sub.querySelector('[data-wip-live-stage]')
+    };
+    return liveEls;
+  }
+
+  // ── Control functions ──────────────────────────────────────
+  function startMeeting(){
+    ensureMeetingState();
+    var m = state.meeting;
+    m.active = true;
+    m.startedAt = new Date().toISOString();
+    m.endedAt = null;
+    m.pausedAt = null;
+    m.pausedTotalMs = 0;
+    m.currentIndex = 0;
+    m.sequence = buildMeetingSequence();
+    m.itemStart = {};
+    m.itemStart[m.sequence[0]] = Date.now();
+    m.itemElapsed = {};
+    m.itemDone = {};
+    m.notes = [];
+    m.flagResolutions = {};
+    saveState();
+  }
+
+  function recordItemElapsed(){
+    var m = state.meeting;
+    if (!m.active) return;
+    var key = m.sequence[m.currentIndex];
+    if (!key) return;
+    var now = Date.now();
+    var started = m.itemStart[key] || now;
+    var pausedOffset = m.pausedAt ? (now - m.pausedAt) : 0;
+    m.itemElapsed[key] = (m.itemElapsed[key] || 0) + Math.max(0, (now - started) - pausedOffset);
+  }
+
+  function advance(delta){
+    var m = state.meeting;
+    if (!m.active) return;
+    var key = m.sequence[m.currentIndex];
+    recordItemElapsed();
+    if (delta > 0 && key) m.itemDone[key] = true;
+    var next = m.currentIndex + delta;
+    if (next < 0) next = 0;
+    if (next >= m.sequence.length) next = m.sequence.length - 1;
+    m.currentIndex = next;
+    m.itemStart[m.sequence[next]] = Date.now();
+    closeCapture();
+    saveState();
+    renderLive();
+    scrollStageToTop();
+  }
+
+  function jumpTo(blockKey){
+    var m = state.meeting;
+    if (!m.active) return;
+    var i = m.sequence.indexOf(blockKey);
+    if (i < 0 || i === m.currentIndex) return;
+    recordItemElapsed();
+    m.currentIndex = i;
+    m.itemStart[blockKey] = Date.now();
+    closeCapture();
+    saveState();
+    renderLive();
+    scrollStageToTop();
+  }
+
+  function togglePause(){
+    var m = state.meeting;
+    if (!m.active) return;
+    var now = Date.now();
+    if (m.pausedAt) {
+      m.pausedTotalMs += (now - m.pausedAt);
+      m.pausedAt = null;
+    } else {
+      m.pausedAt = now;
+    }
+    saveState();
+    updatePauseButton();
+  }
+
+  function openEndMeetingModal(){
+    var E = getLiveEls(); if (!E || !E.endModal) return;
+    E.endModal.hidden = false;
+  }
+  function closeEndMeetingModal(){
+    var E = getLiveEls(); if (!E || !E.endModal) return;
+    E.endModal.hidden = true;
+  }
+
+  function endMeeting(){
+    var m = state.meeting;
+    if (m.active) {
+      recordItemElapsed();
+    }
+    m.active = false;
+    m.endedAt = new Date().toISOString();
+    stopTicking();
+    closeEndMeetingModal();
+    saveState();
     if (typeof window.showToast === 'function') {
-      window.showToast('Live meeting view lands in Screen 2 \u2014 agenda is locked-in.', { duration: 4200 });
+      window.showToast('Meeting ended \u2014 notes are saved. Recap builds in Stage 3.', { duration: 3600 });
+    }
+    // Route to recap (stub today, real screen in Stage 3).
+    window.location.hash = '#wip/recap';
+  }
+
+  // ── Quick capture ──────────────────────────────────────────
+  var captureKind = null;
+  function openCapture(kind){
+    var E = getLiveEls(); if (!E) return;
+    if (!state.meeting.active) return;
+    captureKind = kind;
+    E.formKind.textContent = kind === 'note' ? 'Note' : (kind === 'decision' ? 'Decision' : 'Action item');
+    E.input.placeholder = kind === 'action'
+      ? 'What needs to happen, and who owns it? (e.g. "Pull reallocation numbers by EOD Fri")'
+      : (kind === 'decision'
+          ? 'What was decided?'
+          : 'Quick note for the record.');
+    E.form.classList.add('is-open');
+    E.input.value = '';
+    setTimeout(function(){ E.input.focus(); }, 10);
+  }
+  function closeCapture(){
+    var E = getLiveEls(); if (!E) return;
+    captureKind = null;
+    E.form.classList.remove('is-open');
+    E.input.value = '';
+  }
+  function submitCapture(){
+    var E = getLiveEls(); if (!E) return;
+    var text = E.input.value;
+    if (!captureKind || !text || !text.trim()) return;
+    addEntry(captureKind, text);
+    closeCapture();
+  }
+
+  function addEntry(kind, text){
+    var m = state.meeting;
+    var key = m.sequence[m.currentIndex];
+    var meta = getBlockMeta(key);
+    var owner = (kind === 'action' && meta && meta.channel) ? meta.channel.manager : null;
+    var entry = {
+      id:        uid('le'),
+      kind:      kind,
+      text:      text.trim(),
+      blockKey:  key,
+      createdAt: Date.now(),
+      owner:     owner
+    };
+    m.notes.push(entry);
+
+    // If it's an action item, also push into state.actionItems so it shows in Screen 4.
+    var linkedActionId = null;
+    if (kind === 'action') {
+      linkedActionId = uid('a');
+      var channelId = meta && meta.channel ? meta.channel.id : null;
+      state.actionItems.push({
+        id:         linkedActionId,
+        owner:      owner || 'You',
+        title:      entry.text,
+        dueAt:      Date.now() + 7 * 86400000,
+        clientId:   null,
+        clientName: null,
+        channelId:  channelId,
+        status:     'in-progress',
+        createdAt:  entry.createdAt
+      });
+      entry.linkedActionId = linkedActionId;
+    }
+
+    saveState();
+    renderLog();
+
+    if (typeof window.showToast === 'function') {
+      var label = kind === 'action' ? 'Action assigned' : (kind === 'decision' ? 'Decision logged' : 'Note saved');
+      window.showToast(label, { action: 'Undo', onAction: function(){ undoEntry(entry.id); }, duration: 4200 });
+    }
+  }
+
+  function undoEntry(id){
+    var m = state.meeting;
+    var idx = -1;
+    for (var i = 0; i < m.notes.length; i++) { if (m.notes[i].id === id) { idx = i; break; } }
+    if (idx < 0) return;
+    var removed = m.notes.splice(idx, 1)[0];
+    if (removed.linkedActionId) {
+      for (var j = 0; j < state.actionItems.length; j++) {
+        if (state.actionItems[j].id === removed.linkedActionId) { state.actionItems.splice(j, 1); break; }
+      }
+    }
+    saveState();
+    renderLog();
+  }
+
+  function resolveFlag(flagId){
+    state.meeting.flagResolutions[flagId] = 'done';
+    saveState();
+    renderLive();
+    if (typeof window.showToast === 'function') {
+      window.showToast('Marked done', { action: 'Undo', onAction: function(){ reopenFlag(flagId); }, duration: 3600 });
+    }
+  }
+  function reopenFlag(flagId){
+    delete state.meeting.flagResolutions[flagId];
+    saveState();
+    renderLive();
+  }
+
+  // ── Renderers ──────────────────────────────────────────────
+  function renderLive(){
+    var E = getLiveEls(); if (!E) return;
+    var m = state.meeting;
+    if (!m.sequence || m.sequence.length === 0) m.sequence = buildMeetingSequence();
+    var key = m.sequence[m.currentIndex];
+    var meta = getBlockMeta(key);
+    if (!meta) return;
+
+    E.date.textContent = fmtMeetingTime(m.startedAt || state.meta.nextMeetingAt);
+    E.eyebrow.textContent = 'On now \u00b7 ' + (m.currentIndex + 1) + ' of ' + m.sequence.length;
+    E.title.textContent = meta.title;
+    E.owner.textContent = meta.owner;
+
+    // Counts/subhead
+    var counts = '';
+    if (meta.kind === 'channel') {
+      var active = meta.flags.filter(function(f){ return m.flagResolutions[f.id] !== 'done'; });
+      counts = meta.flags.length === 0
+        ? 'No red flags \u2014 just BAU'
+        : active.length + ' of ' + meta.flags.length + ' flag' + (meta.flags.length === 1 ? '' : 's') + ' open';
+    } else if (meta.kind === 'fixed') {
+      var n = (meta.items || []).length;
+      counts = n + ' item' + (n === 1 ? '' : 's');
+    } else if (meta.kind === 'bau') {
+      counts = 'One-line update per manager';
+    } else if (meta.kind === 'action-review') {
+      var openN = state.actionItems.filter(function(a){ return a.status !== 'done'; }).length;
+      counts = openN + ' open action' + (openN === 1 ? '' : 's');
+    }
+    E.counts.textContent = counts;
+
+    renderTimeline();
+    renderStageBody();
+    renderLog();
+    updatePauseButton();
+  }
+
+  function renderTimeline(){
+    var E = getLiveEls(); if (!E || !E.timeline) return;
+    var m = state.meeting;
+    E.timeline.innerHTML = '';
+    m.sequence.forEach(function(key, idx){
+      var meta = getBlockMeta(key);
+      if (!meta) return;
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      var cls = 'wip-live-tl-item';
+      if (idx === m.currentIndex) cls += ' is-current';
+      if (m.itemDone[key])        cls += ' is-done';
+      btn.className = cls;
+      btn.setAttribute('data-wip-live-jump', key);
+
+      var state0;
+      if (m.itemDone[key]) {
+        state0 = '<span class="wip-live-tl-state" aria-hidden="true"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>';
+      } else {
+        state0 = '<span class="wip-live-tl-state" aria-hidden="true">' + (idx + 1) + '</span>';
+      }
+
+      var elapsed = m.itemElapsed[key] ? fmtHMS(m.itemElapsed[key]) : (idx === m.currentIndex ? '\u2022' : (meta.est + 'm'));
+
+      btn.innerHTML =
+        state0 +
+        '<div class="wip-live-tl-body">' +
+          '<div class="wip-live-tl-title">' + escapeHtml(meta.title) + '</div>' +
+          '<div class="wip-live-tl-sub">' + escapeHtml(meta.owner || '') + '</div>' +
+        '</div>' +
+        '<span class="wip-live-tl-time">' + elapsed + '</span>';
+
+      E.timeline.appendChild(btn);
+    });
+  }
+
+  function renderStageBody(){
+    var E = getLiveEls(); if (!E || !E.body) return;
+    var m = state.meeting;
+    var key = m.sequence[m.currentIndex];
+    var meta = getBlockMeta(key);
+    if (!meta) return;
+    E.body.innerHTML = '';
+
+    if (meta.kind === 'channel') {
+      var flags = meta.flags;
+      if (flags.length === 0) {
+        E.body.innerHTML = '<div class="wip-live-section-label">Red flags</div><div class="wip-live-items"><div class="wip-live-items-empty">No red flags this week \u2014 quick BAU and move on.</div></div>';
+        return;
+      }
+      var header = document.createElement('div');
+      header.className = 'wip-live-section-label';
+      header.textContent = 'Red flags';
+      E.body.appendChild(header);
+
+      flags.forEach(function(f, idx){
+        var card = document.createElement('div');
+        var isDone = m.flagResolutions[f.id] === 'done';
+        var isFocus = !isDone && flags.slice(0, idx).every(function(ff){ return m.flagResolutions[ff.id] === 'done'; });
+        card.className = 'wip-live-flag' + (isFocus ? ' is-focus' : '') + (isDone ? ' is-resolved' : '');
+        card.setAttribute('data-wip-live-flag', f.id);
+        var actionHtml = isDone
+          ? '<button class="wip-btn wip-btn-ghost" data-wip-live-flag-reopen="' + escapeHtml(f.id) + '" type="button">Re-open</button>'
+          : '<button class="wip-btn wip-btn-primary" data-wip-live-flag-done="' + escapeHtml(f.id) + '" type="button"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>Mark done</button>';
+        card.innerHTML =
+          '<span class="wip-live-flag-sev ' + escapeHtml(f.severity) + '">' + escapeHtml(SEV_LABEL[f.severity] || 'At Risk') + '</span>' +
+          '<div class="wip-live-flag-body">' +
+            '<div class="wip-live-flag-client">' + escapeHtml(f.clientName || 'Internal') + '</div>' +
+            '<div class="wip-live-flag-title">' + escapeHtml(f.title || '') + '</div>' +
+            (f.note ? '<div class="wip-live-flag-note">' + escapeHtml(f.note) + '</div>' : '') +
+          '</div>' +
+          '<div class="wip-live-flag-actions">' + actionHtml + '</div>';
+        E.body.appendChild(card);
+      });
+    } else if (meta.kind === 'fixed') {
+      var clients = readClients();
+      var clientMap = {};
+      clients.forEach(function(c){ clientMap[c.id] = c; });
+      var itemsHtml = (meta.items || []).map(function(it){
+        var metaText = it.client && clientMap[it.client] ? clientMap[it.client].name : (it.owner || '');
+        return '<li><span>' + escapeHtml(it.title || '') + '</span><span class="item-meta">' + escapeHtml(metaText) + '</span></li>';
+      }).join('');
+      var labelText = key === 'new-business' ? 'New business' : 'Announcements';
+      E.body.innerHTML =
+        '<div class="wip-live-section-label">' + labelText + '</div>' +
+        '<div class="wip-live-items">' +
+          (itemsHtml ? '<ul>' + itemsHtml + '</ul>' : '<div class="wip-live-items-empty">Nothing to share this week.</div>') +
+        '</div>';
+    } else if (meta.kind === 'bau') {
+      E.body.innerHTML =
+        '<div class="wip-live-section-label">BAU summary</div>' +
+        '<div class="wip-live-items"><div class="wip-live-items-empty">Each channel manager gets one line: whatever is live, next, or stuck. No flags \u2014 just context.</div></div>';
+    } else if (meta.kind === 'action-review') {
+      var open = state.actionItems.filter(function(a){ return a.status !== 'done'; })
+                                   .sort(function(a,b){ return (a.dueAt||0) - (b.dueAt||0); })
+                                   .slice(0, 10);
+      if (open.length === 0) {
+        E.body.innerHTML = '<div class="wip-live-section-label">Open actions</div><div class="wip-live-items"><div class="wip-live-items-empty">No open action items. Nice.</div></div>';
+      } else {
+        var items = open.map(function(a){
+          var overdue = a.dueAt && a.dueAt < Date.now();
+          var meta2 = statusLabelFor(a.status) + ' \u00b7 ' + fmtDueShort(a.dueAt);
+          return '<li><span><strong>' + escapeHtml(a.owner || '\u2014') + '</strong> \u2014 ' + escapeHtml(a.title || '') + '</span><span class="item-meta"' + (overdue ? ' style="color:var(--status-fire);"' : '') + '>' + escapeHtml(meta2) + '</span></li>';
+        }).join('');
+        E.body.innerHTML =
+          '<div class="wip-live-section-label">Open actions</div>' +
+          '<div class="wip-live-items"><ul>' + items + '</ul></div>';
+      }
+    }
+  }
+
+  function renderLog(){
+    var E = getLiveEls(); if (!E || !E.log) return;
+    var m = state.meeting;
+    var key = m.sequence[m.currentIndex];
+    var entries = m.notes.filter(function(n){ return n.blockKey === key; })
+                          .sort(function(a, b){ return a.createdAt - b.createdAt; });
+    E.log.innerHTML = '';
+    if (entries.length === 0) return;
+    var wrap = document.createElement('div');
+    wrap.className = 'wip-live-log';
+    entries.forEach(function(n){
+      var el = document.createElement('div');
+      el.className = 'wip-live-log-entry kind-' + n.kind;
+      el.setAttribute('data-wip-live-log-entry', n.id);
+      var kindLabel = n.kind === 'action' ? 'Action' : (n.kind === 'decision' ? 'Decision' : 'Note');
+      el.innerHTML =
+        '<span class="wip-live-log-kind">' + kindLabel + '</span>' +
+        '<span class="wip-live-log-text">' + escapeHtml(n.text) + '</span>' +
+        '<span class="wip-live-log-meta">' +
+          (n.owner ? escapeHtml(n.owner) : '') +
+          '<button class="wip-live-log-del" data-wip-live-log-del="' + escapeHtml(n.id) + '" type="button" aria-label="Remove entry" title="Remove">\u00d7</button>' +
+        '</span>';
+      wrap.appendChild(el);
+    });
+    E.log.appendChild(wrap);
+  }
+
+  function updatePauseButton(){
+    var E = getLiveEls(); if (!E || !E.pauseBtn) return;
+    var paused = !!state.meeting.pausedAt;
+    E.pauseBtn.setAttribute('aria-pressed', paused ? 'true' : 'false');
+    if (E.pauseLabel) E.pauseLabel.textContent = paused ? 'Resume' : 'Pause';
+  }
+  function scrollStageToTop(){
+    var E = getLiveEls(); if (!E || !E.stage) return;
+    try { E.stage.scrollTo({ top: 0, behavior: 'smooth' }); } catch (e) { E.stage.scrollTop = 0; }
+  }
+
+  // ── Timer tick ─────────────────────────────────────────────
+  var liveTicker = null;
+  function startTicking(){
+    stopTicking();
+    liveTicker = setInterval(tickLive, 1000);
+    tickLive();
+  }
+  function stopTicking(){ if (liveTicker) { clearInterval(liveTicker); liveTicker = null; } }
+  function tickLive(){
+    var E = getLiveEls(); if (!E) return;
+    var m = state.meeting;
+    if (!m.active) return;
+    var now = Date.now();
+    var startedMs = m.startedAt ? new Date(m.startedAt).getTime() : now;
+    var pausedOffset = m.pausedAt ? (now - m.pausedAt) : 0;
+    var totalMs = Math.max(0, (now - startedMs) - m.pausedTotalMs - pausedOffset);
+    if (E.clock) E.clock.textContent = fmtHMS(totalMs);
+    var key = m.sequence[m.currentIndex];
+    var itemStarted = m.itemStart[key] || now;
+    var itemMs = Math.max(0, (now - itemStarted) - pausedOffset);
+    if (E.itemTimer) {
+      E.itemTimer.textContent = fmtHMS(itemMs);
+      var meta = getBlockMeta(key);
+      if (meta && itemMs > meta.est * 60 * 1000) E.itemTimer.classList.add('is-over');
+      else E.itemTimer.classList.remove('is-over');
+    }
+  }
+
+  // ── Keyboard ───────────────────────────────────────────────
+  var liveKbHandler = null;
+  function attachLiveKeyboard(){
+    if (liveKbHandler) return;
+    liveKbHandler = function(e){
+      if (!state.meeting.active) return;
+      var tgt = e.target || {};
+      var tag = tgt.tagName || '';
+      var isEditable = /(INPUT|TEXTAREA|SELECT)/.test(tag) || tgt.isContentEditable;
+      if (e.key === 'Escape') {
+        var E = getLiveEls();
+        if (E && E.form && E.form.classList.contains('is-open')) { e.preventDefault(); closeCapture(); return; }
+        if (E && E.endModal && !E.endModal.hidden) { e.preventDefault(); closeEndMeetingModal(); return; }
+        e.preventDefault(); openEndMeetingModal(); return;
+      }
+      if (isEditable) return;
+      if (e.key === 'ArrowLeft') { e.preventDefault(); advance(-1); }
+      else if (e.key === 'ArrowRight') { e.preventDefault(); advance(+1); }
+      else if (e.key === 'n' || e.key === 'N') { e.preventDefault(); openCapture('note'); }
+      else if (e.key === 'd' || e.key === 'D') { e.preventDefault(); openCapture('decision'); }
+      else if (e.key === 'a' || e.key === 'A') { e.preventDefault(); openCapture('action'); }
+      else if (e.key === ' ') { e.preventDefault(); togglePause(); }
+    };
+    document.addEventListener('keydown', liveKbHandler);
+  }
+  function detachLiveKeyboard(){
+    if (liveKbHandler) {
+      document.removeEventListener('keydown', liveKbHandler);
+      liveKbHandler = null;
+    }
+  }
+
+  // ── Event wiring (once) ────────────────────────────────────
+  (function wireLive(){
+    var E = getLiveEls(); if (!E || !E.root) return;
+
+    // Capture buttons
+    E.root.addEventListener('click', function(e){
+      var capBtn = e.target.closest('[data-wip-live-capture]');
+      if (capBtn) { openCapture(capBtn.getAttribute('data-wip-live-capture')); return; }
+
+      var jumpBtn = e.target.closest('[data-wip-live-jump]');
+      if (jumpBtn) { jumpTo(jumpBtn.getAttribute('data-wip-live-jump')); return; }
+
+      var flagDone = e.target.closest('[data-wip-live-flag-done]');
+      if (flagDone) { resolveFlag(flagDone.getAttribute('data-wip-live-flag-done')); return; }
+
+      var flagReopen = e.target.closest('[data-wip-live-flag-reopen]');
+      if (flagReopen) { reopenFlag(flagReopen.getAttribute('data-wip-live-flag-reopen')); return; }
+
+      var logDel = e.target.closest('[data-wip-live-log-del]');
+      if (logDel) { undoEntry(logDel.getAttribute('data-wip-live-log-del')); return; }
+
+      if (e.target.closest('[data-wip-live-capture-cancel]')) { closeCapture(); return; }
+      if (e.target.closest('[data-wip-live-capture-save]'))   { submitCapture(); return; }
+
+      if (e.target.closest('[data-wip-live-prev]')) { advance(-1); return; }
+      if (e.target.closest('[data-wip-live-next]')) { advance(+1); return; }
+
+      if (e.target.closest('[data-wip-live-pause]')) { togglePause(); return; }
+      if (e.target.closest('[data-wip-live-end]'))   { openEndMeetingModal(); return; }
+    });
+
+    E.form.addEventListener('submit', function(e){ e.preventDefault(); submitCapture(); });
+    E.input.addEventListener('keydown', function(e){
+      if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submitCapture(); }
+      else if (e.key === 'Escape') { e.preventDefault(); closeCapture(); }
+    });
+
+    // End meeting modal
+    var sub = view.querySelector('[data-wip-sub="live"]');
+    sub.addEventListener('click', function(e){
+      if (e.target.closest('[data-wip-live-end-close]') || e.target.closest('[data-wip-live-end-cancel]')) {
+        closeEndMeetingModal(); return;
+      }
+      if (e.target.closest('[data-wip-live-end-confirm]')) { endMeeting(); return; }
+      // Click outside modal body dismisses
+      if (e.target === E.endModal) closeEndMeetingModal();
+    });
+  })();
+
+  // ── Start Meeting button (agenda builder → live) ───────────
+  els.startMeetingBtn.addEventListener('click', function(){
+    startMeeting();
+    window.location.hash = '#wip/live';
+    if (typeof window.showToast === 'function') {
+      window.showToast('Meeting started \u2014 use \u2190 / \u2192 to pace, N/D/A to capture.', { duration: 4200 });
     }
   });
 
   // ── Public hook for router ──────────────────────────────────
   window.WIP = {
-    onRoute: function(/* sub, id */){
-      // Stage 1: sub-toggle is already done by routeToView.
-      // Future stages can hook per-sub rendering here.
+    onRoute: function(sub /* , id */){
+      if (sub === 'live') {
+        ensureMeetingState();
+        if (!state.meeting.active) {
+          // Auto-start when entering live without prior start (demo-friendly).
+          startMeeting();
+        }
+        renderLive();
+        startTicking();
+        attachLiveKeyboard();
+      } else {
+        stopTicking();
+        detachLiveKeyboard();
+        closeCapture();
+      }
     }
   };
 
@@ -29435,6 +30508,19 @@ window.OPS_TEAM = OPS_TEAM;
   renderHeader();
   renderQueue();
   renderRun();
+
+  // Belated sub-route init: the router may have routed to #wip/live
+  // before this IIFE defined window.WIP (script-order race). Catch up.
+  (function(){
+    var h = (window.location.hash || '').replace('#','').toLowerCase();
+    var match = h.match(/^wip(?:\/([a-z-]+))?/);
+    if (match) {
+      var sub = match[1] || 'agenda';
+      if (window.WIP && typeof window.WIP.onRoute === 'function') {
+        window.WIP.onRoute(sub, null);
+      }
+    }
+  })();
 })();
 </script>
 
