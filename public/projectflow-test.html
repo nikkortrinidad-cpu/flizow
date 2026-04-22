@@ -23596,11 +23596,15 @@ window.OPS_TEAM = OPS_TEAM;
   // reversible.
   // ────────────────────────────────────────────────────────────────────
   function rowActionsHtml(t){
+    // data-tip-pos="below" — rows sit inside .anlx-drill-list (overflow-y: auto)
+    // and .anlx-drill (overflow: hidden). The default ::after tooltip opens
+    // ABOVE the button, which clips on the top row of the drill. Flipping to
+    // "below" keeps the tip inside the row's own space.
     return '<div class="anlx-row-actions" data-task-id="' + esc(t.id) + '">' +
-      '<button type="button" class="anlx-row-act delegate" data-act="delegate" data-tip="Delegate to a teammate" aria-label="Delegate ' + esc(t.title) + '">' +
+      '<button type="button" class="anlx-row-act delegate" data-act="delegate" data-tip="Delegate to a teammate" data-tip-pos="below" aria-label="Delegate ' + esc(t.title) + '">' +
         '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>' +
       '</button>' +
-      '<button type="button" class="anlx-row-act push" data-act="push" data-tip="Push deadline" aria-label="Push deadline on ' + esc(t.title) + '">' +
+      '<button type="button" class="anlx-row-act push" data-act="push" data-tip="Push deadline" data-tip-pos="below" aria-label="Push deadline on ' + esc(t.title) + '">' +
         '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M12 14l2 2 4-4"/></svg>' +
       '</button>' +
     '</div>';
@@ -24250,17 +24254,30 @@ window.OPS_TEAM = OPS_TEAM;
     menu.setAttribute('role', 'listbox');
     menu.innerHTML = html;
     document.body.appendChild(menu);
-    var r = trigger.getBoundingClientRect();
-    menu.style.top = (r.bottom + 6) + 'px';
-    menu.style.left = Math.max(8, r.right - 220) + 'px';
-    requestAnimationFrame(function(){ menu.classList.add('open'); });
+    // Position: below by default, flip above if not enough room below.
+    // Also clamps to viewport edges so the menu never goes off-screen.
+    function place(){
+      var rr = trigger.getBoundingClientRect();
+      var mh = menu.offsetHeight || 260;
+      var vh = window.innerHeight;
+      var spaceBelow = vh - rr.bottom;
+      var spaceAbove = rr.top;
+      var top;
+      if (spaceBelow >= mh + 12 || spaceBelow >= spaceAbove){
+        top = rr.bottom + 6;
+        // if there's not enough space even below, clamp to viewport bottom
+        if (top + mh > vh - 8) top = Math.max(8, vh - mh - 8);
+      } else {
+        top = Math.max(8, rr.top - mh - 6);
+      }
+      menu.style.top = top + 'px';
+      menu.style.left = Math.max(8, rr.right - 220) + 'px';
+    }
+    place();
+    requestAnimationFrame(function(){ menu.classList.add('open'); place(); });
     var outside = function(e){ if (!menu.contains(e.target) && e.target !== trigger) closeActionPop(); };
     var keydown = function(e){ if (e.key === 'Escape'){ closeActionPop(); trigger.focus(); } };
-    var repos = function(){
-      var rr = trigger.getBoundingClientRect();
-      menu.style.top = (rr.bottom + 6) + 'px';
-      menu.style.left = Math.max(8, rr.right - 220) + 'px';
-    };
+    var repos = place;
     document.addEventListener('mousedown', outside, true);
     document.addEventListener('keydown', keydown, true);
     window.addEventListener('scroll', repos, true);
