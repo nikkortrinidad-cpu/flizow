@@ -406,7 +406,14 @@
     transition: background 0.12s, color 0.12s;
   }
   .acct-close:hover { background: var(--bg-soft); color: var(--text); }
-  .acct-close svg { width: 16px; height: 16px; }
+  .acct-close svg { width: 16px; height: 16px; pointer-events: none; }
+  /* Belt-and-suspenders: all decorative SVGs inside clickable acct-*
+     surfaces should pass clicks through to their parent. */
+  .acct-modal button svg,
+  .acct-nav-item svg,
+  .acct-segment-btn svg,
+  .acct-toggle svg,
+  .acct-external-link svg { pointer-events: none; }
 
   .acct-body {
     display: flex; flex: 1; min-height: 0;
@@ -12677,13 +12684,6 @@
               Manage
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17L17 7"/><path d="M7 7h10v10"/></svg>
             </a>
-          </div>
-          <div class="acct-row" style="border-top:0; padding-top:6px;">
-            <div class="acct-row-text">
-              <div class="acct-row-title">Sign out of all devices</div>
-              <div class="acct-row-sub">Ends every ProjectFlow session. You'll sign back in with Google.</div>
-            </div>
-            <button class="acct-btn-ring" type="button" id="settingsSignOutAll">Sign out everywhere</button>
           </div>
         </section>
       </div>
@@ -32885,21 +32885,6 @@ window.OPS_TEAM = OPS_TEAM;
     refreshInitials();
     markDirty();
     closeSettings();
-  });
-
-  /* ---------- Sign out everywhere ---------- */
-  document.getElementById('settingsSignOutAll').addEventListener('click', function(){
-    if (typeof window.openConfirm === 'function') {
-      window.openConfirm({
-        title: 'Sign out of all devices?',
-        body: 'You will need to sign back in with Google on every device.',
-        confirmLabel: 'Sign out everywhere'
-      }).then(function(ok){
-        if (ok) toast('Signed out of all devices (mockup)');
-      });
-    } else {
-      toast('Signed out of all devices (mockup)');
-    }
   });
 
   /* ---------- Section routing ---------- */
