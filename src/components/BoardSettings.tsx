@@ -238,7 +238,7 @@ export function BoardSettings({ onClose }: { onClose: () => void }) {
                     <p className="text-[10px] text-[#86868b]">{m.email}</p>
                   </div>
                   <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#e8e8ed] dark:bg-[#3a3a3c] text-[#6e6e73] dark:text-[#aeaeb2] font-medium">{m.role}</span>
-                  {m.id !== 'user-1' && (
+                  {m.id !== store.getCurrentMemberId() && (
                     <button onClick={() => store.deleteMember(m.id)}
                       className="text-[#86868b] hover:text-[#ff3b30] transition text-xs">Remove</button>
                   )}

@@ -128,47 +128,164 @@ class BoardStore {
       this.firestoreUnsub = null;
     }
 
+    // If a different user is signing in on this browser, reset local state so the
+    // previous user's board doesn't flash or leak into the new user's session.
+    if (this.userId && userId && this.userId !== userId) {
+      localStorage.removeItem(STORAGE_KEY);
+      this.state = createDefaultState();
+    }
+
     this.userId = userId;
 
-    if (userId) {
-      // Update the first member to reflect the logged-in user
-      if (displayName || email) {
-        const me = this.state.members.find(m => m.id === 'user-1');
-        if (me) {
-          me.name = displayName || me.name;
-          me.email = email || me.email;
-          me.avatar = photoURL || me.avatar;
-        }
-      }
+    if (!userId) {
+      this.listeners.forEach(l => l());
+      return;
+    }
 
-      // Listen for realtime updates from Firestore
-      const docRef = doc(db, 'boards', userId);
-      this.firestoreUnsub = onSnapshot(docRef, (snapshot) => {
-        if (this.ignoreNextSnapshot) {
-          this.ignoreNextSnapshot = false;
-          return;
+    // One-time, idempotent migration: rewrite lingering 'user-1' references to
+    // the signed-in user's Firebase UID across members, cards, checklists,
+    // comments (recursive), reactions, activity log, trash, archive, filters.
+    this.migrateUser1ToUid(userId);
+    this.updateOwnProfile(userId, displayName, email, photoURL);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(this.state));
+    this.listeners.forEach(l => l());
+
+    // Listen for realtime updates from Firestore
+    const docRef = doc(db, 'boards', userId);
+    this.firestoreUnsub = onSnapshot(docRef, (snapshot) => {
+      if (this.ignoreNextSnapshot) {
+        this.ignoreNextSnapshot = false;
+        return;
+      }
+      if (snapshot.exists()) {
+        const data = snapshot.data();
+        if (data && data.boardState) {
+          const cloudState = migrateState(JSON.parse(data.boardState));
+          // Preserve local-only state (filters, theme)
+          cloudState.filters = this.state.filters;
+          cloudState.theme = this.state.theme;
+          this.state = cloudState;
+          // Cloud doc may still reference 'user-1' if it was saved by an older build.
+          this.migrateUser1ToUid(userId);
+          this.updateOwnProfile(userId, displayName, email, photoURL);
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(this.state));
+          this.listeners.forEach(l => l());
         }
-        if (snapshot.exists()) {
-          const data = snapshot.data();
-          if (data && data.boardState) {
-            const cloudState = migrateState(JSON.parse(data.boardState));
-            // Preserve local-only state (filters, theme)
-            cloudState.filters = this.state.filters;
-            cloudState.theme = this.state.theme;
-            this.state = cloudState;
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(this.state));
-            this.listeners.forEach(l => l());
-          }
-        } else {
-          // No cloud data yet — push local data up
-          this.saveToFirestore();
-        }
+      } else {
+        // No cloud data yet — push local data up
+        this.saveToFirestore();
+      }
+    });
+  }
+
+  private updateOwnProfile(uid: string, displayName?: string, email?: string, photoURL?: string) {
+    const me = this.state.members.find(m => m.id === uid);
+    if (me) {
+      if (displayName) me.name = displayName;
+      if (email) me.email = email;
+      if (photoURL !== undefined) me.avatar = photoURL || '';
+    } else {
+      // No member record for this UID yet — add one so assignee/author lookups resolve.
+      this.state.members.push({
+        id: uid,
+        name: displayName || 'You',
+        email: email || '',
+        avatar: photoURL || '',
+        role: 'admin',
       });
     }
   }
 
+  private migrateUser1ToUid(newUid: string): boolean {
+    if (newUid === 'user-1') return false;
+    let mutated = false;
+    const rewriteId = (id: string | null | undefined) => {
+      if (id === 'user-1') { mutated = true; return newUid; }
+      return id;
+    };
+
+    // Members: promote user-1's record to the new UID (or drop it if a record for
+    // newUid already exists on this board).
+    const meIdx = this.state.members.findIndex(m => m.id === 'user-1');
+    if (meIdx !== -1) {
+      const existing = this.state.members.find(m => m.id === newUid);
+      if (existing) {
+        this.state.members.splice(meIdx, 1);
+      } else {
+        this.state.members[meIdx].id = newUid;
+      }
+      mutated = true;
+    }
+
+    // Cards: assignee, checklist assignees, comments (recursive), reactions
+    const rewriteCommentTree = (arr: Comment[]) => {
+      arr.forEach(cm => {
+        cm.authorId = rewriteId(cm.authorId) as string;
+        if (cm.reactions) {
+          Object.keys(cm.reactions).forEach(emoji => {
+            cm.reactions![emoji] = cm.reactions![emoji].map(uid => {
+              if (uid === 'user-1') { mutated = true; return newUid; }
+              return uid;
+            });
+          });
+        }
+        if (cm.replies) rewriteCommentTree(cm.replies);
+      });
+    };
+    this.state.cards.forEach(c => {
+      c.assigneeId = rewriteId(c.assigneeId) ?? null;
+      if (c.checklist) c.checklist.forEach(i => { i.assigneeId = rewriteId(i.assigneeId) ?? null; });
+      if (c.comments) rewriteCommentTree(c.comments);
+    });
+
+    // Activity log
+    this.state.activityLog.forEach(a => { a.userId = rewriteId(a.userId) as string; });
+
+    // Trash
+    this.state.trash.forEach(t => {
+      if (t.type === 'card') {
+        const card = t.data as Card;
+        card.assigneeId = rewriteId(card.assigneeId) ?? null;
+        if (card.checklist) card.checklist.forEach(i => { i.assigneeId = rewriteId(i.assigneeId) ?? null; });
+        if (card.comments) rewriteCommentTree(card.comments);
+      }
+      if (t.associatedCards) {
+        t.associatedCards.forEach(card => {
+          card.assigneeId = rewriteId(card.assigneeId) ?? null;
+          if (card.checklist) card.checklist.forEach(i => { i.assigneeId = rewriteId(i.assigneeId) ?? null; });
+          if (card.comments) rewriteCommentTree(card.comments);
+        });
+      }
+    });
+
+    // Archive
+    this.state.archive.forEach(a => {
+      if (a.type === 'card') {
+        const card = a.data as Card;
+        card.assigneeId = rewriteId(card.assigneeId) ?? null;
+        if (card.checklist) card.checklist.forEach(i => { i.assigneeId = rewriteId(i.assigneeId) ?? null; });
+        if (card.comments) rewriteCommentTree(card.comments);
+      }
+      if (a.associatedCards) {
+        a.associatedCards.forEach(card => {
+          card.assigneeId = rewriteId(card.assigneeId) ?? null;
+          if (card.checklist) card.checklist.forEach(i => { i.assigneeId = rewriteId(i.assigneeId) ?? null; });
+          if (card.comments) rewriteCommentTree(card.comments);
+        });
+      }
+    });
+
+    // Filter state (assignee filter chips)
+    if (this.state.filters.assigneeIds.includes('user-1')) {
+      this.state.filters.assigneeIds = this.state.filters.assigneeIds.map(id => id === 'user-1' ? newUid : id);
+      mutated = true;
+    }
+
+    return mutated;
+  }
+
   getCurrentMemberId(): string {
-    return 'user-1';
+    return this.userId || 'user-1';
   }
 
   private saveToFirestore() {
@@ -253,7 +370,7 @@ class BoardStore {
     }
 
     this.state.cards.push(card);
-    this.logActivity(card.id, 'user-1', 'created', `Created card "${card.title}"`);
+    this.logActivity(card.id, this.getCurrentMemberId(), 'created', `Created card "${card.title}"`);
     this.addNotification(`Card "${card.title}" created`, 'success', card.id);
     this.save();
     return card;
@@ -275,9 +392,9 @@ class BoardStore {
           this.addNotification(`WIP limit exceeded for "${newCol.title}" (${count}/${newCol.wipLimit})`, 'warning', cardId);
         }
       }
-      this.logActivity(cardId, 'user-1', 'moved', `Moved "${card.title}" from ${oldCol?.title} to ${newCol?.title}`);
+      this.logActivity(cardId, this.getCurrentMemberId(), 'moved', `Moved "${card.title}" from ${oldCol?.title} to ${newCol?.title}`);
     } else {
-      this.logActivity(cardId, 'user-1', 'updated', `Updated "${card.title}"`);
+      this.logActivity(cardId, this.getCurrentMemberId(), 'updated', `Updated "${card.title}"`);
     }
     this.save();
   }
@@ -294,7 +411,7 @@ class BoardStore {
       };
       this.state.trash.push(trashItem);
       this.state.cards = this.state.cards.filter(c => c.id !== cardId);
-      this.logActivity(cardId, 'user-1', 'deleted', `Moved card "${card.title}" to trash`);
+      this.logActivity(cardId, this.getCurrentMemberId(), 'deleted', `Moved card "${card.title}" to trash`);
       this.addNotification(`Card "${card.title}" moved to trash`, 'info', cardId);
     }
     this.cleanupTrash();
@@ -325,7 +442,7 @@ class BoardStore {
           this.addNotification(`WIP limit exceeded for "${newCol.title}" (${count}/${newCol.wipLimit})`, 'warning', cardId);
         }
       }
-      this.logActivity(cardId, 'user-1', 'moved', `Moved "${card.title}" from ${oldCol?.title} to ${newCol?.title}`);
+      this.logActivity(cardId, this.getCurrentMemberId(), 'moved', `Moved "${card.title}" from ${oldCol?.title} to ${newCol?.title}`);
     }
     this.save();
   }
@@ -348,12 +465,13 @@ class BoardStore {
   addComment(cardId: string, text: string, scheduledAt?: string) {
     const card = this.getCard(cardId);
     if (!card) return;
-    const comment: Comment = { id: uuid(), authorId: 'user-1', text, createdAt: new Date().toISOString(), scheduledAt };
+    const me = this.getCurrentMemberId();
+    const comment: Comment = { id: uuid(), authorId: me, text, createdAt: new Date().toISOString(), scheduledAt };
     card.comments.push(comment);
     if (scheduledAt) {
-      this.logActivity(cardId, 'user-1', 'scheduled', `Scheduled a comment on "${card.title}"`);
+      this.logActivity(cardId, me, 'scheduled', `Scheduled a comment on "${card.title}"`);
     } else {
-      this.logActivity(cardId, 'user-1', 'commented', `Commented on "${card.title}"`);
+      this.logActivity(cardId, me, 'commented', `Commented on "${card.title}"`);
     }
     this.save();
   }
@@ -364,7 +482,7 @@ class BoardStore {
     const comment = this.findCommentInTree(card.comments, commentId);
     if (!comment) return;
     if (!comment.replies) comment.replies = [];
-    const reply: Comment = { id: uuid(), authorId: 'user-1', text, createdAt: new Date().toISOString() };
+    const reply: Comment = { id: uuid(), authorId: this.getCurrentMemberId(), text, createdAt: new Date().toISOString() };
     comment.replies.push(reply);
     this.save();
   }
@@ -405,7 +523,7 @@ class BoardStore {
     comment.deletedAt = new Date().toISOString();
     comment.text = '';
     comment.reactions = {};
-    this.logActivity(cardId, 'user-1', 'updated', `Deleted a comment on "${card.title}"`);
+    this.logActivity(cardId, this.getCurrentMemberId(), 'updated', `Deleted a comment on "${card.title}"`);
     this.save();
   }
 
@@ -416,7 +534,7 @@ class BoardStore {
     if (!card.checklist) card.checklist = [];
     const item: ChecklistItem = { id: uuid(), text, checked: false, assigneeId };
     card.checklist.push(item);
-    this.logActivity(cardId, 'user-1', 'updated', `Added checklist item "${text}" to "${card.title}"`);
+    this.logActivity(cardId, this.getCurrentMemberId(), 'updated', `Added checklist item "${text}" to "${card.title}"`);
     this.save();
     return item;
   }
@@ -453,7 +571,7 @@ class BoardStore {
     const card = this.state.cards.find(c => c.id === cardId);
     if (!card) return;
     card.attachments.push(url);
-    this.logActivity(cardId, 'user-1', 'updated', `Added attachment to "${card.title}"`);
+    this.logActivity(cardId, this.getCurrentMemberId(), 'updated', `Added attachment to "${card.title}"`);
     this.save();
   }
 
@@ -501,7 +619,7 @@ class BoardStore {
       this.state.trash.push(trashItem);
       this.state.cards = this.state.cards.filter(c => c.columnId !== colId);
       this.state.columns = this.state.columns.filter(c => c.id !== colId);
-      this.logActivity(colId, 'user-1', 'deleted', `Moved list "${col.title}" to trash`);
+      this.logActivity(colId, this.getCurrentMemberId(), 'deleted', `Moved list "${col.title}" to trash`);
     }
     this.cleanupTrash();
     this.save();
@@ -673,7 +791,7 @@ class BoardStore {
       }
       card.order = this.state.cards.filter(c => c.columnId === card.columnId).length;
       this.state.cards.push(card);
-      this.logActivity(card.id, 'user-1', 'restored', `Restored card "${card.title}" from trash`);
+      this.logActivity(card.id, this.getCurrentMemberId(), 'restored', `Restored card "${card.title}" from trash`);
       this.addNotification(`Card "${card.title}" restored`, 'success', card.id);
     } else if (trashItem.type === 'column') {
       const col = trashItem.data as Column;
@@ -686,7 +804,7 @@ class BoardStore {
           this.state.cards.push(card);
         });
       }
-      this.logActivity(col.id, 'user-1', 'restored', `Restored list "${col.title}" from trash`);
+      this.logActivity(col.id, this.getCurrentMemberId(), 'restored', `Restored list "${col.title}" from trash`);
       this.addNotification(`List "${col.title}" restored with its cards`, 'success');
     }
 
@@ -721,7 +839,7 @@ class BoardStore {
     };
     this.state.archive.push(archiveItem);
     this.state.cards = this.state.cards.filter(c => c.id !== cardId);
-    this.logActivity(cardId, 'user-1', 'archived', `Archived card "${card.title}"`);
+    this.logActivity(cardId, this.getCurrentMemberId(), 'archived', `Archived card "${card.title}"`);
     this.addNotification(`Card "${card.title}" archived`, 'info', cardId);
     this.save();
   }
@@ -740,7 +858,7 @@ class BoardStore {
     this.state.archive.push(archiveItem);
     this.state.cards = this.state.cards.filter(c => c.columnId !== colId);
     this.state.columns = this.state.columns.filter(c => c.id !== colId);
-    this.logActivity(colId, 'user-1', 'archived', `Archived list "${col.title}"`);
+    this.logActivity(colId, this.getCurrentMemberId(), 'archived', `Archived list "${col.title}"`);
     this.addNotification(`List "${col.title}" archived`, 'info');
     this.save();
   }
@@ -757,7 +875,7 @@ class BoardStore {
       }
       card.order = this.state.cards.filter(c => c.columnId === card.columnId).length;
       this.state.cards.push(card);
-      this.logActivity(card.id, 'user-1', 'restored', `Restored card "${card.title}" from archive`);
+      this.logActivity(card.id, this.getCurrentMemberId(), 'restored', `Restored card "${card.title}" from archive`);
       this.addNotification(`Card "${card.title}" restored from archive`, 'success', card.id);
     } else if (item.type === 'column') {
       const col = item.data as Column;
@@ -769,7 +887,7 @@ class BoardStore {
           this.state.cards.push(card);
         });
       }
-      this.logActivity(col.id, 'user-1', 'restored', `Restored list "${col.title}" from archive`);
+      this.logActivity(col.id, this.getCurrentMemberId(), 'restored', `Restored list "${col.title}" from archive`);
       this.addNotification(`List "${col.title}" restored from archive`, 'success');
     }
 

@@ -558,7 +558,7 @@ export function CardDetailPanel({ card, onClose }: Props) {
                 {/* Shared members */}
                 {(() => {
                   const cardAssignee = state.members.find(m => m.id === card.assigneeId);
-                  const creator = state.members.find(m => m.id === 'user-1');
+                  const creator = state.members.find(m => m.id === store.getCurrentMemberId());
                   const sharedMembers = [creator, cardAssignee].filter((m, i, arr) => m && arr.findIndex(a => a?.id === m.id) === i) as typeof state.members;
                   return sharedMembers.length > 0 ? (
                     <div className="px-5 py-3 border-t border-[#e8e8ed] dark:border-[#38383a]">
