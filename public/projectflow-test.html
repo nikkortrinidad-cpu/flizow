@@ -89,6 +89,23 @@
     --sp-5xl: 40px;       /* large section gap                        */
     --sp-6xl: 48px;       /* hero padding / page-level rhythm         */
     --sp-7xl: 64px;       /* top-level view padding                   */
+
+    /* Motion tokens — Apple HIG #8 "motion explains, it doesn't decorate".
+       Duration default floor 100ms (micro-feedback) → ceiling 400ms (page).
+       Easing default is ease-out for motion (start fast, settle), spring
+       for overshoot/elastic feel, linear only for opacity cross-fades. */
+    --dur-instant:  100ms;  /* color/bg flicks, immediate feedback     */
+    --dur-fast:     120ms;  /* hover state changes (dominant pattern)  */
+    --dur-base:     150ms;  /* standard UI transitions                 */
+    --dur-med:      180ms;  /* toast, menu, popover enter              */
+    --dur-slow:     220ms;  /* larger transforms, logSlideUp           */
+    --dur-slower:   300ms;  /* panel slides, theme crossfade           */
+    --dur-page:     400ms;  /* full-page transitions, max-height       */
+
+    --ease-out:     cubic-bezier(0.2, 0, 0, 1);       /* Apple std ease-out */
+    --ease-spring:  cubic-bezier(0.32, 0.72, 0, 1);   /* Apple spring       */
+    --ease-snap:    cubic-bezier(0.2, 0.8, 0.2, 1);   /* snappy ease-out    */
+    --ease-pop:     cubic-bezier(0.2, 0.9, 0.3, 1.2); /* pop w/ overshoot   */
   }
   :root[data-theme="dark"] {
     --bg: #000000;
@@ -1782,7 +1799,7 @@
     color: #0a84ff;
     border-color: rgba(10, 132, 255, 0.25);
   }
-  .reaction-pill.popping { animation: reaction-pop 220ms cubic-bezier(0.2, 0.8, 0.2, 1); }
+  .reaction-pill.popping { animation: reaction-pop var(--dur-slow) var(--ease-snap); }
   .reaction-pill.leaving { animation: reaction-leave 160ms ease-in forwards; }
   @keyframes reaction-pop {
     0%   { transform: scale(1); }
@@ -2926,7 +2943,7 @@
     box-shadow: var(--modal-shadow);
     display: flex;
     overflow: hidden;
-    animation: settingsPopIn 0.2s cubic-bezier(0.2, 0.9, 0.3, 1.2);
+    animation: settingsPopIn var(--dur-slow) var(--ease-pop);
   }
   @keyframes settingsPopIn {
     from { transform: scale(0.96); opacity: 0; }
@@ -3315,7 +3332,7 @@
     display: flex;
     flex-direction: column;
     overflow: hidden;
-    animation: settingsPopIn 0.2s cubic-bezier(0.2, 0.9, 0.3, 1.2);
+    animation: settingsPopIn var(--dur-slow) var(--ease-pop);
   }
 
   .members-header {
@@ -3602,7 +3619,7 @@
     display: flex;
     flex-direction: column;
     overflow: hidden;
-    animation: settingsPopIn 0.2s cubic-bezier(0.2, 0.9, 0.3, 1.2);
+    animation: settingsPopIn var(--dur-slow) var(--ease-pop);
   }
 
   .analytics-header {
@@ -3938,7 +3955,7 @@
     line-height: var(--lh-dense);
     box-shadow: 0 10px 30px rgba(0,0,0,0.35);
     pointer-events: auto;
-    animation: toast-in 180ms cubic-bezier(0.2, 0.8, 0.2, 1);
+    animation: toast-in var(--dur-med) var(--ease-snap);
     max-width: 420px;
   }
   .toast.leaving { animation: toast-out 160ms ease-in forwards; }
@@ -4473,7 +4490,7 @@
     font-family: inherit;
     letter-spacing: -0.005em;
     cursor: pointer;
-    transition: background 0.12s, opacity 0.12s, transform 0.08s;
+    transition: background var(--dur-fast), opacity var(--dur-fast), transform var(--dur-instant) var(--ease-out);
   }
   .share-invite-btn:hover:not(:disabled) { background: var(--hover-blue-dark); }
   .share-invite-btn:active:not(:disabled) { transform: scale(0.97); }
@@ -4804,7 +4821,7 @@
 
   /* Animate reorder */
   .block.reorder-anim {
-    transition: transform 0.3s cubic-bezier(0.2, 0, 0, 1);
+    transition: transform var(--dur-slower) var(--ease-out);
   }
   .block-title {
     font-size: var(--fs-sm); font-weight: 600; color: var(--text-soft);
@@ -5575,7 +5592,7 @@
     flex-direction: column;
     overflow-y: auto;
     transform: translateX(110%);
-    transition: transform 0.35s cubic-bezier(0.32, 0.72, 0, 1);
+    transition: transform 350ms var(--ease-spring);
   }
   .wl-panel.open {
     transform: translateX(0);
@@ -6205,7 +6222,7 @@
     padding: 22px 24px 18px;
     box-shadow: 0 24px 64px -16px rgba(0, 0, 0, 0.65), 0 4px 16px rgba(0, 0, 0, 0.3);
     transform: scale(0.96);
-    transition: transform 0.15s cubic-bezier(0.2, 0.8, 0.2, 1);
+    transition: transform var(--dur-base) var(--ease-snap);
   }
   .confirm-overlay[data-open="true"] .confirm-dialog { transform: scale(1); }
   .confirm-title {
@@ -6836,7 +6853,7 @@
     padding: 22px 24px 18px;
     box-shadow: 0 24px 64px -16px rgba(0, 0, 0, 0.65), 0 4px 16px rgba(0, 0, 0, 0.3);
     transform: scale(0.96);
-    transition: transform 0.15s cubic-bezier(0.2, 0.8, 0.2, 1);
+    transition: transform var(--dur-base) var(--ease-snap);
     text-align: center;
   }
   .confirm-overlay[data-open="true"] .phone-modal { transform: scale(1); }
@@ -7278,7 +7295,7 @@
     border-radius: 18px;
     display: flex; flex-direction: column;
     box-shadow: var(--modal-shadow, 0 20px 60px rgba(0,0,0,0.35));
-    animation: logSlideUp 0.22s cubic-bezier(0.2, 0.8, 0.2, 1);
+    animation: logSlideUp var(--dur-slow) var(--ease-snap);
     overflow: hidden;
   }
   @keyframes logSlideUp { from { transform: translateY(12px); opacity: 0; } to { transform: none; opacity: 1; } }
@@ -7492,7 +7509,7 @@
     border-radius: 10px;
     font-size: var(--fs-md); font-weight: 500;
     cursor: pointer;
-    transition: background 0.12s, border-color 0.12s, transform 0.08s;
+    transition: background var(--dur-fast), border-color var(--dur-fast), transform var(--dur-instant) var(--ease-out);
   }
   .log-modal-cancel {
     background: transparent;
