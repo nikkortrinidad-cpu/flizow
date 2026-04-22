@@ -356,6 +356,336 @@
   .account-menu-divider {
     height: 1px; background: var(--hairline-soft); margin: 4px 12px;
   }
+
+  /* ═══════════════════════════════════════════════════════════════
+   * ACCOUNT SETTINGS MODAL
+   * Left-nav pattern (Linear/Notion): sections are direct-manipulation
+   * where possible; Profile alone carries an explicit Save footer.
+   * ═══════════════════════════════════════════════════════════════ */
+  .acct-overlay {
+    display: none; position: fixed; inset: 0;
+    z-index: 1500;
+    background: rgba(0, 0, 0, 0.55);
+    -webkit-backdrop-filter: blur(6px);
+    backdrop-filter: blur(6px);
+    align-items: center; justify-content: center;
+    padding: 32px 16px;
+    opacity: 0;
+    transition: opacity 0.16s ease;
+  }
+  .acct-overlay[data-open="true"] { display: flex; opacity: 1; }
+  .acct-modal {
+    width: 100%; max-width: 860px;
+    height: min(640px, 88vh);
+    background: var(--bg-elev);
+    border: 1px solid var(--hairline);
+    border-radius: 16px;
+    box-shadow: 0 32px 80px -20px rgba(0, 0, 0, 0.7), 0 8px 24px rgba(0, 0, 0, 0.3);
+    display: flex; flex-direction: column;
+    overflow: hidden;
+    transform: scale(0.97);
+    transition: transform 0.18s cubic-bezier(0.32, 0.72, 0, 1);
+  }
+  .acct-overlay[data-open="true"] .acct-modal { transform: scale(1); }
+  .acct-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 18px 22px;
+    border-bottom: 1px solid var(--hairline-soft);
+    flex-shrink: 0;
+  }
+  .acct-title {
+    font-size: 17px; font-weight: 600; color: var(--text);
+    letter-spacing: -0.01em;
+    margin: 0;
+  }
+  .acct-close {
+    width: 30px; height: 30px; border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    background: transparent; border: 0; cursor: pointer;
+    color: var(--text-muted);
+    transition: background 0.12s, color 0.12s;
+  }
+  .acct-close:hover { background: var(--bg-soft); color: var(--text); }
+  .acct-close svg { width: 16px; height: 16px; }
+
+  .acct-body {
+    display: flex; flex: 1; min-height: 0;
+  }
+  .acct-nav {
+    width: 190px; flex-shrink: 0;
+    border-right: 1px solid var(--hairline-soft);
+    padding: 12px 10px;
+    overflow-y: auto;
+  }
+  .acct-nav-item {
+    display: flex; align-items: center; gap: 10px;
+    width: 100%;
+    padding: 8px 10px; border-radius: 8px;
+    background: transparent; border: 0;
+    color: var(--text-muted); cursor: pointer;
+    font-size: var(--fs-md); font-weight: 500;
+    text-align: left;
+    transition: background 0.1s, color 0.1s;
+  }
+  .acct-nav-item svg {
+    width: 15px; height: 15px; flex-shrink: 0;
+    color: var(--text-muted);
+  }
+  .acct-nav-item:hover { background: var(--bg-soft); color: var(--text); }
+  .acct-nav-item[aria-selected="true"] {
+    background: var(--hover-tint); color: #0a84ff;
+  }
+  .acct-nav-item[aria-selected="true"] svg { color: #0a84ff; }
+
+  .acct-content {
+    flex: 1; min-width: 0;
+    overflow-y: auto;
+    padding: 28px 32px;
+  }
+  .acct-section { display: none; }
+  .acct-section[data-active="true"] { display: block; }
+  .acct-section-header {
+    margin-bottom: 20px;
+  }
+  .acct-section-title {
+    font-size: 18px; font-weight: 600; color: var(--text);
+    letter-spacing: -0.012em;
+    margin: 0 0 4px;
+  }
+  .acct-section-sub {
+    font-size: var(--fs-md); color: var(--text-muted);
+    line-height: 1.5;
+  }
+
+  /* Profile avatar block */
+  .acct-avatar-block {
+    display: flex; align-items: center; gap: 14px;
+    margin-bottom: 24px;
+  }
+  .acct-avatar-large {
+    width: 56px; height: 56px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px; font-weight: 600; color: #fff;
+    letter-spacing: -0.01em;
+    flex-shrink: 0;
+    background: #5e5ce6; /* default; overridden by JS */
+  }
+  .acct-avatar-colors {
+    display: flex; align-items: center; gap: 8px;
+    flex-wrap: wrap;
+  }
+  .acct-avatar-color {
+    width: 22px; height: 22px; border-radius: 50%;
+    border: 2px solid transparent;
+    cursor: pointer;
+    padding: 0;
+    transition: transform 0.12s, border-color 0.12s;
+  }
+  .acct-avatar-color:hover { transform: scale(1.1); }
+  .acct-avatar-color[aria-pressed="true"] {
+    border-color: var(--text);
+    box-shadow: 0 0 0 2px var(--bg-elev) inset;
+  }
+
+  /* Form grid */
+  .acct-form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px 18px;
+  }
+  .acct-form-grid .acct-field-full { grid-column: 1 / -1; }
+  .acct-form-field { margin: 0; }
+  .acct-form-field .acct-field-label {
+    display: block;
+    font-size: 11px; font-weight: 600;
+    color: var(--text-muted);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+  .acct-form-field .acct-input,
+  .acct-form-field select.acct-input {
+    width: 100%;
+    padding: 9px 12px; /* ~36px tall */
+    background: var(--bg-soft);
+    border: 1px solid var(--hairline);
+    border-radius: 8px;
+    color: var(--text);
+    font-family: inherit; font-size: var(--fs-md);
+    transition: border-color 0.12s, background 0.12s;
+    box-sizing: border-box;
+  }
+  .acct-form-field .acct-input:focus {
+    outline: none;
+    border-color: #0a84ff;
+    background: var(--bg);
+  }
+  .acct-form-field .acct-input[readonly] {
+    background: transparent;
+    color: var(--text-muted);
+    cursor: not-allowed;
+  }
+  .acct-field-hint {
+    display: flex; align-items: center; gap: 5px;
+    font-size: 11px; color: var(--text-muted);
+    margin-top: 6px;
+  }
+  .acct-field-hint svg { width: 11px; height: 11px; flex-shrink: 0; }
+
+  /* Row pattern (Preferences & Notifications share this) */
+  .acct-row {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 16px;
+    padding: 14px 0;
+    border-top: 1px solid var(--hairline-soft);
+  }
+  .acct-row:first-of-type { border-top: 0; padding-top: 4px; }
+  .acct-row-text { min-width: 0; flex: 1; }
+  .acct-row-title {
+    font-size: var(--fs-md); font-weight: 500; color: var(--text);
+    line-height: 1.4;
+  }
+  .acct-row-sub {
+    font-size: 12px; color: var(--text-muted);
+    margin-top: 2px; line-height: 1.4;
+  }
+
+  /* Segmented control (reused from account menu — slightly larger) */
+  .acct-segment {
+    display: inline-flex; align-items: center;
+    background: var(--bg-soft); border-radius: 980px; padding: 3px;
+    flex-shrink: 0;
+  }
+  .acct-segment-btn {
+    font-size: var(--fs-md); font-weight: 500; color: var(--text-muted);
+    padding: 5px 14px; border-radius: 980px;
+    background: transparent; border: 0; cursor: pointer;
+    transition: background 0.12s, color 0.12s;
+  }
+  .acct-segment-btn:hover { color: var(--text); }
+  .acct-segment-btn[aria-pressed="true"] {
+    background: var(--bg-elev); color: var(--text);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+  }
+
+  /* Toggle switch */
+  .acct-toggle {
+    position: relative;
+    width: 40px; height: 24px; border-radius: 980px;
+    background: var(--bg-soft);
+    border: 0; cursor: pointer; padding: 0;
+    transition: background 0.16s ease;
+    flex-shrink: 0;
+  }
+  .acct-toggle::after {
+    content: '';
+    position: absolute;
+    top: 2px; left: 2px;
+    width: 20px; height: 20px; border-radius: 50%;
+    background: #fff;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+    transition: transform 0.16s cubic-bezier(0.32, 0.72, 0, 1);
+  }
+  .acct-toggle[aria-checked="true"] { background: #34c759; }
+  .acct-toggle[aria-checked="true"]::after { transform: translateX(16px); }
+  .acct-toggle:focus-visible {
+    outline: 2px solid #0a84ff; outline-offset: 2px;
+  }
+
+  /* Sign-in section */
+  .acct-connected {
+    display: flex; align-items: center; gap: 14px;
+    padding: 16px;
+    background: var(--bg-soft);
+    border: 1px solid var(--hairline-soft);
+    border-radius: 12px;
+    margin-bottom: 14px;
+  }
+  .acct-connected-logo {
+    width: 36px; height: 36px; border-radius: 50%;
+    background: var(--bg-elev);
+    border: 1px solid var(--hairline);
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .acct-connected-logo svg { width: 18px; height: 18px; }
+  .acct-connected-text { min-width: 0; flex: 1; }
+  .acct-connected-label {
+    font-size: var(--fs-md); font-weight: 500; color: var(--text);
+  }
+  .acct-connected-email {
+    font-size: 12px; color: var(--text-muted); margin-top: 2px;
+  }
+  .acct-external-link {
+    font-size: var(--fs-md); color: #0a84ff;
+    text-decoration: none; font-weight: 500;
+    display: inline-flex; align-items: center; gap: 4px;
+    flex-shrink: 0;
+  }
+  .acct-external-link:hover { text-decoration: underline; }
+  .acct-external-link svg { width: 11px; height: 11px; }
+
+  /* Secondary (ring) button — Tier 2 */
+  .acct-btn-ring {
+    display: inline-flex; align-items: center; justify-content: center;
+    padding: 8px 16px; border-radius: 980px;
+    background: transparent;
+    border: 1px solid #0a84ff; color: #0a84ff;
+    font-size: var(--fs-md); font-weight: 500;
+    cursor: pointer;
+    transition: background 0.12s;
+  }
+  .acct-btn-ring:hover { background: var(--hover-tint); }
+
+  /* Footer */
+  .acct-footer {
+    display: flex; align-items: center; justify-content: flex-end;
+    gap: 10px;
+    padding: 14px 22px;
+    border-top: 1px solid var(--hairline-soft);
+    flex-shrink: 0;
+    min-height: 62px;
+    box-sizing: border-box;
+  }
+  .acct-footer-status {
+    flex: 1; font-size: 12px; color: var(--text-muted);
+  }
+  .acct-btn-text {
+    padding: 8px 14px; border-radius: 980px;
+    background: transparent; border: 0;
+    color: var(--text); font-size: var(--fs-md); font-weight: 500;
+    cursor: pointer;
+    transition: background 0.12s;
+  }
+  .acct-btn-text:hover { background: var(--bg-soft); }
+  .acct-btn-solid {
+    padding: 8px 18px; border-radius: 980px;
+    background: #0a84ff; border: 0;
+    color: #fff; font-size: var(--fs-md); font-weight: 500;
+    cursor: pointer;
+    transition: background 0.12s, opacity 0.12s;
+  }
+  .acct-btn-solid:hover { background: #0077e6; }
+  .acct-btn-solid:disabled {
+    opacity: 0.4; cursor: not-allowed;
+  }
+
+  /* Responsive — collapse sidebar on narrow screens */
+  @media (max-width: 720px) {
+    .acct-body { flex-direction: column; }
+    .acct-nav {
+      width: 100%; border-right: 0;
+      border-bottom: 1px solid var(--hairline-soft);
+      display: flex; overflow-x: auto;
+      padding: 10px 12px; gap: 4px;
+    }
+    .acct-nav-item { width: auto; white-space: nowrap; }
+    .acct-content { padding: 20px; }
+    .acct-form-grid { grid-template-columns: 1fr; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .acct-overlay, .acct-modal, .acct-toggle::after { transition: none; }
+  }
   .theme-toggle {
     width: 36px; height: 36px; border-radius: 50%;
     display: flex; align-items: center; justify-content: center;
@@ -12143,6 +12473,227 @@
         </button>
       </div>
     </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════
+     ACCOUNT SETTINGS MODAL
+     Surfaces: Profile (save/cancel) · Preferences (instant) ·
+     Notifications (instant) · Sign-in (actions).
+     ══════════════════════════════════════════════════════════════ -->
+<div class="acct-overlay" id="settingsOverlay" aria-hidden="true">
+  <div class="acct-modal" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
+    <header class="acct-header">
+      <h2 class="acct-title" id="settingsTitle">Account settings</h2>
+      <button class="acct-close" type="button" id="settingsClose" aria-label="Close settings">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </header>
+    <div class="acct-body">
+      <nav class="acct-nav" role="tablist" aria-label="Settings sections">
+        <button role="tab" type="button" class="acct-nav-item" data-acct-section="profile" aria-selected="true" aria-controls="acct-panel-profile" id="acct-tab-profile">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>
+          Profile
+        </button>
+        <button role="tab" type="button" class="acct-nav-item" data-acct-section="preferences" aria-selected="false" aria-controls="acct-panel-preferences" id="acct-tab-preferences">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-9-9"/><path d="M12 3v4"/><path d="M12 17v4"/><path d="M3 12h4"/><path d="M17 12h4"/></svg>
+          Preferences
+        </button>
+        <button role="tab" type="button" class="acct-nav-item" data-acct-section="notifications" aria-selected="false" aria-controls="acct-panel-notifications" id="acct-tab-notifications">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+          Notifications
+        </button>
+        <button role="tab" type="button" class="acct-nav-item" data-acct-section="signin" aria-selected="false" aria-controls="acct-panel-signin" id="acct-tab-signin">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="10" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          Sign-in
+        </button>
+      </nav>
+
+      <div class="acct-content">
+        <!-- PROFILE -->
+        <section class="acct-section" data-acct-panel="profile" data-active="true" role="tabpanel" id="acct-panel-profile" aria-labelledby="acct-tab-profile">
+          <div class="acct-section-header">
+            <h3 class="acct-section-title">Profile</h3>
+            <p class="acct-section-sub">How you appear across ProjectFlow — visible to your team and clients you share work with.</p>
+          </div>
+
+          <div class="acct-avatar-block">
+            <div class="acct-avatar-large" id="settingsAvatarPreview" data-color="#5e5ce6">NT</div>
+            <div>
+              <div style="font-size:11px; font-weight:600; color:var(--text-muted); letter-spacing:0.04em; text-transform:uppercase; margin-bottom:6px;">Avatar color</div>
+              <div class="acct-avatar-colors" role="group" aria-label="Avatar color">
+                <button class="acct-avatar-color" type="button" data-avatar-color="#5e5ce6" style="background:#5e5ce6" aria-label="Indigo" aria-pressed="true"></button>
+                <button class="acct-avatar-color" type="button" data-avatar-color="#0a84ff" style="background:#0a84ff" aria-label="Blue" aria-pressed="false"></button>
+                <button class="acct-avatar-color" type="button" data-avatar-color="#30d158" style="background:#30d158" aria-label="Green" aria-pressed="false"></button>
+                <button class="acct-avatar-color" type="button" data-avatar-color="#ff9f0a" style="background:#ff9f0a" aria-label="Orange" aria-pressed="false"></button>
+                <button class="acct-avatar-color" type="button" data-avatar-color="#ff375f" style="background:#ff375f" aria-label="Red" aria-pressed="false"></button>
+                <button class="acct-avatar-color" type="button" data-avatar-color="#bf5af2" style="background:#bf5af2" aria-label="Purple" aria-pressed="false"></button>
+                <button class="acct-avatar-color" type="button" data-avatar-color="#64d2ff" style="background:#64d2ff" aria-label="Cyan" aria-pressed="false"></button>
+              </div>
+            </div>
+          </div>
+
+          <div class="acct-form-grid">
+            <div class="acct-form-field">
+              <label class="acct-field-label" for="settingsName">Full name</label>
+              <input type="text" class="acct-input" id="settingsName" value="Nikko Trinidad" data-acct-field>
+            </div>
+            <div class="acct-form-field">
+              <label class="acct-field-label" for="settingsPreferred">Preferred name</label>
+              <input type="text" class="acct-input" id="settingsPreferred" value="Nikko" data-acct-field>
+            </div>
+            <div class="acct-form-field acct-field-full">
+              <label class="acct-field-label" for="settingsEmail">Email</label>
+              <input type="email" class="acct-input" id="settingsEmail" value="nikkortrinidad@gmail.com" readonly>
+              <div class="acct-field-hint">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="10" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                Managed by Google. Change it from your Google account.
+              </div>
+            </div>
+            <div class="acct-form-field">
+              <label class="acct-field-label" for="settingsRole">Role / title</label>
+              <input type="text" class="acct-input" id="settingsRole" value="Account Manager" data-acct-field>
+            </div>
+            <div class="acct-form-field">
+              <label class="acct-field-label" for="settingsTz">Time zone</label>
+              <select class="acct-input" id="settingsTz" data-acct-field>
+                <option value="pst" selected>Pacific · Los Angeles</option>
+                <option value="mst">Mountain · Denver</option>
+                <option value="cst">Central · Chicago</option>
+                <option value="est">Eastern · New York</option>
+                <option value="utc">UTC</option>
+                <option value="gmt">London</option>
+                <option value="cet">Berlin</option>
+                <option value="sgt">Singapore</option>
+                <option value="jst">Tokyo</option>
+                <option value="aest">Sydney</option>
+              </select>
+            </div>
+          </div>
+        </section>
+
+        <!-- PREFERENCES -->
+        <section class="acct-section" data-acct-panel="preferences" role="tabpanel" id="acct-panel-preferences" aria-labelledby="acct-tab-preferences" hidden>
+          <div class="acct-section-header">
+            <h3 class="acct-section-title">Preferences</h3>
+            <p class="acct-section-sub">Changes save instantly.</p>
+          </div>
+          <div class="acct-row">
+            <div class="acct-row-text">
+              <div class="acct-row-title">Appearance</div>
+              <div class="acct-row-sub">Match your device or pick a fixed theme.</div>
+            </div>
+            <div class="acct-segment" role="group" aria-label="Appearance">
+              <button class="acct-segment-btn" type="button" data-pref-appearance="light" aria-pressed="false">Light</button>
+              <button class="acct-segment-btn" type="button" data-pref-appearance="dark" aria-pressed="true">Dark</button>
+              <button class="acct-segment-btn" type="button" data-pref-appearance="system" aria-pressed="false">System</button>
+            </div>
+          </div>
+          <div class="acct-row">
+            <div class="acct-row-text">
+              <div class="acct-row-title">Start week on</div>
+              <div class="acct-row-sub">Affects calendar, WIP reports, and workload views.</div>
+            </div>
+            <div class="acct-segment" role="group" aria-label="Start week on">
+              <button class="acct-segment-btn" type="button" data-pref-week="sun" aria-pressed="false">Sunday</button>
+              <button class="acct-segment-btn" type="button" data-pref-week="mon" aria-pressed="true">Monday</button>
+            </div>
+          </div>
+          <div class="acct-row">
+            <div class="acct-row-text">
+              <div class="acct-row-title">Time format</div>
+              <div class="acct-row-sub">How due dates and meetings display.</div>
+            </div>
+            <div class="acct-segment" role="group" aria-label="Time format">
+              <button class="acct-segment-btn" type="button" data-pref-time="12h" aria-pressed="true">12-hour</button>
+              <button class="acct-segment-btn" type="button" data-pref-time="24h" aria-pressed="false">24-hour</button>
+            </div>
+          </div>
+        </section>
+
+        <!-- NOTIFICATIONS -->
+        <section class="acct-section" data-acct-panel="notifications" role="tabpanel" id="acct-panel-notifications" aria-labelledby="acct-tab-notifications" hidden>
+          <div class="acct-section-header">
+            <h3 class="acct-section-title">Notifications</h3>
+            <p class="acct-section-sub">We err on the side of quiet. Opt in to what's useful.</p>
+          </div>
+          <div class="acct-row">
+            <div class="acct-row-text">
+              <div class="acct-row-title">Daily email digest</div>
+              <div class="acct-row-sub">One email at 8:00 AM with what needs you today.</div>
+            </div>
+            <button class="acct-toggle" type="button" role="switch" aria-checked="true" data-notif-toggle="digest" aria-label="Daily email digest"></button>
+          </div>
+          <div class="acct-row">
+            <div class="acct-row-text">
+              <div class="acct-row-title">Weekly WIP reminder</div>
+              <div class="acct-row-sub">Monday morning nudge to prep your WIP meetings.</div>
+            </div>
+            <button class="acct-toggle" type="button" role="switch" aria-checked="true" data-notif-toggle="wip" aria-label="Weekly WIP reminder"></button>
+          </div>
+          <div class="acct-row">
+            <div class="acct-row-text">
+              <div class="acct-row-title">@Mentions &amp; direct assignments</div>
+              <div class="acct-row-sub">Email when someone tags you or assigns you a card.</div>
+            </div>
+            <button class="acct-toggle" type="button" role="switch" aria-checked="true" data-notif-toggle="mentions" aria-label="Mentions and direct assignments"></button>
+          </div>
+          <div class="acct-row">
+            <div class="acct-row-text">
+              <div class="acct-row-title">Overdue tasks</div>
+              <div class="acct-row-sub">Evening summary of anything slipping on your clients.</div>
+            </div>
+            <button class="acct-toggle" type="button" role="switch" aria-checked="false" data-notif-toggle="overdue" aria-label="Overdue tasks"></button>
+          </div>
+          <div class="acct-row">
+            <div class="acct-row-text">
+              <div class="acct-row-title">In-app notifications</div>
+              <div class="acct-row-sub">The bell icon lights up. Always on by default.</div>
+            </div>
+            <button class="acct-toggle" type="button" role="switch" aria-checked="true" data-notif-toggle="inapp" aria-label="In-app notifications"></button>
+          </div>
+        </section>
+
+        <!-- SIGN-IN -->
+        <section class="acct-section" data-acct-panel="signin" role="tabpanel" id="acct-panel-signin" aria-labelledby="acct-tab-signin" hidden>
+          <div class="acct-section-header">
+            <h3 class="acct-section-title">Sign-in</h3>
+            <p class="acct-section-sub">ProjectFlow uses Google to sign you in. Your password lives with Google.</p>
+          </div>
+          <div class="acct-connected">
+            <div class="acct-connected-logo" aria-hidden="true">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path fill="#EA4335" d="M12 10.2v3.9h5.5c-.24 1.3-1.67 3.8-5.5 3.8A5.9 5.9 0 0 1 6.1 12 5.9 5.9 0 0 1 12 6.1c1.9 0 3.2.8 4 1.5l2.7-2.6A9.3 9.3 0 0 0 12 2.5a9.5 9.5 0 1 0 0 19c5.5 0 9.1-3.9 9.1-9.3 0-.6-.1-1.1-.2-1.6H12z"/>
+                <path fill="#FBBC05" d="M6.1 12c0-.4 0-.8.1-1.2L3.5 8.8A9.5 9.5 0 0 0 2.5 12c0 1.5.4 2.9 1 4.2l2.7-2c-.1-.7-.1-1.4-.1-2.2z"/>
+                <path fill="#34A853" d="M12 21.5c2.6 0 4.7-.8 6.3-2.3l-2.7-2.1c-.8.5-1.9 1-3.6 1-2.8 0-5.2-1.9-6-4.4l-2.7 2c1.5 3 4.6 5.8 8.7 5.8z"/>
+                <path fill="#4285F4" d="M21.1 12.2c0-.6-.1-1.1-.2-1.6H12v3.9h5.5a4.7 4.7 0 0 1-2 3.1l2.7 2.1c1.6-1.5 2.9-3.7 2.9-7.5z"/>
+              </svg>
+            </div>
+            <div class="acct-connected-text">
+              <div class="acct-connected-label">Google</div>
+              <div class="acct-connected-email">nikkortrinidad@gmail.com</div>
+            </div>
+            <a class="acct-external-link" href="https://myaccount.google.com/" target="_blank" rel="noopener noreferrer">
+              Manage
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17L17 7"/><path d="M7 7h10v10"/></svg>
+            </a>
+          </div>
+          <div class="acct-row" style="border-top:0; padding-top:6px;">
+            <div class="acct-row-text">
+              <div class="acct-row-title">Sign out of all devices</div>
+              <div class="acct-row-sub">Ends every ProjectFlow session. You'll sign back in with Google.</div>
+            </div>
+            <button class="acct-btn-ring" type="button" id="settingsSignOutAll">Sign out everywhere</button>
+          </div>
+        </section>
+      </div>
+    </div>
+
+    <footer class="acct-footer" id="settingsFooter">
+      <span class="acct-footer-status" id="settingsFooterStatus" role="status" aria-live="polite"></span>
+      <button class="acct-btn-text" type="button" id="settingsCancel">Cancel</button>
+      <button class="acct-btn-solid" type="button" id="settingsSave" disabled>Save changes</button>
+    </footer>
   </div>
 </div>
 
@@ -32105,20 +32656,348 @@ window.OPS_TEAM = OPS_TEAM;
     });
   });
 
-  // Mockup stubs — real app would route to settings / sign out.
+  // Account actions — settings opens the real modal; sign out is still a stub.
   menu.querySelectorAll('[data-account-action]').forEach(function(item){
     item.addEventListener('click', function(e){
       e.stopPropagation();
       var action = item.getAttribute('data-account-action');
       close();
-      if (action === 'settings') toast('Account settings — coming soon');
-      else if (action === 'signout') toast('Signed out (mockup)');
+      if (action === 'settings') {
+        if (typeof window.openAccountSettings === 'function') window.openAccountSettings();
+      } else if (action === 'signout') {
+        toast('Signed out (mockup)');
+      }
     });
   });
 
   // Keep segment state in sync if theme changes from elsewhere (theme-toggle button).
   var mo = new MutationObserver(syncSegment);
   mo.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+})();
+</script>
+
+<script>
+/* ────────────────────────────────────────────────────────────────── *
+ * ACCOUNT SETTINGS MODAL — open/close, section routing, dirty Save,
+ * direct-manipulation toggles and segmented controls, avatar color,
+ * localStorage persistence, Escape/backdrop/outside close with dirty-
+ * guard via the existing confirm-dialog.
+ * ────────────────────────────────────────────────────────────────── */
+(function(){
+  var overlay = document.getElementById('settingsOverlay');
+  if (!overlay) return;
+  var modal = overlay.querySelector('.acct-modal');
+  var closeBtn = document.getElementById('settingsClose');
+  var cancelBtn = document.getElementById('settingsCancel');
+  var saveBtn = document.getElementById('settingsSave');
+  var statusEl = document.getElementById('settingsFooterStatus');
+  var avatarPreview = document.getElementById('settingsAvatarPreview');
+  var headerAvatarBtn = document.getElementById('accountMenuBtn');
+
+  var STORAGE_KEY = 'projectflow-acct-v1';
+  var prefsOrig = {};      // snapshot on open (for cancel/dirty diff)
+  var prefsCurrent = {};   // live form state
+
+  function toast(msg, opts){
+    if (typeof window.showToast === 'function') window.showToast(msg, opts || { duration: 1800 });
+  }
+
+  /* ---------- Persistence ---------- */
+  function loadPersisted(){
+    try {
+      var raw = localStorage.getItem(STORAGE_KEY);
+      return raw ? JSON.parse(raw) : null;
+    } catch (_) { return null; }
+  }
+  function persist(state){
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch (_) {}
+  }
+
+  /* ---------- Initials — always derived from the full name so the
+       avatar reads "NT" not "NI" when preferred name is just "Nikko". */
+  function initialsOf(name){
+    if (!name || !name.trim()) return 'NT';
+    var parts = name.trim().split(/\s+/);
+    if (parts.length === 1) return parts[0].charAt(0).toUpperCase();
+    return (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase();
+  }
+
+  /* ---------- Read/write form state ---------- */
+  function readForm(){
+    var color = avatarPreview.getAttribute('data-color') || '#5e5ce6';
+    var pressedWeek = modal.querySelector('[data-pref-week][aria-pressed="true"]');
+    var pressedTime = modal.querySelector('[data-pref-time][aria-pressed="true"]');
+    var pressedApp  = modal.querySelector('[data-pref-appearance][aria-pressed="true"]');
+    var notif = {};
+    modal.querySelectorAll('[data-notif-toggle]').forEach(function(t){
+      notif[t.getAttribute('data-notif-toggle')] = t.getAttribute('aria-checked') === 'true';
+    });
+    return {
+      name: document.getElementById('settingsName').value,
+      preferred: document.getElementById('settingsPreferred').value,
+      role: document.getElementById('settingsRole').value,
+      tz: document.getElementById('settingsTz').value,
+      avatarColor: color,
+      appearance: pressedApp ? pressedApp.getAttribute('data-pref-appearance') : 'dark',
+      weekStart: pressedWeek ? pressedWeek.getAttribute('data-pref-week') : 'mon',
+      timeFormat: pressedTime ? pressedTime.getAttribute('data-pref-time') : '12h',
+      notifications: notif
+    };
+  }
+  function writeForm(s){
+    document.getElementById('settingsName').value = s.name || 'Nikko Trinidad';
+    document.getElementById('settingsPreferred').value = s.preferred || 'Nikko';
+    document.getElementById('settingsRole').value = s.role || 'Account Manager';
+    document.getElementById('settingsTz').value = s.tz || 'pst';
+    applyAvatarColor(s.avatarColor || '#5e5ce6');
+    setSegment('data-pref-appearance', s.appearance || 'dark');
+    setSegment('data-pref-week', s.weekStart || 'mon');
+    setSegment('data-pref-time', s.timeFormat || '12h');
+    var notif = s.notifications || { digest: true, wip: true, mentions: true, overdue: false, inapp: true };
+    modal.querySelectorAll('[data-notif-toggle]').forEach(function(t){
+      var key = t.getAttribute('data-notif-toggle');
+      t.setAttribute('aria-checked', notif[key] ? 'true' : 'false');
+    });
+  }
+  function setSegment(attr, value){
+    modal.querySelectorAll('[' + attr + ']').forEach(function(b){
+      b.setAttribute('aria-pressed', b.getAttribute(attr) === value ? 'true' : 'false');
+    });
+  }
+
+  /* ---------- Avatar color ---------- */
+  function applyAvatarColor(hex){
+    avatarPreview.style.background = hex;
+    avatarPreview.setAttribute('data-color', hex);
+    modal.querySelectorAll('[data-avatar-color]').forEach(function(b){
+      b.setAttribute('aria-pressed', b.getAttribute('data-avatar-color') === hex ? 'true' : 'false');
+    });
+  }
+  modal.querySelectorAll('[data-avatar-color]').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      applyAvatarColor(btn.getAttribute('data-avatar-color'));
+      markDirty();
+    });
+  });
+
+  /* ---------- Initials live preview — always from FULL name ---------- */
+  function refreshInitials(){
+    var fullName = document.getElementById('settingsName').value;
+    avatarPreview.textContent = initialsOf(fullName);
+  }
+
+  /* ---------- Dirty / Save ---------- */
+  function isDirty(){
+    return JSON.stringify(readForm()) !== JSON.stringify(prefsOrig);
+  }
+  function markDirty(){
+    var dirty = isDirty();
+    saveBtn.disabled = !dirty;
+    statusEl.textContent = dirty ? 'Unsaved changes' : '';
+  }
+  // Text inputs + select dirty tracking
+  ['settingsName','settingsPreferred','settingsRole','settingsTz'].forEach(function(id){
+    var el = document.getElementById(id);
+    el.addEventListener('input', function(){ refreshInitials(); markDirty(); });
+    el.addEventListener('change', markDirty);
+  });
+
+  /* ---------- Preferences: instant-save segmented controls ---------- */
+  modal.querySelectorAll('[data-pref-appearance]').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      var target = btn.getAttribute('data-pref-appearance');
+      setSegment('data-pref-appearance', target);
+      // Actually apply theme (System = prefers-color-scheme)
+      if (target === 'system') {
+        var mq = window.matchMedia('(prefers-color-scheme: dark)');
+        var t = mq.matches ? 'dark' : 'light';
+        document.documentElement.setAttribute('data-theme', t);
+        try { localStorage.setItem('refined-theme', t); } catch(_) {}
+      } else {
+        document.documentElement.setAttribute('data-theme', target);
+        try { localStorage.setItem('refined-theme', target); } catch(_) {}
+      }
+      persistPrefs();
+      toast('Appearance updated');
+    });
+  });
+  modal.querySelectorAll('[data-pref-week]').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      setSegment('data-pref-week', btn.getAttribute('data-pref-week'));
+      persistPrefs();
+      toast('Week starts on ' + (btn.getAttribute('data-pref-week') === 'sun' ? 'Sunday' : 'Monday'));
+    });
+  });
+  modal.querySelectorAll('[data-pref-time]').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      setSegment('data-pref-time', btn.getAttribute('data-pref-time'));
+      persistPrefs();
+      toast('Time format: ' + (btn.getAttribute('data-pref-time') === '12h' ? '12-hour' : '24-hour'));
+    });
+  });
+
+  /* ---------- Notifications: instant-save toggles ---------- */
+  modal.querySelectorAll('[data-notif-toggle]').forEach(function(t){
+    t.addEventListener('click', function(){
+      var next = t.getAttribute('aria-checked') !== 'true';
+      t.setAttribute('aria-checked', next ? 'true' : 'false');
+      persistPrefs();
+      toast((next ? 'Enabled: ' : 'Disabled: ') + t.getAttribute('aria-label'));
+    });
+  });
+
+  function persistPrefs(){
+    // Reset the "original" baseline for the instant-save groups so they
+    // don't show up as unsaved, but keep Profile dirty-tracking honest.
+    var cur = readForm();
+    prefsOrig.appearance = cur.appearance;
+    prefsOrig.weekStart = cur.weekStart;
+    prefsOrig.timeFormat = cur.timeFormat;
+    prefsOrig.notifications = cur.notifications;
+    markDirty();
+    persist(cur);
+  }
+
+  /* ---------- Save / Cancel (Profile) ---------- */
+  saveBtn.addEventListener('click', function(){
+    var s = readForm();
+    persist(s);
+    prefsOrig = JSON.parse(JSON.stringify(s));
+    // Reflect new avatar on header button (initials always from full name)
+    var initials = initialsOf(s.name);
+    if (headerAvatarBtn) {
+      headerAvatarBtn.style.background = s.avatarColor;
+      headerAvatarBtn.textContent = initials;
+    }
+    var idAvatar = document.querySelector('.account-menu-identity-avatar');
+    if (idAvatar) {
+      idAvatar.style.background = s.avatarColor;
+      idAvatar.textContent = initials;
+    }
+    var idName = document.querySelector('.account-menu-identity-name');
+    if (idName) idName.textContent = s.name;
+    markDirty();
+    toast('Profile updated');
+  });
+  cancelBtn.addEventListener('click', function(){
+    if (!isDirty()) { closeSettings(); return; }
+    writeForm(prefsOrig);
+    refreshInitials();
+    markDirty();
+    closeSettings();
+  });
+
+  /* ---------- Sign out everywhere ---------- */
+  document.getElementById('settingsSignOutAll').addEventListener('click', function(){
+    if (typeof window.openConfirm === 'function') {
+      window.openConfirm({
+        title: 'Sign out of all devices?',
+        body: 'You will need to sign back in with Google on every device.',
+        confirmLabel: 'Sign out everywhere'
+      }).then(function(ok){
+        if (ok) toast('Signed out of all devices (mockup)');
+      });
+    } else {
+      toast('Signed out of all devices (mockup)');
+    }
+  });
+
+  /* ---------- Section routing ---------- */
+  function showSection(name){
+    modal.querySelectorAll('[data-acct-section]').forEach(function(tab){
+      var on = tab.getAttribute('data-acct-section') === name;
+      tab.setAttribute('aria-selected', on ? 'true' : 'false');
+    });
+    modal.querySelectorAll('[data-acct-panel]').forEach(function(panel){
+      var on = panel.getAttribute('data-acct-panel') === name;
+      if (on) { panel.setAttribute('data-active', 'true'); panel.removeAttribute('hidden'); }
+      else { panel.removeAttribute('data-active'); panel.setAttribute('hidden', ''); }
+    });
+    // Footer only relevant for Profile (others save instantly)
+    document.getElementById('settingsFooter').style.display = (name === 'profile') ? 'flex' : 'none';
+    // Focus first interactive in panel for keyboard users
+    var panel = modal.querySelector('[data-acct-panel="' + name + '"]');
+    var first = panel && panel.querySelector('input, select, button');
+    if (first && name !== 'profile') first.focus();
+  }
+  modal.querySelectorAll('[data-acct-section]').forEach(function(tab){
+    tab.addEventListener('click', function(){ showSection(tab.getAttribute('data-acct-section')); });
+    // Left/Right arrow to move between tabs
+    tab.addEventListener('keydown', function(e){
+      if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return;
+      e.preventDefault();
+      var tabs = Array.prototype.slice.call(modal.querySelectorAll('[data-acct-section]'));
+      var i = tabs.indexOf(tab);
+      var next = e.key === 'ArrowDown' ? tabs[(i + 1) % tabs.length] : tabs[(i - 1 + tabs.length) % tabs.length];
+      next.focus(); showSection(next.getAttribute('data-acct-section'));
+    });
+  });
+
+  /* ---------- Open / Close ---------- */
+  function openSettings(){
+    // Load persisted state and populate form
+    var saved = loadPersisted();
+    if (saved) writeForm(saved);
+    refreshInitials();
+    prefsOrig = readForm();
+    markDirty();
+    showSection('profile');
+    overlay.setAttribute('data-open', 'true');
+    overlay.setAttribute('aria-hidden', 'false');
+    document.body.style.overflow = 'hidden';
+    setTimeout(function(){
+      var firstInput = document.getElementById('settingsName');
+      if (firstInput) firstInput.focus();
+      document.addEventListener('keydown', onKey, true);
+    }, 0);
+  }
+  function closeSettings(){
+    if (isDirty() && typeof window.openConfirm === 'function') {
+      window.openConfirm({
+        title: 'Discard unsaved changes?',
+        body: 'Your profile edits haven\u2019t been saved. Close anyway?',
+        confirmLabel: 'Discard',
+        danger: true
+      }).then(function(ok){
+        if (ok) { writeForm(prefsOrig); refreshInitials(); markDirty(); doClose(); }
+      });
+      return;
+    }
+    doClose();
+  }
+  function doClose(){
+    overlay.removeAttribute('data-open');
+    overlay.setAttribute('aria-hidden', 'true');
+    document.body.style.overflow = '';
+    document.removeEventListener('keydown', onKey, true);
+    if (headerAvatarBtn) headerAvatarBtn.focus();
+  }
+  function onKey(e){
+    if (e.key === 'Escape') { e.stopPropagation(); closeSettings(); }
+  }
+  // Backdrop click (click on overlay outside the modal)
+  overlay.addEventListener('click', function(e){
+    if (e.target === overlay) closeSettings();
+  });
+  closeBtn.addEventListener('click', closeSettings);
+
+  // Expose opener
+  window.openAccountSettings = openSettings;
+
+  // Keep header avatar in sync with persisted avatar color on page load
+  var savedAtLoad = loadPersisted();
+  if (savedAtLoad && headerAvatarBtn) {
+    if (savedAtLoad.avatarColor) headerAvatarBtn.style.background = savedAtLoad.avatarColor;
+    var label = initialsOf(savedAtLoad.name || 'Nikko Trinidad');
+    headerAvatarBtn.textContent = label;
+    var idAv = document.querySelector('.account-menu-identity-avatar');
+    if (idAv) {
+      if (savedAtLoad.avatarColor) idAv.style.background = savedAtLoad.avatarColor;
+      idAv.textContent = label;
+    }
+    var idNm = document.querySelector('.account-menu-identity-name');
+    if (idNm && savedAtLoad.name) idNm.textContent = savedAtLoad.name;
+  }
 })();
 </script>
 
