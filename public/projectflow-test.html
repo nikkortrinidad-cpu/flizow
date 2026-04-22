@@ -10154,13 +10154,14 @@
   }
   .anlx-drill-row {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) 160px 120px 64px;
+    grid-template-columns: minmax(0, 1fr) 160px 120px 72px 36px;
     align-items: center; gap: var(--sp-md);
     padding: var(--sp-md) var(--sp-lg);
     border-bottom: 1px solid var(--hairline);
     color: var(--text); text-decoration: none;
     font-size: var(--fs-sm);
     transition: background 100ms ease;
+    position: relative;
   }
   .anlx-drill-row:last-child { border-bottom: 0; }
   .anlx-drill-row:hover { background: var(--bg-soft); }
@@ -10239,13 +10240,14 @@
   .anlx-up-list { max-height: 360px; overflow-y: auto; }
   .anlx-up-row {
     display: grid;
-    grid-template-columns: 72px minmax(0, 1fr) 150px 110px 64px;
+    grid-template-columns: 72px minmax(0, 1fr) 150px 110px 72px 36px;
     align-items: center; gap: var(--sp-md);
     padding: var(--sp-md) var(--sp-lg);
     border-bottom: 1px solid var(--hairline);
     color: var(--text); text-decoration: none;
     font-size: var(--fs-sm);
     transition: background 100ms ease;
+    position: relative;
   }
   .anlx-up-row:last-child { border-bottom: 0; }
   .anlx-up-row:hover { background: var(--bg-soft); }
@@ -10374,6 +10376,158 @@
   }
   .anlx-av.sm { width: 18px; height: 18px; font-size: 9px; }
 
+  /* ── Save view button (in filter bar) ──
+     Same neutral shape as filter pills so it doesn't compete; reveals
+     its full label on hover. Tier 2 hover-only ring.                    */
+  .anlx-save-view {
+    display: inline-flex; align-items: center; gap: var(--sp-xs);
+    height: 28px; padding: 0 var(--sp-md);
+    border-radius: 999px;
+    background: transparent; border: 1px solid transparent;
+    color: var(--text-muted); cursor: pointer;
+    font: inherit; font-size: var(--fs-sm); font-weight: 500; line-height: 1;
+    transition: background 140ms ease, border-color 140ms ease, color 140ms ease;
+  }
+  .anlx-save-view svg { width: 14px; height: 14px; stroke-width: 2; }
+  .anlx-save-view:hover {
+    color: var(--highlight);
+    border-color: color-mix(in srgb, var(--highlight) 35%, transparent);
+    background: color-mix(in srgb, var(--highlight) 6%, transparent);
+  }
+
+  /* ── Saved views row ──
+     Tier 3 tint when a chip matches the current filter combo (active
+     selection inside the view). × button reveals on chip hover.         */
+  .anlx-saved-views {
+    display: flex; align-items: center; gap: var(--sp-sm); flex-wrap: wrap;
+    margin: calc(var(--sp-2xl) * -1) 0 var(--sp-2xl);
+    padding: var(--sp-md) 0;
+    border-bottom: 1px solid var(--hairline);
+  }
+  .anlx-sv-label {
+    font-size: var(--fs-micro); font-weight: 600; letter-spacing: 0.04em;
+    text-transform: uppercase; color: var(--text-soft);
+    margin-right: var(--sp-xs);
+  }
+  .anlx-sv-chip-wrap {
+    display: inline-flex; align-items: stretch;
+    border-radius: 999px; overflow: hidden;
+    border: 1px solid var(--hairline);
+    background: var(--bg-elev);
+    transition: border-color 140ms ease, background 140ms ease;
+  }
+  .anlx-sv-chip-wrap:hover { border-color: color-mix(in srgb, var(--text) 14%, var(--hairline)); }
+  .anlx-sv-chip-wrap.is-active {
+    background: color-mix(in srgb, var(--highlight) 12%, transparent);
+    border-color: color-mix(in srgb, var(--highlight) 26%, transparent);
+  }
+  .anlx-sv-chip {
+    appearance: none; border: 0; background: transparent;
+    padding: 0 var(--sp-sm) 0 var(--sp-md); height: 28px;
+    font: inherit; font-size: var(--fs-sm); font-weight: 500;
+    color: var(--text); cursor: pointer;
+    display: inline-flex; align-items: center;
+  }
+  .anlx-sv-chip-wrap.is-active .anlx-sv-chip { color: var(--highlight); }
+  .anlx-sv-del {
+    appearance: none; border: 0; background: transparent;
+    padding: 0 var(--sp-sm) 0 2px; height: 28px;
+    color: var(--text-faint); cursor: pointer;
+    display: inline-flex; align-items: center; justify-content: center;
+    opacity: 0; transition: opacity 120ms ease, color 120ms ease;
+  }
+  .anlx-sv-del svg { width: 12px; height: 12px; stroke-width: 2.5; }
+  .anlx-sv-chip-wrap:hover .anlx-sv-del { opacity: 1; }
+  .anlx-sv-del:hover { color: #ff453a; }
+
+  /* ── Alerts banner ──
+     Neutral chrome, colored dot signals tone. Click opens the relevant
+     KPI drill. Proactive and quiet; disappears when no breach.          */
+  .anlx-alerts {
+    display: flex; flex-wrap: wrap; gap: var(--sp-sm);
+    margin-bottom: var(--sp-xl);
+  }
+  .anlx-alert-chip {
+    appearance: none; cursor: pointer;
+    display: inline-flex; align-items: center; gap: var(--sp-sm);
+    padding: var(--sp-sm) var(--sp-md);
+    background: var(--bg-elev); border: 1px solid var(--hairline);
+    border-radius: 10px;
+    font: inherit; font-size: var(--fs-sm); color: var(--text);
+    transition: border-color 140ms ease, background 140ms ease;
+  }
+  .anlx-alert-chip:hover {
+    border-color: color-mix(in srgb, var(--text) 18%, var(--hairline));
+    background: var(--bg-soft);
+  }
+  .anlx-alert-chip svg { width: 12px; height: 12px; color: var(--text-faint); stroke-width: 2.5; }
+  .anlx-alert-dot {
+    width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
+    background: var(--text-muted);
+  }
+  .anlx-alert-chip.fire .anlx-alert-dot { background: #ff453a; box-shadow: 0 0 0 3px color-mix(in srgb, #ff453a 14%, transparent); }
+  .anlx-alert-chip.warn .anlx-alert-dot { background: #ff9f0a; box-shadow: 0 0 0 3px color-mix(in srgb, #ff9f0a 14%, transparent); }
+
+  /* ── Inline row actions (reveal on hover) ──
+     Tier 2 ring (Blue Hierarchy). Hidden at rest — the row stays clean
+     and the primary action remains "click to open task". Actions surface
+     only when the user means to act.                                     */
+  .anlx-row-actions {
+    display: inline-flex; align-items: center; gap: 4px;
+    opacity: 0;
+    transition: opacity 140ms ease;
+    justify-content: flex-end;
+  }
+  .anlx-up-row:hover .anlx-row-actions,
+  .anlx-drill-row:hover .anlx-row-actions,
+  .anlx-up-row:focus-within .anlx-row-actions,
+  .anlx-drill-row:focus-within .anlx-row-actions,
+  .anlx-row-actions:has(.anlx-row-act[aria-expanded="true"]) { opacity: 1; }
+  .anlx-row-act {
+    appearance: none; border: 1px solid var(--hairline);
+    background: var(--bg-elev); color: var(--text-muted);
+    width: 26px; height: 26px; padding: 0;
+    border-radius: 6px; cursor: pointer;
+    display: inline-flex; align-items: center; justify-content: center;
+    transition: border-color 120ms ease, color 120ms ease, background 120ms ease;
+  }
+  .anlx-row-act svg { width: 13px; height: 13px; stroke-width: 2; }
+  .anlx-row-act:hover {
+    color: var(--highlight);
+    border-color: color-mix(in srgb, var(--highlight) 40%, transparent);
+    background: color-mix(in srgb, var(--highlight) 6%, transparent);
+  }
+
+  .anlx-action-menu { min-width: 220px; }
+
+  /* ── Toast + undo ──
+     Fixed bottom-center. Slides up briefly. Undo is Tier 4 text-only
+     link — it's a small inline affordance, not a primary CTA.           */
+  .anlx-toast {
+    position: fixed; bottom: 24px; left: 50%;
+    transform: translate(-50%, 20px);
+    display: inline-flex; align-items: center; gap: var(--sp-md);
+    padding: var(--sp-sm) var(--sp-md) var(--sp-sm) var(--sp-lg);
+    background: var(--bg-elev); border: 1px solid var(--hairline);
+    border-radius: 10px;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.12), 0 2px 6px rgba(0,0,0,0.06);
+    font-size: var(--fs-sm);
+    opacity: 0; pointer-events: none;
+    transition: opacity 200ms ease, transform 200ms ease;
+    z-index: 70; max-width: 90vw;
+  }
+  .anlx-toast.show {
+    opacity: 1; transform: translate(-50%, 0);
+    pointer-events: auto;
+  }
+  .anlx-toast-msg { color: var(--text); }
+  .anlx-toast-undo {
+    appearance: none; border: 0; background: transparent;
+    color: var(--highlight); font: inherit; cursor: pointer;
+    padding: 4px 8px; border-radius: 6px;
+  }
+  .anlx-toast-undo:hover { background: color-mix(in srgb, var(--highlight) 8%, transparent); }
+
   /* ── Responsive ── */
   @media (max-width: 1200px) {
     .anlx-kpi-grid { grid-template-columns: repeat(3, 1fr); }
@@ -10384,9 +10538,11 @@
     .anlx-kpi-grid { grid-template-columns: repeat(2, 1fr); }
     .anlx-up-row { grid-template-columns: 64px minmax(0, 1fr) 40px; }
     .anlx-up-row .anlx-up-owner,
-    .anlx-up-row .anlx-up-phase { display: none; }
+    .anlx-up-row .anlx-up-phase,
+    .anlx-up-row .anlx-row-actions { display: none; }
     .anlx-drill-row { grid-template-columns: minmax(0, 1fr) 100px 40px; }
-    .anlx-drill-row .anlx-drill-row-owner { display: none; }
+    .anlx-drill-row .anlx-drill-row-owner,
+    .anlx-drill-row .anlx-row-actions { display: none; }
     .anlx-wl-head, .anlx-wl-row {
       grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr) 56px 48px;
     }
@@ -10395,6 +10551,8 @@
   @media (max-width: 700px) {
     .anlx-kpi-grid { grid-template-columns: 1fr; }
     .anlx-filters { gap: var(--sp-xs); }
+    .anlx-save-view { padding: 0 var(--sp-sm); }
+    .anlx-save-view svg + * { display: none; }
   }
 
   /* ── Reduced motion ── */
@@ -12641,8 +12799,18 @@
         <span class="anlx-filter-pill-text">Next 30 days</span>
         <svg class="anlx-filter-pill-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
       </button>
+      <button type="button" class="anlx-save-view" data-anlx-save-view aria-label="Save current filter combination as a view">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+        Save view
+      </button>
       <button type="button" class="anlx-filter-reset" data-anlx-filter-reset hidden>Reset filters</button>
     </div>
+
+    <!-- Saved views row (only rendered when there's at least one) -->
+    <div class="anlx-saved-views" data-anlx-saved-views hidden></div>
+
+    <!-- Proactive alerts (only rendered when a threshold is breached) -->
+    <div class="anlx-alerts" data-anlx-alerts hidden></div>
 
     <!-- KPI row — rendered by JS into [data-anlx-kpis] -->
     <div class="anlx-kpi-grid" data-anlx-kpis role="list" aria-label="Delivery health KPIs"></div>
@@ -12689,6 +12857,9 @@
       </div>
       <div class="anlx-wl-list" data-anlx-wl-list role="list"></div>
     </section>
+
+    <!-- Undo toast (fixed, bottom-center) -->
+    <div class="anlx-toast" data-anlx-toast role="status" aria-live="polite"></div>
 
   </main>
 </div>
@@ -23335,9 +23506,76 @@ window.OPS_TEAM = OPS_TEAM;
   }
 
   // ────────────────────────────────────────────────────────────────────
-  // Filters — persisted in memory only (no localStorage; per-session)
+  // Filters — persisted in sessionStorage so navigating to a kanban card
+  // and coming back preserves the user's view. Saved Views (named filter
+  // combos) use localStorage since those are intentional saves.
   // ────────────────────────────────────────────────────────────────────
-  var filters = { person: 'all', project: 'all', range: '30d' };
+  var SESSION_KEY = 'anlx-filters-v1';
+  var SAVED_VIEWS_KEY = 'anlx-saved-views-v1';
+  var UP_TAB_KEY = 'anlx-up-tab-v1';
+  var DRILL_KEY = 'anlx-drill-v1';
+
+  function loadFilters(){
+    try {
+      var raw = sessionStorage.getItem(SESSION_KEY);
+      if (raw){
+        var p = JSON.parse(raw);
+        if (p && typeof p === 'object'){
+          return {
+            person: p.person || 'all',
+            project: p.project || 'all',
+            range: p.range || '30d'
+          };
+        }
+      }
+    } catch(e){}
+    return { person: 'all', project: 'all', range: '30d' };
+  }
+  function persistFilters(){
+    try { sessionStorage.setItem(SESSION_KEY, JSON.stringify(filters)); } catch(e){}
+  }
+  function loadSavedViews(){
+    try {
+      var raw = localStorage.getItem(SAVED_VIEWS_KEY);
+      if (raw){
+        var arr = JSON.parse(raw);
+        if (Array.isArray(arr)) return arr;
+      }
+    } catch(e){}
+    return [];
+  }
+  function persistSavedViews(){
+    try { localStorage.setItem(SAVED_VIEWS_KEY, JSON.stringify(savedViews)); } catch(e){}
+  }
+
+  var filters = loadFilters();
+  var savedViews = loadSavedViews();
+  var initialUpTab = 'today';
+  var initialDrillKey = null;
+  try {
+    var savedTab = sessionStorage.getItem(UP_TAB_KEY);
+    if (savedTab === 'today' || savedTab === 'week' || savedTab === 'next') initialUpTab = savedTab;
+    var savedDrill = sessionStorage.getItem(DRILL_KEY);
+    if (savedDrill) initialDrillKey = savedDrill;
+  } catch(e){}
+
+  // ────────────────────────────────────────────────────────────────────
+  // Row-action helpers (used by drill-rows and upcoming-rows)
+  // Delegate + Push deadline are inline — they mutate the task in
+  // DATA.tasks and re-render. A toast offers undo for 6s. This follows
+  // the Apple HIG Forgiveness principle: destructive-ish changes are
+  // reversible.
+  // ────────────────────────────────────────────────────────────────────
+  function rowActionsHtml(t){
+    return '<div class="anlx-row-actions" data-task-id="' + esc(t.id) + '">' +
+      '<button type="button" class="anlx-row-act delegate" data-act="delegate" data-tip="Delegate to a teammate" aria-label="Delegate ' + esc(t.title) + '">' +
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>' +
+      '</button>' +
+      '<button type="button" class="anlx-row-act push" data-act="push" data-tip="Push deadline" aria-label="Push deadline on ' + esc(t.title) + '">' +
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M12 14l2 2 4-4"/></svg>' +
+      '</button>' +
+    '</div>';
+  }
 
   function taskMatches(t){
     if (filters.person !== 'all' && ownersForTask(t).indexOf(filters.person) === -1) return false;
@@ -23461,13 +23699,13 @@ window.OPS_TEAM = OPS_TEAM;
       },
       {
         key: 'clients',
-        label: 'Clients at risk',
+        label: 'Clients flagged',
         value: atRiskClients.length, unit: atRiskClients.length === 1 ? 'client' : 'clients',
         deltaPct: atRiskClients.length > 1 ? +1 : 0,
         deltaTone: atRiskClients.length > 1 ? 'up' : 'flat',
         spark: seedHistory('clients-' + filters.person + filters.project, 0, 4),
         foot: atRiskClients.slice(0, 3).map(function(c){ return c.name; }).join(' · ') || 'All clients on track',
-        drill: { title: 'Open tasks on at-risk clients', tasks: openTasks.filter(function(t){
+        drill: { title: 'Open tasks on flagged clients', tasks: openTasks.filter(function(t){
           return atRiskClients.some(function(c){ return c.id === t.clientId; });
         }) }
       }
@@ -23597,7 +23835,7 @@ window.OPS_TEAM = OPS_TEAM;
   // ────────────────────────────────────────────────────────────────────
   // Rendering — Upcoming
   // ────────────────────────────────────────────────────────────────────
-  var upTab = 'today';
+  var upTab = initialUpTab;
 
   function computeUpcoming(){
     var tasks = DATA.tasks.filter(taskMatches).filter(isOpen).filter(function(t){ return !!t.dueDate; });
@@ -23681,7 +23919,10 @@ window.OPS_TEAM = OPS_TEAM;
       var ownerM = MEMBER_BY_ID[owners[0]];
       var ownerName = ownerM ? ownerM.name : 'Unassigned';
       var cname = clientName(t.clientId);
-      return '<a class="anlx-up-row" href="#clients/' + esc(t.clientId) + '">' +
+      return '<a class="anlx-up-row" href="#clients/' + esc(t.clientId) + '"' +
+             ' data-task-id="' + esc(t.id) + '"' +
+             ' data-service-id="' + esc(t.serviceId || '') + '"' +
+             ' data-client-id="' + esc(t.clientId) + '">' +
         '<div class="anlx-up-when ' + whenCls + '">' + esc(whenLabel) +
           '<span class="anlx-up-when-dow">' + shortDow(due) + '</span></div>' +
         '<div class="anlx-up-main">' +
@@ -23691,6 +23932,7 @@ window.OPS_TEAM = OPS_TEAM;
         '<div class="anlx-up-owner">' + avatarHtml(owners, true) +
           '<span class="anlx-up-owner-name">' + esc(ownerName) + '</span></div>' +
         '<div class="anlx-up-phase">' + esc(phaseFor(t)) + '</div>' +
+        rowActionsHtml(t) +
         '<div class="anlx-up-chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 18 15 12 9 6"/></svg></div>' +
       '</a>';
     }).join('');
@@ -23746,7 +23988,10 @@ window.OPS_TEAM = OPS_TEAM;
     var ownerName = ownerM ? ownerM.name : 'Unassigned';
     var cname = clientName(t.clientId);
     var s = statusLabel(t);
-    return '<a class="anlx-drill-row" href="#clients/' + esc(t.clientId) + '">' +
+    return '<a class="anlx-drill-row" href="#clients/' + esc(t.clientId) + '"' +
+           ' data-task-id="' + esc(t.id) + '"' +
+           ' data-service-id="' + esc(t.serviceId || '') + '"' +
+           ' data-client-id="' + esc(t.clientId) + '">' +
       '<div>' +
         '<div class="anlx-drill-row-title">' + esc(t.title) + '</div>' +
         '<div class="anlx-drill-row-client">' + esc(cname) + '</div>' +
@@ -23754,6 +23999,7 @@ window.OPS_TEAM = OPS_TEAM;
       '<div class="anlx-drill-row-owner">' + avatarHtml(owners, true) +
         '<span>' + esc(ownerName) + '</span></div>' +
       '<div class="anlx-drill-row-status ' + s.cls + '">' + esc(s.text) + '</div>' +
+      rowActionsHtml(t) +
       '<div class="anlx-drill-row-chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 18 15 12 9 6"/></svg></div>' +
     '</a>';
   }
@@ -23763,6 +24009,7 @@ window.OPS_TEAM = OPS_TEAM;
     var panel = view.querySelector('[data-anlx-drill]');
     if (!kpi || !panel) return;
     openDrillKey = key;
+    try { sessionStorage.setItem(DRILL_KEY, key); } catch(e){}
     panel.hidden = false;
     // Let layout register then apply .open on next frame for the transition
     requestAnimationFrame(function(){ panel.classList.add('open'); });
@@ -23790,6 +24037,7 @@ window.OPS_TEAM = OPS_TEAM;
 
   function closeDrill(){
     openDrillKey = null;
+    try { sessionStorage.removeItem(DRILL_KEY); } catch(e){}
     var panel = view.querySelector('[data-anlx-drill]');
     if (!panel) return;
     panel.classList.remove('open');
@@ -23892,6 +24140,7 @@ window.OPS_TEAM = OPS_TEAM;
       var btn = e.target.closest('[data-opt]');
       if (!btn) return;
       filters[key] = btn.getAttribute('data-opt');
+      persistFilters();
       closeFilterMenu();
       pill.focus();
       renderAll();
@@ -23901,6 +24150,231 @@ window.OPS_TEAM = OPS_TEAM;
     var r = pill.getBoundingClientRect();
     menu.style.top = (r.bottom + 6) + 'px';
     menu.style.left = r.left + 'px';
+  }
+
+  // ────────────────────────────────────────────────────────────────────
+  // Inline row actions — Delegate + Push deadline
+  // Popover pattern mirrors the filter menu. All edits are non-destructive
+  // and show an undo toast for 6s. Writes back to DATA.tasks in place;
+  // every other view reads from the same array so the change is visible
+  // immediately on Overview / Clients / Board too.
+  // ────────────────────────────────────────────────────────────────────
+  var activeActionPop = null;
+  function closeActionPop(){
+    if (!activeActionPop) return;
+    var p = activeActionPop;
+    p.menu.classList.remove('open');
+    setTimeout(function(){ if (p.menu.parentNode) p.menu.parentNode.removeChild(p.menu); }, 160);
+    document.removeEventListener('mousedown', p.outside, true);
+    document.removeEventListener('keydown', p.keydown, true);
+    window.removeEventListener('scroll', p.repos, true);
+    window.removeEventListener('resize', p.repos);
+    activeActionPop = null;
+  }
+  function mountPop(trigger, html, onPick){
+    if (activeActionPop) closeActionPop();
+    var menu = document.createElement('div');
+    menu.className = 'anlx-filter-menu anlx-action-menu';
+    menu.setAttribute('role', 'listbox');
+    menu.innerHTML = html;
+    document.body.appendChild(menu);
+    var r = trigger.getBoundingClientRect();
+    menu.style.top = (r.bottom + 6) + 'px';
+    menu.style.left = Math.max(8, r.right - 220) + 'px';
+    requestAnimationFrame(function(){ menu.classList.add('open'); });
+    var outside = function(e){ if (!menu.contains(e.target) && e.target !== trigger) closeActionPop(); };
+    var keydown = function(e){ if (e.key === 'Escape'){ closeActionPop(); trigger.focus(); } };
+    var repos = function(){
+      var rr = trigger.getBoundingClientRect();
+      menu.style.top = (rr.bottom + 6) + 'px';
+      menu.style.left = Math.max(8, rr.right - 220) + 'px';
+    };
+    document.addEventListener('mousedown', outside, true);
+    document.addEventListener('keydown', keydown, true);
+    window.addEventListener('scroll', repos, true);
+    window.addEventListener('resize', repos);
+    activeActionPop = { menu: menu, trigger: trigger, outside: outside, keydown: keydown, repos: repos };
+    menu.addEventListener('click', function(e){
+      var btn = e.target.closest('[data-opt]');
+      if (!btn) return;
+      var val = btn.getAttribute('data-opt');
+      closeActionPop();
+      onPick(val);
+    });
+  }
+
+  function openDelegatePop(trigger, taskId){
+    var t = DATA.tasks.filter(function(x){ return x.id === taskId; })[0];
+    if (!t) return;
+    var current = t.assigneeId;
+    var items = MEMBERS.map(function(m){
+      var sel = (m.id === current) ? ' selected' : '';
+      return '<button type="button" role="option" class="anlx-filter-option' + sel + '" data-opt="' + esc(m.id) + '" aria-selected="' + (sel ? 'true' : 'false') + '">' +
+        '<svg class="anlx-filter-option-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>' +
+        '<span class="anlx-filter-option-avatar" style="background:' + m.color + '">' + esc(m.initials) + '</span>' +
+        '<span><div>' + esc(m.name) + '</div><div style="font-size:var(--fs-nano); color:var(--text-soft); margin-top:1px;">' + esc(m.role) + '</div></span>' +
+      '</button>';
+    }).join('');
+    mountPop(trigger, items, function(newId){
+      var prev = t.assigneeId;
+      if (prev === newId) return;
+      t.assigneeId = newId;
+      var member = MEMBER_BY_ID[newId];
+      showToast('Delegated to ' + (member ? member.name : newId), function(){ t.assigneeId = prev; renderAll(); });
+      renderAll();
+    });
+  }
+
+  function openPushPop(trigger, taskId){
+    var t = DATA.tasks.filter(function(x){ return x.id === taskId; })[0];
+    if (!t) return;
+    var presets = [
+      { d: 1,  label: '+ 1 day' },
+      { d: 3,  label: '+ 3 days' },
+      { d: 7,  label: '+ 1 week' },
+      { d: 14, label: '+ 2 weeks' }
+    ];
+    var items = presets.map(function(p){
+      return '<button type="button" role="option" class="anlx-filter-option" data-opt="' + p.d + '">' +
+        '<svg class="anlx-filter-option-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>' +
+        '<span style="width:20px;"></span>' +
+        '<span>' + esc(p.label) + '</span>' +
+      '</button>';
+    }).join('');
+    mountPop(trigger, items, function(days){
+      var add = parseInt(days, 10) || 0;
+      if (!add) return;
+      var prev = t.dueDate;
+      var base = t.dueDate ? new Date(t.dueDate) : new Date(TODAY);
+      var newDue = addDays(base, add);
+      // Store back in the same ISO shape the rest of the app uses (YYYY-MM-DD)
+      var iso = newDue.toISOString().slice(0, 10);
+      t.dueDate = iso;
+      showToast('Deadline pushed ' + add + 'd', function(){ t.dueDate = prev; renderAll(); });
+      renderAll();
+    });
+  }
+
+  // ────────────────────────────────────────────────────────────────────
+  // Undo toast
+  // ────────────────────────────────────────────────────────────────────
+  var toastTimer = null;
+  function showToast(msg, undoFn){
+    var host = view.querySelector('[data-anlx-toast]');
+    if (!host) return;
+    clearTimeout(toastTimer);
+    host.innerHTML = '<span class="anlx-toast-msg">' + esc(msg) + '</span>' +
+      '<button type="button" class="anlx-toast-undo" data-anlx-toast-undo>Undo</button>';
+    host.classList.add('show');
+    var undoBtn = host.querySelector('[data-anlx-toast-undo]');
+    undoBtn.onclick = function(){ clearTimeout(toastTimer); host.classList.remove('show'); undoFn && undoFn(); };
+    toastTimer = setTimeout(function(){ host.classList.remove('show'); }, 6000);
+  }
+
+  // ────────────────────────────────────────────────────────────────────
+  // Saved Views — named filter combos persisted in localStorage
+  // ────────────────────────────────────────────────────────────────────
+  function filtersEqual(a, b){
+    return a.person === b.person && a.project === b.project && a.range === b.range;
+  }
+  function currentFilterHash(){
+    return filters.person + '|' + filters.project + '|' + filters.range;
+  }
+  function savedViewMatchesCurrent(v){
+    return filtersEqual(v.filters, filters);
+  }
+  function saveCurrentView(){
+    var defaultName = suggestViewName();
+    var name = window.prompt('Name this view', defaultName);
+    if (!name) return;
+    name = name.trim().slice(0, 40);
+    if (!name) return;
+    savedViews.push({ id: 'sv-' + Date.now(), name: name, filters: { person: filters.person, project: filters.project, range: filters.range } });
+    persistSavedViews();
+    renderSavedViews();
+  }
+  function suggestViewName(){
+    var parts = [];
+    if (filters.person !== 'all'){
+      var m = MEMBER_BY_ID[filters.person];
+      parts.push(m ? m.name : filters.person);
+    }
+    if (filters.project !== 'all') parts.push(clientName(filters.project) || filters.project);
+    if (filters.range !== '30d') parts.push(filterPillLabel('range'));
+    return parts.length ? parts.join(' · ') : 'My view';
+  }
+  function applySavedView(id){
+    var v = savedViews.filter(function(x){ return x.id === id; })[0];
+    if (!v) return;
+    filters = { person: v.filters.person, project: v.filters.project, range: v.filters.range };
+    persistFilters();
+    renderAll();
+  }
+  function deleteSavedView(id){
+    savedViews = savedViews.filter(function(x){ return x.id !== id; });
+    persistSavedViews();
+    renderSavedViews();
+  }
+  function renderSavedViews(){
+    var host = view.querySelector('[data-anlx-saved-views]');
+    if (!host) return;
+    if (!savedViews.length){
+      host.hidden = true;
+      return;
+    }
+    host.hidden = false;
+    var active = savedViews.filter(savedViewMatchesCurrent)[0];
+    host.innerHTML = '<span class="anlx-sv-label">Saved views</span>' +
+      savedViews.map(function(v){
+        var on = active && active.id === v.id;
+        return '<span class="anlx-sv-chip-wrap' + (on ? ' is-active' : '') + '">' +
+          '<button type="button" class="anlx-sv-chip" data-sv-apply="' + esc(v.id) + '">' + esc(v.name) + '</button>' +
+          '<button type="button" class="anlx-sv-del" data-sv-del="' + esc(v.id) + '" aria-label="Delete saved view">' +
+            '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>' +
+          '</button>' +
+        '</span>';
+      }).join('');
+  }
+
+  // ────────────────────────────────────────────────────────────────────
+  // Alerts — proactive banner when thresholds are breached
+  // ────────────────────────────────────────────────────────────────────
+  function renderAlerts(){
+    var host = view.querySelector('[data-anlx-alerts]');
+    if (!host) return;
+    var tasks = DATA.tasks.filter(taskMatches);
+    var openTasks = tasks.filter(isOpen);
+    var overdue = openTasks.filter(function(t){
+      if (!t.dueDate) return false;
+      return daysBetween(TODAY, new Date(t.dueDate)) < 0;
+    }).length;
+    var blocked = openTasks.filter(isBlocked).length;
+    var wl = buildWorkload(tasks);
+    var over = wl.filter(function(r){ return r.pct > 100; }).length;
+
+    var alerts = [];
+    if (overdue > 0){
+      alerts.push({ tone: 'fire', text: overdue + ' task' + (overdue === 1 ? '' : 's') + ' overdue', drill: 'deadlines' });
+    }
+    if (blocked >= 3){
+      alerts.push({ tone: 'warn', text: blocked + ' open tasks blocked', drill: 'blocked' });
+    }
+    if (over > 0){
+      alerts.push({ tone: 'warn', text: over + ' ' + (over === 1 ? 'person is' : 'people are') + ' over capacity', drill: 'cap' });
+    }
+    if (!alerts.length){
+      host.hidden = true;
+      host.innerHTML = '';
+      return;
+    }
+    host.hidden = false;
+    host.innerHTML = alerts.map(function(a){
+      return '<button type="button" class="anlx-alert-chip ' + a.tone + '" data-alert-drill="' + esc(a.drill) + '">' +
+        '<span class="anlx-alert-dot"></span>' +
+        '<span>' + esc(a.text) + '</span>' +
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 18 15 12 9 6"/></svg>' +
+      '</button>';
+    }).join('');
   }
 
   // ────────────────────────────────────────────────────────────────────
@@ -23924,6 +24398,8 @@ window.OPS_TEAM = OPS_TEAM;
 
   function renderAll(){
     renderFilterPills();
+    renderSavedViews();
+    renderAlerts();
     renderKPIs();
     renderUpcoming();
     renderWorkload();
@@ -23948,13 +24424,27 @@ window.OPS_TEAM = OPS_TEAM;
     if (reset){
       reset.addEventListener('click', function(){
         filters = { person: 'all', project: 'all', range: '30d' };
+        persistFilters();
         if (activeMenu) closeFilterMenu();
         renderAll();
       });
     }
 
-    // KPI cards
+    // KPI cards + inline row actions + task row → kanban navigation
     view.addEventListener('click', function(e){
+      // Row action buttons (delegate / push) — intercept before anchor
+      var actBtn = e.target.closest('.anlx-row-act[data-act]');
+      if (actBtn){
+        e.preventDefault();
+        e.stopPropagation();
+        var rowHost = actBtn.closest('.anlx-row-actions');
+        var taskId = rowHost ? rowHost.getAttribute('data-task-id') : null;
+        var act = actBtn.getAttribute('data-act');
+        if (act === 'delegate') openDelegatePop(actBtn, taskId);
+        else if (act === 'push') openPushPop(actBtn, taskId);
+        return;
+      }
+
       var card = e.target.closest('.anlx-kpi-card[data-kpi]');
       if (card){
         var k = card.getAttribute('data-kpi');
@@ -23964,21 +24454,70 @@ window.OPS_TEAM = OPS_TEAM;
       }
       var closeBtn = e.target.closest('[data-anlx-drill-close]');
       if (closeBtn){ closeDrill(); return; }
+
+      // Task row → open kanban card (goToBoardTask pattern).
+      // Only intercept plain left-clicks — let ctrl/meta/middle-click fall
+      // through to the href so users can open in a new tab if they want.
+      var row = e.target.closest('.anlx-up-row[data-task-id], .anlx-drill-row[data-task-id]');
+      if (row && !e.ctrlKey && !e.metaKey && !e.shiftKey && e.button === 0){
+        var tid = row.getAttribute('data-task-id');
+        var sid = row.getAttribute('data-service-id');
+        if (sid && typeof window.goToBoardTask === 'function'){
+          e.preventDefault();
+          window.goToBoardTask(sid, tid);
+        }
+      }
     });
 
     // Upcoming tabs
     view.querySelectorAll('.anlx-up-tab').forEach(function(tab){
       tab.addEventListener('click', function(){
         upTab = tab.getAttribute('data-up-tab');
+        try { sessionStorage.setItem(UP_TAB_KEY, upTab); } catch(e){}
         view.querySelectorAll('.anlx-up-tab').forEach(function(t){
           t.setAttribute('aria-selected', t === tab ? 'true' : 'false');
         });
         renderUpcoming();
       });
     });
+
+    // Save-view button (in filter bar)
+    var saveBtn = view.querySelector('[data-anlx-save-view]');
+    if (saveBtn) saveBtn.addEventListener('click', saveCurrentView);
+
+    // Saved view chips (apply or delete)
+    var svHost = view.querySelector('[data-anlx-saved-views]');
+    if (svHost){
+      svHost.addEventListener('click', function(e){
+        var del = e.target.closest('[data-sv-del]');
+        if (del){ e.stopPropagation(); deleteSavedView(del.getAttribute('data-sv-del')); return; }
+        var apply = e.target.closest('[data-sv-apply]');
+        if (apply){ applySavedView(apply.getAttribute('data-sv-apply')); return; }
+      });
+    }
+
+    // Alert chips (click → open the related KPI drill)
+    var alertHost = view.querySelector('[data-anlx-alerts]');
+    if (alertHost){
+      alertHost.addEventListener('click', function(e){
+        var chip = e.target.closest('[data-alert-drill]');
+        if (!chip) return;
+        openDrill(chip.getAttribute('data-alert-drill'));
+        // Scroll drill into view
+        var panel = view.querySelector('[data-anlx-drill]');
+        if (panel) panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      });
+    }
   }
 
-  function init(){ wire(); renderAll(); }
+  function init(){
+    wire();
+    renderAll();
+    // Restore drill state if it was open pre-navigation
+    if (initialDrillKey && lastKpis.some(function(k){ return k.key === initialDrillKey; })){
+      openDrill(initialDrillKey);
+    }
+  }
   if (document.readyState === 'loading'){
     document.addEventListener('DOMContentLoaded', init);
   } else {
