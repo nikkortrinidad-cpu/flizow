@@ -9486,6 +9486,552 @@
     .clients-split-wrapper .client-detail-page { padding: var(--sp-2xl); }
   }
 
+  /* ═══════ WEEKLY WIP VIEW ═══════
+     Core belief: the PM is prepping Friday's WIP in <5 min. Show what's urgent,
+     let them shape run-of-show, get them into the meeting cleanly.
+     Blue hierarchy: Tier 1 = Start Meeting. Tier 2 ring = Send pre-read / Add flag.
+     Tier 3 tint = active tab, selected/drag-hover. Tier 4 = text links.
+     Neutral = Cancel, close, drag handles, tab inactive. */
+
+  .wip-page {
+    flex: 1; min-height: 0; overflow-y: auto;
+    max-width: 1280px; width: 100%;
+    margin: 0 auto;
+    padding: var(--sp-36) var(--sp-4xl) 96px;
+    display: flex; flex-direction: column; gap: var(--sp-3xl);
+  }
+  .wip-header {
+    display: flex; align-items: flex-start; justify-content: space-between;
+    gap: var(--sp-3xl);
+  }
+  .wip-header-text { max-width: 680px; }
+  .wip-header-text .page-title { font-size: var(--fs-5xl); margin-bottom: 4px; }
+  .wip-header-text .page-date { font-size: var(--fs-base); }
+  .wip-header-meta {
+    display: flex; align-items: center; gap: var(--sp-base);
+    padding-top: var(--sp-2xl);
+  }
+  .wip-next-meeting {
+    display: flex; flex-direction: column; gap: 2px;
+    padding: var(--sp-sm) var(--sp-base);
+    background: var(--bg-elev);
+    border: 1px solid var(--hairline);
+    border-radius: 10px;
+    min-width: 200px;
+  }
+  .wip-next-label {
+    font-size: var(--fs-nano); font-weight: 600; text-transform: uppercase;
+    letter-spacing: 0.06em; color: var(--text-soft);
+  }
+  .wip-next-time {
+    font-size: var(--fs-md); font-weight: 600; color: var(--text);
+    letter-spacing: -0.01em;
+  }
+
+  /* Tab row — Tier 3 tint for active, neutral hover for inactive */
+  .wip-tabs {
+    display: flex; gap: var(--sp-micro);
+    border-bottom: 1px solid var(--hairline);
+    padding-bottom: var(--sp-micro);
+  }
+  .wip-tab {
+    padding: var(--sp-sm) var(--sp-base);
+    font-size: var(--fs-md); font-weight: 500; color: var(--text-soft);
+    text-decoration: none; border-radius: 8px;
+    letter-spacing: -0.01em;
+    transition: color var(--dur-fast), background var(--dur-fast);
+  }
+  .wip-tab:hover { color: var(--text); background: color-mix(in srgb, currentColor 6%, transparent); }
+  .wip-tab.on {
+    color: var(--highlight);
+    background: var(--highlight-soft);
+    font-weight: 600;
+  }
+  .wip-tab:focus-visible {
+    outline: 2px solid var(--highlight); outline-offset: 2px;
+  }
+
+  .wip-sub { display: block; }
+  .wip-sub[hidden] { display: none; }
+
+  /* Agenda builder two-column layout */
+  .wip-agenda-grid {
+    display: grid; grid-template-columns: 380px 1fr;
+    gap: var(--sp-3xl);
+    align-items: start;
+  }
+  .wip-queue-col,
+  .wip-run-col {
+    background: var(--bg-elev);
+    border: 1px solid var(--hairline);
+    border-radius: 14px;
+    padding: var(--sp-2xl);
+    display: flex; flex-direction: column; gap: var(--sp-xl);
+    min-width: 0;
+  }
+
+  .wip-col-head {
+    display: flex; align-items: flex-start; justify-content: space-between;
+    gap: var(--sp-base);
+  }
+  .wip-col-title {
+    font-size: var(--fs-lg); font-weight: 600; color: var(--text);
+    letter-spacing: -0.01em;
+  }
+  .wip-col-sub {
+    font-size: var(--fs-xs); color: var(--text-soft);
+    line-height: var(--lh-px-md); margin-top: 2px;
+    max-width: 52ch;
+  }
+  .wip-col-sub strong { color: var(--text-muted); font-weight: 600; }
+
+  .wip-run-meta {
+    font-size: var(--fs-xs); color: var(--text-soft);
+    white-space: nowrap;
+    padding: var(--sp-micro) var(--sp-sm);
+    background: var(--bg-soft);
+    border-radius: 6px;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Queue — channel manager groups */
+  .wip-queue {
+    display: flex; flex-direction: column; gap: var(--sp-xl);
+  }
+  .wip-queue-group {
+    display: flex; flex-direction: column; gap: var(--sp-sm);
+  }
+  .wip-queue-group-head {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: var(--sp-sm); padding: 0 var(--sp-micro);
+  }
+  .wip-queue-group-name {
+    font-size: var(--fs-nano); font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.08em; color: var(--text-soft);
+  }
+  .wip-queue-group-count {
+    font-size: var(--fs-nano); color: var(--text-faint);
+    font-variant-numeric: tabular-nums;
+  }
+  .wip-flag-card {
+    display: flex; flex-direction: column; gap: var(--sp-micro);
+    padding: var(--sp-base) var(--sp-lg);
+    background: var(--bg);
+    border: 1px solid var(--hairline);
+    border-radius: 10px;
+    cursor: grab;
+    transition: border-color var(--dur-fast), background var(--dur-fast);
+  }
+  .wip-flag-card:hover {
+    border-color: color-mix(in srgb, var(--text) 18%, transparent);
+    background: color-mix(in srgb, var(--text) 3%, var(--bg));
+  }
+  .wip-flag-card:active { cursor: grabbing; }
+  .wip-flag-card.is-dragging { opacity: 0.5; }
+  .wip-flag-card.is-scheduled {
+    border-style: dashed;
+    opacity: 0.7;
+  }
+  .wip-flag-head {
+    display: flex; align-items: center; gap: var(--sp-sm);
+    justify-content: space-between;
+  }
+  .wip-flag-client {
+    font-size: var(--fs-xs); color: var(--text-soft);
+    font-weight: 500; letter-spacing: -0.005em;
+  }
+  .wip-flag-title {
+    font-size: var(--fs-sm); font-weight: 600; color: var(--text);
+    letter-spacing: -0.01em; line-height: var(--lh-px-md);
+  }
+  .wip-flag-note {
+    font-size: var(--fs-xs); color: var(--text-muted);
+    line-height: var(--lh-px-md);
+    max-width: 62ch;
+  }
+  .wip-flag-actions {
+    display: flex; gap: var(--sp-micro); margin-left: auto;
+  }
+  .wip-icon-btn {
+    width: 24px; height: 24px;
+    display: inline-flex; align-items: center; justify-content: center;
+    background: transparent; border: none; border-radius: 6px;
+    color: var(--text-soft); cursor: pointer;
+    transition: background var(--dur-fast), color var(--dur-fast);
+  }
+  .wip-icon-btn:hover {
+    background: color-mix(in srgb, currentColor 10%, transparent);
+    color: var(--text);
+  }
+  .wip-icon-btn:focus-visible {
+    outline: 2px solid var(--highlight); outline-offset: 2px;
+  }
+
+  .wip-queue-empty {
+    text-align: center; padding: var(--sp-4xl) var(--sp-xl);
+    background: var(--bg);
+    border: 1px dashed var(--hairline);
+    border-radius: 10px;
+  }
+  .wip-empty-title {
+    font-size: var(--fs-md); font-weight: 600; color: var(--text);
+    margin-bottom: 4px;
+  }
+  .wip-empty-body {
+    font-size: var(--fs-xs); color: var(--text-soft);
+    max-width: 38ch; margin: 0 auto;
+    line-height: var(--lh-px-md);
+  }
+
+  /* Run of show */
+  .wip-run {
+    list-style: none; padding: 0; margin: 0;
+    display: flex; flex-direction: column; gap: var(--sp-sm);
+  }
+  .wip-run-block {
+    display: flex; flex-direction: column;
+    border: 1px solid var(--hairline);
+    border-radius: 10px;
+    background: var(--bg);
+    overflow: hidden;
+    transition: border-color var(--dur-fast), box-shadow var(--dur-fast);
+  }
+  .wip-run-block:hover { border-color: color-mix(in srgb, var(--text) 16%, transparent); }
+  .wip-run-block.is-drop-target {
+    border-color: var(--highlight);
+    background: var(--highlight-soft);
+  }
+  .wip-run-block.is-dragging { opacity: 0.5; }
+  .wip-run-block.is-bau { background: var(--bg-soft); }
+
+  .wip-run-head {
+    display: grid;
+    grid-template-columns: auto auto 1fr auto auto;
+    align-items: center;
+    gap: var(--sp-sm);
+    padding: var(--sp-base) var(--sp-lg);
+    cursor: default;
+  }
+  .wip-run-block[data-reorderable="true"] .wip-run-drag {
+    cursor: grab;
+  }
+  .wip-run-block[data-reorderable="true"].is-dragging .wip-run-drag { cursor: grabbing; }
+  .wip-run-drag {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 22px; height: 22px;
+    color: var(--text-faint);
+    border-radius: 4px;
+    opacity: 0; transition: opacity var(--dur-fast), color var(--dur-fast);
+  }
+  .wip-run-block[data-reorderable="true"]:hover .wip-run-drag,
+  .wip-run-block[data-reorderable="true"]:focus-within .wip-run-drag { opacity: 1; }
+  .wip-run-drag:hover { color: var(--text-muted); }
+
+  .wip-run-index {
+    font-size: var(--fs-xs); color: var(--text-faint);
+    font-variant-numeric: tabular-nums; font-weight: 600;
+    min-width: 18px; text-align: right;
+  }
+  .wip-run-title-col { min-width: 0; }
+  .wip-run-title {
+    font-size: var(--fs-md); font-weight: 600; color: var(--text);
+    letter-spacing: -0.01em;
+  }
+  .wip-run-meta-line {
+    font-size: var(--fs-xs); color: var(--text-soft);
+    margin-top: 2px;
+    display: flex; align-items: center; gap: var(--sp-sm);
+    flex-wrap: wrap;
+  }
+  .wip-run-meta-line .sep { color: var(--text-faint); }
+  .wip-run-meta-line .owner { color: var(--text-muted); }
+  .wip-run-count-pill {
+    font-size: var(--fs-nano); font-weight: 600;
+    padding: 2px 7px; border-radius: 980px;
+    background: var(--bg-soft); color: var(--text-muted);
+    font-variant-numeric: tabular-nums;
+  }
+  .wip-run-count-pill.has-flag {
+    background: color-mix(in srgb, var(--status-fire) 14%, transparent);
+    color: var(--status-fire);
+  }
+
+  /* Early-leave toggle — Tier 3 tint when active */
+  .wip-run-leave {
+    display: inline-flex; align-items: center; gap: var(--sp-micro);
+    padding: 4px var(--sp-sm);
+    background: transparent;
+    border: 1px solid var(--hairline);
+    border-radius: 6px;
+    font-size: var(--fs-nano); font-weight: 600;
+    color: var(--text-soft);
+    cursor: pointer;
+    transition: all var(--dur-fast);
+  }
+  .wip-run-leave:hover { color: var(--text); border-color: color-mix(in srgb, var(--text) 18%, transparent); }
+  .wip-run-leave.is-on {
+    background: var(--highlight-soft);
+    border-color: transparent;
+    color: var(--highlight);
+  }
+  .wip-run-leave svg { width: 10px; height: 10px; }
+
+  .wip-run-expand {
+    width: 22px; height: 22px;
+    display: inline-flex; align-items: center; justify-content: center;
+    background: transparent; border: none; border-radius: 4px;
+    color: var(--text-soft); cursor: pointer;
+    transition: background var(--dur-fast), transform var(--dur-fast);
+  }
+  .wip-run-expand:hover { background: color-mix(in srgb, currentColor 10%, transparent); color: var(--text); }
+  .wip-run-block.is-open .wip-run-expand svg { transform: rotate(90deg); }
+
+  .wip-run-body {
+    padding: 0 var(--sp-lg) var(--sp-base);
+    border-top: 1px solid var(--hairline);
+    display: none;
+    flex-direction: column; gap: var(--sp-sm);
+  }
+  .wip-run-block.is-open .wip-run-body { display: flex; padding-top: var(--sp-base); }
+
+  .wip-item-list {
+    list-style: none; padding: 0; margin: 0;
+    display: flex; flex-direction: column; gap: var(--sp-micro);
+  }
+  .wip-item {
+    display: flex; align-items: flex-start; gap: var(--sp-sm);
+    padding: var(--sp-xs) var(--sp-sm);
+    border-radius: 6px;
+    font-size: var(--fs-sm); color: var(--text);
+    line-height: var(--lh-px-md);
+  }
+  .wip-item:hover { background: color-mix(in srgb, var(--text) 3%, transparent); }
+  .wip-item-dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    margin-top: 7px; flex-shrink: 0;
+    background: var(--text-faint);
+  }
+  .wip-item.has-flag .wip-item-dot { background: var(--status-fire); }
+  .wip-item-title { flex: 1; min-width: 0; max-width: 62ch; }
+  .wip-item-meta {
+    font-size: var(--fs-nano); color: var(--text-soft);
+    margin-left: var(--sp-sm); white-space: nowrap;
+  }
+
+  .wip-item-empty {
+    font-size: var(--fs-xs); color: var(--text-soft);
+    padding: var(--sp-sm) var(--sp-sm);
+    font-style: italic;
+  }
+
+  /* Run footer actions */
+  .wip-run-actions {
+    display: flex; align-items: center; justify-content: space-between;
+    padding-top: var(--sp-lg);
+    border-top: 1px solid var(--hairline);
+  }
+  .wip-run-actions-right {
+    display: flex; gap: var(--sp-sm);
+  }
+  .wip-save-hint {
+    font-size: var(--fs-xs); color: var(--text-faint);
+    transition: color var(--dur-fast);
+  }
+  .wip-save-hint.is-pulse { color: var(--highlight); }
+
+  /* Buttons — shared */
+  .wip-btn {
+    display: inline-flex; align-items: center; gap: var(--sp-xs);
+    padding: var(--sp-sm) var(--sp-lg);
+    font-size: var(--fs-md); font-weight: 600;
+    border-radius: 8px; border: 1px solid transparent;
+    cursor: pointer;
+    letter-spacing: -0.01em;
+    transition: all var(--dur-fast);
+  }
+  .wip-btn:focus-visible { outline: 2px solid var(--highlight); outline-offset: 2px; }
+  .wip-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .wip-btn-primary {
+    background: var(--highlight); color: #fff;
+  }
+  .wip-btn-primary:hover:not(:disabled) {
+    background: var(--hover-blue-dark, #0071E3);
+  }
+  .wip-btn-primary:active:not(:disabled) { transform: scale(0.98); }
+  .wip-btn-ring {
+    background: transparent;
+    border-color: var(--highlight);
+    color: var(--highlight);
+  }
+  .wip-btn-ring:hover:not(:disabled) {
+    background: var(--highlight-soft);
+  }
+  .wip-btn-ghost {
+    background: transparent; color: var(--text-muted);
+    border-color: var(--hairline);
+  }
+  .wip-btn-ghost:hover:not(:disabled) { color: var(--text); border-color: color-mix(in srgb, var(--text) 18%, transparent); }
+  .wip-btn-muted {
+    border-color: transparent;
+  }
+
+  /* Stubs for other tabs */
+  .wip-stub {
+    max-width: 520px; margin: 40px auto;
+    padding: var(--sp-5xl) var(--sp-3xl);
+    text-align: center;
+    background: var(--bg-elev);
+    border: 1px solid var(--hairline);
+    border-radius: 14px;
+    display: flex; flex-direction: column; align-items: center; gap: var(--sp-base);
+  }
+  .wip-stub-icon { color: var(--text-faint); margin-bottom: var(--sp-xs); }
+  .wip-stub-title {
+    font-size: var(--fs-xl); font-weight: 600; color: var(--text);
+    letter-spacing: -0.01em;
+  }
+  .wip-stub-body {
+    font-size: var(--fs-sm); color: var(--text-soft);
+    line-height: var(--lh-px-md);
+    max-width: 50ch;
+  }
+  .wip-stub-back {
+    margin-top: var(--sp-sm);
+    font-size: var(--fs-sm); font-weight: 600;
+    color: var(--highlight); text-decoration: none;
+  }
+  .wip-stub-back:hover { text-decoration: underline; }
+  .wip-stub-kbd {
+    display: flex; gap: var(--sp-micro); flex-wrap: wrap; justify-content: center;
+    margin-bottom: var(--sp-sm);
+  }
+  .wip-kbd {
+    font-family: 'SF Mono', Menlo, monospace;
+    font-size: var(--fs-nano); font-weight: 600;
+    padding: 3px 7px; border-radius: 4px;
+    background: var(--kbd-bg); border: 1px solid var(--kbd-border);
+    color: var(--text-muted);
+  }
+
+  /* Edit red-flag modal */
+  .wip-modal-overlay {
+    position: fixed; inset: 0;
+    background: rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(4px);
+    display: flex; align-items: center; justify-content: center;
+    padding: var(--sp-3xl);
+    z-index: 1000;
+    opacity: 0; pointer-events: none;
+    transition: opacity var(--dur-med) var(--ease-out);
+  }
+  .wip-modal-overlay:not([hidden]) { opacity: 1; pointer-events: auto; }
+  .wip-modal {
+    background: var(--bg-elev);
+    border: 1px solid var(--hairline);
+    border-radius: 16px;
+    width: 100%; max-width: 460px;
+    display: flex; flex-direction: column;
+    box-shadow: var(--modal-shadow, 0 30px 80px rgba(0,0,0,0.2));
+    transform: translateY(4px);
+    transition: transform var(--dur-med) var(--ease-out);
+  }
+  .wip-modal-overlay:not([hidden]) .wip-modal { transform: translateY(0); }
+  .wip-modal-head {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: var(--sp-lg) var(--sp-2xl);
+    border-bottom: 1px solid var(--hairline);
+  }
+  .wip-modal-title {
+    font-size: var(--fs-lg); font-weight: 600; color: var(--text);
+    letter-spacing: -0.01em;
+  }
+  .wip-modal-close {
+    width: 28px; height: 28px; border-radius: 6px;
+    background: transparent; border: none; color: var(--text-soft);
+    display: inline-flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    transition: background var(--dur-fast), color var(--dur-fast);
+  }
+  .wip-modal-close:hover { background: var(--bg-soft); color: var(--text); }
+  .wip-modal-body {
+    padding: var(--sp-2xl);
+    display: flex; flex-direction: column; gap: var(--sp-lg);
+  }
+  .wip-field { display: flex; flex-direction: column; gap: var(--sp-micro); }
+  .wip-field-label {
+    font-size: var(--fs-xs); font-weight: 600; color: var(--text-muted);
+    letter-spacing: -0.005em;
+  }
+  .wip-field-input {
+    font-family: inherit; font-size: var(--fs-sm); color: var(--text);
+    padding: var(--sp-9) var(--sp-base);
+    background: var(--bg);
+    border: 1px solid var(--hairline); border-radius: 8px;
+    transition: border-color var(--dur-fast);
+  }
+  .wip-field-input:focus {
+    outline: none;
+    border-color: var(--highlight);
+    box-shadow: 0 0 0 3px var(--highlight-soft);
+  }
+  .wip-field-textarea { resize: vertical; min-height: 72px; max-height: 180px; font-family: inherit; }
+  .wip-field-severity { gap: var(--sp-sm); }
+  .wip-sev-row { display: flex; gap: var(--sp-sm); flex-wrap: wrap; }
+  .wip-sev-opt { display: inline-flex; align-items: center; cursor: pointer; }
+  .wip-sev-opt input { position: absolute; opacity: 0; pointer-events: none; }
+  .wip-sev-chip {
+    display: inline-flex; align-items: center; gap: var(--sp-xs);
+    padding: var(--sp-micro) var(--sp-base);
+    border-radius: 980px;
+    font-size: var(--fs-xs); font-weight: 500;
+    border: 1px solid transparent;
+    transition: border-color var(--dur-fast);
+  }
+  .wip-sev-chip.fire { background: var(--status-fire-soft); color: var(--status-fire); }
+  .wip-sev-chip.risk { background: var(--status-risk-soft); color: var(--status-risk); }
+  .wip-sev-chip.track { background: var(--status-track-soft); color: var(--status-track); }
+  .wip-sev-opt input:checked + .wip-sev-chip {
+    border-color: currentColor;
+    box-shadow: 0 0 0 2px color-mix(in srgb, currentColor 18%, transparent);
+  }
+  .wip-sev-opt input:focus-visible + .wip-sev-chip {
+    outline: 2px solid var(--highlight); outline-offset: 2px;
+  }
+  .wip-modal-foot {
+    display: flex; align-items: center; justify-content: flex-end;
+    gap: var(--sp-sm);
+    padding: var(--sp-lg) var(--sp-2xl);
+    border-top: 1px solid var(--hairline);
+    background: var(--bg-faint, transparent);
+    border-bottom-left-radius: 16px; border-bottom-right-radius: 16px;
+  }
+
+  /* Severity dots inside flag cards */
+  .wip-flag-sev-dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    flex-shrink: 0;
+    margin-right: var(--sp-xs);
+  }
+  .wip-flag-sev-dot.fire { background: var(--status-fire); }
+  .wip-flag-sev-dot.risk { background: var(--status-risk); }
+  .wip-flag-sev-dot.track { background: var(--status-track); }
+
+  /* Responsive */
+  @media (max-width: 1024px) {
+    .wip-agenda-grid { grid-template-columns: 1fr; }
+  }
+  @media (max-width: 640px) {
+    .wip-page { padding: var(--sp-2xl) var(--sp-xl) 80px; }
+    .wip-header { flex-direction: column; gap: var(--sp-base); }
+    .wip-header-meta { padding-top: 0; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .wip-modal-overlay, .wip-modal,
+    .wip-tab, .wip-btn, .wip-run-block, .wip-icon-btn,
+    .wip-run-expand, .wip-save-hint, .wip-field-input { transition: none; }
+  }
+
   /* ═══════ TEMPLATES VIEW ═══════ */
   body[data-active-view="templates"] .templates-split-wrapper { display: flex; }
   .templates-split-wrapper {
@@ -10602,7 +11148,7 @@
       <a href="#overview" data-view-target="overview" class="on" aria-current="page">Home</a>
       <a href="#clients" data-view-target="clients">Clients</a>
       <a href="#analytics" data-view-target="analytics">Analytics</a>
-      <a href="#" class="is-stub" onclick="event.preventDefault()" data-tip="Coming soon" data-tip-pos="below">Weekly WIP<span class="nav-soon-pill">Soon</span></a>
+      <a href="#wip/agenda" data-view-target="wip">Weekly WIP</a>
     </nav>
   </div>
   <div class="header-right">
@@ -12894,6 +13440,173 @@
   </main>
 </div>
 <!-- ═══════ END ANALYTICS VIEW ═══════ -->
+
+<!-- ═══════ WEEKLY WIP VIEW ═══════ -->
+<div class="view view-wip" data-view="wip">
+  <main class="wip-page">
+
+    <header class="wip-header">
+      <div class="wip-header-text">
+        <div class="page-greeting">Weekly WIP</div>
+        <h1 class="page-title" data-wip-page-title>Prep the meeting</h1>
+        <p class="page-date" data-wip-page-sub>Queue the red flags, shape the run of show, start when everyone's ready.</p>
+      </div>
+      <div class="wip-header-meta">
+        <div class="wip-next-meeting" aria-live="polite">
+          <span class="wip-next-label">Next meeting</span>
+          <span class="wip-next-time" data-wip-next-time>—</span>
+        </div>
+      </div>
+    </header>
+
+    <nav class="wip-tabs" role="tablist" aria-label="Weekly WIP sections">
+      <a class="wip-tab on" href="#wip/agenda" data-wip-tab="agenda" role="tab" aria-current="page">Agenda</a>
+      <a class="wip-tab" href="#wip/live" data-wip-tab="live" role="tab">Live meeting</a>
+      <a class="wip-tab" href="#wip/recap" data-wip-tab="recap" role="tab">Recaps</a>
+      <a class="wip-tab" href="#wip/actions" data-wip-tab="actions" role="tab">Action items</a>
+    </nav>
+
+    <!-- ── AGENDA BUILDER ── -->
+    <section class="wip-sub wip-agenda" data-wip-sub="agenda" aria-label="Agenda builder">
+      <div class="wip-agenda-grid">
+
+        <!-- LEFT: Red-flag queue, grouped by channel manager -->
+        <aside class="wip-queue-col" aria-label="Red flag queue">
+          <div class="wip-col-head">
+            <div>
+              <div class="wip-col-title">This week's red flags</div>
+              <div class="wip-col-sub"><span data-wip-queue-count>0</span> raised · drag a card onto its channel on the right to surface it</div>
+            </div>
+            <button class="wip-btn wip-btn-ring" data-wip-add-flag type="button" aria-label="Add red flag">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              <span>Add red flag</span>
+            </button>
+          </div>
+
+          <div class="wip-queue" data-wip-queue role="list"></div>
+
+          <div class="wip-queue-empty" data-wip-queue-empty hidden>
+            <div class="wip-empty-title">No red flags this week</div>
+            <div class="wip-empty-body">Nice. Use the button above if something comes up before Friday.</div>
+          </div>
+        </aside>
+
+        <!-- RIGHT: Run of show -->
+        <section class="wip-run-col" aria-label="Run of show">
+          <div class="wip-col-head">
+            <div>
+              <div class="wip-col-title">Run of show</div>
+              <div class="wip-col-sub">Drag <strong>Channel updates</strong> rows to reorder · BAU stays last, collapsed by default</div>
+            </div>
+            <div class="wip-run-meta">
+              <span data-wip-run-count>0</span> items · est. <span data-wip-run-time>0</span> min
+            </div>
+          </div>
+
+          <ol class="wip-run" data-wip-run></ol>
+
+          <footer class="wip-run-actions" role="group" aria-label="Agenda actions">
+            <div class="wip-run-actions-left">
+              <span class="wip-save-hint" data-wip-save-hint>Saved just now</span>
+            </div>
+            <div class="wip-run-actions-right">
+              <button class="wip-btn wip-btn-ring" data-wip-send-preread type="button">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 4h16v16H4z" opacity="0"/><path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4 20-7z"/></svg>
+                <span>Send pre-read</span>
+              </button>
+              <button class="wip-btn wip-btn-primary" data-wip-start-meeting type="button">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="none" aria-hidden="true"><polygon points="6 4 20 12 6 20 6 4"/></svg>
+                <span>Start meeting</span>
+              </button>
+            </div>
+          </footer>
+        </section>
+
+      </div>
+    </section>
+
+    <!-- ── LIVE MEETING (stub for Stage 2) ── -->
+    <section class="wip-sub wip-stub-sub" data-wip-sub="live" aria-label="Live meeting" hidden>
+      <div class="wip-stub">
+        <div class="wip-stub-kbd" aria-hidden="true">
+          <span class="wip-kbd">A</span><span class="wip-kbd">D</span><span class="wip-kbd">U</span><span class="wip-kbd">F</span><span class="wip-kbd">N</span><span class="wip-kbd">P</span><span class="wip-kbd">B</span><span class="wip-kbd">Space</span>
+        </div>
+        <div class="wip-stub-title">Live meeting — builds in the next stage</div>
+        <div class="wip-stub-body">The in-meeting view (Fellow-style transcript, one-key capture, pacing timer, early-leave flags) lands after you sign off on the Agenda Builder.</div>
+        <a class="wip-stub-back" href="#wip/agenda">Back to agenda builder</a>
+      </div>
+    </section>
+
+    <!-- ── RECAPS (stub for Stage 3) ── -->
+    <section class="wip-sub wip-stub-sub" data-wip-sub="recap" aria-label="Recaps" hidden>
+      <div class="wip-stub">
+        <div class="wip-stub-icon" aria-hidden="true">
+          <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+        </div>
+        <div class="wip-stub-title">Recaps — builds in the next stage</div>
+        <div class="wip-stub-body">Fellow AI's draft recap + your edits, side-by-side diff, one-click send to channel managers. Coming in Screen 3.</div>
+        <a class="wip-stub-back" href="#wip/agenda">Back to agenda builder</a>
+      </div>
+    </section>
+
+    <!-- ── ACTION ITEM DASHBOARD (stub for Stage 4) ── -->
+    <section class="wip-sub wip-stub-sub" data-wip-sub="actions" aria-label="Action items" hidden>
+      <div class="wip-stub">
+        <div class="wip-stub-icon" aria-hidden="true">
+          <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+        </div>
+        <div class="wip-stub-title">Action items — builds in the next stage</div>
+        <div class="wip-stub-body">Owner / due-date / client / status filters, overdue highlight, Raise-for-next-WIP button. Coming in Screen 4.</div>
+        <a class="wip-stub-back" href="#wip/agenda">Back to agenda builder</a>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<!-- Edit red-flag modal -->
+<div class="wip-modal-overlay" data-wip-flag-overlay role="dialog" aria-modal="true" aria-labelledby="wip-flag-modal-title" hidden>
+  <div class="wip-modal" role="document">
+    <header class="wip-modal-head">
+      <h2 class="wip-modal-title" id="wip-flag-modal-title" data-wip-flag-modal-title>Raise a red flag</h2>
+      <button class="wip-modal-close" data-wip-flag-close type="button" aria-label="Close">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </header>
+    <div class="wip-modal-body">
+      <label class="wip-field">
+        <span class="wip-field-label">Channel</span>
+        <select class="wip-field-input" data-wip-flag-channel></select>
+      </label>
+      <label class="wip-field">
+        <span class="wip-field-label">Client</span>
+        <select class="wip-field-input" data-wip-flag-client></select>
+      </label>
+      <label class="wip-field">
+        <span class="wip-field-label">Headline</span>
+        <input type="text" class="wip-field-input" data-wip-flag-title placeholder="e.g. Paid budget reallocation decision needed">
+      </label>
+      <label class="wip-field">
+        <span class="wip-field-label">Context</span>
+        <textarea class="wip-field-input wip-field-textarea" data-wip-flag-note rows="3" placeholder="Detail for the pre-read email."></textarea>
+      </label>
+      <fieldset class="wip-field wip-field-severity">
+        <span class="wip-field-label">Severity</span>
+        <div class="wip-sev-row" role="radiogroup" aria-label="Severity">
+          <label class="wip-sev-opt"><input type="radio" name="wip-flag-sev" value="fire"><span class="wip-sev-chip fire">Needs decision</span></label>
+          <label class="wip-sev-opt"><input type="radio" name="wip-flag-sev" value="risk" checked><span class="wip-sev-chip risk">Heads up</span></label>
+          <label class="wip-sev-opt"><input type="radio" name="wip-flag-sev" value="track"><span class="wip-sev-chip track">FYI</span></label>
+        </div>
+      </fieldset>
+    </div>
+    <footer class="wip-modal-foot">
+      <button class="wip-btn wip-btn-ghost wip-btn-muted" data-wip-flag-cancel type="button">Cancel</button>
+      <button class="wip-btn wip-btn-primary" data-wip-flag-save type="button">Save flag</button>
+    </footer>
+  </div>
+</div>
+
+<!-- ═══════ END WEEKLY WIP VIEW ═══════ -->
 
 <!-- ═══════ TEMPLATES VIEW ═══════ -->
 <div class="view view-templates" data-view="templates">
@@ -21246,15 +21959,15 @@ window.OPS_TEAM = OPS_TEAM;
 
 /* ── View routing (overview · clients · client-detail · board) ── */
 (function() {
-  var VALID = { overview: 1, board: 1, clients: 1, 'client-detail': 1, templates: 1, analytics: 1 };
+  var VALID = { overview: 1, board: 1, clients: 1, 'client-detail': 1, templates: 1, analytics: 1, wip: 1 };
 
   var DEFAULT_CLIENT = 'acme-corp';
   var DEFAULT_TEMPLATE = 'web-design-full-stack';
 
   // Expose for external callers (keyboard nav in split-view script)
-  window.routeToView = function(t, id) { routeToView(t, id); };
+  window.routeToView = function(t, id, sub) { routeToView(t, id, sub); };
 
-  function routeToView(target, clientId) {
+  function routeToView(target, clientId, sub) {
     if (!VALID[target]) target = 'overview';
     document.querySelectorAll('.view').forEach(function(v) {
       v.classList.toggle('active', v.getAttribute('data-view') === target);
@@ -21317,6 +22030,30 @@ window.OPS_TEAM = OPS_TEAM;
       var detailPane = document.querySelector('.templates-detail-pane');
       if (detailPane) detailPane.scrollTo({ top: 0 });
     }
+
+    if (target === 'wip') {
+      var activeSub = (sub || 'agenda');
+      var wipPanels = document.querySelectorAll('[data-wip-sub]');
+      var wipMatched = false;
+      wipPanels.forEach(function(p) {
+        var on = p.getAttribute('data-wip-sub') === activeSub;
+        p.hidden = !on;
+        if (on) wipMatched = true;
+      });
+      if (!wipMatched && wipPanels[0]) {
+        wipPanels[0].hidden = false;
+        activeSub = wipPanels[0].getAttribute('data-wip-sub');
+      }
+      document.querySelectorAll('.wip-tab[data-wip-tab]').forEach(function(t) {
+        var on = t.getAttribute('data-wip-tab') === activeSub;
+        t.classList.toggle('on', on);
+        if (on) { t.setAttribute('aria-current', 'page'); }
+        else    { t.removeAttribute('aria-current'); }
+      });
+      if (window.WIP && typeof window.WIP.onRoute === 'function') {
+        window.WIP.onRoute(activeSub, clientId);
+      }
+    }
   }
 
   function parseHash() {
@@ -21328,6 +22065,8 @@ window.OPS_TEAM = OPS_TEAM;
     if (m) return { view: 'client-detail', id: m[1] };
     var t = h.match(/^templates(?:\/(.+))?$/);
     if (t) return { view: 'templates', id: t[1] || null };
+    var w = h.match(/^wip(?:\/([a-z-]+))?(?:\/(.+))?$/);
+    if (w) return { view: 'wip', sub: w[1] || 'agenda', id: w[2] || null };
     if (h === 'analytics') return { view: 'analytics' };
     if (h === 'overview') return { view: 'overview' };
     return { view: 'overview' };
@@ -21404,13 +22143,13 @@ window.OPS_TEAM = OPS_TEAM;
 
   window.addEventListener('hashchange', function() {
     var parsed = parseHash();
-    routeToView(parsed.view, parsed.id);
+    routeToView(parsed.view, parsed.id, parsed.sub);
   });
 
   /* Initial route */
   (function() {
     var parsed = parseHash();
-    routeToView(parsed.view, parsed.id);
+    routeToView(parsed.view, parsed.id, parsed.sub);
   })();
 
   /* ── Template meta: computes "Last edited" + Activity log from system time ── */
@@ -27914,6 +28653,781 @@ window.OPS_TEAM = OPS_TEAM;
   });
 
   window.openAddServiceModal = open;
+})();
+</script>
+
+<script>
+/* ═══════ WEEKLY WIP — Agenda Builder (Stage 1) ═══════
+   Belief: The PM is prepping Friday's WIP in under 5 minutes. Surface what's
+   urgent (red flags by channel manager), let them shape the run of show
+   (drag to reorder channels, toggle early-leave, collapse BAU), and get
+   into the meeting cleanly. Screens 2/3/4 are stubbed until this ships. */
+(function(){
+  var view = document.querySelector('.view-wip');
+  if (!view) return;
+
+  var STORAGE_KEY = 'projectflow.wip.v1';
+  var STATE_VERSION = 1;
+  var DEFAULT_MEETING_DAY  = 5;   // 0=Sun, 5=Fri
+  var DEFAULT_MEETING_HOUR = 10;  // 10:00 local
+
+  var CHANNELS = [
+    { id: 'paid-social', name: 'Paid Social',   manager: 'Steven' },
+    { id: 'seo',         name: 'SEO',           manager: 'Michael' },
+    { id: 'email',       name: 'Email & CRM',   manager: 'Kate' },
+    { id: 'creative',    name: 'Creative',      manager: 'Chris' },
+    { id: 'web',         name: 'Web',           manager: 'Roxy & Zeke' },
+    { id: 'analytics',   name: 'Analytics',     manager: 'Scott & Adam' },
+    { id: 'internal-ops', name: 'Internal Ops', manager: 'Adam' }
+  ];
+
+  // ── Seed data ────────────────────────────────────────────────
+  function seedState(){
+    var now   = Date.now();
+    var today = new Date(); today.setHours(0,0,0,0);
+    var dayDelta = ((DEFAULT_MEETING_DAY - today.getDay()) + 7) % 7;
+    if (dayDelta === 0 && (new Date()).getHours() >= DEFAULT_MEETING_HOUR + 1) dayDelta = 7;
+    var nextMeeting = new Date(today);
+    nextMeeting.setDate(today.getDate() + (dayDelta || 7));
+    nextMeeting.setHours(DEFAULT_MEETING_HOUR, 0, 0, 0);
+
+    var hour = 3600 * 1000, day = 86400 * 1000;
+
+    return {
+      meta: {
+        version: STATE_VERSION,
+        nextMeetingAt: nextMeeting.toISOString(),
+        lastPrereadSentAt: null,
+        lastSavedAt: now
+      },
+      channelOrder: CHANNELS.map(function(c){ return c.id; }),
+      earlyLeave: {},
+      bauCollapsed: true,
+      newBusinessItems: [
+        { id: 'nb-1', title: 'Meridian Health \u2014 proposal accepted, kickoff slots Monday', owner: 'Sales \u2192 AM', client: 'meridian-health' },
+        { id: 'nb-2', title: 'Bloom Retail expansion \u2014 second location, +20% scope', owner: 'AM',            client: 'bloom-retail' }
+      ],
+      internalItems: [
+        { id: 'int-1', title: 'Quarterly health benefits enrollment closes Wednesday', owner: 'HR' },
+        { id: 'int-2', title: 'New Figma seats provisioned \u2014 let Ops know if anyone is missed', owner: 'Ops' }
+      ],
+      redFlags: [
+        { id: 'f-1', channelId: 'paid-social', clientId: 'acme-corp',      clientName: 'Acme Corp',       title: 'Meta CPA up 38% week-over-week \u2014 budget reallocation decision', note: 'Recommend shifting $4k from prospecting into retargeting. Need sign-off today.', severity: 'fire',  createdAt: now -  2*hour, createdBy: 'You',     scheduled: true  },
+        { id: 'f-2', channelId: 'seo',         clientId: 'bloom-retail',   clientName: 'Bloom Retail',    title: 'Core Web Vitals failing on collection pages post-migration',        note: 'LCP 3.8s on /collections. Rank tracker showing slip in non-brand terms.', severity: 'risk',  createdAt: now -  5*hour, createdBy: 'Michael', scheduled: true  },
+        { id: 'f-3', channelId: 'creative',    clientId: 'techstart-inc',  clientName: 'TechStart Inc',   title: 'Q2 brand refresh \u2014 legal review on tagline',                      note: 'Waiting on IP counsel since Tuesday. Blocks all new ad creative.',     severity: 'fire',  createdAt: now -  8*hour, createdBy: 'Chris',   scheduled: true  },
+        { id: 'f-4', channelId: 'email',       clientId: 'harvest-co',     clientName: 'Harvest Co',      title: 'Klaviyo send reputation dropped \u2014 re-engagement flow scope',     note: 'Sunset ~40k cold subscribers. Client wants volume, we want deliverability.', severity: 'risk', createdAt: now - 12*hour, createdBy: 'Kate',    scheduled: false },
+        { id: 'f-5', channelId: 'web',         clientId: 'northwind-labs', clientName: 'Northwind Labs',  title: 'Staging env broken \u2014 product page template regression',          note: 'Fix likely a rollback. Need to confirm before re-pushing release branch.', severity: 'fire',  createdAt: now - 14*hour, createdBy: 'Roxy',    scheduled: false },
+        { id: 'f-6', channelId: 'analytics',   clientId: 'summit-outdoor', clientName: 'Summit Outdoor',  title: 'GA4 conversion imports into Ads are double-counting',                 note: 'Noticed in last attribution pull. Likely Tag Manager duplicate trigger.', severity: 'track', createdAt: now - 20*hour, createdBy: 'Scott',   scheduled: false },
+        { id: 'f-7', channelId: 'paid-social', clientId: 'cascade-coffee', clientName: 'Cascade Coffee',  title: 'Holiday planning \u2014 need sign-off on campaign brief',             note: 'Draft ready since Monday. No response yet; risks missing prep window.',   severity: 'risk',  createdAt: now - 26*hour, createdBy: 'Steven',  scheduled: false }
+      ],
+      actionItems: [
+        { id: 'a-1', owner: 'Kate',    title: 'Send Klaviyo re-engagement plan to Harvest Co', dueAt: now +  2*day, clientId: 'harvest-co',     clientName: 'Harvest Co',     channelId: 'email',       status: 'in-progress',          createdAt: now -  7*day },
+        { id: 'a-2', owner: 'Michael', title: 'Fix LCP regression on Bloom collection template',     dueAt: now +  5*day, clientId: 'bloom-retail',   clientName: 'Bloom Retail',   channelId: 'seo',         status: 'awaiting-confirmation',createdAt: now -  7*day },
+        { id: 'a-3', owner: 'Chris',   title: 'Present Q2 brand refresh v2 to TechStart',            dueAt: now -  1*day, clientId: 'techstart-inc',  clientName: 'TechStart Inc',  channelId: 'creative',    status: 'blocked',              createdAt: now - 14*day },
+        { id: 'a-4', owner: 'Scott',   title: 'Resolve GA4 double-count in Ads',                     dueAt: now +  3*day, clientId: 'summit-outdoor', clientName: 'Summit Outdoor', channelId: 'analytics',   status: 'in-progress',          createdAt: now -  3*day },
+        { id: 'a-5', owner: 'Steven',  title: 'Deliver Meta CPA reallocation analysis',              dueAt: now,          clientId: 'acme-corp',      clientName: 'Acme Corp',      channelId: 'paid-social', status: 'needs-attention',      createdAt: now -  2*day },
+        { id: 'a-6', owner: 'Roxy',    title: 'Rebuild staging env for Northwind',                   dueAt: now +  1*day, clientId: 'northwind-labs', clientName: 'Northwind Labs', channelId: 'web',         status: 'in-progress',          createdAt: now -  1*day },
+        { id: 'a-7', owner: 'Kate',    title: 'Draft welcome flow subject-line variants',            dueAt: now +  4*day, clientId: 'bloom-retail',   clientName: 'Bloom Retail',   channelId: 'email',       status: 'done',                 createdAt: now - 14*day },
+        { id: 'a-8', owner: 'Adam',    title: 'Reconcile March invoicing against delivered scope',   dueAt: now +  6*day, clientId: 'acme-corp',      clientName: 'Acme Corp',      channelId: 'internal-ops',status: 'awaiting-files',       createdAt: now -  5*day }
+      ]
+    };
+  }
+
+  // ── Persistence ──────────────────────────────────────────────
+  function loadState(){
+    try {
+      var raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) {
+        var parsed = JSON.parse(raw);
+        if (parsed && parsed.meta && parsed.meta.version === STATE_VERSION) return parsed;
+      }
+    } catch (e) { /* fall through to seed */ }
+    var s = seedState();
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(s)); } catch (e) {}
+    return s;
+  }
+  function saveState(){
+    state.meta.lastSavedAt = Date.now();
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch (e) {}
+    pulseSaveHint();
+  }
+
+  var state = loadState();
+
+  // ── Utilities ────────────────────────────────────────────────
+  function channel(id){
+    for (var i = 0; i < CHANNELS.length; i++) if (CHANNELS[i].id === id) return CHANNELS[i];
+    return null;
+  }
+  function readClients(){
+    var D = window.PROJECTFLOW_DATA;
+    return (D && D.clients) ? D.clients.slice() : [];
+  }
+  function uid(pfx){
+    return (pfx || 'id') + '-' + Math.random().toString(36).slice(2, 8) + Date.now().toString(36).slice(-4);
+  }
+  function fmtMeetingTime(iso){
+    if (!iso) return '\u2014';
+    var d = new Date(iso);
+    var day  = d.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
+    var time = d.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
+    return day + ' \u00b7 ' + time;
+  }
+  function statusLabelFor(s){
+    return ({
+      'done': 'Done',
+      'in-progress': 'In progress',
+      'needs-attention': 'Needs attention',
+      'awaiting-files': 'Awaiting files',
+      'awaiting-confirmation': 'Awaiting confirmation',
+      'blocked': 'Blocked'
+    })[s] || 'In progress';
+  }
+  function escapeHtml(s){
+    return String(s == null ? '' : s)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  }
+
+  // ── DOM refs ─────────────────────────────────────────────────
+  var els = {
+    nextTime:       view.querySelector('[data-wip-next-time]'),
+    queue:          view.querySelector('[data-wip-queue]'),
+    queueCount:     view.querySelector('[data-wip-queue-count]'),
+    queueEmpty:     view.querySelector('[data-wip-queue-empty]'),
+    run:            view.querySelector('[data-wip-run]'),
+    runCount:       view.querySelector('[data-wip-run-count]'),
+    runTime:        view.querySelector('[data-wip-run-time]'),
+    saveHint:       view.querySelector('[data-wip-save-hint]'),
+    addFlagBtn:     view.querySelector('[data-wip-add-flag]'),
+    sendPrereadBtn: view.querySelector('[data-wip-send-preread]'),
+    startMeetingBtn:view.querySelector('[data-wip-start-meeting]')
+  };
+
+  function pulseSaveHint(){
+    if (!els.saveHint) return;
+    els.saveHint.textContent = 'Saved just now';
+    els.saveHint.classList.add('is-pulse');
+    setTimeout(function(){ els.saveHint.classList.remove('is-pulse'); }, 900);
+  }
+
+  // ── Render: header ───────────────────────────────────────────
+  function renderHeader(){
+    els.nextTime.textContent = fmtMeetingTime(state.meta.nextMeetingAt);
+  }
+
+  // ── Render: queue (red flags grouped by channel manager) ────
+  var SEV_RANK = { fire: 0, risk: 1, track: 2 };
+  function renderQueue(){
+    var flags = state.redFlags.slice();
+    flags.sort(function(a, b){
+      if (a.scheduled !== b.scheduled) return a.scheduled ? 1 : -1;
+      var s = (SEV_RANK[a.severity] || 9) - (SEV_RANK[b.severity] || 9);
+      if (s) return s;
+      return (b.createdAt || 0) - (a.createdAt || 0);
+    });
+    var unscheduled = flags.filter(function(f){ return !f.scheduled; });
+    els.queueCount.textContent = unscheduled.length;
+
+    els.queue.innerHTML = '';
+    if (flags.length === 0) { els.queueEmpty.hidden = false; return; }
+    els.queueEmpty.hidden = true;
+
+    var byChannel = {};
+    flags.forEach(function(f){ (byChannel[f.channelId] = byChannel[f.channelId] || []).push(f); });
+
+    state.channelOrder.forEach(function(cid){
+      var arr = byChannel[cid] || [];
+      if (arr.length === 0) return;
+      var ch = channel(cid);
+      if (!ch) return;
+      var group = document.createElement('div');
+      group.className = 'wip-queue-group';
+      group.setAttribute('data-wip-queue-group', cid);
+      group.innerHTML =
+        '<div class="wip-queue-group-head">' +
+          '<div class="wip-queue-group-name">' + escapeHtml(ch.name) + ' \u00b7 ' + escapeHtml(ch.manager) + '</div>' +
+          '<div class="wip-queue-group-count">' + arr.length + '</div>' +
+        '</div>';
+      arr.forEach(function(f){ group.appendChild(buildFlagCard(f)); });
+      els.queue.appendChild(group);
+    });
+  }
+
+  function buildFlagCard(f){
+    var card = document.createElement('div');
+    card.className = 'wip-flag-card' + (f.scheduled ? ' is-scheduled' : '');
+    card.setAttribute('draggable', 'true');
+    card.setAttribute('data-flag-id', f.id);
+    card.setAttribute('role', 'listitem');
+    var sevLabel = f.severity === 'fire' ? 'Needs decision' : (f.severity === 'risk' ? 'Heads up' : 'FYI');
+    card.innerHTML =
+      '<div class="wip-flag-head">' +
+        '<span class="wip-flag-client">' +
+          '<span class="wip-flag-sev-dot ' + escapeHtml(f.severity) + '" aria-hidden="true"></span>' +
+          escapeHtml(f.clientName || 'Internal') +
+          (f.scheduled ? ' \u00b7 <em style="font-style:normal; color:var(--highlight);">on agenda</em>' : '') +
+        '</span>' +
+        '<span class="wip-flag-actions">' +
+          '<button class="wip-icon-btn" data-wip-flag-edit type="button" aria-label="Edit flag">' +
+            '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>' +
+          '</button>' +
+          '<button class="wip-icon-btn" data-wip-flag-remove type="button" aria-label="Remove flag">' +
+            '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>' +
+          '</button>' +
+        '</span>' +
+      '</div>' +
+      '<div class="wip-flag-title">' + escapeHtml(f.title || '') + '</div>' +
+      (f.note ? '<div class="wip-flag-note">' + escapeHtml(f.note) + '</div>' : '') +
+      '<div class="wip-flag-note" style="color:var(--text-faint); font-size:var(--fs-nano);">' +
+        escapeHtml(sevLabel) + ' \u00b7 raised by ' + escapeHtml(f.createdBy || 'You') +
+      '</div>';
+    return card;
+  }
+
+  // ── Render: run of show ──────────────────────────────────────
+  function renderRun(){
+    els.run.innerHTML = '';
+    var blocks = buildRunBlocks();
+    var totalItems = 0, totalMin = 0;
+    var visibleIdx = 0;
+    blocks.forEach(function(b){
+      if (!b.el) return;
+      els.run.appendChild(b.el);
+      totalItems += b.itemCount;
+      totalMin   += b.est;
+      visibleIdx++;
+      var ix = b.el.querySelector('.wip-run-index');
+      if (ix) ix.textContent = visibleIdx;
+    });
+    els.runCount.textContent = totalItems;
+    els.runTime.textContent  = totalMin;
+  }
+
+  function buildRunBlocks(){
+    var clients = readClients();
+    var clientMap = {};
+    clients.forEach(function(c){ clientMap[c.id] = c; });
+
+    var blocks = [];
+
+    // 1. New business (fixed)
+    blocks.push(makeFixedBlock({
+      id: 'new-business', title: 'New business', owner: 'Sales \u2192 AM', est: 5,
+      items: state.newBusinessItems.map(function(nb){
+        var meta = nb.client && clientMap[nb.client] ? clientMap[nb.client].name : (nb.owner || '');
+        return { title: nb.title, meta: meta };
+      })
+    }));
+
+    // 2. Internal announcements (fixed)
+    blocks.push(makeFixedBlock({
+      id: 'internal', title: 'Internal announcements', owner: 'HR / Ops', est: 5,
+      items: state.internalItems.map(function(it){ return { title: it.title, meta: it.owner || '' }; })
+    }));
+
+    // 3. Channels — reorderable
+    var flagsByChannel = {};
+    state.redFlags.forEach(function(f){ (flagsByChannel[f.channelId] = flagsByChannel[f.channelId] || []).push(f); });
+
+    state.channelOrder.forEach(function(cid){
+      var ch = channel(cid);
+      if (!ch) return;
+      blocks.push(makeChannelBlock(ch, flagsByChannel[cid] || []));
+    });
+
+    // 4. BAU (fixed-last, collapsible)
+    blocks.push(makeBAUBlock());
+
+    // 5. Action-items review (fixed)
+    blocks.push(makeActionReviewBlock());
+
+    return blocks;
+  }
+
+  function createBlock(opts){
+    var li = document.createElement('li');
+    li.className = 'wip-run-block' + (opts.cls || '');
+    if (opts.reorderable) li.setAttribute('data-reorderable', 'true');
+    if (opts.blockKind)   li.setAttribute('data-block-kind', opts.blockKind);
+    if (opts.blockId)     li.setAttribute('data-block-id', opts.blockId);
+
+    var head = document.createElement('div');
+    head.className = 'wip-run-head';
+    head.innerHTML =
+      '<span class="wip-run-drag" data-wip-run-drag aria-hidden="true">' +
+        '<svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><circle cx="9" cy="6" r="1.3"/><circle cx="9" cy="12" r="1.3"/><circle cx="9" cy="18" r="1.3"/><circle cx="15" cy="6" r="1.3"/><circle cx="15" cy="12" r="1.3"/><circle cx="15" cy="18" r="1.3"/></svg>' +
+      '</span>' +
+      '<span class="wip-run-index">1</span>' +
+      '<div class="wip-run-title-col">' +
+        '<div class="wip-run-title">' + escapeHtml(opts.title) + '</div>' +
+        '<div class="wip-run-meta-line">' +
+          '<span class="owner">' + escapeHtml(opts.owner || '') + '</span>' +
+          '<span class="sep">\u00b7</span>' +
+          '<span>' + opts.est + ' min</span>' +
+          (opts.extraMeta || '') +
+        '</div>' +
+      '</div>' +
+      (opts.rightControl || '') +
+      '<button class="wip-run-expand" data-wip-run-expand type="button" aria-label="Toggle section" aria-expanded="' + (opts.startOpen ? 'true' : 'false') + '">' +
+        '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 6 15 12 9 18"/></svg>' +
+      '</button>';
+    li.appendChild(head);
+
+    var body = document.createElement('div');
+    body.className = 'wip-run-body';
+    body.innerHTML = opts.bodyHtml || '';
+    li.appendChild(body);
+
+    if (opts.startOpen) li.classList.add('is-open');
+    return li;
+  }
+
+  function makeFixedBlock(def){
+    var items = def.items || [];
+    var bodyHtml = items.length
+      ? '<ul class="wip-item-list">' + items.map(function(it){
+          return '<li class="wip-item">' +
+            '<span class="wip-item-dot"></span>' +
+            '<span class="wip-item-title">' + escapeHtml(it.title) + '</span>' +
+            (it.meta ? '<span class="wip-item-meta">' + escapeHtml(it.meta) + '</span>' : '') +
+          '</li>';
+        }).join('') + '</ul>'
+      : '<div class="wip-item-empty">Nothing queued yet.</div>';
+    var el = createBlock({
+      title: def.title, owner: def.owner, est: def.est,
+      cls: ' wip-run-block--fixed',
+      reorderable: false,
+      blockKind: 'fixed', blockId: def.id,
+      startOpen: items.length > 0 && items.length <= 4,
+      bodyHtml: bodyHtml
+    });
+    return { el: el, itemCount: items.length, est: def.est };
+  }
+
+  function makeChannelBlock(ch, flags){
+    var scheduledCount = flags.filter(function(f){ return f.scheduled; }).length;
+    var queuedCount    = flags.length - scheduledCount;
+    var hasFlag        = flags.length > 0;
+
+    var countPill =
+      '<span class="wip-run-count-pill' + (hasFlag ? ' has-flag' : '') + '">' +
+        (hasFlag
+          ? (flags.length + ' flag' + (flags.length === 1 ? '' : 's'))
+          : 'no flags') +
+      '</span>';
+
+    var earlyOn = !!state.earlyLeave[ch.id];
+    var leaveBtn =
+      '<button class="wip-run-leave' + (earlyOn ? ' is-on' : '') + '" data-wip-leave="' + escapeHtml(ch.id) + '" type="button" aria-pressed="' + (earlyOn ? 'true' : 'false') + '">' +
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>' +
+        'Early leave' +
+      '</button>';
+
+    var rightControl = '<span style="display:inline-flex; gap:var(--sp-xs); align-items:center;">' + countPill + leaveBtn + '</span>';
+
+    var itemsHtml;
+    if (flags.length === 0) {
+      itemsHtml = '<div class="wip-item-empty">No red flags \u2014 BAU only.</div>';
+    } else {
+      itemsHtml = '<ul class="wip-item-list">' + flags.map(function(f){
+        var sev = f.severity === 'fire' ? 'Needs decision' : (f.severity === 'risk' ? 'Heads up' : 'FYI');
+        return '<li class="wip-item has-flag">' +
+          '<span class="wip-item-dot"></span>' +
+          '<span class="wip-item-title"><strong>' + escapeHtml(f.clientName || 'Internal') + '</strong> \u2014 ' + escapeHtml(f.title || '') + '</span>' +
+          '<span class="wip-item-meta">' + escapeHtml(sev) + (f.scheduled ? '' : ' \u00b7 queued') + '</span>' +
+        '</li>';
+      }).join('') + '</ul>';
+    }
+
+    var est = earlyOn ? 3 : 6;
+    var extraMeta = queuedCount > 0
+      ? '<span class="sep">\u00b7</span><span style="color:var(--status-fire);">' + queuedCount + ' queued</span>'
+      : '';
+    var el = createBlock({
+      title: ch.name + ' \u2014 ' + ch.manager,
+      owner: ch.manager,
+      est: est,
+      cls: ' wip-run-block--channel',
+      reorderable: true,
+      blockKind: 'channel',
+      blockId: ch.id,
+      rightControl: rightControl,
+      startOpen: hasFlag,
+      extraMeta: extraMeta,
+      bodyHtml: itemsHtml
+    });
+    return { el: el, itemCount: scheduledCount, est: est };
+  }
+
+  function makeBAUBlock(){
+    var collapsed = !!state.bauCollapsed;
+    var el = createBlock({
+      title: 'BAU updates',
+      owner: 'Each channel',
+      est: collapsed ? 0 : 10,
+      cls: ' wip-run-block--bau is-bau',
+      reorderable: false,
+      blockKind: 'bau',
+      blockId: 'bau',
+      startOpen: !collapsed,
+      extraMeta: '<span class="sep">\u00b7</span><span>' + (collapsed ? 'skipped this week' : 'running BAU') + '</span>',
+      bodyHtml:
+        '<div class="wip-item-empty">' +
+          'Each channel spends 1\u20132 min on whatever is live, next, or stuck. ' +
+          'Collapsed by default \u2014 open the chevron if the room wants the quick sweep.' +
+        '</div>'
+    });
+    return { el: el, itemCount: 0, est: collapsed ? 0 : 10 };
+  }
+
+  function makeActionReviewBlock(){
+    var now  = Date.now();
+    var open = state.actionItems.filter(function(a){ return a.status !== 'done'; });
+    open.sort(function(a, b){ return (a.dueAt || 0) - (b.dueAt || 0); });
+    var shown = open.slice(0, 8);
+    var itemsHtml;
+    if (shown.length === 0) {
+      itemsHtml = '<div class="wip-item-empty">No open actions from last week. Good.</div>';
+    } else {
+      itemsHtml = '<ul class="wip-item-list">' + shown.map(function(a){
+        var overdue = a.dueAt && a.dueAt < now - 3600 * 1000;
+        return '<li class="wip-item">' +
+          '<span class="wip-item-dot"' + (overdue ? ' style="background:var(--status-fire);"' : '') + '></span>' +
+          '<span class="wip-item-title"><strong>' + escapeHtml(a.owner) + '</strong> \u2014 ' + escapeHtml(a.title) +
+            (a.clientName ? ' <span style="color:var(--text-soft);">\u00b7 ' + escapeHtml(a.clientName) + '</span>' : '') +
+          '</span>' +
+          '<span class="wip-item-meta">' + (overdue ? 'Overdue \u00b7 ' : '') + escapeHtml(statusLabelFor(a.status)) + '</span>' +
+        '</li>';
+      }).join('') + '</ul>';
+      if (open.length > shown.length) {
+        itemsHtml += '<div class="wip-item-empty">+ ' + (open.length - shown.length) + ' more in the Action items tab</div>';
+      }
+    }
+    var el = createBlock({
+      title: 'Action items from last week',
+      owner: 'PM',
+      est: 10,
+      cls: ' wip-run-block--action',
+      reorderable: false,
+      blockKind: 'action-review',
+      blockId: 'action-review',
+      startOpen: shown.length > 0 && shown.length <= 5,
+      bodyHtml: itemsHtml
+    });
+    return { el: el, itemCount: open.length, est: 10 };
+  }
+
+  function updateRunTotals(){
+    var blocks = buildRunBlocks();
+    var totalItems = 0, totalMin = 0;
+    blocks.forEach(function(b){ totalItems += b.itemCount; totalMin += b.est; });
+    els.runCount.textContent = totalItems;
+    els.runTime.textContent  = totalMin;
+  }
+
+  // ── Interactions: expand / collapse run blocks ───────────────
+  view.addEventListener('click', function(e){
+    var exp = e.target.closest('[data-wip-run-expand]');
+    if (!exp) return;
+    var block = exp.closest('.wip-run-block');
+    if (!block) return;
+    var open = block.classList.toggle('is-open');
+    exp.setAttribute('aria-expanded', open ? 'true' : 'false');
+    if (block.getAttribute('data-block-kind') === 'bau') {
+      state.bauCollapsed = !open;
+      saveState();
+      var meta = block.querySelector('.wip-run-meta-line span:last-child');
+      if (meta) meta.textContent = open ? 'running BAU' : 'skipped this week';
+      // Recalc totals + duration on head
+      var timeSpan = block.querySelectorAll('.wip-run-meta-line span')[2];
+      if (timeSpan) timeSpan.textContent = (open ? 10 : 0) + ' min';
+      updateRunTotals();
+    }
+  });
+
+  // Early-leave toggle
+  view.addEventListener('click', function(e){
+    var btn = e.target.closest('[data-wip-leave]');
+    if (!btn) return;
+    e.preventDefault();
+    e.stopPropagation();
+    var cid = btn.getAttribute('data-wip-leave');
+    state.earlyLeave[cid] = !state.earlyLeave[cid];
+    saveState();
+    renderRun();
+  });
+
+  // Flag card — edit + remove
+  view.addEventListener('click', function(e){
+    var edit = e.target.closest('[data-wip-flag-edit]');
+    if (edit) {
+      e.preventDefault();
+      var card = edit.closest('[data-flag-id]');
+      if (!card) return;
+      var id = card.getAttribute('data-flag-id');
+      var f = null;
+      for (var i = 0; i < state.redFlags.length; i++) if (state.redFlags[i].id === id) { f = state.redFlags[i]; break; }
+      if (f) openFlagModal(f);
+      return;
+    }
+    var rm = e.target.closest('[data-wip-flag-remove]');
+    if (rm) {
+      e.preventDefault();
+      var card2 = rm.closest('[data-flag-id]');
+      if (!card2) return;
+      removeFlagWithUndo(card2.getAttribute('data-flag-id'));
+    }
+  });
+
+  function removeFlagWithUndo(id){
+    var idx = -1;
+    for (var i = 0; i < state.redFlags.length; i++) if (state.redFlags[i].id === id) { idx = i; break; }
+    if (idx < 0) return;
+    var removed = state.redFlags.splice(idx, 1)[0];
+    saveState(); renderQueue(); renderRun();
+    if (typeof window.showToast === 'function') {
+      window.showToast('Red flag removed', {
+        action: 'Undo',
+        onAction: function(){
+          state.redFlags.splice(idx, 0, removed);
+          saveState(); renderQueue(); renderRun();
+        }
+      });
+    }
+  }
+
+  // ── Flag modal ───────────────────────────────────────────────
+  var modal     = document.querySelector('[data-wip-flag-overlay]');
+  var mHeadTitle = modal.querySelector('[data-wip-flag-modal-title]');
+  var mChannel   = modal.querySelector('[data-wip-flag-channel]');
+  var mClient    = modal.querySelector('[data-wip-flag-client]');
+  var mTitle     = modal.querySelector('[data-wip-flag-title]');
+  var mNote      = modal.querySelector('[data-wip-flag-note]');
+  var mSevRadios = modal.querySelectorAll('input[name="wip-flag-sev"]');
+  var modalEditingId = null;
+
+  function populateModalSelects(){
+    mChannel.innerHTML = CHANNELS.map(function(c){
+      return '<option value="' + escapeHtml(c.id) + '">' + escapeHtml(c.name + ' \u2014 ' + c.manager) + '</option>';
+    }).join('');
+    var clients = readClients();
+    mClient.innerHTML = '<option value="">\u2014 Select client \u2014</option>' +
+      clients.map(function(c){ return '<option value="' + escapeHtml(c.id) + '">' + escapeHtml(c.name) + '</option>'; }).join('');
+  }
+
+  function openFlagModal(existing){
+    populateModalSelects();
+    if (existing) {
+      modalEditingId = existing.id;
+      mHeadTitle.textContent = 'Edit red flag';
+      mChannel.value = existing.channelId || CHANNELS[0].id;
+      mClient.value  = existing.clientId  || '';
+      mTitle.value   = existing.title     || '';
+      mNote.value    = existing.note      || '';
+      var sev = existing.severity || 'risk';
+      mSevRadios.forEach(function(r){ r.checked = (r.value === sev); });
+    } else {
+      modalEditingId = null;
+      mHeadTitle.textContent = 'Raise a red flag';
+      mChannel.value = CHANNELS[0].id;
+      mClient.value  = '';
+      mTitle.value   = '';
+      mNote.value    = '';
+      mSevRadios.forEach(function(r){ r.checked = (r.value === 'risk'); });
+    }
+    modal.hidden = false;
+    setTimeout(function(){ mTitle.focus(); }, 80);
+  }
+  function closeFlagModal(){
+    modal.hidden = true;
+    modalEditingId = null;
+  }
+
+  modal.addEventListener('click', function(e){
+    if (e.target === modal) return closeFlagModal();
+    if (e.target.closest('[data-wip-flag-close]'))  return closeFlagModal();
+    if (e.target.closest('[data-wip-flag-cancel]')) return closeFlagModal();
+    if (e.target.closest('[data-wip-flag-save]'))   return saveFlagFromModal();
+  });
+  document.addEventListener('keydown', function(e){
+    if (modal.hidden) return;
+    if (e.key === 'Escape') { e.preventDefault(); closeFlagModal(); }
+  });
+
+  function saveFlagFromModal(){
+    var title = (mTitle.value || '').trim();
+    if (!title) {
+      mTitle.focus();
+      mTitle.style.borderColor = 'var(--status-fire)';
+      setTimeout(function(){ mTitle.style.borderColor = ''; }, 800);
+      return;
+    }
+    var sev = 'risk';
+    mSevRadios.forEach(function(r){ if (r.checked) sev = r.value; });
+    var clients = readClients();
+    var cid = mClient.value || null;
+    var cname = '';
+    if (cid) {
+      for (var i = 0; i < clients.length; i++) if (clients[i].id === cid) { cname = clients[i].name; break; }
+    }
+    var payload = {
+      channelId: mChannel.value,
+      clientId: cid,
+      clientName: cname,
+      title: title,
+      note: (mNote.value || '').trim(),
+      severity: sev
+    };
+    if (modalEditingId) {
+      for (var j = 0; j < state.redFlags.length; j++) {
+        if (state.redFlags[j].id === modalEditingId) {
+          Object.keys(payload).forEach(function(k){ state.redFlags[j][k] = payload[k]; });
+          break;
+        }
+      }
+    } else {
+      state.redFlags.push({
+        id: uid('f'), createdAt: Date.now(), createdBy: 'You', scheduled: false,
+        channelId: payload.channelId, clientId: payload.clientId, clientName: payload.clientName,
+        title: payload.title, note: payload.note, severity: payload.severity
+      });
+    }
+    saveState(); renderQueue(); renderRun();
+    closeFlagModal();
+    if (typeof window.showToast === 'function') {
+      window.showToast(modalEditingId ? 'Red flag updated' : 'Red flag raised');
+    }
+  }
+
+  els.addFlagBtn.addEventListener('click', function(){ openFlagModal(null); });
+
+  // ── Drag & drop: reorder channel blocks + drag flag onto channel ──
+  var draggingBlockId = null;
+  var draggingFlagId  = null;
+
+  view.addEventListener('dragstart', function(e){
+    var block = e.target.closest('.wip-run-block[data-reorderable="true"]');
+    if (block) {
+      draggingBlockId = block.getAttribute('data-block-id');
+      block.classList.add('is-dragging');
+      if (e.dataTransfer) {
+        e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.setData('application/x-wip-block', draggingBlockId);
+      }
+      return;
+    }
+    var card = e.target.closest('.wip-flag-card');
+    if (card) {
+      draggingFlagId = card.getAttribute('data-flag-id');
+      card.classList.add('is-dragging');
+      if (e.dataTransfer) {
+        e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.setData('application/x-wip-flag', draggingFlagId);
+      }
+    }
+  });
+
+  view.addEventListener('dragend', function(){
+    view.querySelectorAll('.wip-run-block.is-dragging, .wip-flag-card.is-dragging').forEach(function(el){ el.classList.remove('is-dragging'); });
+    view.querySelectorAll('.wip-run-block.is-drop-target').forEach(function(el){ el.classList.remove('is-drop-target'); });
+    draggingBlockId = null;
+    draggingFlagId  = null;
+  });
+
+  view.addEventListener('dragover', function(e){
+    if (draggingBlockId) {
+      var target = e.target.closest('.wip-run-block[data-reorderable="true"]');
+      if (!target) return;
+      e.preventDefault();
+      if (e.dataTransfer) e.dataTransfer.dropEffect = 'move';
+      view.querySelectorAll('.wip-run-block.is-drop-target').forEach(function(b){ if (b !== target) b.classList.remove('is-drop-target'); });
+      target.classList.add('is-drop-target');
+      return;
+    }
+    if (draggingFlagId) {
+      var target2 = e.target.closest('.wip-run-block[data-block-kind="channel"]');
+      if (!target2) return;
+      e.preventDefault();
+      if (e.dataTransfer) e.dataTransfer.dropEffect = 'move';
+      view.querySelectorAll('.wip-run-block.is-drop-target').forEach(function(b){ if (b !== target2) b.classList.remove('is-drop-target'); });
+      target2.classList.add('is-drop-target');
+    }
+  });
+
+  view.addEventListener('drop', function(e){
+    if (draggingBlockId) {
+      var target = e.target.closest('.wip-run-block[data-reorderable="true"]');
+      if (!target) return;
+      e.preventDefault();
+      var toId = target.getAttribute('data-block-id');
+      if (toId === draggingBlockId) return;
+      var from = state.channelOrder.indexOf(draggingBlockId);
+      var to   = state.channelOrder.indexOf(toId);
+      if (from < 0 || to < 0) return;
+      state.channelOrder.splice(from, 1);
+      state.channelOrder.splice(to, 0, draggingBlockId);
+      saveState();
+      renderRun();
+      return;
+    }
+    if (draggingFlagId) {
+      var target2 = e.target.closest('.wip-run-block[data-block-kind="channel"]');
+      if (!target2) return;
+      e.preventDefault();
+      var toChannel = target2.getAttribute('data-block-id');
+      var flag = null, idx = -1;
+      for (var i = 0; i < state.redFlags.length; i++) if (state.redFlags[i].id === draggingFlagId) { flag = state.redFlags[i]; idx = i; break; }
+      if (!flag) return;
+      var prev = { channelId: flag.channelId, scheduled: flag.scheduled };
+      flag.channelId = toChannel;
+      flag.scheduled = true;
+      saveState(); renderQueue(); renderRun();
+      if (typeof window.showToast === 'function') {
+        window.showToast('Added to run of show', {
+          action: 'Undo',
+          onAction: function(){
+            flag.channelId = prev.channelId;
+            flag.scheduled = prev.scheduled;
+            saveState(); renderQueue(); renderRun();
+          }
+        });
+      }
+    }
+  });
+
+  // ── Send pre-read / Start meeting ────────────────────────────
+  els.sendPrereadBtn.addEventListener('click', function(){
+    state.meta.lastPrereadSentAt = new Date().toISOString();
+    saveState();
+    if (typeof window.showToast === 'function') {
+      window.showToast('Pre-read drafted \u2014 ready for review', {
+        action: 'Open draft',
+        onAction: function(){
+          if (typeof window.showToast === 'function') window.showToast('Opens in email app (simulated)');
+        }
+      });
+    }
+  });
+
+  els.startMeetingBtn.addEventListener('click', function(){
+    if (typeof window.showToast === 'function') {
+      window.showToast('Live meeting view lands in Screen 2 \u2014 agenda is locked-in.', { duration: 4200 });
+    }
+  });
+
+  // ── Public hook for router ──────────────────────────────────
+  window.WIP = {
+    onRoute: function(/* sub, id */){
+      // Stage 1: sub-toggle is already done by routeToView.
+      // Future stages can hook per-sub rendering here.
+    }
+  };
+
+  // ── Initial render ──────────────────────────────────────────
+  renderHeader();
+  renderQueue();
+  renderRun();
 })();
 </script>
 
