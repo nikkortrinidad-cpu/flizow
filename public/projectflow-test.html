@@ -265,6 +265,96 @@
     display: flex; align-items: center; justify-content: center;
     font-size: var(--fs-md); font-weight: 600;
     letter-spacing: -0.01em;
+    cursor: pointer;
+    border: none; padding: 0;
+    transition: box-shadow 0.12s ease;
+  }
+  .avatar:hover { box-shadow: 0 0 0 3px var(--hover-tint); }
+  .avatar:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 35%, transparent);
+  }
+  .account-menu-wrap { position: relative; display: inline-flex; }
+  .account-menu {
+    position: absolute; top: calc(100% + 8px); right: 0;
+    width: 280px;
+    background: var(--bg-elev);
+    border: 1px solid var(--hairline);
+    border-radius: 14px;
+    box-shadow: 0 18px 44px -14px rgba(0, 0, 0, 0.55), 0 2px 10px rgba(0, 0, 0, 0.2);
+    padding: 6px;
+    z-index: 1200;
+    display: none;
+    transform: translateY(-4px);
+    opacity: 0;
+    transition: opacity 0.12s ease, transform 0.12s ease;
+  }
+  .account-menu[data-open="true"] { display: block; opacity: 1; transform: translateY(0); }
+  .account-menu-identity {
+    display: flex; align-items: center; gap: 12px;
+    padding: 12px; border-radius: 10px;
+  }
+  .account-menu-identity-avatar {
+    width: 40px; height: 40px; border-radius: 50%;
+    background: var(--avatar-bg); color: var(--avatar-fg);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 15px; font-weight: 600; letter-spacing: -0.01em;
+    flex-shrink: 0;
+  }
+  .account-menu-identity-text { min-width: 0; flex: 1; }
+  .account-menu-identity-name {
+    font-size: var(--fs-md); font-weight: 600; color: var(--text);
+    letter-spacing: -0.005em;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .account-menu-identity-email {
+    font-size: 11px; color: var(--text-muted);
+    margin-top: 2px;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .account-menu-item {
+    display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    padding: 9px 12px; border-radius: 8px;
+    background: transparent; border: 0;
+    width: 100%; text-align: left;
+    color: var(--text); cursor: pointer;
+    font-size: var(--fs-md); font-weight: 500; letter-spacing: -0.005em;
+    transition: background 0.1s;
+  }
+  .account-menu-item:hover, .account-menu-item:focus-visible {
+    background: var(--bg-soft); outline: none;
+  }
+  .account-menu-item-label { display: flex; align-items: center; gap: 10px; }
+  .account-menu-item-label svg {
+    width: 15px; height: 15px; color: var(--text-muted); flex-shrink: 0;
+  }
+  .account-menu-item-chev {
+    width: 13px; height: 13px; color: var(--text-muted-soft, #8e8e93);
+  }
+  .account-menu-appearance {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 8px 12px;
+  }
+  .account-menu-appearance-label {
+    font-size: 11px; color: var(--text-muted); font-weight: 500;
+  }
+  .account-menu-segment {
+    display: inline-flex; align-items: center;
+    background: var(--bg-soft); border-radius: 980px; padding: 2px;
+  }
+  .account-menu-segment-btn {
+    font-size: 11px; font-weight: 500; color: var(--text-muted);
+    padding: 4px 10px; border-radius: 980px;
+    background: transparent; border: 0; cursor: pointer;
+    transition: background 0.12s, color 0.12s;
+  }
+  .account-menu-segment-btn:hover { color: var(--text); }
+  .account-menu-segment-btn[aria-pressed="true"] {
+    background: var(--bg-elev); color: var(--text);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+  }
+  .account-menu-divider {
+    height: 1px; background: var(--hairline-soft); margin: 4px 12px;
   }
   .theme-toggle {
     width: 36px; height: 36px; border-radius: 50%;
@@ -12020,7 +12110,39 @@
       <svg class="icon-moon" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
       <svg class="icon-sun" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>
     </button>
-    <div class="avatar" tabindex="0" role="button" aria-label="Nikko Trinidad" data-tip="Nikko Trinidad (You)" data-tip-pos="below-end">NT</div>
+    <div class="account-menu-wrap" id="accountMenuWrap">
+      <button class="avatar" type="button" id="accountMenuBtn" aria-haspopup="menu" aria-expanded="false" aria-controls="accountMenu" aria-label="Open account menu">NT</button>
+      <div class="account-menu" id="accountMenu" role="menu" aria-labelledby="accountMenuBtn">
+        <div class="account-menu-identity">
+          <div class="account-menu-identity-avatar" aria-hidden="true">NT</div>
+          <div class="account-menu-identity-text">
+            <div class="account-menu-identity-name">Nikko Trinidad</div>
+            <div class="account-menu-identity-email">nikkortrinidad@gmail.com</div>
+          </div>
+        </div>
+        <button class="account-menu-item" role="menuitem" type="button" data-account-action="settings">
+          <span class="account-menu-item-label">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+            Account settings
+          </span>
+          <svg class="account-menu-item-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 18 15 12 9 6"/></svg>
+        </button>
+        <div class="account-menu-appearance">
+          <span class="account-menu-appearance-label">Appearance</span>
+          <div class="account-menu-segment" role="group" aria-label="Appearance">
+            <button class="account-menu-segment-btn" type="button" data-theme-target="light" aria-pressed="true">Light</button>
+            <button class="account-menu-segment-btn" type="button" data-theme-target="dark" aria-pressed="false">Dark</button>
+          </div>
+        </div>
+        <div class="account-menu-divider"></div>
+        <button class="account-menu-item" role="menuitem" type="button" data-account-action="signout">
+          <span class="account-menu-item-label">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+            Sign out
+          </span>
+        </button>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -31917,6 +32039,86 @@ window.OPS_TEAM = OPS_TEAM;
       }
     }
   })();
+})();
+</script>
+
+<script>
+/* ------------------------------------------------------------------ *
+ * Account menu — header avatar dropdown
+ * Click/keyboard toggle; outside click + Escape close; segmented
+ * control mirrors toggleTheme() and reflects live theme state.
+ * ------------------------------------------------------------------ */
+(function(){
+  var wrap = document.getElementById('accountMenuWrap');
+  if (!wrap) return;
+  var btn  = document.getElementById('accountMenuBtn');
+  var menu = document.getElementById('accountMenu');
+  if (!btn || !menu) return;
+
+  var toast = function(msg){
+    if (typeof window.showToast === 'function') window.showToast(msg, { duration: 1800 });
+  };
+
+  function syncSegment(){
+    var current = document.documentElement.getAttribute('data-theme') || 'light';
+    menu.querySelectorAll('[data-theme-target]').forEach(function(seg){
+      seg.setAttribute('aria-pressed', seg.getAttribute('data-theme-target') === current ? 'true' : 'false');
+    });
+  }
+
+  function open(){
+    menu.setAttribute('data-open', 'true');
+    btn.setAttribute('aria-expanded', 'true');
+    syncSegment();
+    setTimeout(function(){
+      document.addEventListener('click', onDocClick, true);
+      document.addEventListener('keydown', onKey, true);
+    }, 0);
+  }
+  function close(){
+    menu.removeAttribute('data-open');
+    btn.setAttribute('aria-expanded', 'false');
+    document.removeEventListener('click', onDocClick, true);
+    document.removeEventListener('keydown', onKey, true);
+  }
+  function onDocClick(e){ if (!wrap.contains(e.target)) close(); }
+  function onKey(e){ if (e.key === 'Escape') { close(); btn.focus(); } }
+
+  btn.addEventListener('click', function(e){
+    e.stopPropagation();
+    if (menu.getAttribute('data-open') === 'true') close(); else open();
+  });
+
+  // Appearance segmented control — flips theme if it isn't already that theme.
+  menu.querySelectorAll('[data-theme-target]').forEach(function(seg){
+    seg.addEventListener('click', function(e){
+      e.stopPropagation();
+      var target = seg.getAttribute('data-theme-target');
+      var current = document.documentElement.getAttribute('data-theme') || 'light';
+      if (target !== current && typeof window.toggleTheme === 'function') {
+        window.toggleTheme();
+      } else if (target !== current) {
+        document.documentElement.setAttribute('data-theme', target);
+        try { localStorage.setItem('refined-theme', target); } catch(_) {}
+      }
+      syncSegment();
+    });
+  });
+
+  // Mockup stubs — real app would route to settings / sign out.
+  menu.querySelectorAll('[data-account-action]').forEach(function(item){
+    item.addEventListener('click', function(e){
+      e.stopPropagation();
+      var action = item.getAttribute('data-account-action');
+      close();
+      if (action === 'settings') toast('Account settings — coming soon');
+      else if (action === 'signout') toast('Signed out (mockup)');
+    });
+  });
+
+  // Keep segment state in sync if theme changes from elsewhere (theme-toggle button).
+  var mo = new MutationObserver(syncSegment);
+  mo.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
 })();
 </script>
 
