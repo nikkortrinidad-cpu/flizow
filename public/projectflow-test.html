@@ -12703,6 +12703,61 @@
     letter-spacing: -0.005em;
   }
   .ta-empty[hidden] { display: none; }
+
+  /* ═══════ Peer testing — read-only viewing banner ═══════
+     Admin-only. When admin clicks "View" on another tester, the session is
+     hydrated from that tester's doc and this banner becomes the pressure cue
+     that the admin is NOT in their own session. Sits above the header as a
+     flex child of <body> so the app shrinks underneath by exactly its height. */
+  #testersBanner {
+    flex-shrink: 0;
+    background: #ff9f0a;
+    color: #1d1d1f;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    box-shadow: 0 1px 0 rgba(0,0,0,0.08);
+    z-index: 200;
+  }
+  #testersBanner[hidden] { display: none; }
+  .tb-inner {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 10px 24px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 13px;
+    font-weight: 500;
+    letter-spacing: -0.005em;
+  }
+  .tb-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: #1d1d1f;
+    flex-shrink: 0;
+    animation: tb-pulse 1.6s ease-in-out infinite;
+  }
+  @keyframes tb-pulse {
+    0%, 100% { opacity: 1; }
+    50%      { opacity: 0.35; }
+  }
+  .tb-label { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .tb-label strong { font-weight: 600; }
+  .tb-exit {
+    background: #1d1d1f;
+    color: #ffffff;
+    border: none;
+    border-radius: 999px;
+    padding: 6px 14px;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    letter-spacing: -0.005em;
+    flex-shrink: 0;
+    transition: background 0.15s ease, transform 0.15s ease;
+    font-family: inherit;
+  }
+  .tb-exit:hover { background: #333336; transform: translateY(-1px); }
+  .tb-exit:active { transform: translateY(0); }
   </style>
 
   <!-- Sync pre-flight: decide whether to hide the app before first paint.
@@ -12729,6 +12784,17 @@
   </script>
 </head>
 <body>
+
+<!-- Peer testing read-only banner. Flex child of body so the app shrinks by
+     exactly this height. Revealed by the boot script when the admin is
+     viewing another tester's session. -->
+<div id="testersBanner" role="status" aria-live="polite" hidden>
+  <div class="tb-inner">
+    <span class="tb-dot" aria-hidden="true"></span>
+    <span class="tb-label">Viewing <strong id="testersBannerName">tester</strong> · read-only</span>
+    <button type="button" class="tb-exit" id="testersBannerExit">Return to my session</button>
+  </div>
+</div>
 
 <!-- Peer testing sign-in gate. Only visible when tester mode is active (see
      pre-flight script in <head>). Blocks the app until Google auth resolves. -->
@@ -33905,6 +33971,10 @@ const TESTERS_MODE = document.documentElement.getAttribute('data-testers-state')
 if (TESTERS_MODE) {
   const ADMIN_EMAIL    = 'nikkortrinidad@gmail.com';
   const HYDRATION_FLAG = 'projectflow.testers.hydratedUid';
+  // sessionStorage — per-tab. Present when the admin is viewing another
+  // tester's session (read-only). Cleared when admin returns to self.
+  const VIEWING_FLAG   = 'projectflow.testers.viewingUid';
+  const VIEWING_NAME   = 'projectflow.testers.viewingName';
   const FLUSH_DELAY_MS = 1200;
   const FIREBASE_CONFIG = {
     apiKey: "AIzaSyBncwf9Qi8vkNKeRrE1jrjJDr5eI-RJP5k",
@@ -34152,14 +34222,29 @@ if (TESTERS_MODE) {
         if (e.key === 'Escape' && !panel.hidden) closePanel();
       });
 
-      // Placeholder click handler — Commit 4 will replace this with the
-      // actual session swap.
+      // Clicking "View" on a row swaps the session: we park the target uid
+      // + name in sessionStorage, clear the hydration flag so the next boot
+      // re-hydrates from the viewed tester's doc, and reload. The read-only
+      // branch in onAuthStateChanged picks it up and shows the banner.
       listEl.addEventListener('click', (e) => {
         const btn = e.target.closest('[data-view-uid]');
         if (!btn) return;
         const uid = btn.getAttribute('data-view-uid');
-        if (uid === user.uid) return;
-        console.log('[testers admin] view requested for', uid, '— wiring lands in Commit 4');
+        if (!uid || uid === user.uid) return;
+        // Pull the display name from the row so the banner can show it
+        // without needing an extra Firestore read on the next load.
+        const nameEl = btn.parentElement && btn.parentElement.querySelector('.ta-row-name');
+        const name = (nameEl && nameEl.textContent.trim()) || 'tester';
+        sessionStorage.setItem(VIEWING_FLAG, uid);
+        sessionStorage.setItem(VIEWING_NAME, name);
+        // Clear hydration flag so the reload triggers a fresh hydrate from
+        // the viewed tester's doc instead of bailing on "already hydrated".
+        sessionStorage.removeItem(HYDRATION_FLAG);
+        // Visual acknowledgement before the reload — the chip label flips
+        // briefly so a slow network doesn't feel like a dead click.
+        btn.textContent = 'Loading…';
+        btn.disabled = true;
+        location.reload();
       });
     }
 
@@ -34197,6 +34282,25 @@ if (TESTERS_MODE) {
       }
     });
 
+    // ── Read-only viewing banner ───────────────────────────────────────
+    // Revealed when sessionStorage flags say the admin is viewing another
+    // tester. Exit button clears the flags and reloads back to self-session.
+    function showViewingBanner(name) {
+      const bar  = document.getElementById('testersBanner');
+      const nm   = document.getElementById('testersBannerName');
+      const exit = document.getElementById('testersBannerExit');
+      if (!bar || !exit) return;
+      if (nm) nm.textContent = name || 'tester';
+      bar.hidden = false;
+      exit.addEventListener('click', () => {
+        sessionStorage.removeItem(VIEWING_FLAG);
+        sessionStorage.removeItem(VIEWING_NAME);
+        // Force a re-hydrate from the admin's own doc on next load.
+        sessionStorage.removeItem(HYDRATION_FLAG);
+        location.reload();
+      }, { once: true });
+    }
+
     // ── Auth state → hydrate → reveal ──────────────────────────────────
     onAuthStateChanged(auth, async (user) => {
       window.__pfTesters.user = user || null;
@@ -34207,15 +34311,36 @@ if (TESTERS_MODE) {
         return;
       }
 
-      // Hydrate once per tab (sessionStorage survives reloads). Switching
-      // accounts in the same tab re-hydrates because the flag is per-uid.
+      // Read-only view mode: admin is viewing another tester's session. Only
+      // honored for the admin email — if a non-admin somehow has the flag,
+      // we clear it and fall through to the normal self-hydrate flow.
+      let viewingUid  = sessionStorage.getItem(VIEWING_FLAG);
+      const viewingNm = sessionStorage.getItem(VIEWING_NAME);
+      if (viewingUid && user.email !== ADMIN_EMAIL) {
+        sessionStorage.removeItem(VIEWING_FLAG);
+        sessionStorage.removeItem(VIEWING_NAME);
+        viewingUid = null;
+      }
+      if (viewingUid && viewingUid === user.uid) {
+        // Viewing self is a no-op — just a plain self-session.
+        sessionStorage.removeItem(VIEWING_FLAG);
+        sessionStorage.removeItem(VIEWING_NAME);
+        viewingUid = null;
+      }
+      const targetUid = viewingUid || user.uid;
+
+      // Hydrate once per tab (sessionStorage survives reloads). The
+      // hydration flag tracks which target was loaded so switching accounts
+      // OR switching viewed testers re-hydrates correctly.
       const hydratedUid = sessionStorage.getItem(HYDRATION_FLAG);
-      if (hydratedUid !== user.uid) {
-        setBusy(true, 'Loading your session…');
+      if (hydratedUid !== targetUid) {
+        setBusy(true, viewingUid ? 'Loading tester session…' : 'Loading your session…');
         try {
-          const data = await hydrateFromCloud(user.uid);
-          await writeProfile(user, !data);
-          sessionStorage.setItem(HYDRATION_FLAG, user.uid);
+          const data = await hydrateFromCloud(targetUid);
+          // Only write profile when hydrating the admin's own session.
+          // Viewing another tester must not touch their profile.
+          if (!viewingUid) await writeProfile(user, !data);
+          sessionStorage.setItem(HYDRATION_FLAG, targetUid);
           // Reload so the mockup IIFEs re-run against the hydrated storage —
           // they cache state in memory on first run, so we can't just patch
           // localStorage underneath them after the fact.
@@ -34225,13 +34350,25 @@ if (TESTERS_MODE) {
           const denied = e && (e.code === 'permission-denied' || /permission/i.test(e.message || ''));
           setErr(denied
             ? 'Firestore rules denied access. Paste the rules snippet and try again.'
-            : 'Could not load your session. Refresh to retry.');
+            : 'Could not load the session. Refresh to retry.');
           setBusy(false);
         }
         return;
       }
 
-      // Already hydrated this tab — wire write-through and reveal the app.
+      // Already hydrated this tab.
+      if (viewingUid) {
+        // Read-only mode: DO NOT install write-through (changes stay local
+        // and get wiped on next reload). Reveal app + banner.
+        document.documentElement.setAttribute('data-testers-state', 'authed');
+        showViewingBanner(viewingNm);
+        // Still init admin so the chip stays available for switching to
+        // another tester or returning to self.
+        initAdmin(user).catch(e => console.warn('[testers] admin init failed:', e));
+        return;
+      }
+
+      // Self-session — wire write-through and reveal the app.
       installWriteThrough();
       writeProfile(user, false).catch(e => console.warn('[testers] profile update skipped:', e));
       document.documentElement.setAttribute('data-testers-state', 'authed');
