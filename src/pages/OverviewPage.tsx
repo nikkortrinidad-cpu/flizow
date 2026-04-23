@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { navigate } from '../router';
 import { useFlizow } from '../store/useFlizow';
-import type { Client, Task, ClientStatus } from '../types/flizow';
+import type { Client, Task, Touchpoint, ClientStatus } from '../types/flizow';
 
 const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 const MONTHS = [
@@ -47,7 +47,13 @@ function taglineForDay(now: Date): string {
 export function OverviewPage() {
   const { user } = useAuth();
   const { data } = useFlizow();
-  const [weekTab, setWeekTab] = useState<'current' | 'next'>('current');
+  // Land on "next week" when today is Sat/Sun — the 5-col grid skips the
+  // weekend, so "this week" would be 100% grayed out and useless. Lazy
+  // init so this only runs once on mount.
+  const [weekTab, setWeekTab] = useState<'current' | 'next'>(() => {
+    const dow = new Date().getDay();
+    return dow === 0 || dow === 6 ? 'next' : 'current';
+  });
   const now = new Date();
   const greetingLine = `${DAYS[now.getDay()]}, ${MONTHS[now.getMonth()]} ${now.getDate()}`;
   const title = `${greetingFor(now.getHours())}, ${firstNameOf(user?.displayName)}.`;
@@ -83,6 +89,26 @@ export function OverviewPage() {
       data.clients.filter(c => c.status === 'fire' || c.status === 'risk').length - attention.length,
     );
   }, [data.clients, attention.length]);
+
+  // Schedule grid: Mon–Fri this week + Mon–Fri next week. Tasks with a
+  // `_schedule` meta (deadline/meeting/milestone) and touchpoints with
+  // scheduled=true both land here — task pools cover internal work,
+  // touchpoints cover client meetings, and the schedule is the one
+  // place they have to overlap.
+  const weekDays = useMemo(() => {
+    return buildWeekGrid(data.tasks, data.touchpoints, data.clients, new Date());
+  }, [data.tasks, data.touchpoints, data.clients]);
+  // Tab labels use the week's date range ("Apr 22 – 26") so the user
+  // sees at a glance what they're looking at without decoding which
+  // Monday we anchored on.
+  const weekLabels = useMemo(() => {
+    const current = weekDays.filter(d => d.week === 'current');
+    const next = weekDays.filter(d => d.week === 'next');
+    return {
+      current: formatWeekRange(current[0]?.iso, current[current.length - 1]?.iso),
+      next: formatWeekRange(next[0]?.iso, next[next.length - 1]?.iso),
+    };
+  }, [weekDays]);
 
   return (
     <div className="view view-overview active">
@@ -202,6 +228,9 @@ export function OverviewPage() {
                   onClick={() => setWeekTab('current')}
                 >
                   This week
+                  <span style={{ fontWeight: 400, color: 'var(--text-soft)', marginLeft: 6 }}>
+                    {weekLabels.current}
+                  </span>
                 </button>
                 <button
                   type="button"
@@ -209,14 +238,45 @@ export function OverviewPage() {
                   onClick={() => setWeekTab('next')}
                 >
                   Next week
+                  <span style={{ fontWeight: 400, color: 'var(--text-soft)', marginLeft: 6 }}>
+                    {weekLabels.next}
+                  </span>
                 </button>
               </div>
             </div>
           </div>
-          <div className="week-board">
-            <div style={{ padding: 24, color: 'var(--text-soft)', fontSize: 14 }}>
-              {weekTab === 'current' ? 'No meetings scheduled this week.' : 'No meetings scheduled next week.'}
-            </div>
+          <div className={`week-board${weekTab === 'next' ? ' show-next' : ''}`}>
+            {weekDays.map((d) => (
+              <div
+                key={d.iso}
+                className={`week-col${d.isToday ? ' is-today' : ''}${d.isPast ? ' is-past' : ''}`}
+                data-iso={d.iso}
+                data-week={d.week}
+              >
+                <div className="week-col-header">
+                  <div className="week-col-date">{d.dateLabel}</div>
+                  <div className="week-col-day">{d.dayName}</div>
+                </div>
+                <div className="week-col-body">
+                  {d.items.map((item) => (
+                    <a
+                      key={item.id}
+                      className="week-task"
+                      href={item.href}
+                      data-done={item.done ? 'true' : 'false'}
+                      aria-label={`Open ${item.title}`}
+                    >
+                      <div className="week-task-title">{item.title}</div>
+                      {item.meta && <div className="week-task-meta">{item.meta}</div>}
+                      <span className={`week-task-tag ${item.tag}`}>
+                        <ScheduleTagIcon tag={item.tag} />
+                        {TAG_LABEL[item.tag]}
+                      </span>
+                    </a>
+                  ))}
+                </div>
+              </div>
+            ))}
           </div>
         </div>
 
@@ -253,6 +313,176 @@ type HealthCellProps = {
   valueClass?: string;
   iconClass?: string;
 };
+
+// ── Schedule grid (Block 4) ────────────────────────────────────────────────
+
+type ScheduleTag = 'deadline' | 'meeting' | 'milestone';
+const TAG_LABEL: Record<ScheduleTag, string> = {
+  deadline: 'Deadline',
+  meeting: 'Meeting',
+  milestone: 'Milestone',
+};
+
+type ScheduleItem = {
+  id: string;
+  title: string;
+  meta?: string;
+  tag: ScheduleTag;
+  done: boolean;
+  href: string;
+};
+
+type WeekDay = {
+  iso: string;
+  week: 'current' | 'next';
+  dayName: string;
+  dateLabel: string;
+  isToday: boolean;
+  isPast: boolean;
+  items: ScheduleItem[];
+};
+
+const MONTHS_SHORT = [
+  'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+  'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+];
+const DAY_NAMES_MF = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
+
+function isoOfLocalDate(d: Date): string {
+  // Build YYYY-MM-DD from local components so we never slip a day on
+  // UTC offset quirks. Task dueDates and our cell ids both live in
+  // local calendar space.
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
+function formatWeekRange(startIso: string | undefined, endIso: string | undefined): string {
+  if (!startIso || !endIso) return '';
+  const [sy, sm, sd] = startIso.split('-').map(Number);
+  const [ey, em, ed] = endIso.split('-').map(Number);
+  const startMo = MONTHS_SHORT[sm - 1];
+  if (sy === ey && sm === em) {
+    return `${startMo} ${sd}–${ed}`;
+  }
+  return `${startMo} ${sd} – ${MONTHS_SHORT[em - 1]} ${ed}`;
+}
+
+function buildWeekGrid(
+  tasks: Task[],
+  touchpoints: Touchpoint[],
+  clients: Client[],
+  today: Date,
+): WeekDay[] {
+  // Anchor on Monday of today's week. Sunday is dow=0 and wraps back six
+  // days to reach the Monday that just passed — same behavior as the
+  // mockup's _ddMondayOf helper so demo data aligns.
+  const dow = today.getDay();
+  const daysToMonday = dow === 0 ? -6 : 1 - dow;
+  const monday = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+  monday.setDate(monday.getDate() + daysToMonday);
+
+  const todayKey = isoOfLocalDate(today);
+
+  // Bucket scheduled work by iso date. Tasks with `_schedule` carry a
+  // tag explicitly; touchpoints always render as 'meeting'. Touchpoints
+  // also carry a time-of-day hint in meta that tasks don't.
+  const byDate: Record<string, ScheduleItem[]> = {};
+  for (const t of tasks) {
+    if (!t._schedule || !t.dueDate) continue;
+    const bucket = (byDate[t.dueDate] ||= []);
+    bucket.push({
+      id: t.id,
+      title: t.title,
+      meta: t._schedule.meta || undefined,
+      tag: t._schedule.tag,
+      done: !!t._schedule.done,
+      // Link into the service board so the card context is one click
+      // away. We don't yet deep-link to the individual card.
+      href: `#board/${t.serviceId}`,
+    });
+  }
+
+  const clientName: Record<string, string> = {};
+  for (const c of clients) clientName[c.id] = c.name;
+
+  for (const tp of touchpoints) {
+    if (!tp.scheduled || !tp.occurredAt) continue;
+    const at = new Date(tp.occurredAt);
+    if (isNaN(at.getTime())) continue;
+    const iso = isoOfLocalDate(at);
+    const timeLabel = at.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
+    const who = clientName[tp.clientId] || 'Client';
+    const bucket = (byDate[iso] ||= []);
+    bucket.push({
+      id: tp.id,
+      title: tp.topic || 'Meeting',
+      meta: `${timeLabel} · ${who}`,
+      tag: 'meeting',
+      done: false,
+      href: `#clients/${tp.clientId}`,
+    });
+  }
+
+  const days: WeekDay[] = [];
+  for (let i = 0; i < 10; i++) {
+    // Step Mon-Fri, then jump two to skip Sat/Sun, then Mon-Fri again.
+    const offset = i < 5 ? i : i + 2;
+    const d = new Date(monday);
+    d.setDate(d.getDate() + offset);
+    const iso = isoOfLocalDate(d);
+    days.push({
+      iso,
+      week: i < 5 ? 'current' : 'next',
+      dayName: DAY_NAMES_MF[i % 5],
+      dateLabel: `${MONTHS_SHORT[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}`,
+      isToday: iso === todayKey,
+      isPast: iso < todayKey,
+      items: byDate[iso] || [],
+    });
+  }
+
+  return days;
+}
+
+function ScheduleTagIcon({ tag }: { tag: ScheduleTag }) {
+  const common = {
+    viewBox: '0 0 24 24',
+    fill: 'none',
+    stroke: 'currentColor',
+    strokeWidth: 2.5,
+    strokeLinecap: 'round' as const,
+    strokeLinejoin: 'round' as const,
+  };
+  if (tag === 'deadline') {
+    return (
+      <svg {...common}>
+        <circle cx="12" cy="12" r="10" />
+        <polyline points="12 6 12 12 16 14" />
+      </svg>
+    );
+  }
+  if (tag === 'meeting') {
+    return (
+      <svg {...common}>
+        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+        <circle cx="9" cy="7" r="4" />
+        <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+        <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+      </svg>
+    );
+  }
+  // milestone
+  return (
+    <svg {...common}>
+      <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z" />
+      <line x1="4" y1="22" x2="4" y2="15" />
+    </svg>
+  );
+}
+
+// ── Needs-your-attention (Block 2) ─────────────────────────────────────────
 
 type AttentionCard = {
   clientId: string;
