@@ -162,6 +162,7 @@ function ClientDetail({ client, data, store }: DetailProps) {
           actionItems={data.actionItems}
           members={data.members}
           contacts={data.contacts}
+          services={data.services}
           store={store}
           todayISO={data.today}
         />

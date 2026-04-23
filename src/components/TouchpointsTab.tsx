@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type {
-  Client, Touchpoint, ActionItem, Member, Contact, TouchpointKind,
+  Client, Touchpoint, ActionItem, Member, Contact, Service, TouchpointKind,
 } from '../types/flizow';
 import type { FlizowStore } from '../store/flizowStore';
+import { navigate } from '../router';
 import { formatMonthDay, daysBetween } from '../utils/dateFormat';
 import { ConfirmDangerDialog } from './ConfirmDangerDialog';
 
@@ -25,13 +26,21 @@ interface Props {
   actionItems: ActionItem[];
   members: Member[];
   contacts: Contact[];
+  services: Service[];
   store: FlizowStore;
   todayISO: string;
 }
 
 export function TouchpointsTab({
-  client, touchpoints, actionItems, members, contacts, store, todayISO,
+  client, touchpoints, actionItems, members, contacts, services, store, todayISO,
 }: Props) {
+  // Only this client's services are ever promote targets. Derived once so
+  // every ActionItemRow picker shares the same filtered list.
+  const clientServices = useMemo(
+    () => services.filter(s => s.clientId === client.id),
+    [services, client.id],
+  );
+
   // Scheduled first (soonest first), then past (newest first). One
   // trip through sort so the list is stable across renders.
   const clientTps = useMemo(() => {
@@ -163,6 +172,7 @@ export function TouchpointsTab({
                 actions={clientActions.filter(a => a.touchpointId === tp.id)}
                 members={members}
                 contacts={contacts}
+                clientServices={clientServices}
                 store={store}
                 todayISO={todayISO}
               />
@@ -176,11 +186,12 @@ export function TouchpointsTab({
 
 // ── Meeting entry ─────────────────────────────────────────────────────────
 
-function MeetingEntry({ touchpoint, actions, members, contacts, store, todayISO }: {
+function MeetingEntry({ touchpoint, actions, members, contacts, clientServices, store, todayISO }: {
   touchpoint: Touchpoint;
   actions: ActionItem[];
   members: Member[];
   contacts: Contact[];
+  clientServices: Service[];
   store: FlizowStore;
   todayISO: string;
 }) {
@@ -348,6 +359,7 @@ function MeetingEntry({ touchpoint, actions, members, contacts, store, todayISO 
               key={a.id}
               item={a}
               members={members}
+              clientServices={clientServices}
               store={store}
               todayISO={todayISO}
             />
@@ -497,19 +509,77 @@ function TldrField({ touchpoint, store }: {
 
 // ── Action item row ───────────────────────────────────────────────────────
 
-function ActionItemRow({ item, members, store, todayISO }: {
+function ActionItemRow({ item, members, clientServices, store, todayISO }: {
   item: ActionItem;
   members: Member[];
+  clientServices: Service[];
   store: FlizowStore;
   todayISO: string;
 }) {
   const assignee = item.assigneeId ? members.find(m => m.id === item.assigneeId) ?? null : null;
   const dueStatus = dueChipStatus(item.dueDate, todayISO, item.done);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [promoteOpen, setPromoteOpen] = useState(false);
+  const promoteWrapRef = useRef<HTMLDivElement>(null);
 
   // If the action item has a promoted kanban card, delete surfaces that
   // fact in the confirm body so the user isn't surprised the card survives.
   const wasPromoted = !!item.promotedCardId;
+
+  // Dismiss the promote picker on outside click or Escape. Matches the
+  // touchpoint overflow menu pattern for consistency.
+  useEffect(() => {
+    if (!promoteOpen) return;
+    const onPointer = (e: PointerEvent) => {
+      if (promoteWrapRef.current && !promoteWrapRef.current.contains(e.target as Node)) {
+        setPromoteOpen(false);
+      }
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setPromoteOpen(false);
+    };
+    document.addEventListener('pointerdown', onPointer);
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('pointerdown', onPointer);
+      document.removeEventListener('keydown', onKey);
+    };
+  }, [promoteOpen]);
+
+  // One-click promote: if the client owns exactly one service, skip the
+  // picker and land the card directly. Multi-service clients get the
+  // menu; zero-service clients get a disabled button with a hint.
+  //
+  // Promote does NOT navigate — the button flipping to "On board ↗" is
+  // the feedback. Keeps the user's attention on the meeting they're
+  // reviewing. They can click the ↗ later if they want to visit the
+  // card.
+  const onPromoteClick = () => {
+    if (clientServices.length === 0) return; // guarded below — button is disabled
+    if (clientServices.length === 1) {
+      store.promoteActionItem(item.id, clientServices[0].id);
+      return;
+    }
+    setPromoteOpen(v => !v);
+  };
+
+  const onPickService = (serviceId: string) => {
+    setPromoteOpen(false);
+    store.promoteActionItem(item.id, serviceId);
+  };
+
+  const onOpenPromotedCard = () => {
+    if (!item.promotedCardId) return;
+    // Find the task (to get its serviceId) so we can jump to the right
+    // board. If the card was deleted after promotion, fall back silently.
+    const task = store.getSnapshot().tasks.find(t => t.id === item.promotedCardId);
+    if (!task) return;
+    // BoardPage auto-opens a card when sessionStorage['flizow-open-card']
+    // matches a task on the destination board. One-shot signal — the
+    // board clears the key after consuming it.
+    sessionStorage.setItem('flizow-open-card', task.id);
+    navigate(`#board/${task.serviceId}`);
+  };
 
   return (
     <>
@@ -540,26 +610,60 @@ function ActionItemRow({ item, members, store, todayISO }: {
           {dueChipLabel(item.dueDate, todayISO, item.done)}
         </span>
         {item.promotedCardId ? (
-          <span
-            className="meeting-action-promote"
-            title="Already promoted to a card"
-            style={{ opacity: 0.6, pointerEvents: 'none' }}
-          >
-            On board
-          </span>
-        ) : (
           <button
             type="button"
             className="meeting-action-promote"
-            onClick={() => {
-              // Promotion to a kanban card lands once the board is wired.
-              // For now the button stays visible but is a deliberate stub so
-              // the interaction is discoverable before the wire-up.
-              window.alert('Promotion to a kanban card ships with the Service board pass.');
-            }}
+            title="Open the kanban card this action item became"
+            onClick={onOpenPromotedCard}
+            style={{ opacity: 0.85 }}
           >
-            Promote to card
+            On board ↗
           </button>
+        ) : (
+          <div ref={promoteWrapRef} className="meeting-action-promote-wrap" style={{ position: 'relative' }}>
+            <button
+              type="button"
+              className="meeting-action-promote"
+              onClick={onPromoteClick}
+              disabled={clientServices.length === 0}
+              title={
+                clientServices.length === 0
+                  ? 'Add a service to this client before promoting action items.'
+                  : clientServices.length === 1
+                    ? `Promote to ${clientServices[0].name} board`
+                    : 'Pick a service board to promote to'
+              }
+              aria-haspopup={clientServices.length > 1 ? 'menu' : undefined}
+              aria-expanded={clientServices.length > 1 ? promoteOpen : undefined}
+            >
+              Promote to card
+            </button>
+            {promoteOpen && clientServices.length > 1 && (
+              <div className="tb-menu open promote-menu" role="menu" style={{ right: 0, minWidth: 220 }}>
+                <div className="promote-menu-label">Which board?</div>
+                {clientServices.map(s => (
+                  <div
+                    key={s.id}
+                    className="tb-menu-item promote-menu-service"
+                    role="menuitem"
+                    tabIndex={0}
+                    onClick={() => onPickService(s.id)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        onPickService(s.id);
+                      }
+                    }}
+                  >
+                    <span className="promote-menu-name">{s.name}</span>
+                    <span className={`service-type ${s.type} promote-menu-type`}>
+                      {s.type === 'project' ? 'Project' : 'Retainer'}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         )}
         <button
           type="button"

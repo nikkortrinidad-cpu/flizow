@@ -125,6 +125,21 @@ function BoardBody({
   // time the user navigates away from this page (unmount handles it).
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
 
+  // Auto-open a card if another surface (touchpoints "On board ↗",
+  // command palette, etc.) dropped its id in sessionStorage. One-shot —
+  // we clear the key immediately so a refresh doesn't re-open it.
+  useEffect(() => {
+    const pending = sessionStorage.getItem('flizow-open-card');
+    if (!pending) return;
+    sessionStorage.removeItem('flizow-open-card');
+    if (tasks.some(t => t.id === pending)) {
+      setSelectedTaskId(pending);
+    }
+    // We only need to fire once per board mount — the service id is the
+    // mount boundary so we key off it. Re-navigations to the same board
+    // with a new pending card will land via the service-id change below.
+  }, [service.id, tasks]);
+
   // Per-task comment count. Built once per comment-array change so card
   // tiles don't each scan the whole list — O(n+m) instead of O(n*m).
   const commentCountByTask = useMemo(() => {

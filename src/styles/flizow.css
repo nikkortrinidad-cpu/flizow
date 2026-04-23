@@ -8102,6 +8102,44 @@
   .meeting-action-promote:hover {
     color: var(--text); background: var(--bg-soft);
   }
+  .meeting-action-promote:disabled {
+    opacity: 0.4; cursor: not-allowed;
+  }
+  .meeting-action-promote:disabled:hover {
+    color: var(--text-faint); background: transparent;
+  }
+  /* Button-shaped "On board ↗" affordance — same hover-reveal as the
+     promote button so the row stays calm until the user reaches for it. */
+  .meeting-action:hover .meeting-action-promote[title*="kanban card"] { opacity: 1; }
+
+  /* Service picker dropdown for multi-service clients. Top tightens up
+     so it hangs right under the promote button instead of floating. */
+  .promote-menu {
+    top: 30px;
+  }
+  .promote-menu-label {
+    padding: 4px 12px 8px;
+    font-size: var(--fs-xs);
+    color: var(--text-faint);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-weight: 600;
+  }
+  .promote-menu-service {
+    justify-content: space-between;
+  }
+  .promote-menu-name {
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .promote-menu-type {
+    flex-shrink: 0;
+    font-size: 10px;
+    padding: 2px 8px;
+  }
 
   /* Destructive × — hover-revealed so it doesn't compete with the
      primary action (checkbox) or the semi-primary (promote). Red only

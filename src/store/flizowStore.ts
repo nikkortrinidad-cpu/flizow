@@ -1018,6 +1018,49 @@ class FlizowStore {
     this.save();
   }
 
+  /** Promote a touchpoint action item to a kanban card on one of the
+   *  client's service boards. Creates a new Task seeded with the action
+   *  item's text, assignee, and due date, lands it in the To Do column,
+   *  and back-links the action item so its row swaps from "Promote to
+   *  card" to "On board" on the next render.
+   *
+   *  Returns the new task id so the UI can route/open the card after. */
+  promoteActionItem(actionItemId: string, serviceId: string): string | null {
+    const item = this.data.actionItems.find(a => a.id === actionItemId);
+    if (!item) return null;
+    const service = this.data.services.find(s => s.id === serviceId);
+    if (!service) return null;
+
+    const now = new Date().toISOString();
+    const taskId = `task-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
+    const task: Task = {
+      id: taskId,
+      serviceId: service.id,
+      clientId: service.clientId,
+      title: item.text,
+      columnId: 'todo',
+      priority: 'medium',
+      assigneeId: item.assigneeId ?? null,
+      labels: [],
+      dueDate: item.dueDate,
+      createdAt: now,
+    };
+
+    this.data.tasks.push(task);
+    if (!service.taskIds.includes(taskId)) service.taskIds.push(taskId);
+    // Activity entry makes the provenance findable from the card side —
+    // the first line of the card's history tells you it came from a
+    // meeting follow-up, not a raw +Add Card.
+    this.logActivity(
+      taskId,
+      'created',
+      `promoted from meeting action item: "${item.text}"`,
+    );
+    item.promotedCardId = taskId;
+    this.save();
+    return taskId;
+  }
+
   // ── Bulk / dev helpers ───────────────────────────────────────────────
 
   /** Replace the entire dataset. Used by the demo-seed loader and the
