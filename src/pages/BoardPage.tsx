@@ -6,6 +6,7 @@ import { useFlizow } from '../store/useFlizow';
 import type { ColumnId, Priority, Task, Client, Service, Member } from '../types/flizow';
 import { daysBetween, formatMonthDay } from '../utils/dateFormat';
 import FlizowCardModal from '../components/FlizowCardModal';
+import { BoardFilters, applyFilters, EMPTY_FILTERS, type BoardFilterState } from '../components/BoardFilters';
 
 /**
  * Service Kanban board — per-client workspace for a single service. Shows
@@ -114,6 +115,7 @@ function BoardBody({
 }) {
   const { store } = useFlizow();
   const [search, setSearch] = useState('');
+  const [filters, setFilters] = useState<BoardFilterState>(EMPTY_FILTERS);
   const [activeId, setActiveId] = useState<string | null>(null);
   // Selected card in the detail modal. null = modal closed. Reset any
   // time the user navigates away from this page (unmount handles it).
@@ -126,11 +128,10 @@ function BoardBody({
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
   );
 
-  const filteredTasks = useMemo(() => {
-    const q = search.trim().toLowerCase();
-    if (!q) return tasks;
-    return tasks.filter(t => t.title.toLowerCase().includes(q));
-  }, [tasks, search]);
+  const filteredTasks = useMemo(
+    () => applyFilters(tasks, filters, todayISO, search),
+    [tasks, filters, search, todayISO],
+  );
 
   // Bucket tasks into columns (skip Blocked column in rendering if empty
   // and there's no explicit need to show the dropzone).
@@ -175,7 +176,13 @@ function BoardBody({
   return (
     <>
       <Breadcrumb client={client} service={service} />
-      <FiltersBar search={search} onSearch={setSearch} />
+      <FiltersBar
+        search={search}
+        onSearch={setSearch}
+        filters={filters}
+        onFiltersChange={setFilters}
+        members={members}
+      />
 
       <DndContext
         sensors={sensors}
@@ -272,7 +279,19 @@ function Breadcrumb({ client, service }: { client: Client; service: Service }) {
 
 // ── Filters bar (first-pass: search only, chips visual) ──────────────
 
-function FiltersBar({ search, onSearch }: { search: string; onSearch: (v: string) => void }) {
+function FiltersBar({
+  search,
+  onSearch,
+  filters,
+  onFiltersChange,
+  members,
+}: {
+  search: string;
+  onSearch: (v: string) => void;
+  filters: BoardFilterState;
+  onFiltersChange: (next: BoardFilterState) => void;
+  members: Member[];
+}) {
   return (
     <div className="filters-bar" role="search" aria-label="Board filters">
       <label className="filter-search">
@@ -289,26 +308,11 @@ function FiltersBar({ search, onSearch }: { search: string; onSearch: (v: string
         />
         <kbd>⌘F</kbd>
       </label>
-      {/* Placeholder filter chips. Wired up in a follow-up. */}
-      <button className="filter-chip" type="button" disabled title="Filter by assignee (coming soon)">
-        <PeopleIcon /> Assignee <ChevronDown />
-      </button>
-      <button className="filter-chip" type="button" disabled title="Filter by label (coming soon)">
-        <LabelIcon /> Labels <ChevronDown />
-      </button>
-      <button className="filter-chip" type="button" disabled title="Filter by priority (coming soon)">
-        <FlagIcon /> Priority <ChevronDown />
-      </button>
-      <button className="filter-chip" type="button" disabled title="Filter by due date (coming soon)">
-        <CalIcon /> Due date <ChevronDown />
-      </button>
-      <div className="filter-spacer" />
-      <button className="filter-chip" type="button" disabled title="Group by swimlane (coming soon)">
-        <RowsIcon /> Group by: <strong style={{ fontWeight: 600, color: 'var(--text)' }}>None</strong> <ChevronDown />
-      </button>
-      <button className="filter-chip" type="button" disabled title="Sort (coming soon)">
-        <SortIcon /> Sort: <strong style={{ fontWeight: 600, color: 'var(--text)' }}>Manual</strong> <ChevronDown />
-      </button>
+      <BoardFilters
+        state={filters}
+        onChange={onFiltersChange}
+        members={members}
+      />
     </div>
   );
 }
@@ -618,22 +622,6 @@ function BarsIcon() {
     </svg>
   );
 }
-function LabelIcon() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-      <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z" />
-      <line x1="7" y1="7" x2="7.01" y2="7" />
-    </svg>
-  );
-}
-function FlagIcon() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-      <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z" />
-      <line x1="4" y1="22" x2="4" y2="15" />
-    </svg>
-  );
-}
 function CalIcon() {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
@@ -641,31 +629,6 @@ function CalIcon() {
       <line x1="16" y1="2" x2="16" y2="6" />
       <line x1="8" y1="2" x2="8" y2="6" />
       <line x1="3" y1="10" x2="21" y2="10" />
-    </svg>
-  );
-}
-function RowsIcon() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-      <line x1="3" y1="6" x2="21" y2="6" />
-      <line x1="3" y1="12" x2="21" y2="12" />
-      <line x1="3" y1="18" x2="21" y2="18" />
-    </svg>
-  );
-}
-function SortIcon() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-      <path d="M3 6h18" />
-      <path d="M6 12h12" />
-      <path d="M10 18h4" />
-    </svg>
-  );
-}
-function ChevronDown() {
-  return (
-    <svg className="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-      <polyline points="6 9 12 15 18 9" />
     </svg>
   );
 }

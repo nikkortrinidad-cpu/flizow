@@ -2,6 +2,7 @@ import { useMemo, useState, type ReactElement } from 'react';
 import { DndContext, DragOverlay, PointerSensor, useSensor, useSensors, closestCenter, useDraggable, useDroppable } from '@dnd-kit/core';
 import type { DragEndEvent, DragStartEvent } from '@dnd-kit/core';
 import { daysBetween, formatMonthDay } from '../utils/dateFormat';
+import { BoardFilters, applyFilters, EMPTY_FILTERS, type BoardFilterState } from '../components/BoardFilters';
 
 /**
  * Ops board — internal-team kanban for the work the agency does for
@@ -74,21 +75,21 @@ const COLUMNS: Array<{ id: ColumnId; title: string; dot: string; emptyHide?: boo
 export function OpsPage() {
   const [tasks, setTasks] = useState<OpsTask[]>(INITIAL_TASKS);
   const [search, setSearch] = useState('');
+  const [filters, setFilters] = useState<BoardFilterState>(EMPTY_FILTERS);
   const [activeId, setActiveId] = useState<string | null>(null);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
   );
 
-  const filteredTasks = useMemo(() => {
-    const q = search.trim().toLowerCase();
-    if (!q) return tasks;
-    return tasks.filter(t =>
-      t.title.toLowerCase().includes(q) ||
-      t.labels.some(l => l.toLowerCase().includes(q)) ||
-      t.assignee.toLowerCase().includes(q),
-    );
-  }, [tasks, search]);
+  // Filter + sort. Ops tasks have their own narrower shape (initials instead
+  // of member ids, plain-text labels instead of BOARD_LABELS ids) so the
+  // shared Assignee/Label chips are hidden via `show={{...}}` in FiltersBar.
+  // Priority + Due date + Sort still apply normally.
+  const filteredTasks = useMemo(
+    () => applyFilters(tasks, filters, todayISO(), search),
+    [tasks, filters, search],
+  );
 
   const tasksByColumn = useMemo(() => {
     const byCol = new Map<ColumnId, OpsTask[]>();
@@ -137,7 +138,12 @@ export function OpsPage() {
   return (
     <div className="view view-ops active" data-view="ops">
       <Header stats={stats} />
-      <FiltersBar search={search} onSearch={setSearch} />
+      <FiltersBar
+        search={search}
+        onSearch={setSearch}
+        filters={filters}
+        onFiltersChange={setFilters}
+      />
 
       <DndContext
         sensors={sensors}
@@ -195,9 +201,19 @@ function Header({ stats }: { stats: { total: number; inProgress: number; blocked
   );
 }
 
-// ── Filters bar (search functional; chips visual until wiring pass) ──
+// ── Filters bar ──────────────────────────────────────────────────────
 
-function FiltersBar({ search, onSearch }: { search: string; onSearch: (v: string) => void }) {
+function FiltersBar({
+  search,
+  onSearch,
+  filters,
+  onFiltersChange,
+}: {
+  search: string;
+  onSearch: (v: string) => void;
+  filters: BoardFilterState;
+  onFiltersChange: (next: BoardFilterState) => void;
+}) {
   return (
     <div className="filters-bar" role="search" aria-label="Ops board filters">
       <label className="filter-search">
@@ -213,19 +229,15 @@ function FiltersBar({ search, onSearch }: { search: string; onSearch: (v: string
           onChange={(e) => onSearch(e.target.value)}
         />
       </label>
-      <button className="filter-chip" type="button" disabled title="Filter by assignee (coming soon)">
-        <PeopleIcon /> Assignee <ChevronDown />
-      </button>
-      <button className="filter-chip" type="button" disabled title="Filter by label (coming soon)">
-        <LabelIcon /> Labels <ChevronDown />
-      </button>
-      <button className="filter-chip" type="button" disabled title="Filter by priority (coming soon)">
-        <FlagIcon /> Priority <ChevronDown />
-      </button>
-      <div className="filter-spacer" />
-      <button className="filter-chip" type="button" disabled title="Sort (coming soon)">
-        <SortIcon /> Sort: <strong style={{ fontWeight: 600, color: 'var(--text)' }}>Manual</strong> <ChevronDown />
-      </button>
+      {/* Ops tasks store assignees as initials and labels as free-text,
+          so the shared component's member/label pickers don't fit yet.
+          Hide them here and expose just Priority / Due date / Sort. */}
+      <BoardFilters
+        state={filters}
+        onChange={onFiltersChange}
+        members={[]}
+        show={{ assignees: false, labels: false }}
+      />
     </div>
   );
 }
@@ -365,33 +377,10 @@ function todayISO(): string {
 }
 
 // ── Icons ────────────────────────────────────────────────────────────
+// Only the icons used inside cards (due pill, comment/attachment meta)
+// live here. Filter-chip icons moved to BoardFilters.tsx when we stopped
+// rendering a local filter bar.
 
-function PeopleIcon() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-      <circle cx="9" cy="7" r="4" />
-      <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
-      <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-    </svg>
-  );
-}
-function LabelIcon() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-      <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z" />
-      <line x1="7" y1="7" x2="7.01" y2="7" />
-    </svg>
-  );
-}
-function FlagIcon() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-      <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z" />
-      <line x1="4" y1="22" x2="4" y2="15" />
-    </svg>
-  );
-}
 function CalIcon() {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
@@ -399,22 +388,6 @@ function CalIcon() {
       <line x1="16" y1="2" x2="16" y2="6" />
       <line x1="8" y1="2" x2="8" y2="6" />
       <line x1="3" y1="10" x2="21" y2="10" />
-    </svg>
-  );
-}
-function SortIcon() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-      <path d="M3 6h18" />
-      <path d="M6 12h12" />
-      <path d="M10 18h4" />
-    </svg>
-  );
-}
-function ChevronDown() {
-  return (
-    <svg className="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-      <polyline points="6 9 12 15 18 9" />
     </svg>
   );
 }
