@@ -1,6 +1,8 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { navigate } from '../router';
+import { useFlizow } from '../store/useFlizow';
+import type { Client, Task, ClientStatus } from '../types/flizow';
 
 const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 const MONTHS = [
@@ -44,15 +46,43 @@ function taglineForDay(now: Date): string {
 
 export function OverviewPage() {
   const { user } = useAuth();
+  const { data } = useFlizow();
   const [weekTab, setWeekTab] = useState<'current' | 'next'>('current');
   const now = new Date();
   const greetingLine = `${DAYS[now.getDay()]}, ${MONTHS[now.getMonth()]} ${now.getDate()}`;
   const title = `${greetingFor(now.getHours())}, ${firstNameOf(user?.displayName)}.`;
   const tagline = taglineForDay(now);
 
-  // Portfolio health counts — stubbed with demo values matching the mockup's
-  // defaults. Replaced by real counts once the unified store lands.
-  const health = { fire: 1, risk: 2, track: 5, active: 8 };
+  // Portfolio health counts, computed from live client statuses. `active`
+  // is everything that isn't paused — the Overview is about what's in
+  // play, so a paused retainer doesn't count toward "active clients"
+  // but still lives on the Clients page. Memoized because it recomputes
+  // on every client write otherwise.
+  const health = useMemo(() => {
+    const byStatus: Record<ClientStatus, number> = {
+      fire: 0, risk: 0, track: 0, onboard: 0, paused: 0,
+    };
+    for (const c of data.clients) byStatus[c.status]++;
+    return {
+      fire: byStatus.fire,
+      risk: byStatus.risk,
+      track: byStatus.track,
+      active: data.clients.length - byStatus.paused,
+    };
+  }, [data.clients]);
+
+  // Needs-attention cards — the clients you actually need to open today.
+  // Order: fire first, then risk, capped at 6 so the block stays scannable.
+  // Overflow spills into a "View all" link rather than an ever-growing list.
+  const attention = useMemo(() => {
+    return buildAttentionCards(data.clients, data.tasks).slice(0, 6);
+  }, [data.clients, data.tasks]);
+  const hiddenAttention = useMemo(() => {
+    return Math.max(
+      0,
+      data.clients.filter(c => c.status === 'fire' || c.status === 'risk').length - attention.length,
+    );
+  }, [data.clients, attention.length]);
 
   return (
     <div className="view view-overview active">
@@ -111,9 +141,52 @@ export function OverviewPage() {
             <div className="block-title">Needs Your Attention</div>
           </div>
           <div className="attention-list">
-            <div className="attn-empty" style={{ padding: 24, color: 'var(--text-soft)', fontSize: 14 }}>
-              Nothing urgent right now. Enjoy the quiet.
-            </div>
+            {attention.length === 0 ? (
+              <div className="attn-empty" style={{ padding: 24, color: 'var(--text-soft)', fontSize: 14 }}>
+                Nothing urgent right now. Enjoy the quiet.
+              </div>
+            ) : (
+              <>
+                {attention.map((card) => (
+                  <div
+                    key={card.clientId}
+                    className={`attn-card ${card.severity === 'critical' ? 'critical' : 'warn'}`}
+                    role="button"
+                    tabIndex={0}
+                    aria-label={`Open ${card.clientName}`}
+                    onClick={() => navigate(`#clients/${card.clientId}`)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        navigate(`#clients/${card.clientId}`);
+                      }
+                    }}
+                  >
+                    <div className="attn-content">
+                      <div className="attn-row1">
+                        <span className={`attn-severity ${card.severity === 'critical' ? 'critical' : 'warning'}`}>
+                          <span className="dot" />{card.severityLabel}
+                        </span>
+                        <span className="attn-client">{card.clientName}</span>
+                        <span className="attn-age">{card.ageLabel}</span>
+                      </div>
+                      <div className="attn-title">{card.title}</div>
+                      {card.desc && <div className="attn-desc">{card.desc}</div>}
+                    </div>
+                  </div>
+                ))}
+                {hiddenAttention > 0 && (
+                  <a
+                    className="attn-more"
+                    href="#clients"
+                    style={{ textDecoration: 'none' }}
+                    aria-label={`View all ${attention.length + hiddenAttention} clients needing attention`}
+                  >
+                    View all {attention.length + hiddenAttention} →
+                  </a>
+                )}
+              </>
+            )}
           </div>
         </div>
 
@@ -180,6 +253,94 @@ type HealthCellProps = {
   valueClass?: string;
   iconClass?: string;
 };
+
+type AttentionCard = {
+  clientId: string;
+  clientName: string;
+  severity: 'critical' | 'warning';
+  severityLabel: 'On Fire' | 'At Risk';
+  title: string;
+  ageLabel: string;
+  desc?: string;
+};
+
+// Why we group by client (not by task): the AM's first move when the
+// Overview surfaces something urgent is to open the client and look at
+// the whole picture — which service is bleeding, what the last touchpoint
+// said, whether a retainer is up for renewal. A card per task would push
+// the same client 3x when they have three overdue items, which trains
+// the eye to ignore repeats instead of act on them.
+function buildAttentionCards(clients: Client[], tasks: Task[]): AttentionCard[] {
+  const fire = clients.filter((c) => c.status === 'fire');
+  const risk = clients.filter((c) => c.status === 'risk');
+  const ordered = [...fire, ...risk];
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const todayMs = today.getTime();
+
+  return ordered.map((c) => {
+    const isCritical = c.status === 'fire';
+    const openTasks = tasks.filter((t) => t.clientId === c.id && t.columnId !== 'done');
+    const overdue = openTasks.filter((t) => {
+      const due = new Date(t.dueDate);
+      due.setHours(0, 0, 0, 0);
+      return due.getTime() < todayMs;
+    });
+    const blocked = openTasks.filter((t) => t.columnId === 'blocked');
+
+    let title: string;
+    if (overdue.length && blocked.length) {
+      title = `${overdue.length} overdue · ${blocked.length} blocked`;
+    } else if (overdue.length) {
+      title = overdue.length === 1 ? '1 overdue card' : `${overdue.length} overdue cards`;
+    } else if (blocked.length) {
+      title = blocked.length === 1 ? '1 blocked card' : `${blocked.length} blocked cards`;
+    } else if (isCritical) {
+      title = 'Marked on fire — no blocker logged yet';
+    } else {
+      title = 'Drifting — time for a check-in';
+    }
+
+    // Age label: anchored on the oldest overdue task if we have one, so
+    // the AM sees the worst-case staleness at a glance. Falls back to a
+    // status hint when there's nothing measurably late.
+    let ageLabel: string;
+    if (overdue.length) {
+      let oldestDueMs = Infinity;
+      for (const t of overdue) {
+        const due = new Date(t.dueDate);
+        due.setHours(0, 0, 0, 0);
+        if (due.getTime() < oldestDueMs) oldestDueMs = due.getTime();
+      }
+      const days = Math.max(1, Math.floor((todayMs - oldestDueMs) / 86_400_000));
+      ageLabel = days === 1 ? '1 day overdue' : `${days} days overdue`;
+    } else if (blocked.length) {
+      ageLabel = 'Blocked';
+    } else {
+      ageLabel = 'Needs review';
+    }
+
+    // Optional longer sentence when a blocker reason is present —
+    // surfaces the human context ("waiting on brand assets") so the AM
+    // can triage without opening the card.
+    let desc: string | undefined;
+    const firstBlocker = blocked.find((t) => t.blockerReason)?.blockerReason;
+    if (firstBlocker) {
+      desc = `Blocked: ${firstBlocker}`;
+    }
+
+    return {
+      clientId: c.id,
+      clientName: c.name,
+      severity: isCritical ? 'critical' : 'warning',
+      severityLabel: isCritical ? 'On Fire' : 'At Risk',
+      title,
+      ageLabel,
+      desc,
+    };
+  });
+}
 
 function HealthCell({ label, value, sub, icon, onClick, ariaLabel, valueClass, iconClass }: HealthCellProps) {
   return (
