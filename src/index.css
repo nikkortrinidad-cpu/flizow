@@ -21,6 +21,14 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* React root must mirror the mockup's body layout (flex column, full height)
+   so `.view.active { flex: 1 }` has a flexbox parent to size against. */
+#root {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
 body {
   margin: 0;
   font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Helvetica Neue', 'Helvetica', 'Arial', sans-serif;
