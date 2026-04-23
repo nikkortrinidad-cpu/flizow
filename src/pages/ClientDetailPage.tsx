@@ -80,13 +80,18 @@ interface DetailProps {
 function ClientDetail({ client, data, store }: DetailProps) {
   const [activeTab, setActiveTab] = useState<TabKey>('overview');
   const [showAddService, setShowAddService] = useState(false);
+  const [servicesEditMode, setServicesEditMode] = useState(false);
+  const [deleteServiceId, setDeleteServiceId] = useState<string | null>(null);
 
   // Reset to Overview whenever the user lands on a different client, so the
   // first thing they see on a new row isn't whatever tab they peeked at on
-  // the previous one.
+  // the previous one. Also drops edit mode + any in-flight confirm dialog
+  // so a half-finished delete doesn't bleed onto the next client.
   useEffect(() => {
     setActiveTab('overview');
     setShowAddService(false);
+    setServicesEditMode(false);
+    setDeleteServiceId(null);
   }, [client.id]);
 
   const am = client.amId ? data.members.find(m => m.id === client.amId) ?? null : null;
@@ -115,7 +120,13 @@ function ClientDetail({ client, data, store }: DetailProps) {
       {activeTab === 'overview' && (
         <>
           <AttentionSection client={client} tasks={openTasks} services={services} />
-          <ServicesSection services={services} onAdd={() => setShowAddService(true)} />
+          <ServicesSection
+            services={services}
+            onAdd={() => setShowAddService(true)}
+            editing={servicesEditMode}
+            onToggleEdit={() => setServicesEditMode(v => !v)}
+            onDelete={(id) => setDeleteServiceId(id)}
+          />
           <ActivitySection client={client} tasks={data.tasks} members={data.members} todayISO={data.today} />
         </>
       )}
@@ -158,6 +169,39 @@ function ClientDetail({ client, data, store }: DetailProps) {
           onClose={() => setShowAddService(false)}
         />
       )}
+
+      {deleteServiceId && (() => {
+        const svc = data.services.find(s => s.id === deleteServiceId);
+        if (!svc) return null;
+        const taskCount = data.tasks.filter(t => t.serviceId === svc.id).length;
+        const onbCount = data.onboardingItems.filter(o => o.serviceId === svc.id).length;
+        return (
+          <ConfirmDangerDialog
+            title={`Delete "${svc.name}"?`}
+            body={
+              <>
+                This removes the service board and cascades{' '}
+                <strong>{taskCount}</strong> card{taskCount === 1 ? '' : 's'}
+                {onbCount > 0 && (
+                  <>
+                    {' '}plus <strong>{onbCount}</strong> onboarding item{onbCount === 1 ? '' : 's'}
+                  </>
+                )}
+                . This can't be undone.
+              </>
+            }
+            confirmLabel="Delete service"
+            onConfirm={() => {
+              flizowStore.deleteService(svc.id);
+              setDeleteServiceId(null);
+              // If this was the last service and we were in edit mode, drop
+              // the edit state so the empty-state CTA reads naturally.
+              setServicesEditMode(false);
+            }}
+            onClose={() => setDeleteServiceId(null)}
+          />
+        );
+      })()}
     </section>
   );
 }
@@ -519,11 +563,18 @@ function buildAttentionChips(
 
 // ── Overview · Active Services ────────────────────────────────────────────
 
-function ServicesSection({ services, onAdd }: { services: Service[]; onAdd: () => void }) {
+function ServicesSection({ services, onAdd, editing, onToggleEdit, onDelete }: {
+  services: Service[];
+  onAdd: () => void;
+  editing: boolean;
+  onToggleEdit: () => void;
+  onDelete: (id: string) => void;
+}) {
   if (services.length === 0) {
     // Empty state: the "Add a service" hint becomes the CTA itself. A button
     // right inside the empty panel beats a button far away in the header —
-    // the user's eye is already there.
+    // the user's eye is already there. No Edit button here: there's nothing
+    // to edit, and the button would just add noise.
     return (
       <div className="detail-section">
         <div className="detail-section-header">
@@ -574,28 +625,61 @@ function ServicesSection({ services, onAdd }: { services: Service[]; onAdd: () =
         <div className="detail-section-sub">
           {services.length} of {services.length} · {projects} project{projects === 1 ? '' : 's'}, {retainers} retainer{retainers === 1 ? '' : 's'}
         </div>
-        <button
-          type="button"
-          className="detail-section-link"
-          onClick={onAdd}
-          style={{ background: 'none', border: 'none', cursor: 'pointer', font: 'inherit' }}
-        >
-          + Add service
-        </button>
+        {/* Wrapper div so `.detail-section-header > *:last-child { margin-left: auto }`
+            pushes both buttons to the right as a group — same trick as the
+            Team section. */}
+        <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+          <button
+            type="button"
+            className="detail-section-link"
+            onClick={onToggleEdit}
+            style={{ background: 'none', border: 'none', cursor: 'pointer', font: 'inherit' }}
+          >
+            {editing ? 'Done' : 'Edit'}
+          </button>
+          <button
+            type="button"
+            className="detail-section-link"
+            onClick={onAdd}
+            style={{ background: 'none', border: 'none', cursor: 'pointer', font: 'inherit' }}
+          >
+            + Add service
+          </button>
+        </div>
       </div>
-      <div className="services-list" data-services-list>
-        {services.map(s => <ServiceCard key={s.id} service={s} />)}
+      <div className="services-list" data-services-list data-edit={editing ? 'true' : 'false'}>
+        {services.map(s => (
+          <ServiceCard
+            key={s.id}
+            service={s}
+            editing={editing}
+            onRemove={editing ? () => onDelete(s.id) : undefined}
+          />
+        ))}
       </div>
     </div>
   );
 }
 
-function ServiceCard({ service }: { service: Service }) {
+function ServiceCard({ service, editing, onRemove }: {
+  service: Service;
+  editing?: boolean;
+  onRemove?: () => void;
+}) {
   const handleClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    // In edit mode the card is a management surface, not a link — clicks
+    // that hit the body are swallowed so users don't accidentally open a
+    // board they're about to delete. The × button handles its own stop
+    // propagation so it still works.
+    if (editing) {
+      e.preventDefault();
+      return;
+    }
     if (e.metaKey || e.ctrlKey || e.shiftKey) return;
     navigate(`#board/${service.id}`);
   };
   const handleKey = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    if (editing) return;
     if (e.key === 'Enter' || e.key === ' ') {
       e.preventDefault();
       navigate(`#board/${service.id}`);
@@ -605,12 +689,28 @@ function ServiceCard({ service }: { service: Service }) {
   return (
     <div
       className="service-card"
-      role="link"
-      tabIndex={0}
-      aria-label={`Open board for ${service.name}`}
+      role={editing ? undefined : 'link'}
+      tabIndex={editing ? -1 : 0}
+      aria-label={editing ? undefined : `Open board for ${service.name}`}
       onClick={handleClick}
       onKeyDown={handleKey}
     >
+      {editing && onRemove && (
+        <button
+          type="button"
+          className="service-remove-btn"
+          aria-label={`Delete ${service.name}`}
+          onClick={(e) => {
+            e.stopPropagation();
+            onRemove();
+          }}
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <line x1="18" y1="6" x2="6" y2="18" />
+            <line x1="6" y1="6" x2="18" y2="18" />
+          </svg>
+        </button>
+      )}
       <div className="service-icon logo-indigo">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
           <rect x="3" y="3" width="7" height="7" rx="1.5" />
@@ -2152,6 +2252,101 @@ function AddOperatorModal({ clientId, allMembers, currentTeamIds, onClose }: {
               : undefined}
           >
             {picked.size > 1 ? `Add ${picked.size} operators` : 'Add operator'}
+          </button>
+        </footer>
+      </div>
+    </div>
+  );
+}
+
+// ── Confirm Danger Dialog ─────────────────────────────────────────────────
+
+/**
+ * Reusable "are you sure" dialog for destructive actions. Matches the
+ * `wip-modal-*` pattern used by every other modal in this file so the
+ * shell (backdrop, focus trap-ish, Esc-to-close) reads the same.
+ *
+ * The confirm button is rendered in red rather than the blue primary to
+ * signal "this is the dangerous one" — per design rule, we never use
+ * color alone, so the label also says what it does ("Delete service",
+ * "Remove", etc.) rather than a generic "Confirm".
+ *
+ * Used by Delete Service today; will be reused for Delete Client, Delete
+ * Note, and any other cascade-style removals without a soft-delete stage.
+ */
+function ConfirmDangerDialog({ title, body, confirmLabel, onConfirm, onClose }: {
+  title: string;
+  body: React.ReactNode;
+  confirmLabel: string;
+  onConfirm: () => void;
+  onClose: () => void;
+}) {
+  const confirmRef = useRef<HTMLButtonElement>(null);
+
+  // Focus the destructive button on open so Enter confirms and Esc cancels.
+  // Putting focus on the *dangerous* action is the Apple pattern (Finder's
+  // "Move to Trash" dialog does the same): the user arrived here by clicking
+  // delete, so the default action should be the one they asked for, not an
+  // extra reach to say yes a second time.
+  useEffect(() => {
+    const t = window.setTimeout(() => confirmRef.current?.focus(), 80);
+    return () => window.clearTimeout(t);
+  }, []);
+
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        onClose();
+      }
+    }
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [onClose]);
+
+  function handleBackdropClick(e: React.MouseEvent<HTMLDivElement>) {
+    if (e.target === e.currentTarget) onClose();
+  }
+
+  return (
+    <div
+      className="wip-modal-overlay"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="confirm-danger-title"
+      onClick={handleBackdropClick}
+    >
+      <div className="wip-modal" role="document" style={{ maxWidth: 440 }}>
+        <header className="wip-modal-head">
+          <h2 className="wip-modal-title" id="confirm-danger-title">{title}</h2>
+          <button type="button" className="wip-modal-close" onClick={onClose} aria-label="Close">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="18" y1="6" x2="6" y2="18" />
+              <line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
+          </button>
+        </header>
+
+        <div className="wip-modal-body" style={{ fontSize: 14, color: 'var(--text-soft)', lineHeight: 1.55 }}>
+          {body}
+        </div>
+
+        <footer className="wip-modal-foot">
+          <button type="button" className="wip-btn wip-btn-ghost" onClick={onClose}>
+            Cancel
+          </button>
+          <button
+            ref={confirmRef}
+            type="button"
+            className="wip-btn"
+            onClick={onConfirm}
+            style={{
+              background: '#ff453a',
+              color: '#fff',
+              borderColor: '#ff453a',
+            }}
+          >
+            {confirmLabel}
           </button>
         </footer>
       </div>

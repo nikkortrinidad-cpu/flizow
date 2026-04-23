@@ -9029,6 +9029,41 @@
     margin: -6px;
   }
 
+  /* Services-list edit mode — same × affordance as the Team grid.
+     We reuse the visual pattern so "edit a group of cards" reads the
+     same across the page. The card itself stays clickable (→ board) in
+     non-edit mode; in edit mode the click opens the confirm dialog
+     instead — handled in JSX by swapping the click handler. */
+  .service-card { position: relative; }
+  .service-remove-btn {
+    position: absolute;
+    top: -6px; right: -6px;
+    width: 22px; height: 22px;
+    display: none;
+    align-items: center; justify-content: center;
+    border-radius: 50%;
+    background: var(--bg-elev);
+    border: 1px solid color-mix(in srgb, #ff453a 40%, var(--hairline));
+    color: #ff453a;
+    cursor: pointer;
+    padding: 0;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+    transition: background 0.12s ease, transform 0.12s ease;
+    z-index: 2;
+  }
+  .service-remove-btn svg { width: 10px; height: 10px; }
+  .service-remove-btn:hover {
+    background: #ff453a;
+    color: #fff;
+    transform: scale(1.08);
+  }
+  [data-services-list][data-edit="true"] .service-remove-btn { display: inline-flex; }
+  [data-services-list][data-edit="true"] .service-card {
+    background: color-mix(in srgb, #ff453a 4%, transparent);
+    border-color: color-mix(in srgb, #ff453a 25%, var(--hairline));
+    cursor: default;
+  }
+
   /* Notes — Apple Notes-style 2-pane */
   .notes-section .detail-section-header { align-items: center; gap: var(--sp-base); }
   .notes-new-btn {
