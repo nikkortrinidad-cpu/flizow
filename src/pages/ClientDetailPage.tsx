@@ -903,6 +903,9 @@ function OnboardingRow({ item, onToggle }: {
  * immediately rather than hidden behind a WIP flag.
  */
 function AboutSection({ client, data }: { client: Client; data: FlizowData }) {
+  const [showAddContact, setShowAddContact] = useState(false);
+  const [showAddQuickLink, setShowAddQuickLink] = useState(false);
+
   const contacts = useMemo(
     () => data.contacts.filter(c => c.clientId === client.id)
       // Primary first, then original order. Small, consistent ordering
@@ -931,8 +934,8 @@ function AboutSection({ client, data }: { client: Client; data: FlizowData }) {
           <div className="detail-section-sub">Who we talk to, and where to find their stuff</div>
         </div>
         <div className="relationship-grid">
-          <ContactsCard contacts={contacts} />
-          <QuickLinksCard links={quickLinks} />
+          <ContactsCard contacts={contacts} onAdd={() => setShowAddContact(true)} />
+          <QuickLinksCard links={quickLinks} onAdd={() => setShowAddQuickLink(true)} />
         </div>
       </div>
 
@@ -946,20 +949,55 @@ function AboutSection({ client, data }: { client: Client; data: FlizowData }) {
         </div>
         <TeamGrid am={am} team={team} />
       </div>
+
+      {showAddContact && (
+        <AddContactModal
+          clientId={client.id}
+          hasPrimary={contacts.some(c => c.primary)}
+          onClose={() => setShowAddContact(false)}
+        />
+      )}
+
+      {showAddQuickLink && (
+        <AddQuickLinkModal
+          clientId={client.id}
+          onClose={() => setShowAddQuickLink(false)}
+        />
+      )}
     </>
   );
 }
 
-function ContactsCard({ contacts }: { contacts: Contact[] }) {
+function ContactsCard({ contacts, onAdd }: { contacts: Contact[]; onAdd: () => void }) {
   return (
     <div className="relationship-card">
       <div className="relationship-card-head">
         <div className="relationship-card-label">Client contacts</div>
+        <button
+          type="button"
+          className="relationship-card-link"
+          onClick={onAdd}
+          style={{ background: 'none', border: 'none', cursor: 'pointer', font: 'inherit', padding: 0 }}
+        >
+          + Add contact
+        </button>
       </div>
 
       {contacts.length === 0 ? (
         <div style={{ padding: '12px 0', color: 'var(--text-soft)', fontSize: 14 }}>
-          No contacts yet. Add the first person we work with here.
+          No contacts yet.{' '}
+          <button
+            type="button"
+            onClick={onAdd}
+            style={{
+              background: 'none', border: 'none', padding: 0,
+              color: 'var(--highlight)', fontSize: 'inherit', font: 'inherit',
+              cursor: 'pointer', textDecoration: 'underline',
+            }}
+          >
+            Add the first person
+          </button>{' '}
+          we work with here.
         </div>
       ) : (
         <div className="contacts-list">
@@ -1028,16 +1066,35 @@ function ContactsCard({ contacts }: { contacts: Contact[] }) {
   );
 }
 
-function QuickLinksCard({ links }: { links: QuickLink[] }) {
+function QuickLinksCard({ links, onAdd }: { links: QuickLink[]; onAdd: () => void }) {
   return (
     <div className="relationship-card">
       <div className="relationship-card-head">
         <div className="relationship-card-label">Quick links</div>
+        <button
+          type="button"
+          className="relationship-card-link"
+          onClick={onAdd}
+          style={{ background: 'none', border: 'none', cursor: 'pointer', font: 'inherit', padding: 0 }}
+        >
+          + Add link
+        </button>
       </div>
 
       {links.length === 0 ? (
         <div style={{ padding: '12px 0', color: 'var(--text-soft)', fontSize: 14 }}>
-          No saved links yet. Pin the client's website, Drive, or design system.
+          No saved links yet.{' '}
+          <button
+            type="button"
+            onClick={onAdd}
+            style={{
+              background: 'none', border: 'none', padding: 0,
+              color: 'var(--highlight)', fontSize: 'inherit', font: 'inherit',
+              cursor: 'pointer', textDecoration: 'underline',
+            }}
+          >
+            Pin the client's website, Drive, or design system
+          </button>.
         </div>
       ) : (
         <div className="quick-links-list">
@@ -1417,6 +1474,327 @@ function AddServiceModal({ clientId, onClose }: {
           </button>
           <button type="button" className="wip-btn wip-btn-primary" onClick={handleSave}>
             Create service
+          </button>
+        </footer>
+      </div>
+    </div>
+  );
+}
+
+// ── Add Contact Modal ─────────────────────────────────────────────────────
+
+function AddContactModal({ clientId, hasPrimary, onClose }: {
+  clientId: string;
+  hasPrimary: boolean;
+  onClose: () => void;
+}) {
+  const [name, setName] = useState('');
+  const [role, setRole] = useState('');
+  const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
+  // New primary demotes the old one (handled in the store). Default is
+  // "set as primary" only if the client has no primary yet — the common
+  // case is the first contact you add is the main one, and we shouldn't
+  // make the user think about it.
+  const [primary, setPrimary] = useState<boolean>(!hasPrimary);
+  const [nameError, setNameError] = useState(false);
+  const nameRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    const t = window.setTimeout(() => nameRef.current?.focus(), 80);
+    return () => window.clearTimeout(t);
+  }, []);
+
+  function handleSave() {
+    const trimmedName = name.trim();
+    if (!trimmedName) {
+      setNameError(true);
+      nameRef.current?.focus();
+      window.setTimeout(() => setNameError(false), 1400);
+      return;
+    }
+    const id = `ct-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
+    const contact: Contact = {
+      id,
+      clientId,
+      name: trimmedName,
+      role: role.trim() || undefined,
+      email: email.trim() || undefined,
+      phone: phone.trim() || undefined,
+      primary: primary || undefined,
+    };
+    flizowStore.addContact(contact);
+    onClose();
+  }
+
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        onClose();
+        return;
+      }
+      if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+        e.preventDefault();
+        handleSave();
+      }
+    }
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [onClose, name, role, email, phone, primary]);
+
+  function handleBackdropClick(e: React.MouseEvent<HTMLDivElement>) {
+    if (e.target === e.currentTarget) onClose();
+  }
+
+  return (
+    <div
+      className="wip-modal-overlay"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="add-contact-title"
+      onClick={handleBackdropClick}
+    >
+      <div className="wip-modal" role="document" style={{ maxWidth: 480 }}>
+        <header className="wip-modal-head">
+          <h2 className="wip-modal-title" id="add-contact-title">Add contact</h2>
+          <button type="button" className="wip-modal-close" onClick={onClose} aria-label="Close">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="18" y1="6" x2="6" y2="18" />
+              <line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
+          </button>
+        </header>
+
+        <div className="wip-modal-body">
+          <label className="wip-field">
+            <span className="wip-field-label">Name</span>
+            <input
+              ref={nameRef}
+              type="text"
+              className="wip-field-input"
+              value={name}
+              onChange={(e) => { setName(e.target.value); if (nameError) setNameError(false); }}
+              placeholder="e.g. Jamie Chen"
+              style={nameError ? { borderColor: 'var(--status-fire)' } : undefined}
+              aria-invalid={nameError || undefined}
+            />
+          </label>
+
+          <label className="wip-field">
+            <span className="wip-field-label">Role</span>
+            <input
+              type="text"
+              className="wip-field-input"
+              value={role}
+              onChange={(e) => setRole(e.target.value)}
+              placeholder="e.g. VP Marketing"
+            />
+          </label>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+            <label className="wip-field">
+              <span className="wip-field-label">Email</span>
+              <input
+                type="email"
+                className="wip-field-input"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="jamie@acme.com"
+              />
+            </label>
+            <label className="wip-field">
+              <span className="wip-field-label">Phone</span>
+              <input
+                type="tel"
+                className="wip-field-input"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                placeholder="+1 555 1234"
+              />
+            </label>
+          </div>
+
+          <label
+            className="wip-field"
+            style={{ flexDirection: 'row', alignItems: 'center', gap: 10, cursor: 'pointer' }}
+          >
+            <input
+              type="checkbox"
+              checked={primary}
+              onChange={(e) => setPrimary(e.target.checked)}
+              style={{ margin: 0, cursor: 'pointer' }}
+            />
+            <span style={{ fontSize: 'var(--fs-md)', color: 'var(--text)' }}>
+              Set as primary contact
+            </span>
+            <span style={{ fontSize: 'var(--fs-sm)', color: 'var(--text-faint)' }}>
+              {hasPrimary
+                ? '— this will replace the current primary'
+                : '— gets CC\u2019d on Weekly WIP pings'}
+            </span>
+          </label>
+        </div>
+
+        <footer className="wip-modal-foot">
+          <button type="button" className="wip-btn wip-btn-ghost" onClick={onClose}>
+            Cancel
+          </button>
+          <button type="button" className="wip-btn wip-btn-primary" onClick={handleSave}>
+            Add contact
+          </button>
+        </footer>
+      </div>
+    </div>
+  );
+}
+
+// ── Add Quick Link Modal ──────────────────────────────────────────────────
+
+const LINK_ICON_OPTIONS: Array<{ value: NonNullable<QuickLink['icon']>; label: string }> = [
+  { value: 'link',   label: 'Link (generic)' },
+  { value: 'globe',  label: 'Website' },
+  { value: 'drive',  label: 'Drive / cloud' },
+  { value: 'doc',    label: 'Document' },
+  { value: 'figma',  label: 'Figma' },
+  { value: 'folder', label: 'Folder' },
+];
+
+function AddQuickLinkModal({ clientId, onClose }: {
+  clientId: string;
+  onClose: () => void;
+}) {
+  const [label, setLabel] = useState('');
+  const [url, setUrl] = useState('');
+  const [icon, setIcon] = useState<NonNullable<QuickLink['icon']>>('link');
+  const [labelError, setLabelError] = useState(false);
+  const [urlError, setUrlError] = useState(false);
+  const labelRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    const t = window.setTimeout(() => labelRef.current?.focus(), 80);
+    return () => window.clearTimeout(t);
+  }, []);
+
+  function handleSave() {
+    const trimmedLabel = label.trim();
+    const trimmedUrl = url.trim();
+    let bad = false;
+    if (!trimmedLabel) { setLabelError(true); bad = true; }
+    if (!trimmedUrl)   { setUrlError(true);   bad = true; }
+    if (bad) {
+      window.setTimeout(() => { setLabelError(false); setUrlError(false); }, 1400);
+      if (!trimmedLabel) labelRef.current?.focus();
+      return;
+    }
+
+    // Normalize: if the user typed "acme.com", prepend https:// so the
+    // anchor tag opens a real URL instead of a local path.
+    const normalizedUrl = /^https?:\/\//i.test(trimmedUrl)
+      ? trimmedUrl
+      : `https://${trimmedUrl}`;
+
+    const id = `ql-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
+    const link: QuickLink = {
+      id,
+      clientId,
+      label: trimmedLabel,
+      url: normalizedUrl,
+      icon,
+    };
+    flizowStore.addQuickLink(link);
+    onClose();
+  }
+
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        onClose();
+        return;
+      }
+      if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+        e.preventDefault();
+        handleSave();
+      }
+    }
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [onClose, label, url, icon]);
+
+  function handleBackdropClick(e: React.MouseEvent<HTMLDivElement>) {
+    if (e.target === e.currentTarget) onClose();
+  }
+
+  return (
+    <div
+      className="wip-modal-overlay"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="add-link-title"
+      onClick={handleBackdropClick}
+    >
+      <div className="wip-modal" role="document" style={{ maxWidth: 460 }}>
+        <header className="wip-modal-head">
+          <h2 className="wip-modal-title" id="add-link-title">Add quick link</h2>
+          <button type="button" className="wip-modal-close" onClick={onClose} aria-label="Close">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="18" y1="6" x2="6" y2="18" />
+              <line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
+          </button>
+        </header>
+
+        <div className="wip-modal-body">
+          <label className="wip-field">
+            <span className="wip-field-label">Label</span>
+            <input
+              ref={labelRef}
+              type="text"
+              className="wip-field-input"
+              value={label}
+              onChange={(e) => { setLabel(e.target.value); if (labelError) setLabelError(false); }}
+              placeholder="e.g. Brand docs"
+              style={labelError ? { borderColor: 'var(--status-fire)' } : undefined}
+              aria-invalid={labelError || undefined}
+            />
+          </label>
+
+          <label className="wip-field">
+            <span className="wip-field-label">URL</span>
+            <input
+              type="url"
+              className="wip-field-input"
+              value={url}
+              onChange={(e) => { setUrl(e.target.value); if (urlError) setUrlError(false); }}
+              placeholder="https://drive.google.com/..."
+              style={urlError ? { borderColor: 'var(--status-fire)' } : undefined}
+              aria-invalid={urlError || undefined}
+            />
+          </label>
+
+          <label className="wip-field">
+            <span className="wip-field-label">Icon</span>
+            <select
+              className="wip-field-input"
+              value={icon}
+              onChange={(e) => setIcon(e.target.value as NonNullable<QuickLink['icon']>)}
+            >
+              {LINK_ICON_OPTIONS.map(opt => (
+                <option key={opt.value} value={opt.value}>{opt.label}</option>
+              ))}
+            </select>
+          </label>
+        </div>
+
+        <footer className="wip-modal-foot">
+          <button type="button" className="wip-btn wip-btn-ghost" onClick={onClose}>
+            Cancel
+          </button>
+          <button type="button" className="wip-btn wip-btn-primary" onClick={handleSave}>
+            Add link
           </button>
         </footer>
       </div>

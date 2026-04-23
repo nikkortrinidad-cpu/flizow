@@ -746,12 +746,16 @@ class FlizowStore {
     // Enforce at-most-one primary per client — a new primary bumps the
     // previous one down. The UI also guards this, but the store is the
     // source of truth so duplicate primaries can't leak in via import.
-    if (contact.primary) {
-      this.data.contacts
-        .filter(c => c.clientId === contact.clientId && c.primary)
-        .forEach(c => { c.primary = false; });
-    }
-    this.data.contacts.push(contact);
+    // Replace the array ref (not `.push`) so useMemo([data.contacts])
+    // consumers on the Client Detail About tab recompute.
+    const demoted = contact.primary
+      ? this.data.contacts.map(c =>
+          c.clientId === contact.clientId && c.primary
+            ? { ...c, primary: false }
+            : c,
+        )
+      : this.data.contacts;
+    this.data.contacts = [...demoted, contact];
     this.save();
   }
 
@@ -773,7 +777,8 @@ class FlizowStore {
   }
 
   addQuickLink(link: QuickLink) {
-    this.data.quickLinks.push(link);
+    // Replace array ref so useMemo([data.quickLinks]) consumers recompute.
+    this.data.quickLinks = [...this.data.quickLinks, link];
     this.save();
   }
 
