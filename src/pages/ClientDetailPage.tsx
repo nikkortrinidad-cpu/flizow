@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useRoute, navigate } from '../router';
 import { useFlizow } from '../store/useFlizow';
-import type { Client, Service, Task, Member, FlizowData, ClientStatus } from '../types/flizow';
+import type { Client, Service, Task, Member, FlizowData, ClientStatus, OnboardingItem } from '../types/flizow';
+import type { FlizowStore } from '../store/flizowStore';
 import { formatMonthYear, formatMonthDay, formatMrr, daysBetween } from '../utils/dateFormat';
 
 /**
@@ -34,13 +35,13 @@ const TABS: TabDef[] = [
 
 export function ClientDetailPage() {
   const route = useRoute();
-  const { data } = useFlizow();
+  const { data, store } = useFlizow();
   const id = route.params.id ?? null;
   const client = id ? data.clients.find(c => c.id === id) ?? null : null;
 
   return (
     <div className="view view-client-detail active" data-view="client-detail">
-      {client ? <ClientDetail client={client} data={data} /> : <EmptyState />}
+      {client ? <ClientDetail client={client} data={data} store={store} /> : <EmptyState />}
     </div>
   );
 }
@@ -67,9 +68,10 @@ function EmptyState() {
 interface DetailProps {
   client: Client;
   data: FlizowData;
+  store: FlizowStore;
 }
 
-function ClientDetail({ client, data }: DetailProps) {
+function ClientDetail({ client, data, store }: DetailProps) {
   const [activeTab, setActiveTab] = useState<TabKey>('overview');
 
   // Reset to Overview whenever the user lands on a different client, so the
@@ -88,6 +90,10 @@ function ClientDetail({ client, data }: DetailProps) {
     () => data.tasks.filter(t => t.clientId === client.id && t.columnId !== 'done'),
     [data.tasks, client.id],
   );
+  const clientOnboarding = useMemo(() => {
+    const svcIds = new Set(services.map(s => s.id));
+    return data.onboardingItems.filter(o => svcIds.has(o.serviceId));
+  }, [data.onboardingItems, services]);
 
   return (
     <section
@@ -106,7 +112,17 @@ function ClientDetail({ client, data }: DetailProps) {
         </>
       )}
 
-      {activeTab !== 'overview' && <TabPlaceholder tab={activeTab} />}
+      {activeTab === 'onboarding' && (
+        <OnboardingSection
+          services={services}
+          items={clientOnboarding}
+          onToggle={(id) => store.toggleOnboardingItem(id)}
+        />
+      )}
+
+      {activeTab !== 'overview' && activeTab !== 'onboarding' && (
+        <TabPlaceholder tab={activeTab} />
+      )}
     </section>
   );
 }
@@ -593,11 +609,225 @@ function quickTime(createdAt: string, todayISO: string): string {
   return formatMonthDay(createdAt);
 }
 
+// ── Onboarding tab ────────────────────────────────────────────────────────
+
+/**
+ * Setup checklist grouped by service. Each service is its own collapsible
+ * card; completed services collapse by default so incomplete work is what
+ * the user sees first. Checkboxes flip optimistically through the store
+ * (local + Firestore debounce handles durability).
+ *
+ * Design notes, Apple-style:
+ * - Clarity over ornament: one checkbox, one label, no icons on items.
+ * - Hierarchy through count/progress — the eye lands on "3 of 7" first.
+ * - Forgiveness: toggling is a flip, so an accidental tick is one more
+ *   click to fix.
+ * - Keyboard: head is a <button>, each check is a <button aria-pressed>.
+ */
+function OnboardingSection({ services, items, onToggle }: {
+  services: Service[];
+  items: OnboardingItem[];
+  onToggle: (id: string) => void;
+}) {
+  const groups = useMemo(() => groupByService(services, items), [services, items]);
+
+  // Header math: how many services still have open items, total items.
+  const totalItems = items.length;
+  const doneItems  = items.filter(i => i.done).length;
+  const openServices = groups.filter(g => g.doneCount < g.total).length;
+
+  if (services.length === 0) {
+    return (
+      <div className="detail-section">
+        <div className="detail-section-header">
+          <div className="detail-section-title">Setup & Onboarding</div>
+          <div className="detail-section-sub">No services to set up yet</div>
+        </div>
+        <div
+          className="onboarding-service-stack"
+          style={{ padding: 20, color: 'var(--text-soft)', fontSize: 14 }}
+        >
+          Spin up a service to see its onboarding checklist here.
+        </div>
+      </div>
+    );
+  }
+
+  if (totalItems === 0) {
+    // Services exist but none carry a template checklist. Rare, but keep
+    // the tab from rendering an empty stack.
+    return (
+      <div className="detail-section">
+        <div className="detail-section-header">
+          <div className="detail-section-title">Setup & Onboarding</div>
+          <div className="detail-section-sub">No checklists for these services</div>
+        </div>
+        <div
+          className="onboarding-service-stack"
+          style={{ padding: 20, color: 'var(--text-soft)', fontSize: 14 }}
+        >
+          Setup checklists attach to services through templates. Swap in a
+          template to see yours here.
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="detail-section">
+      <div className="detail-section-header">
+        <div className="detail-section-title">Setup & Onboarding</div>
+        <div className="detail-section-sub">
+          {openServices === 0
+            ? `All set · ${doneItems} of ${totalItems} items complete`
+            : `${openServices} of ${services.length} service${services.length === 1 ? '' : 's'} in progress · ${doneItems} of ${totalItems} items complete`
+          }
+        </div>
+      </div>
+      <div className="onboarding-service-stack">
+        {groups.map(g => (
+          <OnboardingServiceCard key={g.service.id} group={g} onToggle={onToggle} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+interface OnboardingGroup {
+  service: Service;
+  client: OnboardingItem[];
+  us: OnboardingItem[];
+  doneCount: number;
+  total: number;
+}
+
+function groupByService(services: Service[], items: OnboardingItem[]): OnboardingGroup[] {
+  return services.map(service => {
+    const svcItems = items.filter(i => i.serviceId === service.id);
+    const client = svcItems.filter(i => i.group === 'client');
+    const us     = svcItems.filter(i => i.group === 'us');
+    const doneCount = svcItems.filter(i => i.done).length;
+    return { service, client, us, doneCount, total: svcItems.length };
+  });
+}
+
+function OnboardingServiceCard({ group, onToggle }: {
+  group: OnboardingGroup;
+  onToggle: (id: string) => void;
+}) {
+  const { service, client, us, doneCount, total } = group;
+  const complete = total > 0 && doneCount === total;
+  // Completed services collapse by default — the tab points the user at
+  // unfinished setup first, not green checkmarks.
+  const [collapsed, setCollapsed] = useState<boolean>(complete);
+  const percent = total === 0 ? 0 : Math.round((doneCount / total) * 100);
+
+  const classes = [
+    'onboarding-service-card',
+    complete ? 'complete' : '',
+    collapsed ? 'collapsed' : '',
+  ].filter(Boolean).join(' ');
+
+  return (
+    <div className={classes}>
+      <button
+        type="button"
+        className="onboarding-service-head"
+        onClick={() => setCollapsed(c => !c)}
+        aria-expanded={!collapsed}
+        aria-controls={`onb-body-${service.id}`}
+      >
+        <span className="onb-svc-icon" aria-hidden="true">
+          {complete ? (
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="20 6 9 17 4 12" />
+            </svg>
+          ) : (
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="3" y="5" width="18" height="16" rx="2" />
+              <path d="M8 3v4M16 3v4M3 11h18" />
+            </svg>
+          )}
+        </span>
+        <span className="onb-svc-body">
+          <span className="onb-svc-name">{service.name}</span>
+          <span className="onb-svc-sub">
+            {humanTemplate(service.templateKey)}
+            {complete ? ' · setup complete' : ` · ${total - doneCount} item${total - doneCount === 1 ? '' : 's'} left`}
+          </span>
+        </span>
+        <span className="onb-svc-progress">
+          <span className="onb-svc-count">{doneCount}/{total}</span>
+          <span className="onb-svc-bar">
+            <span className="onb-svc-fill" style={{ width: `${percent}%` }} />
+          </span>
+        </span>
+        <span className="onb-svc-chevron" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="6 9 12 15 18 9" />
+          </svg>
+        </span>
+      </button>
+
+      <div id={`onb-body-${service.id}`} className="onboarding-service-body">
+        <div className="onboarding-checklist">
+          {client.length > 0 && (
+            <>
+              <div className="onboarding-group-label">Needed from client</div>
+              {client.map(item => (
+                <OnboardingRow key={item.id} item={item} onToggle={onToggle} />
+              ))}
+            </>
+          )}
+          {us.length > 0 && (
+            <>
+              <div className="onboarding-group-label">We take care of</div>
+              {us.map(item => (
+                <OnboardingRow key={item.id} item={item} onToggle={onToggle} />
+              ))}
+            </>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function OnboardingRow({ item, onToggle }: {
+  item: OnboardingItem;
+  onToggle: (id: string) => void;
+}) {
+  return (
+    <label
+      className={`onboarding-item${item.done ? ' done' : ''}`}
+      // The whole row is clickable for the same reason toggles on iOS let
+      // you tap anywhere on the row: bigger target, fewer missed taps.
+    >
+      <button
+        type="button"
+        className="onboarding-check"
+        role="checkbox"
+        aria-checked={item.done}
+        aria-label={`${item.done ? 'Mark as not done' : 'Mark as done'}: ${item.label}`}
+        onClick={(e) => { e.preventDefault(); onToggle(item.id); }}
+      >
+        {item.done && (
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <polyline points="20 6 9 17 4 12" />
+          </svg>
+        )}
+      </button>
+      <span>{item.label}</span>
+    </label>
+  );
+}
+
 // ── Tabs that haven't been ported yet ─────────────────────────────────────
 
-function TabPlaceholder({ tab }: { tab: Exclude<TabKey, 'overview'> }) {
-  const LABELS: Record<Exclude<TabKey, 'overview'>, string> = {
-    onboarding:  'Onboarding checklist',
+type PlaceholderTab = Exclude<TabKey, 'overview' | 'onboarding'>;
+
+function TabPlaceholder({ tab }: { tab: PlaceholderTab }) {
+  const LABELS: Record<PlaceholderTab, string> = {
     about:       'Relationship & contacts',
     stats:       'Stats hub',
     touchpoints: 'Touchpoint log',

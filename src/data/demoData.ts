@@ -1,10 +1,11 @@
 import type {
-  FlizowData, Client, Service, Task, Integration,
+  FlizowData, Client, Service, Task, Integration, OnboardingItem,
   ColumnId, Priority, IndustryCategory, TemplateKey,
   ServiceType, TaskSeverity, ScheduleMeta,
 } from '../types/flizow';
 import { CLIENT_SEEDS, type ClientSeed } from './demoClientSeeds';
 import { DEMO_AMS, OPS_TEAM } from './demoRosters';
+import { ONBOARDING_TEMPLATES, slugifyLabel } from './onboardingTemplates';
 
 /**
  * Port of the mockup's window.FLIZOW_DATA generator
@@ -237,6 +238,71 @@ function daysFromTodayISO(today: Date, offset: number): string {
   return isoFromDate(new Date(today.getTime() + offset * 86_400_000));
 }
 
+// ── Onboarding seeding ───────────────────────────────────────────────────
+
+interface OnboardingOpts {
+  /** Client status — drives the default done ratio when `doneLabels` isn't
+   *  passed. `'onboard'` → partial (~55% done). Anything else → fully done,
+   *  because the setup is long over for a client who's been live for months. */
+  status?: ClientSeed['status'];
+  /** Explicit "these exact labels are done" override. Used by the Acme
+   *  extras so the mockup's 4/7 and 3/6 progress bars reproduce verbatim
+   *  no matter what the status-based heuristic would say. */
+  doneLabels?: Set<string>;
+  /** Stir-value for the `onboard`-status partial distribution. Different
+   *  seeds give each service a distinct spread so the UI isn't marking the
+   *  same three positions done on every card. */
+  seed?: number;
+}
+
+/**
+ * Expand a template's checklist into concrete OnboardingItem rows.
+ *
+ * Labels come from ONBOARDING_TEMPLATES keyed by the service's template.
+ * Done-state is either drawn from an explicit set (`doneLabels`) or derived
+ * from the client's status: `'onboard'` clients land with a partial,
+ * deterministic mix so the tab has real work to chip through, and every
+ * other status gets "all done" because by the time a client is on-track /
+ * at-risk / paused, setup is a closed book.
+ */
+function buildOnboardingItems(
+  serviceId: string,
+  templateKey: TemplateKey,
+  opts: OnboardingOpts,
+): OnboardingItem[] {
+  const template = ONBOARDING_TEMPLATES[templateKey];
+  if (!template) return [];
+
+  const { status, doneLabels, seed = 0 } = opts;
+  const items: OnboardingItem[] = [];
+  let idx = 0;
+
+  const push = (group: 'client' | 'us', label: string) => {
+    let done: boolean;
+    if (doneLabels) {
+      done = doneLabels.has(label);
+    } else if (status === 'onboard') {
+      // ~55% done, deterministically scattered. Keeps the checklist
+      // visibly live instead of "all green" or "all empty".
+      done = ((seed * 31 + idx * 17) % 100) < 55;
+    } else {
+      done = true;
+    }
+    items.push({
+      id: `${serviceId}-${slugifyLabel(label)}`,
+      serviceId,
+      group,
+      label,
+      done,
+    });
+    idx++;
+  };
+
+  template.client.forEach(label => push('client', label));
+  template.us.forEach(label => push('us', label));
+  return items;
+}
+
 // ── Main build ───────────────────────────────────────────────────────────
 
 export function generateDemoData(): FlizowData {
@@ -247,6 +313,7 @@ export function generateDemoData(): FlizowData {
   const services: Service[] = [];
   const tasks: Task[] = [];
   const integrations: Integration[] = [];
+  const onboardingItems: OnboardingItem[] = [];
 
   const members = [...DEMO_AMS, ...OPS_TEAM];
 
@@ -333,6 +400,17 @@ export function generateDemoData(): FlizowData {
 
       services.push(service);
       client.serviceIds.push(serviceId);
+
+      // Seed the onboarding checklist for this service. For fully
+      // ramped-up clients (track / fire / risk / paused) treat the
+      // setup as long complete; only onboard-status clients carry
+      // partially-done lists so the tab actually has something to do.
+      onboardingItems.push(
+        ...buildOnboardingItems(serviceId, tmpl.pool, {
+          status: seedRow.status,
+          seed: seed + si,
+        }),
+      );
     }
 
     // 2–4 integrations per client, mostly connected with the occasional error.
@@ -425,6 +503,19 @@ export function generateDemoData(): FlizowData {
     services.push(ms);
     acme.serviceIds.unshift(msId);
 
+    // Mockup shows Marketing Site v3 at 4 of 7 items complete. Pin
+    // exactly which ones are done so the strip matches the reference.
+    onboardingItems.push(
+      ...buildOnboardingItems(msId, 'web-design-full-stack', {
+        doneLabels: new Set([
+          'Domain registrar credentials',
+          'Hosting or CDN access',
+          'Brand kit — logos, fonts, colors',
+          'Provision staging environment',
+        ]),
+      }),
+    );
+
     // Brand Refresh Q2
     const brId = 'acme-corp-svc-brq2';
     const br: Service = {
@@ -446,6 +537,17 @@ export function generateDemoData(): FlizowData {
     brTasks.forEach(t => { tasks.push(t); br.taskIds.push(t.id); });
     services.push(br);
     acme.serviceIds.unshift(brId);
+
+    // Mockup shows Brand Refresh Q2 at 3 of 6 items complete.
+    onboardingItems.push(
+      ...buildOnboardingItems(brId, 'brand-refresh', {
+        doneLabels: new Set([
+          'Existing brand history & assets shared',
+          'Leadership interviews scheduled',
+          'Set up moodboard workspace',
+        ]),
+      }),
+    );
   }
 
   return {
@@ -454,6 +556,7 @@ export function generateDemoData(): FlizowData {
     tasks,
     members,
     integrations,
+    onboardingItems,
     today: todayStr,
     scheduleTaskMap,
   };

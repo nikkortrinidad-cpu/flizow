@@ -237,6 +237,29 @@ export interface ServiceTemplate {
   description?: string;
 }
 
+// ── Onboarding ───────────────────────────────────────────────────────────
+
+/**
+ * A single setup task on a service's onboarding checklist. Items are
+ * template-driven (the labels and grouping come from constants keyed by
+ * service template), but the done-state is per-instance so two clients
+ * running the same service have independent checklists.
+ *
+ * We store flat rather than nested so toggling a single item is a cheap
+ * patch — no digging through a `Service.onboarding` subtree.
+ */
+export interface OnboardingItem {
+  /** Stable id: `${serviceId}-${slug(label)}`. Rebuilding from the
+   *  template is deterministic, so upgrades don't break older docs. */
+  id: string;
+  serviceId: string;
+  /** `client` = "we need this from the client". `us` = "we need to do
+   *  this internally". Drives the two-column grouping in the UI. */
+  group: 'client' | 'us';
+  label: string;
+  done: boolean;
+}
+
 // ── Meetings (Weekly WIP) ────────────────────────────────────────────────
 
 /** Weekly WIP agenda entry. The mockup's WIP tab is still a stub, but
@@ -267,6 +290,7 @@ export interface FlizowData {
   tasks: Task[];
   members: Member[];
   integrations: Integration[];
+  onboardingItems: OnboardingItem[];
   /** The "today" reference the mockup uses for all date math. A single
    *  anchor keeps the UI stable across re-renders. */
   today: string;

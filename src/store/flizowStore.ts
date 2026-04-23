@@ -34,6 +34,7 @@ function emptyData(): FlizowData {
     tasks: [],
     members: [],
     integrations: [],
+    onboardingItems: [],
     today: todayISO(),
     scheduleTaskMap: {},
   };
@@ -70,6 +71,7 @@ function migrate(parsed: Partial<FlizowData>): FlizowData {
     tasks: parsed.tasks ?? base.tasks,
     members: parsed.members ?? base.members,
     integrations: parsed.integrations ?? base.integrations,
+    onboardingItems: parsed.onboardingItems ?? base.onboardingItems,
     // `today` always refreshes on load — we never trust a stale anchor.
     today: todayISO(),
     scheduleTaskMap: parsed.scheduleTaskMap ?? base.scheduleTaskMap,
@@ -244,6 +246,9 @@ class FlizowStore {
     this.data.clients = this.data.clients.filter(c => c.id !== id);
     this.data.services = this.data.services.filter(s => !serviceIds.has(s.id));
     this.data.tasks = this.data.tasks.filter(t => !serviceIds.has(t.serviceId));
+    this.data.onboardingItems = this.data.onboardingItems.filter(
+      o => !serviceIds.has(o.serviceId),
+    );
     this.data.integrations = this.data.integrations.filter(i => i.clientId !== id);
     this.save();
   }
@@ -271,6 +276,7 @@ class FlizowStore {
     if (!svc) return;
     this.data.services = this.data.services.filter(s => s.id !== id);
     this.data.tasks = this.data.tasks.filter(t => t.serviceId !== id);
+    this.data.onboardingItems = this.data.onboardingItems.filter(o => o.serviceId !== id);
     const client = this.data.clients.find(c => c.id === svc.clientId);
     if (client) {
       client.serviceIds = client.serviceIds.filter(sid => sid !== id);
@@ -341,6 +347,17 @@ class FlizowStore {
     // Leave any tasks assigned to this member untouched — the UI can
     // show "Unknown" until someone reassigns them.
     this.data.members = this.data.members.filter(m => m.id !== id);
+    this.save();
+  }
+
+  // ── Onboarding ───────────────────────────────────────────────────────
+
+  /** Flip a single onboarding checkbox. No-op when the id is stale so a
+   *  retried click from a re-render can't toss an error. */
+  toggleOnboardingItem(id: string) {
+    const item = this.data.onboardingItems.find(o => o.id === id);
+    if (!item) return;
+    item.done = !item.done;
     this.save();
   }
 
