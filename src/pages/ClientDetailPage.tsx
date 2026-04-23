@@ -83,6 +83,7 @@ function ClientDetail({ client, data, store }: DetailProps) {
   const [showAddService, setShowAddService] = useState(false);
   const [servicesEditMode, setServicesEditMode] = useState(false);
   const [deleteServiceId, setDeleteServiceId] = useState<string | null>(null);
+  const [showDeleteClient, setShowDeleteClient] = useState(false);
 
   // Reset to Overview whenever the user lands on a different client, so the
   // first thing they see on a new row isn't whatever tab they peeked at on
@@ -93,6 +94,7 @@ function ClientDetail({ client, data, store }: DetailProps) {
     setShowAddService(false);
     setServicesEditMode(false);
     setDeleteServiceId(null);
+    setShowDeleteClient(false);
   }, [client.id]);
 
   const am = client.amId ? data.members.find(m => m.id === client.amId) ?? null : null;
@@ -115,7 +117,7 @@ function ClientDetail({ client, data, store }: DetailProps) {
       data-client-panel={client.id}
       data-active-tab={activeTab}
     >
-      <Hero client={client} am={am} />
+      <Hero client={client} am={am} onRequestDelete={() => setShowDeleteClient(true)} />
       <TabsRow tabs={TABS} activeTab={activeTab} onChange={setActiveTab} />
 
       {activeTab === 'overview' && (
@@ -171,6 +173,55 @@ function ClientDetail({ client, data, store }: DetailProps) {
         />
       )}
 
+      {showDeleteClient && (() => {
+        // Tally what the cascade will take with it, so the user isn't
+        // surprised by missing data somewhere else after the delete.
+        // Counts here mirror the filters in store.deleteClient().
+        const serviceIds = services.map(s => s.id);
+        const serviceCount = services.length;
+        const taskCount = data.tasks.filter(t => serviceIds.includes(t.serviceId)).length;
+        const contactCount = data.contacts.filter(c => c.clientId === client.id).length;
+        const noteCount = data.notes.filter(n => n.clientId === client.id).length;
+        const touchpointCount = data.touchpoints.filter(t => t.clientId === client.id).length;
+
+        // Tiny helper so the sentence stays readable. Only list categories
+        // that have something — a list of five zeros is just noise.
+        const parts: string[] = [];
+        const push = (n: number, singular: string, plural: string) => {
+          if (n > 0) parts.push(`${n} ${n === 1 ? singular : plural}`);
+        };
+        push(serviceCount,    'service',    'services');
+        push(taskCount,       'card',       'cards');
+        push(contactCount,    'contact',    'contacts');
+        push(noteCount,       'note',       'notes');
+        push(touchpointCount, 'touchpoint', 'touchpoints');
+        const cascadeLine = parts.length > 0
+          ? `Cascades ${parts.join(', ')}.`
+          : 'No services, cards, or notes to cascade.';
+
+        return (
+          <ConfirmDangerDialog
+            title={`Delete "${client.name}"?`}
+            body={
+              <>
+                {cascadeLine} Also removes the account-manager link, quick
+                links, and every activity entry tied to this client. This
+                can't be undone.
+              </>
+            }
+            confirmLabel="Delete client"
+            onConfirm={() => {
+              flizowStore.deleteClient(client.id);
+              setShowDeleteClient(false);
+              // Land on the clients list. The detail pane unmounts as the
+              // row disappears; navigate explicitly so state resets cleanly.
+              navigate('#clients');
+            }}
+            onClose={() => setShowDeleteClient(false)}
+          />
+        );
+      })()}
+
       {deleteServiceId && (() => {
         const svc = data.services.find(s => s.id === deleteServiceId);
         if (!svc) return null;
@@ -223,7 +274,11 @@ function deriveInitialsLocal(name: string): string {
   return (words[0][0] + words[1][0]).toUpperCase();
 }
 
-function Hero({ client, am }: { client: Client; am: Member | null }) {
+function Hero({ client, am, onRequestDelete }: {
+  client: Client;
+  am: Member | null;
+  onRequestDelete: () => void;
+}) {
   const statusLabel = statusChipLabel(client.status);
   // Inline rename: click the name to edit, Enter/blur to commit, Esc to
   // cancel. No pencil icon — cursor:text + hover tint + ring on focus do
@@ -231,6 +286,32 @@ function Hero({ client, am }: { client: Client; am: Member | null }) {
   const [editingName, setEditingName] = useState(false);
   const [nameDraft, setNameDraft] = useState(client.name);
   const nameInputRef = useRef<HTMLInputElement>(null);
+
+  // Overflow menu (⋯) — lives in the top-right of the hero. Today it
+  // only carries "Delete client…" but is plural in shape so we can drop
+  // Archive, Export, etc. in later without moving the affordance.
+  const [menuOpen, setMenuOpen] = useState(false);
+  useEffect(() => { setMenuOpen(false); }, [client.id]);
+  // Dismiss on outside click or Esc. We scope the outside-click check to
+  // pointerdown so button handlers still fire in the same gesture.
+  const menuRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!menuOpen) return;
+    function onDown(e: PointerEvent) {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setMenuOpen(false);
+      }
+    }
+    function onKey(e: KeyboardEvent) {
+      if (e.key === 'Escape') setMenuOpen(false);
+    }
+    window.addEventListener('pointerdown', onDown);
+    window.addEventListener('keydown', onKey);
+    return () => {
+      window.removeEventListener('pointerdown', onDown);
+      window.removeEventListener('keydown', onKey);
+    };
+  }, [menuOpen]);
 
   // Keep the draft in sync when the user switches clients without leaving
   // edit mode (unlikely but cheap to guard against).
@@ -386,6 +467,49 @@ function Hero({ client, am }: { client: Client; am: Member | null }) {
               </span>
             </>
           )}
+        </div>
+      </div>
+
+      {/* Overflow menu at the top-right of the hero. Kept tucked behind a
+          ⋯ so destructive actions aren't one click away — the user has to
+          open the menu, pick delete, then confirm in a dialog. Three
+          steps, matching Finder / Mail / most adult apps. */}
+      <div
+        ref={menuRef}
+        className="hero-overflow"
+        style={{ position: 'absolute', top: 16, right: 16 }}
+      >
+        <button
+          type="button"
+          className="tb-btn"
+          aria-label="Client options"
+          aria-haspopup="menu"
+          aria-expanded={menuOpen}
+          onClick={() => setMenuOpen(v => !v)}
+          style={{
+            width: 32, height: 32, display: 'inline-flex',
+            alignItems: 'center', justifyContent: 'center',
+            borderRadius: 8, border: 'none', background: 'transparent',
+            color: 'var(--text-muted)', cursor: 'pointer',
+          }}
+        >
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+            <circle cx="5" cy="12" r="1.8" />
+            <circle cx="12" cy="12" r="1.8" />
+            <circle cx="19" cy="12" r="1.8" />
+          </svg>
+        </button>
+        <div className={`tb-menu${menuOpen ? ' open' : ''}`} role="menu">
+          <div
+            className="tb-menu-item danger"
+            role="menuitem"
+            onClick={() => {
+              setMenuOpen(false);
+              onRequestDelete();
+            }}
+          >
+            Delete client…
+          </div>
         </div>
       </div>
     </div>
