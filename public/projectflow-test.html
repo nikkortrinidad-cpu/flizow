@@ -12546,6 +12546,163 @@
     animation: tg-spin 0.7s linear infinite;
   }
   @keyframes tg-spin { to { transform: rotate(360deg); } }
+
+  /* ═══════ Peer testing — admin Testers chip ═══════
+     Floating chip bottom-right, visible only to the admin email. Click opens
+     a panel listing every tester with last-seen timestamps. Commit 4 wires
+     "View" to load another tester's session in read-only mode. */
+  #testersAdmin {
+    position: fixed;
+    bottom: 24px; right: 24px;
+    z-index: 999998;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  }
+  #testersAdmin[hidden] { display: none; }
+  .ta-chip {
+    background: #1d1d1f;
+    color: #ffffff;
+    border: none;
+    border-radius: 999px;
+    padding: 10px 16px;
+    font-size: 13px;
+    font-weight: 500;
+    letter-spacing: -0.005em;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.18);
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+    font-family: inherit;
+  }
+  .ta-chip:hover { transform: translateY(-1px); box-shadow: 0 10px 28px rgba(0,0,0,0.22); }
+  .ta-chip svg { width: 14px; height: 14px; }
+  .ta-count {
+    background: rgba(255,255,255,0.18);
+    border-radius: 999px;
+    padding: 1px 8px;
+    font-size: 11px;
+    font-weight: 600;
+    min-width: 20px;
+    text-align: center;
+    font-feature-settings: "tnum";
+  }
+  .ta-panel {
+    position: absolute;
+    bottom: calc(100% + 10px);
+    right: 0;
+    width: 340px;
+    max-height: 480px;
+    background: var(--bg-elev);
+    border: 1px solid var(--hairline-soft);
+    border-radius: 16px;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.15);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+  .ta-panel[hidden] { display: none; }
+  .ta-header {
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--hairline);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .ta-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text);
+    letter-spacing: -0.005em;
+  }
+  .ta-close {
+    background: transparent;
+    border: none;
+    color: var(--text-soft);
+    font-size: 20px;
+    line-height: 1;
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 6px;
+    transition: background 0.12s ease, color 0.12s ease;
+    font-family: inherit;
+  }
+  .ta-close:hover { background: var(--hover-tint); color: var(--text); }
+  .ta-list {
+    overflow-y: auto;
+    flex: 1;
+  }
+  .ta-row {
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    border-bottom: 1px solid var(--hairline-soft);
+    transition: background 0.12s ease;
+  }
+  .ta-row:last-child { border-bottom: none; }
+  .ta-row:hover { background: var(--hover-tint); }
+  .ta-row.is-you { background: var(--hover-tint); }
+  .ta-avatar {
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    background: #1d1d1f;
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 600;
+    flex-shrink: 0;
+    overflow: hidden;
+    letter-spacing: 0.02em;
+  }
+  .ta-avatar img { width: 100%; height: 100%; object-fit: cover; }
+  .ta-row-body { flex: 1; min-width: 0; }
+  .ta-row-name {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text);
+    letter-spacing: -0.005em;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .ta-row-sub {
+    font-size: 12px;
+    color: var(--text-soft);
+    letter-spacing: -0.003em;
+    margin-top: 2px;
+  }
+  .ta-row-view {
+    background: transparent;
+    border: 1px solid var(--hairline);
+    color: var(--text);
+    border-radius: 999px;
+    padding: 6px 12px;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.12s ease, border-color 0.12s ease;
+    font-family: inherit;
+    flex-shrink: 0;
+  }
+  .ta-row-view:hover {
+    background: var(--hover-tint);
+    border-color: var(--hover-blue);
+  }
+  .ta-row.is-you .ta-row-view {
+    opacity: 0.5;
+    pointer-events: none;
+  }
+  .ta-empty {
+    padding: 40px 20px;
+    text-align: center;
+    font-size: 13px;
+    color: var(--text-soft);
+    letter-spacing: -0.005em;
+  }
+  .ta-empty[hidden] { display: none; }
   </style>
 
   <!-- Sync pre-flight: decide whether to hide the app before first paint.
@@ -12595,6 +12752,31 @@
     </button>
     <div class="tg-err" id="testersSignInErr" role="alert"></div>
     <p class="tg-foot">Session syncs to the team's shared workspace.</p>
+  </div>
+</div>
+
+<!-- Peer testing admin chip. Hidden by default; boot script reveals it for
+     the admin email. Commit 4 will wire the "View" button on each row. -->
+<div id="testersAdmin" hidden>
+  <button type="button" class="ta-chip" id="testersAdminChip" aria-expanded="false" aria-controls="testersAdminPanel">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+      <circle cx="9" cy="7" r="4"/>
+      <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+      <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+    </svg>
+    <span>Testers</span>
+    <span class="ta-count" id="testersAdminCount">0</span>
+  </button>
+  <div class="ta-panel" id="testersAdminPanel" hidden>
+    <div class="ta-header">
+      <div class="ta-title">Testers</div>
+      <button type="button" class="ta-close" id="testersAdminClose" aria-label="Close">×</button>
+    </div>
+    <div class="ta-list" id="testersAdminList" role="list"></div>
+    <div class="ta-empty" id="testersAdminEmpty" hidden>
+      No sessions yet. Share the tester URL to start.
+    </div>
   </div>
 </div>
 
@@ -33743,7 +33925,8 @@ if (TESTERS_MODE) {
     const { initializeApp } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js');
     const { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } =
       await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js');
-    const { getFirestore, doc, getDoc, setDoc, serverTimestamp } =
+    const { getFirestore, doc, getDoc, setDoc, serverTimestamp,
+            collection, getDocs } =
       await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
 
     const app = initializeApp(FIREBASE_CONFIG);
@@ -33848,6 +34031,138 @@ if (TESTERS_MODE) {
       snapshotStore            // used by the admin view in a later commit
     };
 
+    // ── Admin Testers panel ─────────────────────────────────────────────
+    // Only runs for the admin email. Lists all tester sessions with their
+    // last-seen timestamps. Clicking "View" is wired in the next commit.
+    function escapeHtml(s) {
+      return String(s == null ? '' : s)
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+    }
+    function initialsFor(name) {
+      const m = String(name || '').trim().match(/\b[A-Za-z]/g);
+      return (m ? m.slice(0, 2).join('') : '·').toUpperCase();
+    }
+    function formatLastSeen(ts) {
+      if (!ts || typeof ts.toDate !== 'function') return '—';
+      const d = ts.toDate();
+      const diffSec = (Date.now() - d.getTime()) / 1000;
+      if (diffSec < 45)      return 'Just now';
+      if (diffSec < 3600)    return Math.floor(diffSec / 60) + 'm ago';
+      if (diffSec < 86400)   return Math.floor(diffSec / 3600) + 'h ago';
+      if (diffSec < 172800)  return 'Yesterday';
+      if (diffSec < 604800)  return Math.floor(diffSec / 86400) + 'd ago';
+      return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+    }
+
+    async function initAdmin(user) {
+      if (!user || !user.email || user.email !== ADMIN_EMAIL) return;
+
+      const root    = document.getElementById('testersAdmin');
+      const chip    = document.getElementById('testersAdminChip');
+      const panel   = document.getElementById('testersAdminPanel');
+      const closeBt = document.getElementById('testersAdminClose');
+      const listEl  = document.getElementById('testersAdminList');
+      const emptyEl = document.getElementById('testersAdminEmpty');
+      const countEl = document.getElementById('testersAdminCount');
+      if (!root || !chip || !panel) return;
+
+      root.hidden = false;
+      let pollTimer = null;
+
+      async function loadList() {
+        try {
+          const snap = await getDocs(collection(db, 'projectflow-testers'));
+          const testers = [];
+          snap.forEach(d => testers.push({ uid: d.id, ...d.data() }));
+          // Sort by lastSeen desc client-side so we don't need a Firestore index.
+          testers.sort((a, b) => {
+            const ta = a.profile && a.profile.lastSeen && a.profile.lastSeen.toMillis
+                       ? a.profile.lastSeen.toMillis() : 0;
+            const tb = b.profile && b.profile.lastSeen && b.profile.lastSeen.toMillis
+                       ? b.profile.lastSeen.toMillis() : 0;
+            return tb - ta;
+          });
+          renderList(testers);
+        } catch (e) {
+          console.error('[testers admin] load failed:', e);
+          listEl.innerHTML = '<div class="ta-empty">Could not load testers. Check Firestore rules.</div>';
+          emptyEl.hidden = true;
+          countEl.textContent = '—';
+        }
+      }
+
+      function renderList(testers) {
+        countEl.textContent = String(testers.length);
+        if (!testers.length) {
+          listEl.innerHTML = '';
+          emptyEl.hidden = false;
+          return;
+        }
+        emptyEl.hidden = true;
+        listEl.innerHTML = testers.map(t => {
+          const p = t.profile || {};
+          const name = p.name || p.email || 'Unnamed tester';
+          const avatar = p.photoURL
+            ? '<img src="' + escapeHtml(p.photoURL) + '" alt="" referrerpolicy="no-referrer"/>'
+            : escapeHtml(initialsFor(name));
+          const sub = p.email && p.email !== name
+            ? escapeHtml(p.email) + ' · ' + escapeHtml(formatLastSeen(p.lastSeen))
+            : escapeHtml(formatLastSeen(p.lastSeen));
+          const isYou = t.uid === user.uid;
+          return '' +
+            '<div class="ta-row' + (isYou ? ' is-you' : '') + '" role="listitem">' +
+              '<div class="ta-avatar">' + avatar + '</div>' +
+              '<div class="ta-row-body">' +
+                '<div class="ta-row-name">' + escapeHtml(name) + '</div>' +
+                '<div class="ta-row-sub">' + sub + '</div>' +
+              '</div>' +
+              '<button type="button" class="ta-row-view" data-view-uid="' + escapeHtml(t.uid) + '">' +
+                (isYou ? 'You' : 'View') +
+              '</button>' +
+            '</div>';
+        }).join('');
+      }
+
+      function openPanel() {
+        panel.hidden = false;
+        chip.setAttribute('aria-expanded', 'true');
+        loadList();
+        // Refresh every 20s while open so lastSeen ticks forward.
+        clearInterval(pollTimer);
+        pollTimer = setInterval(loadList, 20000);
+      }
+      function closePanel() {
+        panel.hidden = true;
+        chip.setAttribute('aria-expanded', 'false');
+        clearInterval(pollTimer);
+        pollTimer = null;
+      }
+
+      chip.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (panel.hidden) openPanel(); else closePanel();
+      });
+      closeBt.addEventListener('click', closePanel);
+      document.addEventListener('click', (e) => {
+        if (panel.hidden) return;
+        if (!root.contains(e.target)) closePanel();
+      });
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && !panel.hidden) closePanel();
+      });
+
+      // Placeholder click handler — Commit 4 will replace this with the
+      // actual session swap.
+      listEl.addEventListener('click', (e) => {
+        const btn = e.target.closest('[data-view-uid]');
+        if (!btn) return;
+        const uid = btn.getAttribute('data-view-uid');
+        if (uid === user.uid) return;
+        console.log('[testers admin] view requested for', uid, '— wiring lands in Commit 4');
+      });
+    }
+
     // ── Gate UI ─────────────────────────────────────────────────────────
     const gateBtn   = document.getElementById('testersSignInBtn');
     const gateLabel = document.getElementById('testersSignInLabel');
@@ -33920,6 +34235,8 @@ if (TESTERS_MODE) {
       installWriteThrough();
       writeProfile(user, false).catch(e => console.warn('[testers] profile update skipped:', e));
       document.documentElement.setAttribute('data-testers-state', 'authed');
+      // Admin chip shows only for ADMIN_EMAIL; initAdmin no-ops for everyone else.
+      initAdmin(user).catch(e => console.warn('[testers] admin init failed:', e));
     });
   } catch (e) {
     console.error('[testers] boot failed:', e);
