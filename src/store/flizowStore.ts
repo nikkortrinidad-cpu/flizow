@@ -3,8 +3,10 @@ import { db } from '../lib/firebase';
 import type {
   FlizowData, Client, Service, Task, Member, Contact, QuickLink, Note,
   Touchpoint, ActionItem, TaskComment, TaskActivity, TaskActivityKind,
-  ManualAgendaItem, ColumnId, Priority,
+  ManualAgendaItem, OnboardingItem, ColumnId, Priority,
 } from '../types/flizow';
+import { ONBOARDING_TEMPLATES } from '../data/onboardingTemplates';
+import { TASK_POOLS } from '../data/taskPools';
 
 /**
  * FlizowStore — central data container for the new product surface
@@ -99,6 +101,20 @@ function migrate(parsed: Partial<FlizowData>): FlizowData {
     today: todayISO(),
     scheduleTaskMap: parsed.scheduleTaskMap ?? base.scheduleTaskMap,
   };
+}
+
+/**
+ * Label → deterministic id slug. Used to build stable OnboardingItem ids
+ * from template label text, so adding the same service twice would share
+ * id prefixes (never happens in practice — serviceIds are unique) and, more
+ * importantly, so the ids stay readable in devtools when debugging.
+ */
+function slugLabel(label: string): string {
+  return label
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 40) || 'item';
 }
 
 // ── Store class ──────────────────────────────────────────────────────────
@@ -291,15 +307,74 @@ class FlizowStore {
   // ── Services ─────────────────────────────────────────────────────────
 
   addService(service: Service) {
+    // Seed 3 starter tasks into To Do so the board doesn't open empty.
+    // This is the delivery side of the Add Service modal's promise:
+    // "Seeds the board with starter columns and a few example cards."
+    // Pulls the first 3 titles from the template's task pool rather than
+    // a random sample — determinism keeps the user from seeing the same
+    // service with different starter cards on different devices.
+    const pool = TASK_POOLS[service.templateKey] ?? [];
+    const starterTitles = pool.slice(0, 3);
+    const nowISO = new Date().toISOString();
+    const dueISO = new Date(Date.now() + 7 * 86_400_000).toISOString().slice(0, 10);
+    const seededTasks: Task[] = starterTitles.map((title, idx) => ({
+      id: `${service.id}-starter-${idx}`,
+      serviceId: service.id,
+      clientId: service.clientId,
+      title,
+      columnId: 'todo',
+      priority: 'medium',
+      assigneeId: null,
+      labels: [],
+      dueDate: dueISO,
+      createdAt: nowISO,
+    }));
+
+    // Replace the service's taskIds with the ids of the seeded cards so
+    // the ServiceCard task counters + onboarding group lookups see them.
+    const serviceWithTasks: Service = {
+      ...service,
+      taskIds: seededTasks.map(t => t.id),
+    };
+
     // Replace array refs (not `.push`) so `useMemo([data.services])` consumers
     // on ClientDetailPage recompute. Same trick on the client's serviceIds so
     // the client-level memos see the new membership.
-    this.data.services = [...this.data.services, service];
+    this.data.services = [...this.data.services, serviceWithTasks];
     this.data.clients = this.data.clients.map(c =>
       c.id === service.clientId && !c.serviceIds.includes(service.id)
         ? { ...c, serviceIds: [...c.serviceIds, service.id] }
         : c,
     );
+    if (seededTasks.length > 0) {
+      this.data.tasks = [...this.data.tasks, ...seededTasks];
+    }
+
+    // Seed the onboarding checklist from the template so the Onboarding
+    // tab has real work the moment the service exists. Everything starts
+    // undone — the user just created this, there's no ground truth for
+    // what's already in progress.
+    const tmpl = ONBOARDING_TEMPLATES[service.templateKey];
+    if (tmpl) {
+      const seeded: OnboardingItem[] = [
+        ...tmpl.client.map(label => ({
+          id: `${service.id}-${slugLabel(label)}`,
+          serviceId: service.id,
+          group: 'client' as const,
+          label,
+          done: false,
+        })),
+        ...tmpl.us.map(label => ({
+          id: `${service.id}-${slugLabel(label)}`,
+          serviceId: service.id,
+          group: 'us' as const,
+          label,
+          done: false,
+        })),
+      ];
+      this.data.onboardingItems = [...this.data.onboardingItems, ...seeded];
+    }
+
     this.save();
   }
 
