@@ -3,6 +3,7 @@ import { LoginPage } from './components/LoginPage';
 import { TopNav } from './components/TopNav';
 import { PageShell } from './components/PageShell';
 import FlizowAccountModal from './components/FlizowAccountModal';
+import FlizowCommandPalette from './components/FlizowCommandPalette';
 import { useAuth } from './contexts/AuthContext';
 import { useBoard } from './store/useStore';
 import { store } from './store/boardStore';
@@ -61,6 +62,21 @@ function App() {
 function AppShell() {
   const [accountOpen, setAccountOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
+  const [cmdkOpen, setCmdkOpen] = useState(false);
+
+  // ⌘K / Ctrl+K toggles the command palette from anywhere. We swallow
+  // the keystroke so the browser's own "Search bookmarks" / Quick Find
+  // binding doesn't also fire.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const isToggle = (e.metaKey || e.ctrlKey) && (e.key === 'k' || e.key === 'K');
+      if (!isToggle) return;
+      e.preventDefault();
+      setCmdkOpen((v) => !v);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
 
   return (
     <>
@@ -69,11 +85,16 @@ function AppShell() {
         notifOpen={notifOpen}
         onToggleNotifications={() => setNotifOpen((v) => !v)}
         onCloseNotifications={() => setNotifOpen(false)}
+        onOpenCmdk={() => setCmdkOpen(true)}
       />
       <PageShell />
       {accountOpen && (
         <FlizowAccountModal onClose={() => setAccountOpen(false)} />
       )}
+      <FlizowCommandPalette
+        open={cmdkOpen}
+        onClose={() => setCmdkOpen(false)}
+      />
     </>
   );
 }
