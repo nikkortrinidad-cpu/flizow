@@ -100,6 +100,46 @@ export interface Client {
   /** Ordered — oldest first, except project services get unshifted to the
    *  top so new work surfaces at the start of the strip. */
   serviceIds: string[];
+  /** Operators attached to this client, above and beyond the AM. The AM
+   *  lives on `amId` — this is the "Project team" you see in the About
+   *  tab's Team section. Ordered by add-time; dedupe at write. */
+  teamIds: string[];
+}
+
+// ── Client-scoped directory data (About tab) ─────────────────────────────
+
+/**
+ * A person we talk to at the client. Distinct from `Member` (who works on
+ * our side). Kept flat at the FlizowData root rather than nested under
+ * Client so edits are single-field patches.
+ */
+export interface Contact {
+  id: string;
+  clientId: string;
+  name: string;
+  /** e.g. "VP Marketing", "Head of Growth". Optional because the mockup
+   *  allows a bare name. */
+  role?: string;
+  email?: string;
+  phone?: string;
+  /** The primary contact gets a star in the UI and is who the Weekly
+   *  WIP agenda pings by default. At most one per client at a time. */
+  primary?: boolean;
+}
+
+/**
+ * A saved URL on a client — their website, shared drive, brand docs,
+ * asset library. The `icon` field maps to one of a small set of glyphs
+ * the Quick Links card knows how to render.
+ */
+export interface QuickLink {
+  id: string;
+  clientId: string;
+  label: string;
+  url: string;
+  /** Optional icon hint. Falls back to a generic link glyph when unset
+   *  or unknown. */
+  icon?: 'globe' | 'drive' | 'doc' | 'figma' | 'folder' | 'link';
 }
 
 export interface Service {
@@ -291,6 +331,8 @@ export interface FlizowData {
   members: Member[];
   integrations: Integration[];
   onboardingItems: OnboardingItem[];
+  contacts: Contact[];
+  quickLinks: QuickLink[];
   /** The "today" reference the mockup uses for all date math. A single
    *  anchor keeps the UI stable across re-renders. */
   today: string;

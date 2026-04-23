@@ -1,7 +1,8 @@
 import { doc, setDoc, onSnapshot, type Unsubscribe } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import type {
-  FlizowData, Client, Service, Task, Member, ColumnId, Priority,
+  FlizowData, Client, Service, Task, Member, Contact, QuickLink,
+  ColumnId, Priority,
 } from '../types/flizow';
 
 /**
@@ -35,6 +36,8 @@ function emptyData(): FlizowData {
     members: [],
     integrations: [],
     onboardingItems: [],
+    contacts: [],
+    quickLinks: [],
     today: todayISO(),
     scheduleTaskMap: {},
   };
@@ -65,13 +68,20 @@ function loadFromLocalStorage(): FlizowData {
  *  tolerate a localStorage/Firestore doc written by an older build. */
 function migrate(parsed: Partial<FlizowData>): FlizowData {
   const base = emptyData();
+  // Older docs may have Client rows without teamIds — backfill.
+  const clients = (parsed.clients ?? base.clients).map(c => ({
+    ...c,
+    teamIds: Array.isArray(c.teamIds) ? c.teamIds : [],
+  }));
   return {
-    clients: parsed.clients ?? base.clients,
+    clients,
     services: parsed.services ?? base.services,
     tasks: parsed.tasks ?? base.tasks,
     members: parsed.members ?? base.members,
     integrations: parsed.integrations ?? base.integrations,
     onboardingItems: parsed.onboardingItems ?? base.onboardingItems,
+    contacts: parsed.contacts ?? base.contacts,
+    quickLinks: parsed.quickLinks ?? base.quickLinks,
     // `today` always refreshes on load — we never trust a stale anchor.
     today: todayISO(),
     scheduleTaskMap: parsed.scheduleTaskMap ?? base.scheduleTaskMap,
@@ -250,6 +260,8 @@ class FlizowStore {
       o => !serviceIds.has(o.serviceId),
     );
     this.data.integrations = this.data.integrations.filter(i => i.clientId !== id);
+    this.data.contacts = this.data.contacts.filter(c => c.clientId !== id);
+    this.data.quickLinks = this.data.quickLinks.filter(q => q.clientId !== id);
     this.save();
   }
 
@@ -358,6 +370,74 @@ class FlizowStore {
     const item = this.data.onboardingItems.find(o => o.id === id);
     if (!item) return;
     item.done = !item.done;
+    this.save();
+  }
+
+  // ── Client directory: contacts, quick links, team ────────────────────
+
+  addContact(contact: Contact) {
+    // Enforce at-most-one primary per client — a new primary bumps the
+    // previous one down. The UI also guards this, but the store is the
+    // source of truth so duplicate primaries can't leak in via import.
+    if (contact.primary) {
+      this.data.contacts
+        .filter(c => c.clientId === contact.clientId && c.primary)
+        .forEach(c => { c.primary = false; });
+    }
+    this.data.contacts.push(contact);
+    this.save();
+  }
+
+  updateContact(id: string, patch: Partial<Contact>) {
+    const c = this.data.contacts.find(c => c.id === id);
+    if (!c) return;
+    if (patch.primary) {
+      this.data.contacts
+        .filter(x => x.clientId === c.clientId && x.primary && x.id !== id)
+        .forEach(x => { x.primary = false; });
+    }
+    Object.assign(c, patch);
+    this.save();
+  }
+
+  deleteContact(id: string) {
+    this.data.contacts = this.data.contacts.filter(c => c.id !== id);
+    this.save();
+  }
+
+  addQuickLink(link: QuickLink) {
+    this.data.quickLinks.push(link);
+    this.save();
+  }
+
+  updateQuickLink(id: string, patch: Partial<QuickLink>) {
+    const q = this.data.quickLinks.find(q => q.id === id);
+    if (!q) return;
+    Object.assign(q, patch);
+    this.save();
+  }
+
+  deleteQuickLink(id: string) {
+    this.data.quickLinks = this.data.quickLinks.filter(q => q.id !== id);
+    this.save();
+  }
+
+  /** Add a member to a client's project team. AMs go through `amId`
+   *  on the Client object, not through here — this is for operators. */
+  addTeamMember(clientId: string, memberId: string) {
+    const client = this.data.clients.find(c => c.id === clientId);
+    if (!client) return;
+    if (client.teamIds.includes(memberId)) return;
+    client.teamIds.push(memberId);
+    this.save();
+  }
+
+  removeTeamMember(clientId: string, memberId: string) {
+    const client = this.data.clients.find(c => c.id === clientId);
+    if (!client) return;
+    const next = client.teamIds.filter(id => id !== memberId);
+    if (next.length === client.teamIds.length) return;
+    client.teamIds = next;
     this.save();
   }
 

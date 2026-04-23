@@ -64,7 +64,42 @@ I'll resume once questions are resolved.
 
 ## Page-level
 
-_(Populated per-page as I port.)_
+### 3. Client Detail · About — inline-edit pattern
+
+- **Q:** The mockup flips Contacts, Quick Links, and Team into editable
+  forms via a "Manage" button on each card. Do we build that same edit
+  mode now, or keep the tab view-only for this pass and bring editing in
+  once Notes + Touchpoints force us to build a shared `<InlineField />`
+  primitive?
+- **Context:** The three editable surfaces in About (contacts, links,
+  team) each want slightly different controls. Notes is a full rich-text
+  editor, and Touchpoints has inline TL;DR edit + action-item toggles.
+  If I build the About edit mode in isolation, I risk three inconsistent
+  edit interactions. Waiting until Notes/Touchpoints lock in a pattern
+  lets all three land consistent.
+- **My lean:** View-only now. Shipped as such — the tab renders contacts
+  with mailto/tel affordances, quick links open in a new tab, and the
+  team grid reads from `client.teamIds`. Store methods for add/update/
+  delete are already there so wiring the edit UI later is a view change,
+  not a data change.
+- **Answer:**
+
+### 4. Client Detail · Stats — live data source
+
+- **Q:** The Stats tab in the mockup renders 4 KPI hero cards + 7 channel
+  integration cards (Google Ads, Meta, LinkedIn, Pinterest, GA4, Search
+  Console, HubSpot) with sparklines and deltas. Where does the real data
+  come from when we wire this?
+- **Context:** `FlizowData.integrations` only carries `{ clientId, name,
+  status }` today. For real metrics (spend, sessions, leads, CPL, CTR)
+  we need either (a) a per-client metric blob stored on the client side
+  and populated by a backend job, or (b) direct integration credentials
+  + live fetches from each platform's API.
+- **My lean:** Ship a well-designed stub for now — render the layout
+  against placeholder numbers derived from `client.mrr` + status, plus a
+  banner that reads "Live stats need a data connector." Build the real
+  wiring once you've picked an ETL (Fivetran, Airbyte, direct APIs).
+- **Answer:**
 
 ---
 

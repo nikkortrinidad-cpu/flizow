@@ -1,7 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useRoute, navigate } from '../router';
 import { useFlizow } from '../store/useFlizow';
-import type { Client, Service, Task, Member, FlizowData, ClientStatus, OnboardingItem } from '../types/flizow';
+import type {
+  Client, Service, Task, Member, FlizowData, ClientStatus,
+  OnboardingItem, Contact, QuickLink,
+} from '../types/flizow';
 import type { FlizowStore } from '../store/flizowStore';
 import { formatMonthYear, formatMonthDay, formatMrr, daysBetween } from '../utils/dateFormat';
 
@@ -120,7 +123,11 @@ function ClientDetail({ client, data, store }: DetailProps) {
         />
       )}
 
-      {activeTab !== 'overview' && activeTab !== 'onboarding' && (
+      {activeTab === 'about' && (
+        <AboutSection client={client} data={data} />
+      )}
+
+      {activeTab !== 'overview' && activeTab !== 'onboarding' && activeTab !== 'about' && (
         <TabPlaceholder tab={activeTab} />
       )}
     </section>
@@ -822,13 +829,301 @@ function OnboardingRow({ item, onToggle }: {
   );
 }
 
+// ── About tab ─────────────────────────────────────────────────────────────
+
+/**
+ * Relationship + Team. View-only for now — the mockup exposes Manage/Edit
+ * affordances that flip the surrounding cards into editable form, but the
+ * inline-edit interaction pattern lands in the next pass once we have a
+ * reusable <InlineField /> primitive to share with Notes and Touchpoints.
+ * Keeping the read side clean and accessible today so the tab is useful
+ * immediately rather than hidden behind a WIP flag.
+ */
+function AboutSection({ client, data }: { client: Client; data: FlizowData }) {
+  const contacts = useMemo(
+    () => data.contacts.filter(c => c.clientId === client.id)
+      // Primary first, then original order. Small, consistent ordering
+      // beats a per-session sort on name — the user learns where each
+      // contact sits on the page.
+      .sort((a, b) => Number(!!b.primary) - Number(!!a.primary)),
+    [data.contacts, client.id],
+  );
+  const quickLinks = useMemo(
+    () => data.quickLinks.filter(q => q.clientId === client.id),
+    [data.quickLinks, client.id],
+  );
+  const am = client.amId ? data.members.find(m => m.id === client.amId) ?? null : null;
+  const team = useMemo(
+    () => client.teamIds
+      .map(id => data.members.find(m => m.id === id))
+      .filter((m): m is Member => !!m),
+    [client.teamIds, data.members],
+  );
+
+  return (
+    <>
+      <div className="detail-section" data-tab="about">
+        <div className="detail-section-header">
+          <div className="detail-section-title">Relationship</div>
+          <div className="detail-section-sub">Who we talk to, and where to find their stuff</div>
+        </div>
+        <div className="relationship-grid">
+          <ContactsCard contacts={contacts} />
+          <QuickLinksCard links={quickLinks} />
+        </div>
+      </div>
+
+      <div className="detail-section" data-tab="about" data-team-section>
+        <div className="detail-section-header">
+          <div className="detail-section-title">Team</div>
+          <div className="detail-section-sub">
+            {am ? '1 account manager' : 'No account manager'}
+            {team.length > 0 && ` · ${team.length} operator${team.length === 1 ? '' : 's'}`}
+          </div>
+        </div>
+        <TeamGrid am={am} team={team} />
+      </div>
+    </>
+  );
+}
+
+function ContactsCard({ contacts }: { contacts: Contact[] }) {
+  return (
+    <div className="relationship-card">
+      <div className="relationship-card-head">
+        <div className="relationship-card-label">Client contacts</div>
+      </div>
+
+      {contacts.length === 0 ? (
+        <div style={{ padding: '12px 0', color: 'var(--text-soft)', fontSize: 14 }}>
+          No contacts yet. Add the first person we work with here.
+        </div>
+      ) : (
+        <div className="contacts-list">
+          {contacts.map(c => (
+            <div
+              key={c.id}
+              className="contact-row"
+              data-contact-primary={c.primary ? 'true' : undefined}
+            >
+              <div className="contact-avatar" style={{ background: avatarColor(c.id) }}>
+                {initialsOf(c.name)}
+              </div>
+              <div className="contact-body">
+                <div className="contact-name">
+                  {c.name}
+                  {c.primary && (
+                    <span
+                      className="contact-primary-badge"
+                      title="Primary contact — gets CC'd on Weekly WIP pings"
+                      aria-label="Primary contact"
+                      style={{
+                        marginLeft: 8, color: '#ffb800',
+                        display: 'inline-flex', verticalAlign: 'middle',
+                      }}
+                    >
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                        <polygon points="12 2 15 9 22 9.5 17 14.5 18.5 22 12 18 5.5 22 7 14.5 2 9.5 9 9" />
+                      </svg>
+                    </span>
+                  )}
+                </div>
+                {c.role && <div className="contact-role">{c.role}</div>}
+              </div>
+              <div className="contact-actions">
+                {c.email && (
+                  <a
+                    className="contact-icon-btn"
+                    href={`mailto:${c.email}`}
+                    title={c.email}
+                    aria-label={`Email ${c.name} at ${c.email}`}
+                  >
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <rect x="3" y="5" width="18" height="14" rx="2" />
+                      <path d="M3 7l9 7 9-7" />
+                    </svg>
+                  </a>
+                )}
+                {c.phone && (
+                  <a
+                    className="contact-icon-btn"
+                    href={`tel:${c.phone.replace(/[^\d+]/g, '')}`}
+                    title={c.phone}
+                    aria-label={`Call ${c.name} at ${c.phone}`}
+                  >
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <path d="M22 16.92V21a1 1 0 0 1-1.1 1 19.86 19.86 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.86 19.86 0 0 1 3.2 4.1 1 1 0 0 1 4.2 3h4.08a1 1 0 0 1 1 .75 12.78 12.78 0 0 0 .7 2.81 1 1 0 0 1-.23 1.05L8.21 9.21a16 16 0 0 0 6 6l1.6-1.6a1 1 0 0 1 1-.23 12.78 12.78 0 0 0 2.82.7 1 1 0 0 1 .75 1z" />
+                    </svg>
+                  </a>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function QuickLinksCard({ links }: { links: QuickLink[] }) {
+  return (
+    <div className="relationship-card">
+      <div className="relationship-card-head">
+        <div className="relationship-card-label">Quick links</div>
+      </div>
+
+      {links.length === 0 ? (
+        <div style={{ padding: '12px 0', color: 'var(--text-soft)', fontSize: 14 }}>
+          No saved links yet. Pin the client's website, Drive, or design system.
+        </div>
+      ) : (
+        <div className="quick-links-list">
+          {links.map(l => (
+            <a
+              key={l.id}
+              className="quick-link"
+              href={l.url}
+              target="_blank"
+              rel="noreferrer noopener"
+            >
+              <span className="quick-link-icon" aria-hidden="true">
+                {renderLinkIcon(l.icon)}
+              </span>
+              <span>
+                <span className="quick-link-label">{l.label}</span>
+                <span className="quick-link-host">{hostOf(l.url)}</span>
+              </span>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" width="14" height="14" style={{ color: 'var(--text-faint)' }}>
+                <path d="M7 17L17 7M9 7h8v8" />
+              </svg>
+            </a>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function TeamGrid({ am, team }: { am: Member | null; team: Member[] }) {
+  return (
+    <div className="team-section-grid">
+      <div className="team-group">
+        <div className="team-group-label">Account manager</div>
+        <div className="team-group-row">
+          {am ? (
+            <MemberCard member={am} solid />
+          ) : (
+            <span style={{ color: 'var(--text-soft)', fontSize: 14 }}>
+              None assigned yet.
+            </span>
+          )}
+        </div>
+      </div>
+
+      <div className="team-group-divider" />
+
+      <div className="team-group">
+        <div className="team-group-label">Project team</div>
+        <div className="team-group-row">
+          {team.length === 0 ? (
+            <span style={{ color: 'var(--text-soft)', fontSize: 14 }}>
+              No operators attached yet.
+            </span>
+          ) : (
+            team.map(m => <MemberCard key={m.id} member={m} />)
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function MemberCard({ member, solid = false }: { member: Member; solid?: boolean }) {
+  // AMs use a solid avatar fill; operators use a soft background with
+  // coloured text. Mirrors the mockup's visual split between the two roles
+  // so you can tell roles apart at a glance.
+  const style = solid
+    ? { background: member.color, color: '#fff' }
+    : { background: member.bg ?? 'var(--bg-soft)', color: member.color };
+  return (
+    <div className="team-member-card" data-team-member>
+      <span className="team-member-avatar" style={style}>{member.initials}</span>
+      <div className="team-member-body">
+        <div className="team-member-name">{member.name}</div>
+        {member.role && <div className="team-member-role">{member.role}</div>}
+      </div>
+    </div>
+  );
+}
+
+// ── About helpers ─────────────────────────────────────────────────────────
+
+/** Deterministic pastel avatar tint from a stable id. Keeps each contact's
+ *  swatch the same across re-renders without us having to store a colour. */
+function avatarColor(seed: string): string {
+  let h = 0;
+  for (let i = 0; i < seed.length; i++) h = ((h << 5) - h + seed.charCodeAt(i)) | 0;
+  const hue = Math.abs(h) % 360;
+  return `hsl(${hue} 55% 55%)`;
+}
+
+function initialsOf(name: string): string {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return '?';
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return (parts[0][0] + parts[1][0]).toUpperCase();
+}
+
+function hostOf(url: string): string {
+  try { return new URL(url).host.replace(/^www\./, ''); }
+  catch { return url; }
+}
+
+function renderLinkIcon(kind?: QuickLink['icon']): React.ReactNode {
+  const props = {
+    viewBox: '0 0 24 24',
+    fill: 'none',
+    stroke: 'currentColor',
+    strokeWidth: 2,
+    strokeLinecap: 'round' as const,
+    strokeLinejoin: 'round' as const,
+    'aria-hidden': true as const,
+  };
+  switch (kind) {
+    case 'globe':
+      return (
+        <svg {...props}><circle cx="12" cy="12" r="9" /><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18" /></svg>
+      );
+    case 'drive':
+      return (
+        <svg {...props}><path d="M8 3l8 14M3 17l4-14M21 17l-4-14M3 17h18" /></svg>
+      );
+    case 'doc':
+      return (
+        <svg {...props}><path d="M6 3h9l5 5v13a0 0 0 0 1 0 0H6z" /><path d="M14 3v6h6M8 13h8M8 17h8" /></svg>
+      );
+    case 'figma':
+      return (
+        <svg {...props}><circle cx="12" cy="12" r="3" /><path d="M15 9h-6a3 3 0 1 1 0-6h6zM15 3h-3v6M9 21a3 3 0 1 1 0-6h3v3a3 3 0 0 1-3 3zM15 9h-3v6" /></svg>
+      );
+    case 'folder':
+      return (
+        <svg {...props}><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" /></svg>
+      );
+    case 'link':
+    default:
+      return (
+        <svg {...props}><path d="M10 14a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1 1" /><path d="M14 10a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l1-1" /></svg>
+      );
+  }
+}
+
 // ── Tabs that haven't been ported yet ─────────────────────────────────────
 
-type PlaceholderTab = Exclude<TabKey, 'overview' | 'onboarding'>;
+type PlaceholderTab = Exclude<TabKey, 'overview' | 'onboarding' | 'about'>;
 
 function TabPlaceholder({ tab }: { tab: PlaceholderTab }) {
   const LABELS: Record<PlaceholderTab, string> = {
-    about:       'Relationship & contacts',
     stats:       'Stats hub',
     touchpoints: 'Touchpoint log',
     notes:       'Internal notes',

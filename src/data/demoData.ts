@@ -1,5 +1,6 @@
 import type {
   FlizowData, Client, Service, Task, Integration, OnboardingItem,
+  Contact, QuickLink,
   ColumnId, Priority, IndustryCategory, TemplateKey,
   ServiceType, TaskSeverity, ScheduleMeta,
 } from '../types/flizow';
@@ -303,6 +304,96 @@ function buildOnboardingItems(
   return items;
 }
 
+// ── Contact / quick-link seeding ─────────────────────────────────────────
+
+const CONTACT_NAMES = [
+  'Sarah Chen',      'Marcus Rivera',   'Priya Patel',     'James Oduya',
+  'Elena Moretti',   'Diego Fernandez', 'Amara Okonkwo',   'Lina Tran',
+  'Owen Mitchell',   'Hana Watanabe',   'Nikolai Volkov',  'Farida Haddad',
+  'Robert Langston', 'Ines Ribeiro',    'Tomas Svensson',  'Layla Martin',
+] as const;
+
+const CONTACT_ROLES = [
+  'VP Marketing',         'Head of Growth',      'Marketing Director',
+  'Chief Marketing Officer', 'Director of Digital', 'Brand Manager',
+  'Founder & CEO',        'Head of Demand Gen',  'Product Marketing Lead',
+  'Operations Lead',      'Head of Partnerships', 'Chief of Staff',
+] as const;
+
+function slugDomain(clientName: string): string {
+  return clientName
+    .toLowerCase()
+    .replace(/&/g, 'and')
+    .replace(/[^a-z0-9]+/g, '')
+    .slice(0, 24) || 'client';
+}
+
+function emailOf(fullName: string, domain: string): string {
+  const first = fullName.split(' ')[0].toLowerCase().replace(/[^a-z]/g, '');
+  return `${first}@${domain}.com`;
+}
+
+function buildContacts(clientId: string, clientName: string, seed: number): Contact[] {
+  const count = 2 + (seed % 3); // 2–4 contacts
+  const domain = slugDomain(clientName);
+  const out: Contact[] = [];
+  for (let i = 0; i < count; i++) {
+    const name = CONTACT_NAMES[(seed + i * 7) % CONTACT_NAMES.length];
+    const role = CONTACT_ROLES[(seed + i * 11) % CONTACT_ROLES.length];
+    out.push({
+      id: `${clientId}-contact-${i}`,
+      clientId,
+      name,
+      role,
+      email: emailOf(name, domain),
+      // Roughly one in three carries a phone — keeps the list from
+      // feeling uniform.
+      phone: (seed + i) % 3 === 0
+        ? `+1 (415) 555-${String(((seed + i * 41) % 10000)).padStart(4, '0')}`
+        : undefined,
+      primary: i === 0,
+    });
+  }
+  return out;
+}
+
+interface QuickLinkDef {
+  label: string;
+  urlFor: (domain: string, clientId: string) => string;
+  icon: NonNullable<QuickLink['icon']>;
+}
+
+const QUICK_LINK_CATALOG: QuickLinkDef[] = [
+  { label: 'Website',       urlFor: d => `https://${d}.com`,                icon: 'globe' },
+  { label: 'Shared Drive',  urlFor: (_d, cid) => `https://drive.google.com/drive/folders/${cid}`, icon: 'drive' },
+  { label: 'Brand Guide',   urlFor: (_d, cid) => `https://docs.google.com/document/d/${cid}-brand`, icon: 'doc' },
+  { label: 'Design Files',  urlFor: (_d, cid) => `https://figma.com/files/team/${cid}`, icon: 'figma' },
+  { label: 'Asset Library', urlFor: (_d, cid) => `https://drive.google.com/drive/folders/${cid}-assets`, icon: 'folder' },
+  { label: 'Status Portal', urlFor: (_d, cid) => `https://flizow.app/c/${cid}`, icon: 'link' },
+];
+
+function buildQuickLinks(clientId: string, clientName: string, seed: number): QuickLink[] {
+  const count = 3 + (seed % 3); // 3–5 links
+  const domain = slugDomain(clientName);
+  const out: QuickLink[] = [];
+  // Website is always first — it's the one link every client has.
+  const picks: QuickLinkDef[] = [QUICK_LINK_CATALOG[0]];
+  for (let i = 1; picks.length < count && i < QUICK_LINK_CATALOG.length * 2; i++) {
+    const def = QUICK_LINK_CATALOG[(seed + i * 3) % QUICK_LINK_CATALOG.length];
+    if (!picks.includes(def)) picks.push(def);
+  }
+  picks.forEach((def, i) => {
+    out.push({
+      id: `${clientId}-link-${i}`,
+      clientId,
+      label: def.label,
+      url: def.urlFor(domain, clientId),
+      icon: def.icon,
+    });
+  });
+  return out;
+}
+
 // ── Main build ───────────────────────────────────────────────────────────
 
 export function generateDemoData(): FlizowData {
@@ -314,13 +405,26 @@ export function generateDemoData(): FlizowData {
   const tasks: Task[] = [];
   const integrations: Integration[] = [];
   const onboardingItems: OnboardingItem[] = [];
+  const contacts: Contact[] = [];
+  const quickLinks: QuickLink[] = [];
 
   const members = [...DEMO_AMS, ...OPS_TEAM];
+  const operatorIds = OPS_TEAM.map(m => m.id);
 
   CLIENT_SEEDS.forEach(seedRow => {
     const seed = hash(seedRow.id);
     const cat = categoryFor(seedRow.industry);
     const amId = seedRow.amInits.toLowerCase();
+
+    // Pick a 3–5 person project team from the ops roster, excluding the AM.
+    // Deterministic, rotating start so teams spread across the roster
+    // instead of piling on the first few operators.
+    const teamSize = 3 + (seed % 3);
+    const teamIds: string[] = [];
+    for (let ti = 0; ti < teamSize; ti++) {
+      const mid = operatorIds[(seed + ti * 5) % operatorIds.length];
+      if (mid !== amId && !teamIds.includes(mid)) teamIds.push(mid);
+    }
 
     const client: Client = {
       id: seedRow.id,
@@ -335,7 +439,12 @@ export function generateDemoData(): FlizowData {
       renewsAt: daysFromTodayISO(today, 30 + (seed % 240)),
       startedAt: daysFromTodayISO(today, -180 - (seed % 900)),
       serviceIds: [],
+      teamIds,
     };
+
+    // Seed 2–4 contacts and 3–5 quick links per client.
+    contacts.push(...buildContacts(seedRow.id, seedRow.name, seed));
+    quickLinks.push(...buildQuickLinks(seedRow.id, seedRow.name, seed));
 
     const catServices = SERVICE_TEMPLATES[cat];
     const nServices = Math.min(2 + (seed % 3), catServices.length);
@@ -557,6 +666,8 @@ export function generateDemoData(): FlizowData {
     members,
     integrations,
     onboardingItems,
+    contacts,
+    quickLinks,
     today: todayStr,
     scheduleTaskMap,
   };
