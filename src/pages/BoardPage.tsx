@@ -607,7 +607,19 @@ function Breadcrumb({ client, service, members, isFavorite, taskCount }: {
             />
           )}
         </div>
-        <button type="button" className="btn-sm" disabled title="Analytics (coming soon)">
+        <button
+          type="button"
+          className="btn-sm"
+          title={`Analytics filtered to ${service.name}`}
+          onClick={() => {
+            // Hand off the service id to the Analytics page via
+            // sessionStorage — same one-shot pattern board uses for
+            // auto-opening cards. The query-string alternative would
+            // need router support; this is simpler and scoped.
+            sessionStorage.setItem('flizow-analytics-service', service.id);
+            navigate('#analytics');
+          }}
+        >
           <BarsIcon />
           Analytics
         </button>

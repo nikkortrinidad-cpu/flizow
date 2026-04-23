@@ -54,7 +54,19 @@ export function AnalyticsPage() {
   const { data } = useFlizow();
   const todayISO = data.today;
 
-  const [filters, setFilters] = useState<AnalyticsFilters>(DEFAULT_FILTERS);
+  // If the user arrived from a board's "Analytics" button, we pre-fill the
+  // service filter so they land on a page that's already scoped to what
+  // they were just looking at. Lazy initializer so the sessionStorage read
+  // happens exactly once per mount, same one-shot shape BoardPage uses
+  // for its pending-card key.
+  const [filters, setFilters] = useState<AnalyticsFilters>(() => {
+    const pendingService = sessionStorage.getItem('flizow-analytics-service');
+    if (pendingService) {
+      sessionStorage.removeItem('flizow-analytics-service');
+      return { ...DEFAULT_FILTERS, serviceId: pendingService };
+    }
+    return DEFAULT_FILTERS;
+  });
 
   const filteredTasks = useMemo(
     () => applyAnalyticsFilters(data.tasks, filters, todayISO),
