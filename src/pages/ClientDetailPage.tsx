@@ -1248,6 +1248,9 @@ function AboutSection({ client, data }: { client: Client; data: FlizowData }) {
   // pre-filled via this id. Edit vs. Add is decided inside the modal —
   // one shape, two flows, no duplicated fields.
   const [editContactId, setEditContactId] = useState<string | null>(null);
+  // Same pattern for quick links, except the edit trigger only fires
+  // in edit mode — view mode rows are <a> tags that navigate.
+  const [editLinkId, setEditLinkId] = useState<string | null>(null);
 
   const contacts = useMemo(
     () => data.contacts.filter(c => c.clientId === client.id)
@@ -1292,6 +1295,7 @@ function AboutSection({ client, data }: { client: Client; data: FlizowData }) {
             editing={linksEditMode}
             onToggleEdit={() => setLinksEditMode(v => !v)}
             onRemove={(id) => flizowStore.deleteQuickLink(id)}
+            onEdit={(id) => setEditLinkId(id)}
           />
         </div>
       </div>
@@ -1367,6 +1371,18 @@ function AboutSection({ client, data }: { client: Client; data: FlizowData }) {
           onClose={() => setShowAddQuickLink(false)}
         />
       )}
+
+      {editLinkId && (() => {
+        const target = quickLinks.find(q => q.id === editLinkId);
+        if (!target) return null;
+        return (
+          <AddQuickLinkModal
+            clientId={client.id}
+            link={target}
+            onClose={() => setEditLinkId(null)}
+          />
+        );
+      })()}
 
       {showAddOperator && (
         <AddOperatorModal
@@ -1585,12 +1601,17 @@ function ContactsCard({ contacts, onAdd, editing, onToggleEdit, onRemove, onTogg
   );
 }
 
-function QuickLinksCard({ links, onAdd, editing, onToggleEdit, onRemove }: {
+function QuickLinksCard({ links, onAdd, editing, onToggleEdit, onRemove, onEdit }: {
   links: QuickLink[];
   onAdd: () => void;
   editing: boolean;
   onToggleEdit: () => void;
   onRemove: (id: string) => void;
+  /** Fires when the user clicks the row body (not the × remove button)
+   *  in edit mode. Unlike contacts, links can't be clicked for edit in
+   *  view mode because the row is an <a> that navigates to the URL —
+   *  the edit affordance only appears once the user enters edit mode. */
+  onEdit: (id: string) => void;
 }) {
   return (
     <div className="relationship-card">
@@ -1637,12 +1658,26 @@ function QuickLinksCard({ links, onAdd, editing, onToggleEdit, onRemove }: {
         <div className="quick-links-list" data-edit={editing ? 'true' : undefined}>
           {links.map(l => (
             // In edit mode we drop the <a> so an accidental click doesn't
-            // rip the user out of the app. The row becomes a plain div and
-            // the trailing chevron swaps for a × remove button. Low-info
-            // data so no confirm dialog — consistent with Team removal,
-            // and if you wanted the link back you'd just re-add it.
+            // rip the user out of the app. The row becomes a button whose
+            // body opens the Edit Quick Link modal; the trailing × is the
+            // remove action (red hover, low-info data so no confirm —
+            // consistent with Team removal, and if you wanted the link
+            // back you'd just re-add it).
             editing ? (
-              <div key={l.id} className="quick-link">
+              <div
+                key={l.id}
+                className="quick-link"
+                role="button"
+                tabIndex={0}
+                onClick={() => onEdit(l.id)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    onEdit(l.id);
+                  }
+                }}
+                aria-label={`Edit ${l.label}`}
+              >
                 <span className="quick-link-icon" aria-hidden="true">
                   {renderLinkIcon(l.icon)}
                 </span>
@@ -1655,7 +1690,12 @@ function QuickLinksCard({ links, onAdd, editing, onToggleEdit, onRemove }: {
                   className="quick-link-remove-btn"
                   aria-label={`Remove ${l.label}`}
                   title="Remove link"
-                  onClick={() => onRemove(l.id)}
+                  onClick={(e) => {
+                    // Don't also trigger the row's "open edit modal" —
+                    // × is its own destination.
+                    e.stopPropagation();
+                    onRemove(l.id);
+                  }}
                 >
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                     <line x1="18" y1="6" x2="6" y2="18" />
@@ -2293,21 +2333,33 @@ const LINK_ICON_OPTIONS: Array<{ value: NonNullable<QuickLink['icon']>; label: s
   { value: 'folder', label: 'Folder' },
 ];
 
-function AddQuickLinkModal({ clientId, onClose }: {
+function AddQuickLinkModal({ clientId, link, onClose }: {
   clientId: string;
+  /** When provided, the modal is in edit mode — same fields, same
+   *  validation, but the save button rewrites the existing link via
+   *  updateQuickLink instead of creating a new one. */
+  link?: QuickLink;
   onClose: () => void;
 }) {
-  const [label, setLabel] = useState('');
-  const [url, setUrl] = useState('');
-  const [icon, setIcon] = useState<NonNullable<QuickLink['icon']>>('link');
+  const isEdit = !!link;
+  const [label, setLabel] = useState(link?.label ?? '');
+  // Strip the https:// prefix for display so the URL input doesn't look
+  // noisier than it has to. handleSave re-adds it on write.
+  const [url, setUrl] = useState(link?.url ?? '');
+  const [icon, setIcon] = useState<NonNullable<QuickLink['icon']>>(
+    link?.icon ?? 'link',
+  );
   const [labelError, setLabelError] = useState(false);
   const [urlError, setUrlError] = useState(false);
   const labelRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    const t = window.setTimeout(() => labelRef.current?.focus(), 80);
+    const t = window.setTimeout(() => {
+      labelRef.current?.focus();
+      if (isEdit) labelRef.current?.select();
+    }, 80);
     return () => window.clearTimeout(t);
-  }, []);
+  }, [isEdit]);
 
   function handleSave() {
     const trimmedLabel = label.trim();
@@ -2327,15 +2379,23 @@ function AddQuickLinkModal({ clientId, onClose }: {
       ? trimmedUrl
       : `https://${trimmedUrl}`;
 
-    const id = `ql-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
-    const link: QuickLink = {
-      id,
-      clientId,
-      label: trimmedLabel,
-      url: normalizedUrl,
-      icon,
-    };
-    flizowStore.addQuickLink(link);
+    if (isEdit && link) {
+      flizowStore.updateQuickLink(link.id, {
+        label: trimmedLabel,
+        url: normalizedUrl,
+        icon,
+      });
+    } else {
+      const id = `ql-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
+      const next: QuickLink = {
+        id,
+        clientId,
+        label: trimmedLabel,
+        url: normalizedUrl,
+        icon,
+      };
+      flizowStore.addQuickLink(next);
+    }
     onClose();
   }
 
@@ -2370,7 +2430,9 @@ function AddQuickLinkModal({ clientId, onClose }: {
     >
       <div className="wip-modal" role="document" style={{ maxWidth: 460 }}>
         <header className="wip-modal-head">
-          <h2 className="wip-modal-title" id="add-link-title">Add quick link</h2>
+          <h2 className="wip-modal-title" id="add-link-title">
+            {isEdit ? 'Edit quick link' : 'Add quick link'}
+          </h2>
           <button type="button" className="wip-modal-close" onClick={onClose} aria-label="Close">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <line x1="18" y1="6" x2="6" y2="18" />
@@ -2426,7 +2488,7 @@ function AddQuickLinkModal({ clientId, onClose }: {
             Cancel
           </button>
           <button type="button" className="wip-btn wip-btn-primary" onClick={handleSave}>
-            Add link
+            {isEdit ? 'Save changes' : 'Add link'}
           </button>
         </footer>
       </div>

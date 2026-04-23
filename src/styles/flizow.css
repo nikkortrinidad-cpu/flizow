@@ -7822,16 +7822,20 @@
     background: color-mix(in srgb, #ff453a 10%, transparent);
     color: #ff453a;
   }
+  /* Edit mode: the row body opens the Edit Quick Link modal, the × is
+     the remove action. Blue tint (not red) because the primary vibe is
+     "manage this list," not "delete every row" — the × button by itself
+     carries the destructive colour on its own hover state. */
   .quick-links-list[data-edit="true"] .quick-link {
-    background: color-mix(in srgb, #ff453a 3%, transparent);
-    cursor: default;
+    background: color-mix(in srgb, var(--highlight) 4%, transparent);
+    cursor: pointer;
   }
   .quick-links-list[data-edit="true"] .quick-link:hover {
-    background: color-mix(in srgb, #ff453a 6%, transparent);
+    background: color-mix(in srgb, var(--highlight) 8%, transparent);
   }
-  .quick-links-list[data-edit="true"] .quick-link:hover .quick-link-icon {
-    /* Kill the blue tint in edit mode — red is the vibe now. */
-    background: var(--bg-soft); color: var(--text-muted);
+  .quick-links-list[data-edit="true"] .quick-link:focus-visible {
+    outline: 2px solid var(--highlight);
+    outline-offset: 1px;
   }
 
   /* ── Meetings section — paper trail with TL;DRs and action items ── */
