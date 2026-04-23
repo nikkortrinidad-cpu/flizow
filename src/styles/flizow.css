@@ -10152,6 +10152,18 @@
     border: 1px dashed var(--hairline);
   }
   .view-chip.new-view:hover { color: var(--hover-blue); border-color: var(--hover-blue); background: var(--highlight-soft); }
+  /* When the roadmap hint is the whole point, show "not yet" clearly
+     without making the button feel broken — dimmed text, not-allowed
+     cursor, hover state suppressed. */
+  .view-chip.new-view:disabled {
+    opacity: 0.5; cursor: not-allowed;
+    color: var(--text-faint); border-color: var(--hairline);
+    background: transparent;
+  }
+  .view-chip.new-view:disabled:hover {
+    color: var(--text-faint); border-color: var(--hairline);
+    background: transparent;
+  }
 
   /* Pinned avatars strip */
   .pinned-wrap {

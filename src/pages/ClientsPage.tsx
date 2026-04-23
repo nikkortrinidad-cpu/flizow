@@ -122,11 +122,17 @@ export function ClientsPage() {
                 <span className="view-chip-count">{counts[view.id]}</span>
               </button>
             ))}
+            {/* Custom saved views belong with the Templates pass — they share
+                the same "save a named filter set" plumbing. Until that ships,
+                keep the button visible but disabled so the roadmap hint is
+                still discoverable (via title + aria-label) without a fake
+                dialog masquerading as a real feature. */}
             <button
               type="button"
               className="view-chip new-view"
-              aria-label="Create a custom view"
-              onClick={() => window.alert('Custom saved views arrive with the Templates pass.')}
+              aria-label="Custom views arrive with the Templates pass"
+              title="Custom views arrive with the Templates pass"
+              disabled
             >
               +
             </button>
