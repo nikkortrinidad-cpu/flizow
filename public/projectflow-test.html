@@ -10168,7 +10168,7 @@
   }
 
   /* ═══════ WEEKLY WIP VIEW ═══════
-     Core belief: the PM is prepping Friday's WIP in <5 min. Show what's urgent,
+     Core belief: the PM is prepping Monday's WIP in <5 min. Show what's urgent,
      let them shape run-of-show, get them into the meeting cleanly.
      Blue hierarchy: Tier 1 = Start Meeting. Tier 2 ring = Send pre-read / Add flag.
      Tier 3 tint = active tab, selected/drag-hover. Tier 4 = text links.
@@ -30706,7 +30706,7 @@ window.OPS_TEAM = OPS_TEAM;
 
 <script>
 /* ═══════ WEEKLY WIP — Agenda Builder (Stage 1) ═══════
-   Belief: The PM is prepping Friday's WIP in under 5 minutes. Surface what's
+   Belief: The PM is prepping Monday's WIP in under 5 minutes. Surface what's
    urgent (red flags by channel manager), let them shape the run of show
    (drag to reorder channels, toggle early-leave, collapse BAU), and get
    into the meeting cleanly. Screens 2/3/4 are stubbed until this ships. */
@@ -30715,9 +30715,10 @@ window.OPS_TEAM = OPS_TEAM;
   if (!view) return;
 
   var STORAGE_KEY = 'projectflow.wip.v1';
-  var STATE_VERSION = 2;
-  var DEFAULT_MEETING_DAY  = 5;   // 0=Sun, 5=Fri
-  var DEFAULT_MEETING_HOUR = 10;  // 10:00 local
+  var STATE_VERSION = 3;
+  var DEFAULT_MEETING_DAY  = 1;   // 0=Sun, 1=Mon
+  var DEFAULT_MEETING_HOUR = 9;   // 9:30 local
+  var DEFAULT_MEETING_MIN  = 30;
 
   // Each channel manager gets their own block (co-owners show side-by-side,
   // not merged). Adam appears twice because he owns two distinct channels.
@@ -30741,10 +30742,17 @@ window.OPS_TEAM = OPS_TEAM;
     var now   = Date.now();
     var today = new Date(); today.setHours(0,0,0,0);
     var dayDelta = ((DEFAULT_MEETING_DAY - today.getDay()) + 7) % 7;
-    if (dayDelta === 0 && (new Date()).getHours() >= DEFAULT_MEETING_HOUR + 1) dayDelta = 7;
+    // If we're on meeting day, roll to next week once we're ~2 hours past the
+    // start — long enough that a running WIP has finished, short enough that
+    // the afternoon doesn't still claim "meeting today".
+    if (dayDelta === 0) {
+      var todayStart = new Date(today);
+      todayStart.setHours(DEFAULT_MEETING_HOUR, DEFAULT_MEETING_MIN, 0, 0);
+      if (Date.now() >= todayStart.getTime() + 2 * 3600 * 1000) dayDelta = 7;
+    }
     var nextMeeting = new Date(today);
     nextMeeting.setDate(today.getDate() + (dayDelta || 7));
-    nextMeeting.setHours(DEFAULT_MEETING_HOUR, 0, 0, 0);
+    nextMeeting.setHours(DEFAULT_MEETING_HOUR, DEFAULT_MEETING_MIN, 0, 0);
 
     var hour = 3600 * 1000, day = 86400 * 1000;
 
