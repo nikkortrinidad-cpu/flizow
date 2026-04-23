@@ -1,6 +1,6 @@
 import type {
   FlizowData, Client, Service, Task, Integration, OnboardingItem,
-  Contact, QuickLink, Note,
+  Contact, QuickLink, Note, Touchpoint, ActionItem,
   ColumnId, Priority, IndustryCategory, TemplateKey,
   ServiceType, TaskSeverity, ScheduleMeta,
 } from '../types/flizow';
@@ -433,6 +433,313 @@ function buildNotes(
   return out;
 }
 
+// ── Touchpoints + action items ───────────────────────────────────────────
+
+/** Meeting topics keyed by client status. A fire-status client's
+ *  touchpoints read different from a track-status client's on purpose —
+ *  the topic is the single clearest signal of what the relationship is
+ *  doing. */
+const TOUCHPOINT_TOPICS: Record<string, string[]> = {
+  fire: [
+    'Escalation: delivery concerns', 'Urgent: timeline review',
+    'Root cause: missed deadline',  'Weekly sync',
+  ],
+  risk: [
+    'Retention check-in', 'Scope review', 'Q2 priorities sync', 'Weekly sync',
+  ],
+  track: [
+    'Weekly client sync', 'Monthly performance review', 'Roadmap check-in',
+    'QBR prep',
+  ],
+  onboard: [
+    'Kickoff meeting', 'Working session: access + tooling',
+    'Discovery interview', 'First-week check-in',
+  ],
+  paused: [
+    'Pause agreement', 'Relationship check-in',
+  ],
+};
+
+/** Short TL;DR blurbs, keyed by status. Kept punchy so the paper trail
+ *  doesn't read like lorem ipsum. */
+const TLDR_POOL: Record<string, string[]> = {
+  fire: [
+    'Client flagged delivery concerns — agreed to weekly check-ins until the timeline stabilises. Owner handles escalations; AM coordinates reporting.',
+    'Walked through root cause of missed milestone. Mitigation plan set for next sprint, with extra QA before any client-facing push.',
+  ],
+  risk: [
+    'Client is drifting. Engagement dropped in the last 30 days. Agreed to pull metrics and set a retention-focused QBR for early next month.',
+    'Scope expansion discussion parked — client not ready to sign. Revisit in 2 weeks with updated ROI narrative.',
+  ],
+  track: [
+    'Steady week. Campaigns performing within target. Confirmed Q2 priorities; no scope changes. Next review in two weeks.',
+    'Approved Q2 roadmap: homepage first, then brand refresh. Budget signed off. No scope creep until Q3.',
+  ],
+  onboard: [
+    'Kickoff landed. Team introduced, access provisioned, first-sprint scope locked. Working agreement signed off.',
+    'Discovery session completed. Customer goals logged; first draft of strategy due by end of week.',
+  ],
+  paused: [
+    'Paused retainer. Monthly light touch confirmed. Door is open when client is ready to resume.',
+  ],
+};
+
+/** Action item templates by status. Each item needs text + an offset
+ *  from the meeting date for the due date. */
+const ACTION_POOL: Record<string, Array<{ text: string; dueOffset: number }>> = {
+  fire: [
+    { text: 'Draft root-cause summary for client',     dueOffset: 1 },
+    { text: 'Schedule daily check-in for next sprint', dueOffset: 0 },
+    { text: 'Run timeline review with delivery lead',  dueOffset: 2 },
+    { text: 'Send risk mitigation plan to AM',         dueOffset: 3 },
+  ],
+  risk: [
+    { text: 'Pull last 90 days of engagement metrics', dueOffset: 2 },
+    { text: 'Draft retention-focused QBR agenda',      dueOffset: 4 },
+    { text: 'Confirm Q2 scope with delivery',          dueOffset: 1 },
+    { text: 'Loop in AM lead on renewal outlook',      dueOffset: 5 },
+  ],
+  track: [
+    { text: 'Send weekly report to client',            dueOffset: 1 },
+    { text: 'Confirm next campaign launch date',       dueOffset: 3 },
+    { text: 'Share performance recap',                 dueOffset: 2 },
+    { text: 'Schedule QBR with stakeholders',          dueOffset: 7 },
+  ],
+  onboard: [
+    { text: 'Provision tooling access',                 dueOffset: 1 },
+    { text: 'Share working agreement for sign-off',     dueOffset: 2 },
+    { text: 'Introduce project team via email',         dueOffset: 1 },
+    { text: 'Draft 30-60-90 plan',                      dueOffset: 5 },
+  ],
+  paused: [
+    { text: 'Set calendar reminder for 30-day check-in', dueOffset: 28 },
+  ],
+};
+
+/**
+ * Build a client's Touchpoints + ActionItems list.
+ *
+ * Seed shape: 3–4 touchpoints per client spread over the last ~28 days
+ * plus up to one upcoming. Oldest meetings get their TL;DR locked to
+ * mirror the mockup's "locked after 72h" behaviour. Paused clients get
+ * a single legacy touchpoint so the tab doesn't render empty — anyone
+ * looking at a paused client still sees how the pause was handled.
+ */
+function buildTouchpoints(
+  clientId: string,
+  status: string,
+  seed: number,
+  todayStr: string,
+  amId: string,
+  contactIds: string[],
+  teamIds: string[],
+): { touchpoints: Touchpoint[]; actionItems: ActionItem[] } {
+  const touchpoints: Touchpoint[] = [];
+  const actionItems: ActionItem[] = [];
+  const topics = TOUCHPOINT_TOPICS[status] ?? TOUCHPOINT_TOPICS.track;
+  const tldrs = TLDR_POOL[status] ?? TLDR_POOL.track;
+  const actionPool = ACTION_POOL[status] ?? ACTION_POOL.track;
+  const today = new Date(todayStr);
+
+  // Mix of client + our-side attendees — a real meeting has both. Two
+  // contacts + the AM + maybe one operator gives the typical 3-4 row
+  // attendee strip from the mockup.
+  const makeAttendees = (extra = 0): string[] => {
+    const out: string[] = [];
+    if (amId) out.push(amId);
+    contactIds.slice(0, 2).forEach(id => out.push(id));
+    if (extra > 0 && teamIds.length > 0) {
+      out.push(teamIds[(seed + extra) % teamIds.length]);
+    }
+    return out;
+  };
+
+  // Paused clients sit on a single legacy touchpoint and nothing else.
+  if (status === 'paused') {
+    const daysAgo = 21 + (seed % 14);
+    const at = isoTime(today, -daysAgo, 14, 0);
+    const tpId = `${clientId}-tp-0`;
+    touchpoints.push({
+      id: tpId, clientId,
+      topic: topics[0],
+      occurredAt: at,
+      kind: 'meeting',
+      scheduled: false,
+      attendeeIds: makeAttendees(),
+      durationMin: 20,
+      recordingUrl: `https://fellow.app/t/${tpId}`,
+      recordingLabel: '20 min · Fellow',
+      tldr: tldrs[0],
+      tldrLocked: true,
+      createdAt: at,
+    });
+    return { touchpoints, actionItems };
+  }
+
+  // 1. Upcoming scheduled meeting — ~60% of clients have one on the
+  //    books. Skip for fire clients so the tab leads with the open
+  //    escalation instead of a future date.
+  const hasUpcoming = status !== 'fire' && (seed % 5) !== 0;
+  if (hasUpcoming) {
+    const daysAhead = 1 + (seed % 4);
+    const at = isoTime(today, daysAhead, 10, 0);
+    const tpId = `${clientId}-tp-upcoming`;
+    touchpoints.push({
+      id: tpId, clientId,
+      topic: `${topics[0]} · next week`,
+      occurredAt: at,
+      kind: 'meeting',
+      scheduled: true,
+      attendeeIds: makeAttendees(),
+      tldr: `Agenda: ${topics[0].toLowerCase()} — prep ahead of the call.`,
+      calendarUrl: 'https://calendar.google.com/calendar',
+      createdAt: isoTime(today, -1, 9, 0),
+    });
+  }
+
+  // 2. Recent past meeting (2-4 days ago). TL;DR maybe filled in.
+  const recentDaysAgo = 2 + (seed % 3);
+  const recentAt = isoTime(today, -recentDaysAgo, 14, 0);
+  const recentId = `${clientId}-tp-recent`;
+  const recentHasTldr = status !== 'fire' && (seed % 3) !== 0;
+  touchpoints.push({
+    id: recentId, clientId,
+    topic: topics[1 % topics.length],
+    occurredAt: recentAt,
+    kind: 'meeting',
+    scheduled: false,
+    attendeeIds: makeAttendees(1),
+    durationMin: 30 + (seed % 25),
+    recordingUrl: `https://fellow.app/t/${recentId}`,
+    recordingLabel: `${30 + (seed % 25)} min · Fellow`,
+    tldr: recentHasTldr ? tldrs[0] : '',
+    tldrLocked: false,
+    createdAt: recentAt,
+  });
+  actionItems.push(
+    ...seedActions(recentId, clientId, actionPool, seed, todayStr, recentDaysAgo, {
+      amId, teamIds, count: 3, doneFirst: false, overdueFirst: status === 'fire',
+    }),
+  );
+
+  // 3. Mid-range meeting (~8-12 days ago). TL;DR written and still
+  //    unlocked for a narrow window — the mockup locks at 72h so really
+  //    these should be locked; keep one unlocked so the inline-edit demo
+  //    surface has something to act on.
+  const midDaysAgo = 8 + (seed % 5);
+  const midAt = isoTime(today, -midDaysAgo, 11, 0);
+  const midId = `${clientId}-tp-mid`;
+  touchpoints.push({
+    id: midId, clientId,
+    topic: topics[2 % topics.length],
+    occurredAt: midAt,
+    kind: (seed % 4 === 0) ? 'call' : 'meeting',
+    scheduled: false,
+    attendeeIds: makeAttendees(),
+    durationMin: 20 + (seed % 20),
+    recordingUrl: `https://fellow.app/t/${midId}`,
+    recordingLabel: `${20 + (seed % 20)} min · Fellow`,
+    tldr: tldrs[1 % tldrs.length],
+    tldrLocked: false,
+    createdAt: midAt,
+  });
+  actionItems.push(
+    ...seedActions(midId, clientId, actionPool, seed + 1, todayStr, midDaysAgo, {
+      amId, teamIds, count: 2, doneFirst: true, overdueFirst: false,
+    }),
+  );
+
+  // 4. Old locked meeting (20-28 days ago). TL;DR locked, action items
+  //    mostly done. Every client gets one so there's always at least a
+  //    little history to scroll through.
+  const oldDaysAgo = 20 + (seed % 9);
+  const oldAt = isoTime(today, -oldDaysAgo, 15, 0);
+  const oldId = `${clientId}-tp-old`;
+  touchpoints.push({
+    id: oldId, clientId,
+    topic: topics[0],
+    occurredAt: oldAt,
+    kind: 'meeting',
+    scheduled: false,
+    attendeeIds: makeAttendees(2),
+    durationMin: 25 + (seed % 15),
+    recordingUrl: `https://fellow.app/t/${oldId}`,
+    recordingLabel: `${25 + (seed % 15)} min · Fellow`,
+    tldr: tldrs[0],
+    tldrLocked: true,
+    createdAt: oldAt,
+  });
+  actionItems.push(
+    ...seedActions(oldId, clientId, actionPool, seed + 2, todayStr, oldDaysAgo, {
+      amId, teamIds, count: 2, doneFirst: true, overdueFirst: false, allDone: true,
+    }),
+  );
+
+  return { touchpoints, actionItems };
+}
+
+interface SeedActionsOpts {
+  amId: string;
+  teamIds: string[];
+  count: number;
+  /** Render the first item as done — used on historical meetings where
+   *  the first checkbox has usually already been ticked. */
+  doneFirst: boolean;
+  /** Push one overdue item to the top — fire-client touchpoints get
+   *  this so the escalation narrative reads as a real fire. */
+  overdueFirst: boolean;
+  /** All items land done. Used for the oldest meetings to mirror the
+   *  mockup's "ancient history, nothing pending" pattern. */
+  allDone?: boolean;
+}
+
+function seedActions(
+  touchpointId: string,
+  clientId: string,
+  pool: Array<{ text: string; dueOffset: number }>,
+  seed: number,
+  todayStr: string,
+  meetingDaysAgo: number,
+  opts: SeedActionsOpts,
+): ActionItem[] {
+  const out: ActionItem[] = [];
+  const { amId, teamIds, count, doneFirst, overdueFirst, allDone } = opts;
+  const today = new Date(todayStr);
+  for (let i = 0; i < Math.min(count, pool.length); i++) {
+    const item = pool[(seed + i * 3) % pool.length];
+    // Due date = (meeting date) + item.dueOffset. We want the first
+    // action on a fire touchpoint to be overdue, so we pin dueOffset
+    // to something small there.
+    const due = isoDay(today, -meetingDaysAgo + (overdueFirst && i === 0 ? 1 : item.dueOffset));
+    const assigneeId = (i === 0 || teamIds.length === 0)
+      ? amId
+      : teamIds[(seed + i) % teamIds.length];
+    out.push({
+      id: `${touchpointId}-a${i}`,
+      touchpointId,
+      clientId,
+      text: item.text,
+      assigneeId,
+      dueDate: due,
+      done: !!allDone || (doneFirst && i === 0),
+    });
+  }
+  return out;
+}
+
+/** Full ISO timestamp anchored at a specific day + hour of the mockup
+ *  today. Keeps all demo touchpoints deterministic across runs. */
+function isoTime(today: Date, dayOffset: number, hour: number, minute: number): string {
+  const d = new Date(today.getTime() + dayOffset * 86_400_000);
+  d.setHours(hour, minute, 0, 0);
+  return d.toISOString();
+}
+
+/** Date-only ISO (YYYY-MM-DD) relative to the mockup today. */
+function isoDay(today: Date, dayOffset: number): string {
+  return isoFromDate(new Date(today.getTime() + dayOffset * 86_400_000));
+}
+
 function buildQuickLinks(clientId: string, clientName: string, seed: number): QuickLink[] {
   const count = 3 + (seed % 3); // 3–5 links
   const domain = slugDomain(clientName);
@@ -469,6 +776,8 @@ export function generateDemoData(): FlizowData {
   const contacts: Contact[] = [];
   const quickLinks: QuickLink[] = [];
   const notes: Note[] = [];
+  const touchpoints: Touchpoint[] = [];
+  const actionItems: ActionItem[] = [];
 
   const members = [...DEMO_AMS, ...OPS_TEAM];
   const operatorIds = OPS_TEAM.map(m => m.id);
@@ -505,9 +814,25 @@ export function generateDemoData(): FlizowData {
     };
 
     // Seed 2–4 contacts and 3–5 quick links per client.
-    contacts.push(...buildContacts(seedRow.id, seedRow.name, seed));
+    const clientContacts = buildContacts(seedRow.id, seedRow.name, seed);
+    contacts.push(...clientContacts);
     quickLinks.push(...buildQuickLinks(seedRow.id, seedRow.name, seed));
     notes.push(...buildNotes(seedRow.id, seedRow.name, seedRow.status, seed, todayStr));
+
+    // Seed touchpoints (meetings + action items) — attendees are pulled
+    // from both sides of the relationship so the attendee strip looks
+    // real: AM + 1-2 client contacts, sometimes a teammate.
+    const tp = buildTouchpoints(
+      seedRow.id,
+      seedRow.status,
+      seed,
+      todayStr,
+      amId,
+      clientContacts.map(c => c.id),
+      teamIds,
+    );
+    touchpoints.push(...tp.touchpoints);
+    actionItems.push(...tp.actionItems);
 
     const catServices = SERVICE_TEMPLATES[cat];
     const nServices = Math.min(2 + (seed % 3), catServices.length);
@@ -732,6 +1057,8 @@ export function generateDemoData(): FlizowData {
     contacts,
     quickLinks,
     notes,
+    touchpoints,
+    actionItems,
     today: todayStr,
     scheduleTaskMap,
   };

@@ -8,6 +8,7 @@ import type {
 import type { FlizowStore } from '../store/flizowStore';
 import { formatMonthYear, formatMonthDay, formatMrr, daysBetween } from '../utils/dateFormat';
 import { NotesTab } from '../components/NotesTab';
+import { TouchpointsTab } from '../components/TouchpointsTab';
 
 /**
  * Right-hand pane of the Clients split view. Ports the Acme detail layout
@@ -132,10 +133,23 @@ function ClientDetail({ client, data, store }: DetailProps) {
         <NotesTab clientId={client.id} notes={data.notes} store={store} />
       )}
 
+      {activeTab === 'touchpoints' && (
+        <TouchpointsTab
+          client={client}
+          touchpoints={data.touchpoints}
+          actionItems={data.actionItems}
+          members={data.members}
+          contacts={data.contacts}
+          store={store}
+          todayISO={data.today}
+        />
+      )}
+
       {activeTab !== 'overview'
         && activeTab !== 'onboarding'
         && activeTab !== 'about'
-        && activeTab !== 'notes' && (
+        && activeTab !== 'notes'
+        && activeTab !== 'touchpoints' && (
         <TabPlaceholder tab={activeTab} />
       )}
     </section>
@@ -1128,12 +1142,11 @@ function renderLinkIcon(kind?: QuickLink['icon']): React.ReactNode {
 
 // ── Tabs that haven't been ported yet ─────────────────────────────────────
 
-type PlaceholderTab = Exclude<TabKey, 'overview' | 'onboarding' | 'about' | 'notes'>;
+type PlaceholderTab = Exclude<TabKey, 'overview' | 'onboarding' | 'about' | 'notes' | 'touchpoints'>;
 
 function TabPlaceholder({ tab }: { tab: PlaceholderTab }) {
   const LABELS: Record<PlaceholderTab, string> = {
-    stats:       'Stats hub',
-    touchpoints: 'Touchpoint log',
+    stats: 'Stats hub',
   };
   return (
     <div className="detail-section">

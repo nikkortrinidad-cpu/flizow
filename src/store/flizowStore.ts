@@ -2,6 +2,7 @@ import { doc, setDoc, onSnapshot, type Unsubscribe } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import type {
   FlizowData, Client, Service, Task, Member, Contact, QuickLink, Note,
+  Touchpoint, ActionItem,
   ColumnId, Priority,
 } from '../types/flizow';
 
@@ -39,6 +40,8 @@ function emptyData(): FlizowData {
     contacts: [],
     quickLinks: [],
     notes: [],
+    touchpoints: [],
+    actionItems: [],
     today: todayISO(),
     scheduleTaskMap: {},
   };
@@ -84,6 +87,8 @@ function migrate(parsed: Partial<FlizowData>): FlizowData {
     contacts: parsed.contacts ?? base.contacts,
     quickLinks: parsed.quickLinks ?? base.quickLinks,
     notes: parsed.notes ?? base.notes,
+    touchpoints: parsed.touchpoints ?? base.touchpoints,
+    actionItems: parsed.actionItems ?? base.actionItems,
     // `today` always refreshes on load — we never trust a stale anchor.
     today: todayISO(),
     scheduleTaskMap: parsed.scheduleTaskMap ?? base.scheduleTaskMap,
@@ -265,6 +270,8 @@ class FlizowStore {
     this.data.contacts = this.data.contacts.filter(c => c.clientId !== id);
     this.data.quickLinks = this.data.quickLinks.filter(q => q.clientId !== id);
     this.data.notes = this.data.notes.filter(n => n.clientId !== id);
+    this.data.touchpoints = this.data.touchpoints.filter(t => t.clientId !== id);
+    this.data.actionItems = this.data.actionItems.filter(a => a.clientId !== id);
     this.save();
   }
 
@@ -481,6 +488,65 @@ class FlizowStore {
     const n = this.data.notes.find(n => n.id === id);
     if (!n) return;
     n.locked = !n.locked;
+    this.save();
+  }
+
+  // ── Touchpoints ──────────────────────────────────────────────────────
+
+  addTouchpoint(touchpoint: Touchpoint) {
+    this.data.touchpoints.push(touchpoint);
+    this.save();
+  }
+
+  updateTouchpoint(id: string, patch: Partial<Touchpoint>) {
+    const t = this.data.touchpoints.find(t => t.id === id);
+    if (!t) return;
+    Object.assign(t, patch);
+    this.save();
+  }
+
+  /** Toggle the TL;DR lock. Once a TL;DR is locked any edit has to go
+   *  through the edit-history trail — for now that just means the text
+   *  flips to read-only in the UI. */
+  toggleTouchpointLock(id: string) {
+    const t = this.data.touchpoints.find(t => t.id === id);
+    if (!t) return;
+    t.tldrLocked = !t.tldrLocked;
+    this.save();
+  }
+
+  deleteTouchpoint(id: string) {
+    this.data.touchpoints = this.data.touchpoints.filter(t => t.id !== id);
+    // Cascade: a touchpoint with no parent meeting has nowhere to live,
+    // so action items go too. Promoted cards remain untouched on the
+    // kanban board — losing a meeting shouldn't wipe downstream work.
+    this.data.actionItems = this.data.actionItems.filter(a => a.touchpointId !== id);
+    this.save();
+  }
+
+  // ── Action items ─────────────────────────────────────────────────────
+
+  addActionItem(item: ActionItem) {
+    this.data.actionItems.push(item);
+    this.save();
+  }
+
+  updateActionItem(id: string, patch: Partial<ActionItem>) {
+    const a = this.data.actionItems.find(a => a.id === id);
+    if (!a) return;
+    Object.assign(a, patch);
+    this.save();
+  }
+
+  toggleActionItem(id: string) {
+    const a = this.data.actionItems.find(a => a.id === id);
+    if (!a) return;
+    a.done = !a.done;
+    this.save();
+  }
+
+  deleteActionItem(id: string) {
+    this.data.actionItems = this.data.actionItems.filter(a => a.id !== id);
     this.save();
   }
 

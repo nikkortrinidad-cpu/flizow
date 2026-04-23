@@ -327,6 +327,83 @@ export interface Note {
   updatedAt: string;
 }
 
+// ── Touchpoints (client meetings + action items) ─────────────────────────
+
+/**
+ * How the touchpoint happened. Drives the little icon on the meeting
+ * entry — video camera for `meeting`, phone for `call`, envelope for
+ * `email`, building for `inperson`. Closed union so a new kind is a
+ * type-check failure until the renderer handles it.
+ */
+export type TouchpointKind = 'meeting' | 'call' | 'email' | 'inperson';
+
+/**
+ * A logged meeting or touchpoint with a client. Renders as a card in the
+ * Touchpoints tab. Past touchpoints carry a TL;DR and action items;
+ * scheduled ones (future) carry an agenda + a calendar link instead.
+ */
+export interface Touchpoint {
+  id: string;
+  clientId: string;
+  /** Short title — "Weekly sync", "Q2 roadmap review". */
+  topic: string;
+  /** Full ISO timestamp with time, e.g. "2026-04-22T10:00:00.000Z". The
+   *  clock matters here, not just the day, so the meeting card can show
+   *  "10:00 AM". */
+  occurredAt: string;
+  kind: TouchpointKind;
+  /** Future vs past. Scheduled=true is an upcoming meeting; flips to
+   *  false once `occurredAt` is in the past. Seed-time we set this
+   *  explicitly so we don't round-trip a Date for classification. */
+  scheduled: boolean;
+  /** Mix of Member ids (our side) and Contact ids (their side). Render
+   *  looks each id up in both tables and renders the first hit. */
+  attendeeIds: string[];
+  /** Length of the actual call — shown in the recording link label when
+   *  populated. Only set for past touchpoints with a recording. */
+  durationMin?: number;
+  /** Link to the Fellow/Otter/Grain recording. Omitted means "no recording". */
+  recordingUrl?: string;
+  /** Display label for the recording button, e.g. "52 min · Fellow". */
+  recordingLabel?: string;
+  /** External calendar URL for scheduled meetings. Only set when
+   *  `scheduled` is true. */
+  calendarUrl?: string;
+  /** Free text summary of what was decided. Empty string until someone
+   *  writes one. Rendered in a grey "Add TL;DR —" empty-state span when
+   *  falsy. */
+  tldr?: string;
+  /** Locks the TL;DR from edit. Set either manually by the AM or
+   *  automatically 72h after the meeting (server-side later). Clients
+   *  can't unlock without undoing the lock from the history trail. */
+  tldrLocked?: boolean;
+  /** ISO timestamp when the touchpoint was created in-system. Used as
+   *  the secondary sort when two touchpoints share a day. */
+  createdAt: string;
+}
+
+/**
+ * A follow-up task tied to a specific touchpoint. Separate from the
+ * kanban Task table because action items are lightweight and stay close
+ * to their source meeting — "Promote to card" is the one-way bridge
+ * into the Task system for work that needs visibility on a board.
+ */
+export interface ActionItem {
+  id: string;
+  touchpointId: string;
+  clientId: string;
+  text: string;
+  assigneeId: string | null;
+  /** ISO date (YYYY-MM-DD). */
+  dueDate: string;
+  done: boolean;
+  /** Task id if this action item has been promoted to a kanban card.
+   *  Kept so we can show "Open card" instead of "Promote" once promoted,
+   *  and so deletes stay consistent if the source action item is
+   *  removed. */
+  promotedCardId?: string;
+}
+
 // ── Meetings (Weekly WIP) ────────────────────────────────────────────────
 
 /** Weekly WIP agenda entry. The mockup's WIP tab is still a stub, but
@@ -361,6 +438,8 @@ export interface FlizowData {
   contacts: Contact[];
   quickLinks: QuickLink[];
   notes: Note[];
+  touchpoints: Touchpoint[];
+  actionItems: ActionItem[];
   /** The "today" reference the mockup uses for all date math. A single
    *  anchor keeps the UI stable across re-renders. */
   today: string;
