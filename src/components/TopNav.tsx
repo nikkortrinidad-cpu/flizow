@@ -1,3 +1,4 @@
+import { useAuth } from '../contexts/AuthContext';
 import { useRoute } from '../router';
 
 // Which nav item should be visually active for each route.
@@ -14,9 +15,20 @@ const ACTIVE_NAV_BY_ROUTE: Record<string, string> = {
   'template-detail': '',
 };
 
-export function TopNav() {
+interface TopNavProps {
+  /** Fires when the avatar button is clicked; parent renders the modal. */
+  onOpenAccount?: () => void;
+  /** Reserved for the Notifications panel (wires in the next pass). */
+  onOpenNotifications?: () => void;
+  /** Reserved for the ⌘K command palette (wires in the next pass). */
+  onOpenCmdk?: () => void;
+}
+
+export function TopNav({ onOpenAccount, onOpenNotifications, onOpenCmdk }: TopNavProps = {}) {
   const route = useRoute();
   const active = ACTIVE_NAV_BY_ROUTE[route.name] ?? '';
+  const { user } = useAuth();
+  const initials = deriveInitials(user?.displayName || user?.email || 'U');
 
   return (
     <div className="header">
@@ -31,7 +43,14 @@ export function TopNav() {
         </nav>
       </div>
       <div className="header-right">
-        <button className="cmdk-trigger" type="button" aria-label="Search">
+        <button
+          className="cmdk-trigger"
+          type="button"
+          aria-label="Search (⌘K)"
+          onClick={onOpenCmdk}
+          disabled={!onOpenCmdk}
+          title={onOpenCmdk ? 'Search (⌘K)' : 'Command palette coming soon'}
+        >
           <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
             <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85zm-5.242.656a5 5 0 1 1 0-10 5 5 0 0 1 0 10z"/>
           </svg>
@@ -46,21 +65,39 @@ export function TopNav() {
             <rect x="13" y="13" width="8" height="8" rx="1.5"/>
           </svg>
         </a>
-        {/* Notifications and account menu placeholders — wired up in later passes */}
-        <button className="header-icon" type="button" aria-label="Notifications">
+        <button
+          className="header-icon"
+          type="button"
+          aria-label="Notifications"
+          onClick={onOpenNotifications}
+          disabled={!onOpenNotifications}
+          title={onOpenNotifications ? 'Notifications' : 'Notifications coming soon'}
+        >
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
             <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
             <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
           </svg>
         </button>
-        <AccountMenuPlaceholder />
+        <button
+          className="avatar"
+          type="button"
+          aria-label="Account settings"
+          onClick={onOpenAccount}
+          disabled={!onOpenAccount}
+          title={onOpenAccount ? 'Account settings' : 'Account coming soon'}
+        >{initials}</button>
       </div>
     </div>
   );
 }
 
-function AccountMenuPlaceholder() {
-  // Minimal stand-in. Full account menu (identity card, theme toggle, sign out)
-  // gets wired up when we port the account modal in a later pass.
-  return <button className="avatar" type="button" aria-label="Account">·</button>;
+/** Pull two-letter initials out of a display name or email. Used by the
+ *  avatar button so signed-in users see their own initials instead of a
+ *  placeholder dot. */
+function deriveInitials(nameOrEmail: string): string {
+  const src = nameOrEmail.split('@')[0];
+  const parts = src.replace(/[^\w\s]/g, ' ').trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return '?';
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return (parts[0][0] + parts[1][0]).toUpperCase();
 }

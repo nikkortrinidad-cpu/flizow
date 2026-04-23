@@ -1,7 +1,8 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { LoginPage } from './components/LoginPage';
 import { TopNav } from './components/TopNav';
 import { PageShell } from './components/PageShell';
+import FlizowAccountModal from './components/FlizowAccountModal';
 import { useAuth } from './contexts/AuthContext';
 import { useBoard } from './store/useStore';
 import { store } from './store/boardStore';
@@ -50,9 +51,23 @@ function App() {
   }
 
   return (
+    <AppShell />
+  );
+}
+
+/** App chrome + top-level modal mounts. Kept as its own component so
+ *  the modal-open state doesn't reset every time we re-enter the auth-
+ *  gated branch of App. */
+function AppShell() {
+  const [accountOpen, setAccountOpen] = useState(false);
+
+  return (
     <>
-      <TopNav />
+      <TopNav onOpenAccount={() => setAccountOpen(true)} />
       <PageShell />
+      {accountOpen && (
+        <FlizowAccountModal onClose={() => setAccountOpen(false)} />
+      )}
     </>
   );
 }
