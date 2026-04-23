@@ -1,11 +1,11 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useRoute, navigate } from '../router';
 import { useFlizow } from '../store/useFlizow';
 import type {
-  Client, Service, Task, Member, FlizowData, ClientStatus,
+  Client, Service, ServiceType, TemplateKey, Task, Member, FlizowData, ClientStatus,
   OnboardingItem, Contact, QuickLink,
 } from '../types/flizow';
-import type { FlizowStore } from '../store/flizowStore';
+import { flizowStore, type FlizowStore } from '../store/flizowStore';
 import { formatMonthYear, formatMonthDay, formatMrr, daysBetween } from '../utils/dateFormat';
 import { NotesTab } from '../components/NotesTab';
 import { TouchpointsTab } from '../components/TouchpointsTab';
@@ -79,12 +79,14 @@ interface DetailProps {
 
 function ClientDetail({ client, data, store }: DetailProps) {
   const [activeTab, setActiveTab] = useState<TabKey>('overview');
+  const [showAddService, setShowAddService] = useState(false);
 
   // Reset to Overview whenever the user lands on a different client, so the
   // first thing they see on a new row isn't whatever tab they peeked at on
   // the previous one.
   useEffect(() => {
     setActiveTab('overview');
+    setShowAddService(false);
   }, [client.id]);
 
   const am = client.amId ? data.members.find(m => m.id === client.amId) ?? null : null;
@@ -113,7 +115,7 @@ function ClientDetail({ client, data, store }: DetailProps) {
       {activeTab === 'overview' && (
         <>
           <AttentionSection client={client} tasks={openTasks} services={services} />
-          <ServicesSection services={services} />
+          <ServicesSection services={services} onAdd={() => setShowAddService(true)} />
           <ActivitySection client={client} tasks={data.tasks} members={data.members} todayISO={data.today} />
         </>
       )}
@@ -148,6 +150,13 @@ function ClientDetail({ client, data, store }: DetailProps) {
 
       {activeTab === 'stats' && (
         <StatsTab client={client} />
+      )}
+
+      {showAddService && (
+        <AddServiceModal
+          clientId={client.id}
+          onClose={() => setShowAddService(false)}
+        />
       )}
     </section>
   );
@@ -401,19 +410,46 @@ function buildAttentionChips(
 
 // ── Overview · Active Services ────────────────────────────────────────────
 
-function ServicesSection({ services }: { services: Service[] }) {
+function ServicesSection({ services, onAdd }: { services: Service[]; onAdd: () => void }) {
   if (services.length === 0) {
+    // Empty state: the "Add a service" hint becomes the CTA itself. A button
+    // right inside the empty panel beats a button far away in the header —
+    // the user's eye is already there.
     return (
       <div className="detail-section">
         <div className="detail-section-header">
           <div className="detail-section-title">Active Services</div>
-          <div className="detail-section-sub">No services yet</div>
+          <button
+            type="button"
+            className="detail-section-link"
+            onClick={onAdd}
+            style={{ background: 'none', border: 'none', cursor: 'pointer', font: 'inherit' }}
+          >
+            + Add service
+          </button>
         </div>
         <div
           className="services-list"
           style={{ padding: 20, color: 'var(--text-soft)', fontSize: 14 }}
         >
-          Nothing is running for this client yet. Add a service to spin up a board.
+          Nothing is running for this client yet.{' '}
+          <button
+            type="button"
+            onClick={onAdd}
+            style={{
+              background: 'none',
+              border: 'none',
+              padding: 0,
+              color: 'var(--highlight)',
+              fontSize: 'inherit',
+              cursor: 'pointer',
+              textDecoration: 'underline',
+              font: 'inherit',
+            }}
+          >
+            Add a service
+          </button>{' '}
+          to spin up a board.
         </div>
       </div>
     );
@@ -429,6 +465,14 @@ function ServicesSection({ services }: { services: Service[] }) {
         <div className="detail-section-sub">
           {services.length} of {services.length} · {projects} project{projects === 1 ? '' : 's'}, {retainers} retainer{retainers === 1 ? '' : 's'}
         </div>
+        <button
+          type="button"
+          className="detail-section-link"
+          onClick={onAdd}
+          style={{ background: 'none', border: 'none', cursor: 'pointer', font: 'inherit' }}
+        >
+          + Add service
+        </button>
       </div>
       <div className="services-list" data-services-list>
         {services.map(s => <ServiceCard key={s.id} service={s} />)}
@@ -1148,4 +1192,234 @@ function statusChipLabel(status: ClientStatus): string {
     case 'track':
     default:        return 'On Track';
   }
+}
+
+// ── Add Service Modal ─────────────────────────────────────────────────────
+
+/**
+ * Template options rendered in the dropdown. The order matches the mockup's
+ * Board Settings picker so an operator who's seen both places isn't hunting.
+ * Project-specific templates live in a separate group because they wouldn't
+ * make sense on a retainer (a "Brand Refresh retainer" is a contradiction).
+ */
+const TEMPLATE_OPTIONS: Array<{
+  value: TemplateKey;
+  label: string;
+  allowed: ServiceType[];
+}> = [
+  { value: 'demandgen',             label: 'Demand Gen',           allowed: ['retainer', 'project'] },
+  { value: 'contentSEO',            label: 'Content + SEO',        allowed: ['retainer', 'project'] },
+  { value: 'launch',                label: 'Product Launch',       allowed: ['project'] },
+  { value: 'cro',                   label: 'CRO Sprint',           allowed: ['project'] },
+  { value: 'paidSocial',            label: 'Paid Social',          allowed: ['retainer', 'project'] },
+  { value: 'email',                 label: 'Email Lifecycle',      allowed: ['retainer', 'project'] },
+  { value: 'seasonal',              label: 'Seasonal Campaign',    allowed: ['project'] },
+  { value: 'localSEO',              label: 'Local SEO',            allowed: ['retainer'] },
+  { value: 'paidLead',              label: 'Paid Lead Gen',        allowed: ['retainer', 'project'] },
+  { value: 'reputation',            label: 'Reputation',           allowed: ['retainer'] },
+  { value: 'social',                label: 'Social Retainer',      allowed: ['retainer'] },
+  { value: 'photo',                 label: 'Photo / Video',        allowed: ['retainer', 'project'] },
+  { value: 'linkedin',              label: 'LinkedIn Growth',      allowed: ['retainer'] },
+  { value: 'website',               label: 'Website Build',        allowed: ['project'] },
+  { value: 'web-design-full-stack', label: 'Web Design — Full Stack', allowed: ['project'] },
+  { value: 'brand-refresh',         label: 'Brand Refresh',        allowed: ['project'] },
+];
+
+function defaultNextDeliverableAt(): string {
+  // Default to two weeks out — far enough that nothing's urgent on day one,
+  // close enough that the user will correct it rather than leave the
+  // default in place for a year.
+  return new Date(Date.now() + 14 * 86_400_000).toISOString().slice(0, 10);
+}
+
+function AddServiceModal({ clientId, onClose }: {
+  clientId: string;
+  onClose: () => void;
+}) {
+  const [name, setName] = useState('');
+  const [type, setType] = useState<ServiceType>('retainer');
+  const [templateKey, setTemplateKey] = useState<TemplateKey>('demandgen');
+  const [nextDeliverableAt, setNextDeliverableAt] = useState<string>(defaultNextDeliverableAt);
+  const [nameError, setNameError] = useState(false);
+  const nameRef = useRef<HTMLInputElement>(null);
+
+  // Keep the template valid for the selected type. If the user picks
+  // "project" while a retainer-only template is selected, snap to the first
+  // template that still fits rather than letting them save a mismatch.
+  const visibleTemplates = useMemo(
+    () => TEMPLATE_OPTIONS.filter(t => t.allowed.includes(type)),
+    [type],
+  );
+
+  useEffect(() => {
+    if (!visibleTemplates.some(t => t.value === templateKey) && visibleTemplates.length) {
+      setTemplateKey(visibleTemplates[0].value);
+    }
+  }, [visibleTemplates, templateKey]);
+
+  useEffect(() => {
+    const t = window.setTimeout(() => nameRef.current?.focus(), 80);
+    return () => window.clearTimeout(t);
+  }, []);
+
+  function handleSave() {
+    const trimmedName = name.trim();
+    if (!trimmedName) {
+      setNameError(true);
+      nameRef.current?.focus();
+      window.setTimeout(() => setNameError(false), 1400);
+      return;
+    }
+
+    const id = `svc-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
+    const service: Service = {
+      id,
+      clientId,
+      name: trimmedName,
+      type,
+      templateKey,
+      progress: 0,
+      nextDeliverableAt,
+      taskIds: [],
+    };
+    flizowStore.addService(service);
+    onClose();
+    // Land on the new board so the user can immediately add their first card.
+    navigate(`#board/${id}`);
+  }
+
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        onClose();
+        return;
+      }
+      if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+        e.preventDefault();
+        handleSave();
+      }
+    }
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [onClose, name, type, templateKey, nextDeliverableAt]);
+
+  function handleBackdropClick(e: React.MouseEvent<HTMLDivElement>) {
+    if (e.target === e.currentTarget) onClose();
+  }
+
+  return (
+    <div
+      className="wip-modal-overlay"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="add-service-title"
+      onClick={handleBackdropClick}
+    >
+      <div className="wip-modal" role="document" style={{ maxWidth: 520 }}>
+        <header className="wip-modal-head">
+          <h2 className="wip-modal-title" id="add-service-title">Add service</h2>
+          <button type="button" className="wip-modal-close" onClick={onClose} aria-label="Close">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="18" y1="6" x2="6" y2="18" />
+              <line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
+          </button>
+        </header>
+
+        <div className="wip-modal-body">
+          <label className="wip-field">
+            <span className="wip-field-label">Service name</span>
+            <input
+              ref={nameRef}
+              type="text"
+              className="wip-field-input"
+              value={name}
+              onChange={(e) => { setName(e.target.value); if (nameError) setNameError(false); }}
+              placeholder="e.g. Q2 Paid Social Retainer"
+              style={nameError ? { borderColor: 'var(--status-fire)' } : undefined}
+              aria-invalid={nameError || undefined}
+            />
+          </label>
+
+          <div className="wip-field" role="radiogroup" aria-label="Service type">
+            <span className="wip-field-label">Type</span>
+            <div style={{ display: 'flex', gap: 8 }}>
+              {(['retainer', 'project'] as ServiceType[]).map(opt => {
+                const checked = type === opt;
+                return (
+                  <button
+                    key={opt}
+                    type="button"
+                    role="radio"
+                    aria-checked={checked}
+                    onClick={() => setType(opt)}
+                    style={{
+                      flex: 1,
+                      padding: '10px 14px',
+                      borderRadius: 8,
+                      border: checked
+                        ? '2px solid var(--highlight)'
+                        : '1px solid var(--hairline-soft)',
+                      background: checked ? 'var(--highlight-soft)' : 'var(--bg-elev)',
+                      color: 'var(--text)',
+                      font: 'inherit',
+                      fontWeight: checked ? 600 : 400,
+                      cursor: 'pointer',
+                      textAlign: 'left',
+                    }}
+                  >
+                    <div style={{ textTransform: 'capitalize' }}>{opt}</div>
+                    <div style={{ fontSize: 'var(--fs-sm)', color: 'var(--text-soft)', marginTop: 2 }}>
+                      {opt === 'retainer'
+                        ? 'Ongoing monthly scope'
+                        : 'Fixed deliverable, ships once'}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          <label className="wip-field">
+            <span className="wip-field-label">Template</span>
+            <select
+              className="wip-field-input"
+              value={templateKey}
+              onChange={(e) => setTemplateKey(e.target.value as TemplateKey)}
+            >
+              {visibleTemplates.map(t => (
+                <option key={t.value} value={t.value}>{t.label}</option>
+              ))}
+            </select>
+            <span style={{ fontSize: 'var(--fs-sm)', color: 'var(--text-faint)', marginTop: 4, display: 'block' }}>
+              Seeds the board with starter columns and a few example cards.
+            </span>
+          </label>
+
+          <label className="wip-field">
+            <span className="wip-field-label">
+              {type === 'project' ? 'Due date' : 'Next deliverable'}
+            </span>
+            <input
+              type="date"
+              className="wip-field-input"
+              value={nextDeliverableAt}
+              onChange={(e) => setNextDeliverableAt(e.target.value)}
+            />
+          </label>
+        </div>
+
+        <footer className="wip-modal-foot">
+          <button type="button" className="wip-btn wip-btn-ghost" onClick={onClose}>
+            Cancel
+          </button>
+          <button type="button" className="wip-btn wip-btn-primary" onClick={handleSave}>
+            Create service
+          </button>
+        </footer>
+      </div>
+    </div>
+  );
 }

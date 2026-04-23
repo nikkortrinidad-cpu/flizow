@@ -291,11 +291,15 @@ class FlizowStore {
   // ── Services ─────────────────────────────────────────────────────────
 
   addService(service: Service) {
-    this.data.services.push(service);
-    const client = this.data.clients.find(c => c.id === service.clientId);
-    if (client && !client.serviceIds.includes(service.id)) {
-      client.serviceIds.push(service.id);
-    }
+    // Replace array refs (not `.push`) so `useMemo([data.services])` consumers
+    // on ClientDetailPage recompute. Same trick on the client's serviceIds so
+    // the client-level memos see the new membership.
+    this.data.services = [...this.data.services, service];
+    this.data.clients = this.data.clients.map(c =>
+      c.id === service.clientId && !c.serviceIds.includes(service.id)
+        ? { ...c, serviceIds: [...c.serviceIds, service.id] }
+        : c,
+    );
     this.save();
   }
 
