@@ -1098,6 +1098,30 @@
   }
   .breadcrumb-rename-input:focus { outline: 2px solid var(--highlight); }
 
+  /* Quiet overflow dot next to the service crumb. The rename remains
+     the headline interaction; this button is a secondary affordance
+     for the rest of the service metadata. 22×22 hit target, icon fades
+     in on hover — same language as the meeting-action-delete pattern. */
+  .breadcrumb-menu-wrap {
+    position: relative; display: inline-flex; align-items: center;
+    margin-left: 2px;
+  }
+  .breadcrumb-menu-btn {
+    width: 22px; height: 22px;
+    display: inline-flex; align-items: center; justify-content: center;
+    border: 0; background: transparent;
+    color: var(--text-faint);
+    border-radius: 6px; cursor: pointer;
+    opacity: 0.55;
+    transition: opacity var(--dur-fast), background var(--dur-fast), color var(--dur-fast);
+  }
+  .breadcrumb-menu-btn:hover,
+  .breadcrumb-menu-btn:focus-visible,
+  .breadcrumb-menu-btn[aria-expanded="true"] {
+    opacity: 1; color: var(--text); background: var(--hover-tint);
+  }
+  .breadcrumb-menu-wrap .tb-menu { top: 28px; right: auto; left: 0; }
+
   .board-actions { display: flex; gap: var(--sp-sm); }
   .btn-sm {
     padding: var(--sp-sm) var(--sp-xl);

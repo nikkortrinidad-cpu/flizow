@@ -8,6 +8,7 @@ import type { ColumnId, Priority, Task, Client, Service, Member, TaskComment } f
 import { daysBetween, formatMonthDay } from '../utils/dateFormat';
 import FlizowCardModal from '../components/FlizowCardModal';
 import { BoardFilters, applyFilters, EMPTY_FILTERS, type BoardFilterState } from '../components/BoardFilters';
+import { EditServiceModal } from '../components/EditServiceModal';
 
 /**
  * Service Kanban board — per-client workspace for a single service. Shows
@@ -270,16 +271,22 @@ function Breadcrumb({ client, service }: { client: Client; service: Service }) {
   // Inline rename on the current-page crumb. Same pattern as the client
   // hero rename: cursor:text + hover tint + ring on focus, no pencil icon.
   // This is where users land right after the Add Service modal closes, so
-  // rename-in-place here beats a separate "Edit service" modal.
+  // rename-in-place here beats a separate "Edit service" modal for the
+  // name field. The "⋯" menu next to it handles the rest of the metadata
+  // (type, template, progress, next deliverable) via EditServiceModal.
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(service.name);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const menuWrapRef = useRef<HTMLDivElement>(null);
 
   // Sync draft when the service id changes (user navigated to a different
   // board mid-edit, unlikely but cheap to guard).
   useEffect(() => {
     setDraft(service.name);
     setEditing(false);
+    setMenuOpen(false);
   }, [service.id, service.name]);
 
   useEffect(() => {
@@ -290,6 +297,25 @@ function Breadcrumb({ client, service }: { client: Client; service: Service }) {
     }, 20);
     return () => window.clearTimeout(t);
   }, [editing]);
+
+  // Close the overflow menu on outside click or Esc.
+  useEffect(() => {
+    if (!menuOpen) return;
+    function onPointer(e: PointerEvent) {
+      if (menuWrapRef.current && !menuWrapRef.current.contains(e.target as Node)) {
+        setMenuOpen(false);
+      }
+    }
+    function onKey(e: KeyboardEvent) {
+      if (e.key === 'Escape') setMenuOpen(false);
+    }
+    document.addEventListener('pointerdown', onPointer);
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('pointerdown', onPointer);
+      document.removeEventListener('keydown', onKey);
+    };
+  }, [menuOpen]);
 
   function commit() {
     const next = draft.trim();
@@ -362,6 +388,45 @@ function Breadcrumb({ client, service }: { client: Client; service: Service }) {
                 {service.name}
               </span>
             )}
+            {/* Overflow menu for the service metadata the inline rename
+                can't cover: type, template, progress, next deliverable.
+                Visually quiet — a 22px dot button that only reveals its
+                tint on hover, so the rename stays the primary affordance. */}
+            {!editing && (
+              <div ref={menuWrapRef} className="breadcrumb-menu-wrap">
+                <button
+                  type="button"
+                  className="breadcrumb-menu-btn"
+                  aria-label="Service actions"
+                  aria-haspopup="menu"
+                  aria-expanded={menuOpen}
+                  onClick={() => setMenuOpen(v => !v)}
+                >
+                  <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" width="14" height="14">
+                    <circle cx="5" cy="12" r="1.6" />
+                    <circle cx="12" cy="12" r="1.6" />
+                    <circle cx="19" cy="12" r="1.6" />
+                  </svg>
+                </button>
+                <div className={`tb-menu${menuOpen ? ' open' : ''}`} role="menu">
+                  <div
+                    role="menuitem"
+                    tabIndex={0}
+                    className="tb-menu-item"
+                    onClick={() => { setMenuOpen(false); setShowEditModal(true); }}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        setMenuOpen(false);
+                        setShowEditModal(true);
+                      }
+                    }}
+                  >
+                    Edit service details…
+                  </div>
+                </div>
+              </div>
+            )}
           </li>
         </ol>
       </nav>
@@ -379,6 +444,13 @@ function Breadcrumb({ client, service }: { client: Client; service: Service }) {
           Analytics
         </button>
       </div>
+
+      {showEditModal && (
+        <EditServiceModal
+          service={service}
+          onClose={() => setShowEditModal(false)}
+        />
+      )}
     </div>
   );
 }

@@ -11,6 +11,7 @@ import { NotesTab } from '../components/NotesTab';
 import { TouchpointsTab } from '../components/TouchpointsTab';
 import { StatsTab } from '../components/StatsTab';
 import { ConfirmDangerDialog } from '../components/ConfirmDangerDialog';
+import { TEMPLATE_OPTIONS, defaultNextDeliverableAt } from '../data/serviceTemplateOptions';
 
 /**
  * Right-hand pane of the Clients split view. Ports the Acme detail layout
@@ -2102,41 +2103,8 @@ function statusChipLabel(status: ClientStatus): string {
 
 // ── Add Service Modal ─────────────────────────────────────────────────────
 
-/**
- * Template options rendered in the dropdown. The order matches the mockup's
- * Board Settings picker so an operator who's seen both places isn't hunting.
- * Project-specific templates live in a separate group because they wouldn't
- * make sense on a retainer (a "Brand Refresh retainer" is a contradiction).
- */
-const TEMPLATE_OPTIONS: Array<{
-  value: TemplateKey;
-  label: string;
-  allowed: ServiceType[];
-}> = [
-  { value: 'demandgen',             label: 'Demand Gen',           allowed: ['retainer', 'project'] },
-  { value: 'contentSEO',            label: 'Content + SEO',        allowed: ['retainer', 'project'] },
-  { value: 'launch',                label: 'Product Launch',       allowed: ['project'] },
-  { value: 'cro',                   label: 'CRO Sprint',           allowed: ['project'] },
-  { value: 'paidSocial',            label: 'Paid Social',          allowed: ['retainer', 'project'] },
-  { value: 'email',                 label: 'Email Lifecycle',      allowed: ['retainer', 'project'] },
-  { value: 'seasonal',              label: 'Seasonal Campaign',    allowed: ['project'] },
-  { value: 'localSEO',              label: 'Local SEO',            allowed: ['retainer'] },
-  { value: 'paidLead',              label: 'Paid Lead Gen',        allowed: ['retainer', 'project'] },
-  { value: 'reputation',            label: 'Reputation',           allowed: ['retainer'] },
-  { value: 'social',                label: 'Social Retainer',      allowed: ['retainer'] },
-  { value: 'photo',                 label: 'Photo / Video',        allowed: ['retainer', 'project'] },
-  { value: 'linkedin',              label: 'LinkedIn Growth',      allowed: ['retainer'] },
-  { value: 'website',               label: 'Website Build',        allowed: ['project'] },
-  { value: 'web-design-full-stack', label: 'Web Design — Full Stack', allowed: ['project'] },
-  { value: 'brand-refresh',         label: 'Brand Refresh',        allowed: ['project'] },
-];
-
-function defaultNextDeliverableAt(): string {
-  // Default to two weeks out — far enough that nothing's urgent on day one,
-  // close enough that the user will correct it rather than leave the
-  // default in place for a year.
-  return new Date(Date.now() + 14 * 86_400_000).toISOString().slice(0, 10);
-}
+// Template options + the date default live in src/data/serviceTemplateOptions
+// so EditServiceModal can share them without reaching across files.
 
 function AddServiceModal({ clientId, onClose }: {
   clientId: string;
