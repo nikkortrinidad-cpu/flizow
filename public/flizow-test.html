@@ -12758,6 +12758,155 @@
   }
   .tb-exit:hover { background: #333336; transform: translateY(-1px); }
   .tb-exit:active { transform: translateY(0); }
+
+  /* ═══════ Peer testing — session identity chip ═══════
+     Bottom-left mirror of the admin chip. Every signed-in tester sees it:
+     avatar + first name + sync-status dot. Click opens a panel with full
+     identity + sync status text + sign-out. Hidden in read-only view mode
+     (the orange banner carries the message there). */
+  #testersSession {
+    position: fixed;
+    bottom: 24px; left: 24px;
+    z-index: 999998;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  }
+  #testersSession[hidden] { display: none; }
+  .tsn-chip {
+    background: var(--bg-elev);
+    color: var(--text);
+    border: 1px solid var(--hairline);
+    border-radius: 999px;
+    padding: 6px 14px 6px 6px;
+    font-size: 13px;
+    font-weight: 500;
+    letter-spacing: -0.005em;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.10);
+    transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+    font-family: inherit;
+  }
+  .tsn-chip:hover { transform: translateY(-1px); box-shadow: 0 10px 28px rgba(0,0,0,0.14); }
+  .tsn-avatar {
+    width: 26px; height: 26px;
+    border-radius: 50%;
+    background: #1d1d1f;
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: 600;
+    flex-shrink: 0;
+    overflow: hidden;
+    letter-spacing: 0.02em;
+  }
+  .tsn-avatar img { width: 100%; height: 100%; object-fit: cover; }
+  .tsn-name {
+    max-width: 120px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .tsn-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    background: #86868b;
+    transition: background 0.2s ease;
+  }
+  .tsn-dot[data-state="synced"]  { background: #30d158; }
+  .tsn-dot[data-state="pending"] { background: #ff9f0a; }
+  .tsn-dot[data-state="syncing"] {
+    background: #ff9f0a;
+    animation: tsn-pulse 1.2s ease-in-out infinite;
+  }
+  .tsn-dot[data-state="error"]   { background: #ff453a; }
+  @keyframes tsn-pulse {
+    0%, 100% { opacity: 1; }
+    50%      { opacity: 0.3; }
+  }
+  .tsn-panel {
+    position: absolute;
+    bottom: calc(100% + 10px);
+    left: 0;
+    width: 280px;
+    background: var(--bg-elev);
+    border: 1px solid var(--hairline-soft);
+    border-radius: 16px;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.15);
+    overflow: hidden;
+    padding: 14px;
+  }
+  .tsn-panel[hidden] { display: none; }
+  .tsn-panel-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--hairline-soft);
+  }
+  .tsn-panel-avatar {
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    background: #1d1d1f;
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    font-weight: 600;
+    flex-shrink: 0;
+    overflow: hidden;
+    letter-spacing: 0.02em;
+  }
+  .tsn-panel-avatar img { width: 100%; height: 100%; object-fit: cover; }
+  .tsn-panel-body { flex: 1; min-width: 0; }
+  .tsn-panel-name {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text);
+    letter-spacing: -0.005em;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .tsn-panel-email {
+    font-size: 12px;
+    color: var(--text-soft);
+    letter-spacing: -0.003em;
+    margin-top: 1px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .tsn-status {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 0;
+    font-size: 12px;
+    color: var(--text-soft);
+    letter-spacing: -0.003em;
+  }
+  .tsn-signout {
+    width: 100%;
+    background: transparent;
+    border: 1px solid var(--hairline);
+    color: var(--text);
+    border-radius: 10px;
+    padding: 8px 12px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    letter-spacing: -0.005em;
+    transition: background 0.12s ease, border-color 0.12s ease;
+    font-family: inherit;
+  }
+  .tsn-signout:hover { background: var(--hover-tint); border-color: var(--hover-blue); }
+  .tsn-signout:disabled { opacity: 0.5; cursor: not-allowed; }
   </style>
 
   <!-- Sync pre-flight: decide whether to hide the app before first paint.
@@ -12843,6 +12992,32 @@
     <div class="ta-empty" id="testersAdminEmpty" hidden>
       No sessions yet. Share the tester URL to start.
     </div>
+  </div>
+</div>
+
+<!-- Peer testing session identity chip. Shown for every signed-in tester
+     (admin included). Avatar + first name + sync dot; click opens a panel
+     with full identity, sync status, and a sign-out button. Hidden in
+     read-only view mode — the orange banner carries the cue there. -->
+<div id="testersSession" hidden>
+  <button type="button" class="tsn-chip" id="testersSessionChip" aria-expanded="false" aria-controls="testersSessionPanel">
+    <span class="tsn-avatar" id="testersSessionAvatar" aria-hidden="true">·</span>
+    <span class="tsn-name" id="testersSessionName">You</span>
+    <span class="tsn-dot" id="testersSessionDot" data-state="idle" aria-label="Sync status: idle"></span>
+  </button>
+  <div class="tsn-panel" id="testersSessionPanel" hidden>
+    <div class="tsn-panel-row">
+      <div class="tsn-panel-avatar" id="testersSessionPanelAvatar">·</div>
+      <div class="tsn-panel-body">
+        <div class="tsn-panel-name" id="testersSessionPanelName">You</div>
+        <div class="tsn-panel-email" id="testersSessionPanelEmail"></div>
+      </div>
+    </div>
+    <div class="tsn-status">
+      <span class="tsn-dot" id="testersSessionPanelDot" data-state="idle" aria-hidden="true"></span>
+      <span id="testersSessionStatus">Not synced yet</span>
+    </div>
+    <button type="button" class="tsn-signout" id="testersSessionSignOut">Sign out</button>
   </div>
 </div>
 
@@ -34006,12 +34181,14 @@ if (TESTERS_MODE) {
 
     // ── Sync helpers ────────────────────────────────────────────────────
     // Local-only flags live in localStorage but should not round-trip to
-    // Firestore: they belong to the device, not the session.
+    // Firestore: they belong to the device, not the session. The mockup
+    // uses BOTH `flizow.` (dot) and `flizow-` (hyphen) prefixes across
+    // different views — cover both so state actually round-trips.
     function isSyncedKey(k) {
-      return !!k
-        && k.startsWith('flizow.')
-        && k !== 'flizow.testers.enabled'
-        && k !== HYDRATION_FLAG;
+      if (!k) return false;
+      if (k === 'flizow.testers.enabled') return false;  // local-only activation flag
+      if (k === HYDRATION_FLAG) return false;            // sessionStorage flag (belt + suspenders)
+      return k.startsWith('flizow.') || k.startsWith('flizow-');
     }
     function allSyncedKeys() {
       const out = [];
@@ -34054,17 +34231,47 @@ if (TESTERS_MODE) {
       await setDoc(ref, { profile }, { merge: true });
     }
 
+    // ── Sync status (tester chip dot + panel text) ─────────────────────
+    // Single source of truth for "is my session saved right now?" State
+    // transitions fire listeners so the UI can react without polling.
+    //   idle    — no activity yet this session
+    //   pending — a write happened, debounced flush is queued
+    //   syncing — flush is in flight
+    //   synced  — last flush succeeded (lastSyncedAt timestamped)
+    //   error   — last flush failed
+    const SyncStatus = {
+      state: 'idle',
+      lastSyncedAt: null,
+      lastError: null,
+      listeners: new Set(),
+      set(state, extra) {
+        this.state = state;
+        if (state === 'synced') { this.lastSyncedAt = Date.now(); this.lastError = null; }
+        if (state === 'error')  { this.lastError = (extra && extra.message) || 'Sync failed'; }
+        this.listeners.forEach(fn => { try { fn(this); } catch (_) {} });
+      },
+      subscribe(fn) { this.listeners.add(fn); fn(this); return () => this.listeners.delete(fn); }
+    };
+
     let flushTimer = null;
     async function flushNow() {
       const user = window.__pfTesters && window.__pfTesters.user;
       if (!user) return;
+      SyncStatus.set('syncing');
       const ref = doc(db, 'flizow-testers', user.uid);
-      await setDoc(ref, {
-        store:   snapshotStore(),
-        profile: { lastSeen: serverTimestamp() }
-      }, { merge: true });
+      try {
+        await setDoc(ref, {
+          store:   snapshotStore(),
+          profile: { lastSeen: serverTimestamp() }
+        }, { merge: true });
+        SyncStatus.set('synced');
+      } catch (e) {
+        SyncStatus.set('error', e);
+        throw e;
+      }
     }
     function scheduleFlush() {
+      SyncStatus.set('pending');
       clearTimeout(flushTimer);
       flushTimer = setTimeout(() => {
         flushTimer = null;
@@ -34125,6 +34332,137 @@ if (TESTERS_MODE) {
       return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
     }
 
+    // ── Session chip (bottom-left, every tester) ────────────────────────
+    // Shows identity + live sync status. Sign-out clears local synced keys
+    // and session flags so the next sign-in starts clean. Skipped in view
+    // mode — the orange banner is the sole identity cue there.
+    function firstNameOf(user) {
+      const full = (user && (user.displayName || user.email)) || '';
+      const first = String(full).trim().split(/\s+/)[0] || '';
+      if (first.length && !first.includes('@')) return first;
+      // Fall back to the local-part of the email for name-less accounts.
+      const email = String((user && user.email) || '').trim();
+      return email.split('@')[0] || 'You';
+    }
+    function statusText(sync) {
+      if (sync.state === 'pending') return 'Saving changes…';
+      if (sync.state === 'syncing') return 'Saving…';
+      if (sync.state === 'error')   return 'Sync failed — will retry';
+      if (sync.state === 'synced' && sync.lastSyncedAt) {
+        const diff = Math.floor((Date.now() - sync.lastSyncedAt) / 1000);
+        if (diff < 10)   return 'Synced just now';
+        if (diff < 60)   return 'Synced ' + diff + 's ago';
+        if (diff < 3600) return 'Synced ' + Math.floor(diff / 60) + 'm ago';
+        return 'Synced ' + Math.floor(diff / 3600) + 'h ago';
+      }
+      return 'Not synced yet';
+    }
+
+    function initSession(user, isReadOnly) {
+      const root     = document.getElementById('testersSession');
+      const chip     = document.getElementById('testersSessionChip');
+      const panel    = document.getElementById('testersSessionPanel');
+      const avatarEl = document.getElementById('testersSessionAvatar');
+      const nameEl   = document.getElementById('testersSessionName');
+      const dotEl    = document.getElementById('testersSessionDot');
+      const panelAvatarEl = document.getElementById('testersSessionPanelAvatar');
+      const panelNameEl   = document.getElementById('testersSessionPanelName');
+      const panelEmailEl  = document.getElementById('testersSessionPanelEmail');
+      const panelDotEl    = document.getElementById('testersSessionPanelDot');
+      const statusEl      = document.getElementById('testersSessionStatus');
+      const signOutBtn    = document.getElementById('testersSessionSignOut');
+      if (!root || !chip || !panel) return;
+
+      // Read-only view mode: hide chip entirely. Banner carries the cue.
+      if (isReadOnly) { root.hidden = true; return; }
+
+      // Identity
+      const display = (user.displayName || user.email || 'You').trim();
+      const first = firstNameOf(user);
+      const initials = initialsFor(display);
+      const photo = user.photoURL;
+      nameEl.textContent = first;
+      panelNameEl.textContent = display;
+      panelEmailEl.textContent = user.email || '';
+      if (photo) {
+        const img = '<img src="' + escapeHtml(photo) + '" alt="" referrerpolicy="no-referrer"/>';
+        avatarEl.innerHTML = img;
+        panelAvatarEl.innerHTML = img;
+      } else {
+        avatarEl.textContent = initials;
+        panelAvatarEl.textContent = initials;
+      }
+
+      // Live sync status — dot + panel text. The ticker keeps "Synced Xs ago"
+      // fresh while the panel is open.
+      let tickTimer = null;
+      function render(sync) {
+        const state = sync.state;
+        dotEl.setAttribute('data-state', state);
+        dotEl.setAttribute('aria-label', 'Sync status: ' + state);
+        panelDotEl.setAttribute('data-state', state);
+        statusEl.textContent = statusText(sync);
+      }
+      const unsubscribe = SyncStatus.subscribe(render);
+
+      // On initial load the cloud state matches local (we just hydrated
+      // from it) — seed "synced" so testers don't stare at "Not synced yet".
+      if (SyncStatus.state === 'idle') SyncStatus.set('synced');
+
+      function openPanel() {
+        panel.hidden = false;
+        chip.setAttribute('aria-expanded', 'true');
+        render(SyncStatus);
+        clearInterval(tickTimer);
+        tickTimer = setInterval(() => render(SyncStatus), 10000);
+      }
+      function closePanel() {
+        panel.hidden = true;
+        chip.setAttribute('aria-expanded', 'false');
+        clearInterval(tickTimer);
+        tickTimer = null;
+      }
+
+      chip.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (panel.hidden) openPanel(); else closePanel();
+      });
+      document.addEventListener('click', (e) => {
+        if (panel.hidden) return;
+        if (!root.contains(e.target)) closePanel();
+      });
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && !panel.hidden) closePanel();
+      });
+
+      // Sign-out: flush any pending write, wipe local synced keys + session
+      // flags, then signOut. Reload so the mockup IIFEs don't keep the
+      // prior user's UI state cached in memory.
+      signOutBtn.addEventListener('click', async () => {
+        signOutBtn.disabled = true;
+        signOutBtn.textContent = 'Signing out…';
+        try {
+          if (flushTimer) { clearTimeout(flushTimer); flushTimer = null; await flushNow(); }
+        } catch (e) {
+          console.warn('[testers] pre-signout flush skipped:', e);
+        }
+        try {
+          clearLocalSynced();
+          sessionStorage.removeItem(HYDRATION_FLAG);
+          sessionStorage.removeItem(VIEWING_FLAG);
+          sessionStorage.removeItem(VIEWING_NAME);
+          await signOut(auth);
+        } catch (e) {
+          console.error('[testers] sign-out failed:', e);
+        } finally {
+          unsubscribe();
+          location.reload();
+        }
+      });
+
+      root.hidden = false;
+    }
+
     async function initAdmin(user) {
       if (!user || !user.email || user.email !== ADMIN_EMAIL) return;
 
@@ -34138,6 +34476,14 @@ if (TESTERS_MODE) {
       if (!root || !chip || !panel) return;
 
       root.hidden = false;
+
+      // When viewing another tester's session, the chip label becomes a
+      // second pressure cue alongside the orange banner: "Viewing: Alice".
+      // Plain "Testers" in the default case keeps the chip unambiguous.
+      const viewingNm = sessionStorage.getItem(VIEWING_NAME);
+      const labelEl = chip.querySelector('span:not(.ta-count)');
+      if (labelEl) labelEl.textContent = viewingNm ? ('Viewing: ' + viewingNm) : 'Testers';
+
       let pollTimer = null;
 
       async function loadList() {
@@ -34362,6 +34708,8 @@ if (TESTERS_MODE) {
         // and get wiped on next reload). Reveal app + banner.
         document.documentElement.setAttribute('data-testers-state', 'authed');
         showViewingBanner(viewingNm);
+        // Session chip hides in view mode (banner owns the identity cue).
+        initSession(user, true);
         // Still init admin so the chip stays available for switching to
         // another tester or returning to self.
         initAdmin(user).catch(e => console.warn('[testers] admin init failed:', e));
@@ -34372,6 +34720,8 @@ if (TESTERS_MODE) {
       installWriteThrough();
       writeProfile(user, false).catch(e => console.warn('[testers] profile update skipped:', e));
       document.documentElement.setAttribute('data-testers-state', 'authed');
+      // Session chip shows identity + live sync status + sign-out.
+      initSession(user, false);
       // Admin chip shows only for ADMIN_EMAIL; initAdmin no-ops for everyone else.
       initAdmin(user).catch(e => console.warn('[testers] admin init failed:', e));
     });
