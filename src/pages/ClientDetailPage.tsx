@@ -9,6 +9,7 @@ import type { FlizowStore } from '../store/flizowStore';
 import { formatMonthYear, formatMonthDay, formatMrr, daysBetween } from '../utils/dateFormat';
 import { NotesTab } from '../components/NotesTab';
 import { TouchpointsTab } from '../components/TouchpointsTab';
+import { StatsTab } from '../components/StatsTab';
 
 /**
  * Right-hand pane of the Clients split view. Ports the Acme detail layout
@@ -145,12 +146,8 @@ function ClientDetail({ client, data, store }: DetailProps) {
         />
       )}
 
-      {activeTab !== 'overview'
-        && activeTab !== 'onboarding'
-        && activeTab !== 'about'
-        && activeTab !== 'notes'
-        && activeTab !== 'touchpoints' && (
-        <TabPlaceholder tab={activeTab} />
+      {activeTab === 'stats' && (
+        <StatsTab client={client} />
       )}
     </section>
   );
@@ -1138,33 +1135,6 @@ function renderLinkIcon(kind?: QuickLink['icon']): React.ReactNode {
         <svg {...props}><path d="M10 14a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1 1" /><path d="M14 10a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l1-1" /></svg>
       );
   }
-}
-
-// ── Tabs that haven't been ported yet ─────────────────────────────────────
-
-type PlaceholderTab = Exclude<TabKey, 'overview' | 'onboarding' | 'about' | 'notes' | 'touchpoints'>;
-
-function TabPlaceholder({ tab }: { tab: PlaceholderTab }) {
-  const LABELS: Record<PlaceholderTab, string> = {
-    stats: 'Stats hub',
-  };
-  return (
-    <div className="detail-section">
-      <div
-        style={{
-          padding: 24, borderRadius: 12,
-          border: '1px dashed var(--hairline)',
-          textAlign: 'center',
-          color: 'var(--text-muted)', fontSize: 14, lineHeight: 1.6,
-        }}
-      >
-        <div style={{ fontWeight: 600, color: 'var(--text)', marginBottom: 4 }}>
-          {LABELS[tab]}
-        </div>
-        This tab ports in the next pass.
-      </div>
-    </div>
-  );
 }
 
 // ── Misc ──────────────────────────────────────────────────────────────────
