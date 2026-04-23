@@ -1244,6 +1244,10 @@ function AboutSection({ client, data }: { client: Client; data: FlizowData }) {
   const [contactsEditMode, setContactsEditMode] = useState(false);
   const [linksEditMode, setLinksEditMode] = useState(false);
   const [deleteContactId, setDeleteContactId] = useState<string | null>(null);
+  // Contact row clicks (outside edit mode) open the same modal as Add,
+  // pre-filled via this id. Edit vs. Add is decided inside the modal —
+  // one shape, two flows, no duplicated fields.
+  const [editContactId, setEditContactId] = useState<string | null>(null);
 
   const contacts = useMemo(
     () => data.contacts.filter(c => c.clientId === client.id)
@@ -1280,6 +1284,7 @@ function AboutSection({ client, data }: { client: Client; data: FlizowData }) {
             onToggleEdit={() => setContactsEditMode(v => !v)}
             onRemove={(id) => setDeleteContactId(id)}
             onTogglePrimary={(id, primary) => flizowStore.updateContact(id, { primary })}
+            onEdit={(id) => setEditContactId(id)}
           />
           <QuickLinksCard
             links={quickLinks}
@@ -1343,6 +1348,19 @@ function AboutSection({ client, data }: { client: Client; data: FlizowData }) {
         />
       )}
 
+      {editContactId && (() => {
+        const target = contacts.find(c => c.id === editContactId);
+        if (!target) return null;
+        return (
+          <AddContactModal
+            clientId={client.id}
+            hasPrimary={contacts.some(c => c.primary)}
+            contact={target}
+            onClose={() => setEditContactId(null)}
+          />
+        );
+      })()}
+
       {showAddQuickLink && (
         <AddQuickLinkModal
           clientId={client.id}
@@ -1391,13 +1409,16 @@ function AboutSection({ client, data }: { client: Client; data: FlizowData }) {
   );
 }
 
-function ContactsCard({ contacts, onAdd, editing, onToggleEdit, onRemove, onTogglePrimary }: {
+function ContactsCard({ contacts, onAdd, editing, onToggleEdit, onRemove, onTogglePrimary, onEdit }: {
   contacts: Contact[];
   onAdd: () => void;
   editing: boolean;
   onToggleEdit: () => void;
   onRemove: (id: string) => void;
   onTogglePrimary: (id: string, primary: boolean) => void;
+  /** Fires when the row body (not icons, not edit-mode buttons) is
+   *  clicked. Opens the shared AddContactModal in edit mode. */
+  onEdit: (id: string) => void;
 }) {
   return (
     <div className="relationship-card">
@@ -1451,6 +1472,21 @@ function ContactsCard({ contacts, onAdd, editing, onToggleEdit, onRemove, onTogg
               key={c.id}
               className="contact-row"
               data-contact-primary={c.primary ? 'true' : undefined}
+              // Row body doubles as the edit trigger when NOT in edit mode.
+              // No pencil icon — hover tint + cursor:pointer do the
+              // affordance work (per the "no pencil icons" rule). In
+              // edit mode the row becomes a management surface for
+              // primary toggle + remove, so click-through is disabled.
+              onClick={editing ? undefined : () => onEdit(c.id)}
+              onKeyDown={editing ? undefined : (e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  onEdit(c.id);
+                }
+              }}
+              role={editing ? undefined : 'button'}
+              tabIndex={editing ? -1 : 0}
+              aria-label={editing ? undefined : `Edit ${c.name}`}
             >
               <div className="contact-avatar" style={{ background: avatarColor(c.id) }}>
                 {initialsOf(c.name)}
@@ -1479,7 +1515,9 @@ function ContactsCard({ contacts, onAdd, editing, onToggleEdit, onRemove, onTogg
 
               {/* View actions — email + phone shortcuts. Hidden in edit mode
                   via .contacts-list[data-edit="true"] [data-contact-view-actions]
-                  rule in flizow.css. */}
+                  rule in flizow.css. stopPropagation so a click on the
+                  envelope/phone doesn't also trigger the row-level
+                  "open edit modal" handler. */}
               <div className="contact-actions" data-contact-view-actions>
                 {c.email && (
                   <a
@@ -1487,6 +1525,7 @@ function ContactsCard({ contacts, onAdd, editing, onToggleEdit, onRemove, onTogg
                     href={`mailto:${c.email}`}
                     title={c.email}
                     aria-label={`Email ${c.name} at ${c.email}`}
+                    onClick={(e) => e.stopPropagation()}
                   >
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                       <rect x="3" y="5" width="18" height="14" rx="2" />
@@ -1500,6 +1539,7 @@ function ContactsCard({ contacts, onAdd, editing, onToggleEdit, onRemove, onTogg
                     href={`tel:${c.phone.replace(/[^\d+]/g, '')}`}
                     title={c.phone}
                     aria-label={`Call ${c.name} at ${c.phone}`}
+                    onClick={(e) => e.stopPropagation()}
                   >
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                       <path d="M22 16.92V21a1 1 0 0 1-1.1 1 19.86 19.86 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.86 19.86 0 0 1 3.2 4.1 1 1 0 0 1 4.2 3h4.08a1 1 0 0 1 1 .75 12.78 12.78 0 0 0 .7 2.81 1 1 0 0 1-.23 1.05L8.21 9.21a16 16 0 0 0 6 6l1.6-1.6a1 1 0 0 1 1-.23 12.78 12.78 0 0 0 2.82.7 1 1 0 0 1 .75 1z" />
@@ -2045,27 +2085,40 @@ function AddServiceModal({ clientId, onClose }: {
 
 // ── Add Contact Modal ─────────────────────────────────────────────────────
 
-function AddContactModal({ clientId, hasPrimary, onClose }: {
+function AddContactModal({ clientId, hasPrimary, contact, onClose }: {
   clientId: string;
   hasPrimary: boolean;
+  /** When provided, the modal switches to edit mode: pre-fills every
+   *  field, flips the title + save button copy, and calls updateContact
+   *  instead of addContact. Keeping one component for both flows means
+   *  field layout + validation never drift between the two. */
+  contact?: Contact;
   onClose: () => void;
 }) {
-  const [name, setName] = useState('');
-  const [role, setRole] = useState('');
-  const [email, setEmail] = useState('');
-  const [phone, setPhone] = useState('');
-  // New primary demotes the old one (handled in the store). Default is
-  // "set as primary" only if the client has no primary yet — the common
-  // case is the first contact you add is the main one, and we shouldn't
-  // make the user think about it.
-  const [primary, setPrimary] = useState<boolean>(!hasPrimary);
+  const isEdit = !!contact;
+  const [name, setName] = useState(contact?.name ?? '');
+  const [role, setRole] = useState(contact?.role ?? '');
+  const [email, setEmail] = useState(contact?.email ?? '');
+  const [phone, setPhone] = useState(contact?.phone ?? '');
+  // Edit mode honours the contact's existing flag; add mode defaults to
+  // "primary" only when the client has no primary yet (first-contact case).
+  // New primary demotes the old one — the store handles that.
+  const [primary, setPrimary] = useState<boolean>(
+    isEdit ? !!contact.primary : !hasPrimary,
+  );
   const [nameError, setNameError] = useState(false);
   const nameRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    const t = window.setTimeout(() => nameRef.current?.focus(), 80);
+    const t = window.setTimeout(() => {
+      nameRef.current?.focus();
+      // In edit mode the name is already filled — select-all is more
+      // useful than leaving the cursor floating at the end, since the
+      // user opened this to change something.
+      if (isEdit) nameRef.current?.select();
+    }, 80);
     return () => window.clearTimeout(t);
-  }, []);
+  }, [isEdit]);
 
   function handleSave() {
     const trimmedName = name.trim();
@@ -2075,17 +2128,27 @@ function AddContactModal({ clientId, hasPrimary, onClose }: {
       window.setTimeout(() => setNameError(false), 1400);
       return;
     }
-    const id = `ct-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
-    const contact: Contact = {
-      id,
-      clientId,
-      name: trimmedName,
-      role: role.trim() || undefined,
-      email: email.trim() || undefined,
-      phone: phone.trim() || undefined,
-      primary: primary || undefined,
-    };
-    flizowStore.addContact(contact);
+    if (isEdit && contact) {
+      flizowStore.updateContact(contact.id, {
+        name: trimmedName,
+        role: role.trim() || undefined,
+        email: email.trim() || undefined,
+        phone: phone.trim() || undefined,
+        primary: primary || undefined,
+      });
+    } else {
+      const id = `ct-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
+      const next: Contact = {
+        id,
+        clientId,
+        name: trimmedName,
+        role: role.trim() || undefined,
+        email: email.trim() || undefined,
+        phone: phone.trim() || undefined,
+        primary: primary || undefined,
+      };
+      flizowStore.addContact(next);
+    }
     onClose();
   }
 
@@ -2120,7 +2183,9 @@ function AddContactModal({ clientId, hasPrimary, onClose }: {
     >
       <div className="wip-modal" role="document" style={{ maxWidth: 480 }}>
         <header className="wip-modal-head">
-          <h2 className="wip-modal-title" id="add-contact-title">Add contact</h2>
+          <h2 className="wip-modal-title" id="add-contact-title">
+            {isEdit ? 'Edit contact' : 'Add contact'}
+          </h2>
           <button type="button" className="wip-modal-close" onClick={onClose} aria-label="Close">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <line x1="18" y1="6" x2="6" y2="18" />
@@ -2192,9 +2257,14 @@ function AddContactModal({ clientId, hasPrimary, onClose }: {
               Set as primary contact
             </span>
             <span style={{ fontSize: 'var(--fs-sm)', color: 'var(--text-faint)' }}>
-              {hasPrimary
-                ? '— this will replace the current primary'
-                : '— gets CC\u2019d on Weekly WIP pings'}
+              {/* In edit mode: if this contact is already primary, don't
+                  threaten "will replace" — nothing's being replaced.
+                  Otherwise mirror the add-mode hint. */}
+              {isEdit && contact?.primary
+                ? '— this is the primary contact'
+                : hasPrimary
+                  ? '— this will replace the current primary'
+                  : '— gets CC\u2019d on Weekly WIP pings'}
             </span>
           </label>
         </div>
@@ -2204,7 +2274,7 @@ function AddContactModal({ clientId, hasPrimary, onClose }: {
             Cancel
           </button>
           <button type="button" className="wip-btn wip-btn-primary" onClick={handleSave}>
-            Add contact
+            {isEdit ? 'Save changes' : 'Add contact'}
           </button>
         </footer>
       </div>

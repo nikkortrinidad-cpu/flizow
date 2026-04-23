@@ -7532,6 +7532,34 @@
     border-top: 1px solid var(--hairline-soft);
     padding-top: 12px;
   }
+
+  /* View-mode row affordance: the row itself is the "Edit contact" trigger
+     (no pencil icon). Cursor flips to pointer, a faint tint + rounded
+     corners show up on hover, and keyboard focus gets the same blue ring
+     we use everywhere else. Inside edit mode the row is a management
+     surface (primary toggle + remove), so none of this applies. */
+  .contacts-list:not([data-edit="true"]) .contact-row {
+    cursor: pointer;
+    border-radius: 8px;
+    padding: 4px 6px;
+    margin: 0 -6px;
+    transition: background 0.15s;
+  }
+  .contacts-list:not([data-edit="true"]) .contact-row + .contact-row {
+    /* Kill the hairline separator once rows have a hover background —
+       two divider cues in the same place read as visual noise. */
+    border-top: 0;
+    padding-top: 4px;
+    margin-top: 2px;
+  }
+  .contacts-list:not([data-edit="true"]) .contact-row:hover {
+    background: color-mix(in srgb, var(--highlight) 5%, transparent);
+  }
+  .contacts-list:not([data-edit="true"]) .contact-row:focus-visible {
+    outline: 2px solid var(--highlight);
+    outline-offset: 1px;
+  }
+
   .contact-avatar {
     width: 32px; height: 32px; border-radius: 50%;
     display: flex; align-items: center; justify-content: center;
