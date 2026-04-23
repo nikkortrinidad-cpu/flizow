@@ -1,9 +1,10 @@
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import type {
   Client, Touchpoint, ActionItem, Member, Contact, TouchpointKind,
 } from '../types/flizow';
 import type { FlizowStore } from '../store/flizowStore';
 import { formatMonthDay, daysBetween } from '../utils/dateFormat';
+import { ConfirmDangerDialog } from './ConfirmDangerDialog';
 
 /**
  * Touchpoints tab — the meeting paper trail for a client.
@@ -199,6 +200,32 @@ function MeetingEntry({ touchpoint, actions, members, contacts, store, todayISO 
     ? upcomingRelative(touchpoint.occurredAt, todayISO)
     : pastRelative(touchpoint.occurredAt, todayISO);
 
+  // Overflow ⋯ menu — tucked at the end of the top row. Today it only
+  // carries "Delete meeting…" but is shaped plural so we can add
+  // Reschedule, Duplicate, etc. later without moving the affordance.
+  // Dismiss on outside pointerdown or Esc; matches the same pattern used
+  // by the client hero ⋯.
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!menuOpen) return;
+    function onDown(e: PointerEvent) {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setMenuOpen(false);
+      }
+    }
+    function onKey(e: KeyboardEvent) {
+      if (e.key === 'Escape') setMenuOpen(false);
+    }
+    window.addEventListener('pointerdown', onDown);
+    window.addEventListener('keydown', onKey);
+    return () => {
+      window.removeEventListener('pointerdown', onDown);
+      window.removeEventListener('keydown', onKey);
+    };
+  }, [menuOpen]);
+
   return (
     <div className="meeting-entry" data-scheduled={touchpoint.scheduled ? 'true' : undefined}>
       <div className="meeting-top">
@@ -266,6 +293,44 @@ function MeetingEntry({ touchpoint, actions, members, contacts, store, todayISO 
             {touchpoint.recordingLabel ?? `${touchpoint.durationMin ?? ''} min`}
           </a>
         ) : null}
+
+        {/* Overflow menu — sits at the end of the row, hosting
+            destructive / rarely-needed actions. Relative wrapper
+            anchors the absolute .tb-menu dropdown. */}
+        <div ref={menuRef} className="meeting-overflow" style={{ position: 'relative', marginLeft: 'auto' }}>
+          <button
+            type="button"
+            className="tb-btn"
+            aria-label="Meeting options"
+            aria-haspopup="menu"
+            aria-expanded={menuOpen}
+            onClick={() => setMenuOpen(v => !v)}
+            style={{
+              width: 28, height: 28, display: 'inline-flex',
+              alignItems: 'center', justifyContent: 'center',
+              borderRadius: 8, border: 'none', background: 'transparent',
+              color: 'var(--text-muted)', cursor: 'pointer',
+            }}
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+              <circle cx="5" cy="12" r="1.8" />
+              <circle cx="12" cy="12" r="1.8" />
+              <circle cx="19" cy="12" r="1.8" />
+            </svg>
+          </button>
+          <div className={`tb-menu${menuOpen ? ' open' : ''}`} role="menu">
+            <div
+              className="tb-menu-item danger"
+              role="menuitem"
+              onClick={() => {
+                setMenuOpen(false);
+                setShowDeleteConfirm(true);
+              }}
+            >
+              Delete meeting…
+            </div>
+          </div>
+        </div>
       </div>
 
       <TldrField
@@ -289,6 +354,30 @@ function MeetingEntry({ touchpoint, actions, members, contacts, store, todayISO 
           ))}
         </div>
       )}
+
+      {showDeleteConfirm && (() => {
+        // Cascade: deleteTouchpoint drops every action item tied to the
+        // meeting. Surface the count so the user isn't surprised — same
+        // pattern as Delete Client. Promoted kanban cards stay; the
+        // store deliberately spares those so ripping a meeting doesn't
+        // wipe downstream work.
+        const actionCount = actions.length;
+        const cascadeLine = actionCount > 0
+          ? ` Drops the ${actionCount} action item${actionCount === 1 ? '' : 's'} attached to it.`
+          : '';
+        return (
+          <ConfirmDangerDialog
+            title={`Delete "${touchpoint.topic}"?`}
+            body={`Removes this meeting and its TL;DR.${cascadeLine} Cards already promoted to the kanban board stay.`}
+            confirmLabel="Delete meeting"
+            onConfirm={() => {
+              setShowDeleteConfirm(false);
+              store.deleteTouchpoint(touchpoint.id);
+            }}
+            onClose={() => setShowDeleteConfirm(false)}
+          />
+        );
+      })()}
     </div>
   );
 }
