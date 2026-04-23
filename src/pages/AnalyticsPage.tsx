@@ -15,8 +15,10 @@ import { formatMonthDay, daysBetween } from '../utils/dateFormat';
  *   3. Who's drowning?                 → Team workload
  *
  * Numbers come off the live task + client state, so the page moves when
- * the data moves. The drill-down panel and filter dropdowns from the
- * mockup are not ported yet — this pass lands the read-side.
+ * the data moves. Clicking a KPI opens an inline drill-down panel under
+ * the grid that lists the rows behind the number (tasks or clients);
+ * clicking a task row deep-links to its card on the destination board,
+ * clicking a client row opens that client's detail page.
  *
  * Design notes:
  * - Hero size on the title, calm muted color on the sub. Belief: the
@@ -89,6 +91,13 @@ export function AnalyticsPage() {
   // the KPI grid — hoisting state is the cheapest way to keep them in sync.
   const [drillKpi, setDrillKpi] = useState<Kpi['key'] | null>(null);
 
+  // Which workload row's member drill is open (member id) or null. Same
+  // toggle semantics as the KPI drill — click the same row to close it.
+  // Kept separate from drillKpi so a user can have both open at once:
+  // the KPI drill sits under the grid, the member drill sits under the
+  // workload section, so they don't fight for the same screen region.
+  const [drillMember, setDrillMember] = useState<string | null>(null);
+
   return (
     <div className="view view-analytics active" data-view="analytics">
       <main className="anlx-page">
@@ -140,7 +149,24 @@ export function AnalyticsPage() {
           todayISO={todayISO}
         />
 
-        <WorkloadSection rows={workload} />
+        <WorkloadSection
+          rows={workload}
+          openMemberId={drillMember}
+          onToggleMember={(id) => setDrillMember(prev => (prev === id ? null : id))}
+        />
+
+        {drillMember && (
+          <MemberDrillPanel
+            memberId={drillMember}
+            tasks={filteredTasks}
+            services={data.services}
+            members={data.members}
+            clients={data.clients}
+            workload={workload}
+            todayISO={todayISO}
+            onClose={() => setDrillMember(null)}
+          />
+        )}
       </main>
     </div>
   );
@@ -815,6 +841,102 @@ function buildClientsDrill(tasks: Task[], clients: Client[]): DrillContent {
   };
 }
 
+/**
+ * Drill panel rooted on a single workload row — lists that person's open
+ * tasks. Same visual shell as the KPI drill (`.anlx-drill*`) so the user
+ * sees one pattern for "drill into this number." Sits under the Workload
+ * section so the clicked row stays on screen.
+ */
+function MemberDrillPanel({
+  memberId, tasks, services, members, clients, workload, todayISO, onClose,
+}: {
+  memberId: string;
+  tasks: Task[];
+  services: Service[];
+  members: Member[];
+  clients: Client[];
+  workload: WorkloadRow[];
+  todayISO: string;
+  onClose: () => void;
+}) {
+  const member = members.find(m => m.id === memberId) ?? null;
+  const wlRow = workload.find(r => r.id === memberId) ?? null;
+
+  // Open tasks assigned to this member only. Due-date-sorted so whatever's
+  // next in their queue reads first; undated tasks fall to the bottom.
+  const rows = useMemo(() => {
+    const mine = tasks.filter(t => isOpen(t) && t.assigneeId === memberId);
+    mine.sort((a, b) => (a.dueDate || '9999').localeCompare(b.dueDate || '9999'));
+    return mine;
+  }, [tasks, memberId]);
+
+  // Esc closes, same convention as the KPI drill.
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if (e.key === 'Escape') onClose();
+    }
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [onClose]);
+
+  const title = member
+    ? `${member.name} — open tasks${wlRow ? ` · ${wlRow.pct}% load` : ''}`
+    : 'Member drill-down';
+
+  return (
+    <section className="anlx-drill open" aria-labelledby="anlx-mdrill-title">
+      <div className="anlx-drill-head">
+        <div className="anlx-drill-title" id="anlx-mdrill-title">{title}</div>
+        <div className="anlx-drill-count">
+          {rows.length} {rows.length === 1 ? 'task' : 'tasks'}
+        </div>
+        <button
+          type="button"
+          className="anlx-drill-close"
+          aria-label="Close member drill-down"
+          onClick={onClose}
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18" />
+            <line x1="6" y1="6" x2="18" y2="18" />
+          </svg>
+        </button>
+      </div>
+      {rows.length === 0 ? (
+        <div className="anlx-drill-empty">
+          {member ? `${member.name.split(' ')[0]} has nothing open. Quiet week.` : 'Nothing open.'}
+        </div>
+      ) : (
+        <div className="anlx-drill-list">
+          {rows.map(t => (
+            <DrillTaskRow
+              key={t.id}
+              task={t}
+              service={services.find(s => s.id === t.serviceId) ?? null}
+              client={clients.find(c => c.id === t.clientId) ?? null}
+              owner={member}
+              status={memberDueStatus(t, todayISO)}
+            />
+          ))}
+        </div>
+      )}
+    </section>
+  );
+}
+
+/** Due-date status label + tone for a row inside the member drill.
+ *  Shapes what the user sees when scanning a person's queue: the next
+ *  deadline owed (or a calm placeholder when the task has no date). */
+function memberDueStatus(t: Task, todayISO: string): { label: string; tone?: 'late' | 'soon' } {
+  if (!t.dueDate) return { label: 'No date' };
+  const diff = daysBetween(todayISO, t.dueDate);
+  if (diff < 0) return { label: `${-diff}d overdue`, tone: 'late' };
+  if (diff === 0) return { label: 'Today', tone: 'late' };
+  if (diff === 1) return { label: 'Tomorrow', tone: 'soon' };
+  if (diff <= 3) return { label: `In ${diff}d`, tone: 'soon' };
+  return { label: formatMonthDay(t.dueDate) };
+}
+
 function DrillTaskRow({ task, service, client, owner, status }: {
   task: Task;
   service: Service | null;
@@ -1109,7 +1231,11 @@ interface WorkloadRow {
   spark: number[];
 }
 
-function WorkloadSection({ rows }: { rows: WorkloadRow[] }) {
+function WorkloadSection({ rows, openMemberId, onToggleMember }: {
+  rows: WorkloadRow[];
+  openMemberId: string | null;
+  onToggleMember: (id: string) => void;
+}) {
   const over = rows.filter(r => r.pct > 100).length;
   const tight = rows.filter(r => r.pct >= 85 && r.pct <= 100).length;
 
@@ -1132,17 +1258,34 @@ function WorkloadSection({ rows }: { rows: WorkloadRow[] }) {
         <div className="anlx-wl-head-cell" />
       </div>
       <div className="anlx-wl-list">
-        {rows.map(r => <WorkloadRowView key={r.id} row={r} />)}
+        {rows.map(r => (
+          <WorkloadRowView
+            key={r.id}
+            row={r}
+            isOpen={openMemberId === r.id}
+            onClick={() => onToggleMember(r.id)}
+          />
+        ))}
       </div>
     </section>
   );
 }
 
-function WorkloadRowView({ row }: { row: WorkloadRow }) {
+function WorkloadRowView({ row, isOpen, onClick }: {
+  row: WorkloadRow;
+  isOpen: boolean;
+  onClick: () => void;
+}) {
   const barPct = Math.min(row.pct, 100);
 
   return (
-    <button type="button" className="anlx-wl-row">
+    <button
+      type="button"
+      className="anlx-wl-row"
+      aria-expanded={isOpen}
+      aria-label={`${row.name}, ${row.pct}% load, ${row.wip} open ${row.wip === 1 ? 'task' : 'tasks'}. ${isOpen ? 'Close' : 'Open'} member drill-down.`}
+      onClick={onClick}
+    >
       <div className="anlx-wl-who">
         <span className="anlx-av" style={{ background: row.color }}>
           {row.initials}
@@ -1165,7 +1308,14 @@ function WorkloadRowView({ row }: { row: WorkloadRow }) {
         <SparkPaths series={row.spark} w={80} h={22} />
       </svg>
       <div className="anlx-wl-chev">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round">
+        <svg
+          viewBox="0 0 24 24" fill="none" stroke="currentColor"
+          strokeLinecap="round" strokeLinejoin="round"
+          style={{
+            transform: isOpen ? 'rotate(90deg)' : undefined,
+            transition: 'transform 160ms ease',
+          }}
+        >
           <polyline points="9 18 15 12 9 6" />
         </svg>
       </div>

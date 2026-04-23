@@ -18,16 +18,22 @@ import { ConfirmDangerDialog } from '../components/ConfirmDangerDialog';
  * via the flizowStore; visual language matches the mockup's `.board` +
  * `.column` + `.card` classes.
  *
- * First-pass scope:
- *   ✓ Breadcrumb + action buttons
- *   ✓ Filters bar (search functional; chips visual only)
- *   ✓ 5 columns — Blocked hides when empty
- *   ✓ Cards with labels, due pill, priority accent, assignee avatar
- *   ✓ Drag-drop between columns
- *   ✓ Add-card inline in To Do
- *   ○ Card Detail modal (separate TODO)
- *   ○ Sort / Group-by / Priority / Assignee filters (separate TODO)
- *   ○ WIP limits / column settings (separate TODO)
+ * What's live today:
+ *   - Breadcrumb with Board Settings menu (edit service, archived cards,
+ *     analytics jump, delete service)
+ *   - Filters bar: search + priority + due + sort (assignees + labels
+ *     from the shared BoardFilters component)
+ *   - 5 columns — Blocked hides when empty
+ *   - Cards with labels, due pill, priority accent, assignee avatars
+ *   - Drag-drop between columns (via flizowStore.moveTask)
+ *   - Add-card inline in To Do only (per product rule)
+ *   - Full card detail modal (FlizowCardModal) — open on click or
+ *     on mount via sessionStorage / route deep-link
+ *   - Archive / unarchive flow with triage modal from Board Settings
+ *
+ * Not yet:
+ *   - Per-column WIP limits and column color / reorder editing
+ *   - Swimlanes (group-by assignee / priority)
  */
 
 // ── Column definitions ───────────────────────────────────────────────
