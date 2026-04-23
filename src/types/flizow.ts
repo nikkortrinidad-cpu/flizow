@@ -300,6 +300,33 @@ export interface OnboardingItem {
   done: boolean;
 }
 
+// ── Notes ────────────────────────────────────────────────────────────────
+
+/**
+ * Per-client note. Stores an HTML body (produced by TipTap) rather than
+ * markdown so we don't round-trip through a parser on every save. The
+ * title is derived from the first non-empty line of the body at render
+ * time, not stored separately — a single source of truth means the
+ * sidebar list can't drift from the editor.
+ *
+ * pinned / locked are both per-note toggles: pinned floats to the top
+ * of the list; locked flips the editor to read-only (mapping to the
+ * mockup's "visibility lock" glyph for "client-facing; don't edit
+ * casually").
+ */
+export interface Note {
+  id: string;
+  clientId: string;
+  /** Sanitised HTML string. Empty when the note is a fresh draft. */
+  body: string;
+  pinned: boolean;
+  locked?: boolean;
+  /** ISO timestamp. */
+  createdAt: string;
+  /** ISO timestamp. Bumped on every body edit so the list can sort. */
+  updatedAt: string;
+}
+
 // ── Meetings (Weekly WIP) ────────────────────────────────────────────────
 
 /** Weekly WIP agenda entry. The mockup's WIP tab is still a stub, but
@@ -333,6 +360,7 @@ export interface FlizowData {
   onboardingItems: OnboardingItem[];
   contacts: Contact[];
   quickLinks: QuickLink[];
+  notes: Note[];
   /** The "today" reference the mockup uses for all date math. A single
    *  anchor keeps the UI stable across re-renders. */
   today: string;

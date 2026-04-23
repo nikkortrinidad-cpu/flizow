@@ -9337,6 +9337,17 @@
     color: var(--text-soft);
     pointer-events: none;
   }
+  /* TipTap renders an empty paragraph rather than leaving the contenteditable
+   * truly empty, so the :empty rule above never fires. Placeholder extension
+   * tags that paragraph with data-placeholder + is-editor-empty — this rule
+   * is the one the user actually sees. */
+  .notes-body-editor p.is-editor-empty:first-child::before {
+    content: attr(data-placeholder);
+    color: var(--text-soft);
+    float: left;
+    height: 0;
+    pointer-events: none;
+  }
   .notes-body-editor h1 {
     font-size: var(--fs-2xl);
     font-weight: 700;

@@ -1,6 +1,6 @@
 import type {
   FlizowData, Client, Service, Task, Integration, OnboardingItem,
-  Contact, QuickLink,
+  Contact, QuickLink, Note,
   ColumnId, Priority, IndustryCategory, TemplateKey,
   ServiceType, TaskSeverity, ScheduleMeta,
 } from '../types/flizow';
@@ -372,6 +372,67 @@ const QUICK_LINK_CATALOG: QuickLinkDef[] = [
   { label: 'Status Portal', urlFor: (_d, cid) => `https://flizow.app/c/${cid}`, icon: 'link' },
 ];
 
+// ── Notes seeding ────────────────────────────────────────────────────────
+
+/** Small stable of note bodies keyed by client status. The Notes tab isn't
+ *  the place for filler lorem ipsum — a two-line, plausible agency note
+ *  makes the tab feel lived-in from first render. */
+const NOTE_BODIES_BY_STATUS: Record<string, string[]> = {
+  fire: [
+    '<h3>Escalation log</h3><p>Client raised timeline concerns on Tuesday. Owner has the response drafted — awaiting sign-off before send. Keep AM in the loop.</p><ul><li>Call scheduled for Thursday 2pm</li><li>Draft response in Drive</li><li>Track turnaround on open blockers</li></ul>',
+    '<h3>Weekly pulse</h3><p>Three blockers hit this sprint. Pattern looks like <strong>approval latency</strong> rather than execution. Flag at next WIP.</p>',
+  ],
+  risk: [
+    '<h3>Retention notes</h3><p>Signals of drift: fewer open tickets, slower email replies. Worth pulling performance numbers before the next check-in.</p><ul><li>Pull last 90 days of engagement</li><li>Draft QBR agenda</li><li>Loop in AM lead</li></ul>',
+    '<h3>Follow-up</h3><p>Customer asked about scope expansion but deferred on signing. Revisit in 2 weeks if no movement.</p>',
+  ],
+  track: [
+    '<h3>Ongoing</h3><p>Client is steady. Regular retainer cadence holding up. Document any one-off asks here so they don\'t get lost.</p>',
+    '<h3>Opportunities</h3><p>They mentioned a Q3 expansion push. Worth drafting a proposal ahead of the QBR — historically they sign during that window.</p>',
+  ],
+  onboard: [
+    '<h3>Kickoff notes</h3><p>Initial kickoff went well. Team aligned on scope and cadence. Next steps: finalise working agreement, provision tooling, introduce project team.</p><ul><li>Access provisioning — in progress</li><li>Working agreement — draft shared</li><li>Kickoff retro — scheduled</li></ul>',
+  ],
+  paused: [
+    '<h3>Paused</h3><p>Retainer paused mid-quarter. Check in monthly. Door is open when they\'re ready to resume.</p>',
+  ],
+};
+
+function buildNotes(
+  clientId: string,
+  clientName: string,
+  status: string,
+  seed: number,
+  todayStr: string,
+): Note[] {
+  // Keep the seed light — not every client needs multiple notes to look
+  // plausible. One per client is enough to show the layout; a couple of
+  // the more active statuses get two.
+  const pool = NOTE_BODIES_BY_STATUS[status] ?? NOTE_BODIES_BY_STATUS.track;
+  const n = Math.min(pool.length, 1 + (seed % 2));
+  const out: Note[] = [];
+  for (let i = 0; i < n; i++) {
+    const daysAgo = 3 + i * 6 + (seed % 10);
+    const iso = new Date(
+      new Date(todayStr).getTime() - daysAgo * 86_400_000,
+    ).toISOString();
+    out.push({
+      id: `${clientId}-note-${i}`,
+      clientId,
+      body: pool[i],
+      // Pin the most recent note per client so the Notes sidebar always
+      // has a top item that's not buried by idle notes.
+      pinned: i === 0,
+      createdAt: iso,
+      updatedAt: iso,
+    });
+  }
+  // Silences the unused-param warning while keeping the signature clean
+  // in case we later want to include the client's name in the body.
+  void clientName;
+  return out;
+}
+
 function buildQuickLinks(clientId: string, clientName: string, seed: number): QuickLink[] {
   const count = 3 + (seed % 3); // 3–5 links
   const domain = slugDomain(clientName);
@@ -407,6 +468,7 @@ export function generateDemoData(): FlizowData {
   const onboardingItems: OnboardingItem[] = [];
   const contacts: Contact[] = [];
   const quickLinks: QuickLink[] = [];
+  const notes: Note[] = [];
 
   const members = [...DEMO_AMS, ...OPS_TEAM];
   const operatorIds = OPS_TEAM.map(m => m.id);
@@ -445,6 +507,7 @@ export function generateDemoData(): FlizowData {
     // Seed 2–4 contacts and 3–5 quick links per client.
     contacts.push(...buildContacts(seedRow.id, seedRow.name, seed));
     quickLinks.push(...buildQuickLinks(seedRow.id, seedRow.name, seed));
+    notes.push(...buildNotes(seedRow.id, seedRow.name, seedRow.status, seed, todayStr));
 
     const catServices = SERVICE_TEMPLATES[cat];
     const nServices = Math.min(2 + (seed % 3), catServices.length);
@@ -668,6 +731,7 @@ export function generateDemoData(): FlizowData {
     onboardingItems,
     contacts,
     quickLinks,
+    notes,
     today: todayStr,
     scheduleTaskMap,
   };

@@ -1,7 +1,7 @@
 import { doc, setDoc, onSnapshot, type Unsubscribe } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import type {
-  FlizowData, Client, Service, Task, Member, Contact, QuickLink,
+  FlizowData, Client, Service, Task, Member, Contact, QuickLink, Note,
   ColumnId, Priority,
 } from '../types/flizow';
 
@@ -38,6 +38,7 @@ function emptyData(): FlizowData {
     onboardingItems: [],
     contacts: [],
     quickLinks: [],
+    notes: [],
     today: todayISO(),
     scheduleTaskMap: {},
   };
@@ -82,6 +83,7 @@ function migrate(parsed: Partial<FlizowData>): FlizowData {
     onboardingItems: parsed.onboardingItems ?? base.onboardingItems,
     contacts: parsed.contacts ?? base.contacts,
     quickLinks: parsed.quickLinks ?? base.quickLinks,
+    notes: parsed.notes ?? base.notes,
     // `today` always refreshes on load — we never trust a stale anchor.
     today: todayISO(),
     scheduleTaskMap: parsed.scheduleTaskMap ?? base.scheduleTaskMap,
@@ -262,6 +264,7 @@ class FlizowStore {
     this.data.integrations = this.data.integrations.filter(i => i.clientId !== id);
     this.data.contacts = this.data.contacts.filter(c => c.clientId !== id);
     this.data.quickLinks = this.data.quickLinks.filter(q => q.clientId !== id);
+    this.data.notes = this.data.notes.filter(n => n.clientId !== id);
     this.save();
   }
 
@@ -438,6 +441,46 @@ class FlizowStore {
     const next = client.teamIds.filter(id => id !== memberId);
     if (next.length === client.teamIds.length) return;
     client.teamIds = next;
+    this.save();
+  }
+
+  // ── Notes ────────────────────────────────────────────────────────────
+
+  addNote(note: Note) {
+    this.data.notes.push(note);
+    this.save();
+  }
+
+  /** Update the body, pinned state, or lock on a note. Bumps updatedAt
+   *  whenever the body changed so the list sort stays honest. */
+  updateNote(id: string, patch: Partial<Note>) {
+    const n = this.data.notes.find(n => n.id === id);
+    if (!n) return;
+    // Only bump updatedAt when the body actually moved — tagging a note
+    // as pinned shouldn't re-shuffle the sort order by modification time.
+    if (patch.body !== undefined && patch.body !== n.body) {
+      n.updatedAt = new Date().toISOString();
+    }
+    Object.assign(n, patch);
+    this.save();
+  }
+
+  deleteNote(id: string) {
+    this.data.notes = this.data.notes.filter(n => n.id !== id);
+    this.save();
+  }
+
+  toggleNotePinned(id: string) {
+    const n = this.data.notes.find(n => n.id === id);
+    if (!n) return;
+    n.pinned = !n.pinned;
+    this.save();
+  }
+
+  toggleNoteLocked(id: string) {
+    const n = this.data.notes.find(n => n.id === id);
+    if (!n) return;
+    n.locked = !n.locked;
     this.save();
   }
 
