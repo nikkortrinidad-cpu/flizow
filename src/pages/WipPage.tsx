@@ -86,11 +86,16 @@ export function WipPage() {
   const [meeting, setMeeting] = useState<LiveMeetingState>({ phase: 'idle' });
   const [showPreRead, setShowPreRead] = useState(false);
 
+  // Archived cards are hidden work — they shouldn't show up in the
+  // Weekly WIP agenda, even if their status would otherwise mark them
+  // as urgent or blocked. Filter once, feed the filtered list into the
+  // agenda builder.
+  const liveTasks = useMemo(() => data.tasks.filter(t => !t.archived), [data.tasks]);
   const groups = useMemo(
     () => buildAgenda(
-      data.clients, data.services, data.tasks, data.manualAgendaItems, data.today,
+      data.clients, data.services, liveTasks, data.manualAgendaItems, data.today,
     ),
-    [data.clients, data.services, data.tasks, data.manualAgendaItems, data.today],
+    [data.clients, data.services, liveTasks, data.manualAgendaItems, data.today],
   );
 
   // Apply per-session dismissals so removing an auto item sticks until

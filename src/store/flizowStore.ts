@@ -688,6 +688,40 @@ class FlizowStore {
     return newId;
   }
 
+  /**
+   * Soft-hide a task from the active board. Archived tasks keep every
+   * other field intact — column, checklist, comments, activity, due
+   * date — so the restore is a single-field flip. They drop out of
+   * column rendering, WIP counts, and active analytics, but the row
+   * stays in the store so we don't lose history.
+   *
+   * Idempotent: calling archiveTask on an already-archived card is a
+   * no-op (no duplicate activity log entry, no spurious save).
+   */
+  archiveTask(id: string) {
+    const task = this.data.tasks.find(t => t.id === id);
+    if (!task || task.archived) return;
+    task.archived = true;
+    task.archivedAt = new Date().toISOString();
+    this.logActivity(id, 'archived', 'archived this card');
+    this.save();
+  }
+
+  /**
+   * Bring an archived task back to the active board. Pairs with
+   * archiveTask — same idempotency, same activity-log shape. The task
+   * returns to whatever column it was parked in when it was archived,
+   * so users don't need to re-sort anything.
+   */
+  unarchiveTask(id: string) {
+    const task = this.data.tasks.find(t => t.id === id);
+    if (!task || !task.archived) return;
+    task.archived = false;
+    task.archivedAt = undefined;
+    this.logActivity(id, 'archived', 'restored this card from archive');
+    this.save();
+  }
+
   deleteTask(id: string) {
     const t = this.data.tasks.find(t => t.id === id);
     if (!t) return;

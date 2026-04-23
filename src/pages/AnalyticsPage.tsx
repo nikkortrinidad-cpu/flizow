@@ -125,7 +125,12 @@ function applyAnalyticsFilters(
   filters: AnalyticsFilters,
   todayISO: string,
 ): Task[] {
-  let out = tasks;
+  // Drop archived tasks up front — they don't count toward any active
+  // KPI (workload, overdue, upcoming) and shouldn't inflate the
+  // "completed" totals either. Restoring a card from the archive
+  // brings it back into analytics automatically since this is a pure
+  // filter, not a data change.
+  let out = tasks.filter(t => !t.archived);
 
   if (filters.assigneeId) {
     const id = filters.assigneeId;

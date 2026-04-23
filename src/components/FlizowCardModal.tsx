@@ -322,9 +322,37 @@ export default function FlizowCardModal({ taskId, onClose }: Props) {
                   {copiedLink ? 'Link copied' : 'Copy link'}
                 </div>
                 <div className="tb-menu-divider" />
-                <div className="tb-menu-item" aria-disabled="true" style={{ opacity: 0.5, cursor: 'not-allowed' }}>
-                  Archive card
-                  <span style={{ marginLeft: 'auto', fontSize: 11, color: 'var(--text-faint)' }}>soon</span>
+                <div
+                  className="tb-menu-item"
+                  role="menuitem"
+                  tabIndex={0}
+                  onClick={() => {
+                    // Archive hides the card from the active board but
+                    // keeps every field intact (comments, checklist,
+                    // activity). Restoring from the Board Settings →
+                    // Archived-cards modal puts it back in the same
+                    // column. We close the detail modal on archive so
+                    // the user doesn't see a ghost card they've just
+                    // hidden from themselves; on unarchive we leave it
+                    // open so the user can continue editing.
+                    if (!task) return;
+                    if (task.archived) {
+                      flizowStore.unarchiveTask(task.id);
+                      setMoreOpen(false);
+                    } else {
+                      flizowStore.archiveTask(task.id);
+                      setMoreOpen(false);
+                      onClose();
+                    }
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      (e.currentTarget as HTMLElement).click();
+                    }
+                  }}
+                >
+                  {task.archived ? 'Unarchive card' : 'Archive card'}
                 </div>
                 <div
                   className="tb-menu-item danger"

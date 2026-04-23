@@ -77,12 +77,18 @@ export function OverviewPage() {
     };
   }, [data.clients]);
 
+  // Archived tasks are hidden from every Overview panel — they don't
+  // contribute to client health, schedule entries, or needs-attention
+  // counts. Pre-filter once so every downstream builder sees the same
+  // view of "active work."
+  const liveTasks = useMemo(() => data.tasks.filter(t => !t.archived), [data.tasks]);
+
   // Needs-attention cards — the clients you actually need to open today.
   // Order: fire first, then risk, capped at 6 so the block stays scannable.
   // Overflow spills into a "View all" link rather than an ever-growing list.
   const attention = useMemo(() => {
-    return buildAttentionCards(data.clients, data.tasks).slice(0, 6);
-  }, [data.clients, data.tasks]);
+    return buildAttentionCards(data.clients, liveTasks).slice(0, 6);
+  }, [data.clients, liveTasks]);
   const hiddenAttention = useMemo(() => {
     return Math.max(
       0,
@@ -96,8 +102,8 @@ export function OverviewPage() {
   // touchpoints cover client meetings, and the schedule is the one
   // place they have to overlap.
   const weekDays = useMemo(() => {
-    return buildWeekGrid(data.tasks, data.touchpoints, data.clients, new Date());
-  }, [data.tasks, data.touchpoints, data.clients]);
+    return buildWeekGrid(liveTasks, data.touchpoints, data.clients, new Date());
+  }, [liveTasks, data.touchpoints, data.clients]);
   // Tab labels use the week's date range ("Apr 22 – 26") so the user
   // sees at a glance what they're looking at without decoding which
   // Monday we anchored on.

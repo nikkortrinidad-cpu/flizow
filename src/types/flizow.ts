@@ -214,6 +214,16 @@ export interface Task {
    *  Kept separate from `assigneeId` (the legacy single-owner field)
    *  so the card tile can still show the primary owner. */
   assigneeIds?: string[];
+  // ── Archive ─────────────────────────────────────────────────────────
+  /** Soft-hidden from the board. Archived tasks keep their columnId,
+   *  dueDate, checklist, comments, and activity — nothing is destroyed —
+   *  they just drop out of column rendering and out of active analytics
+   *  counts. Restore via the Archived-cards panel. Absent / false = live. */
+  archived?: boolean;
+  /** ISO timestamp the task was archived. Used to sort the Archived-cards
+   *  list newest-first so the most recently hidden cards are easiest to
+   *  find again. Cleared on unarchive. */
+  archivedAt?: string;
 }
 
 export interface Member {
@@ -301,7 +311,8 @@ export type TaskActivityKind =
   | 'checklistDeleted'
   | 'checklistRenamed'
   | 'commentAdded'
-  | 'commentDeleted';
+  | 'commentDeleted'
+  | 'archived';
 
 export interface TaskActivity {
   id: string;

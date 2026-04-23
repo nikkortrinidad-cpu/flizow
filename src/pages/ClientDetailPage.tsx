@@ -114,9 +114,13 @@ function ClientDetail({ client, data, store }: DetailProps) {
       return ai - bi;
     });
   }, [data.services, client.id, client.serviceIds]);
+  // Archived cards are hidden everywhere active work is measured —
+  // attention counts, service counts, activity feed. Pre-filter once so
+  // every consumer on this page uses the same definition.
+  const liveTasks = useMemo(() => data.tasks.filter(t => !t.archived), [data.tasks]);
   const openTasks = useMemo(
-    () => data.tasks.filter(t => t.clientId === client.id && t.columnId !== 'done'),
-    [data.tasks, client.id],
+    () => liveTasks.filter(t => t.clientId === client.id && t.columnId !== 'done'),
+    [liveTasks, client.id],
   );
   const clientOnboarding = useMemo(() => {
     const svcIds = new Set(services.map(s => s.id));
@@ -146,7 +150,7 @@ function ClientDetail({ client, data, store }: DetailProps) {
             favoriteIds={data.favoriteServiceIds}
             onToggleFavorite={(id) => store.toggleServiceFavorite(id)}
           />
-          <ActivitySection client={client} tasks={data.tasks} members={data.members} todayISO={data.today} />
+          <ActivitySection client={client} tasks={liveTasks} members={data.members} todayISO={data.today} />
         </>
       )}
 

@@ -69,17 +69,26 @@ export function BoardPage() {
     );
   }
 
+  // Split the service's task list into live vs archived up front so
+  // BoardBody (columns, filters, WIP counts) only ever sees live work.
+  // Archived cards surface exclusively through the Archived-cards modal
+  // opened from the Board Settings menu.
+  const serviceTasks = data.tasks.filter(t => t.serviceId === service.id);
+  const liveTasks = serviceTasks.filter(t => !t.archived);
+  const archivedTasks = serviceTasks.filter(t => !!t.archived);
+
   return (
     <div className="view view-board active" data-view="board">
       <BoardBody
         client={client}
         service={service}
-        tasks={data.tasks.filter(t => t.serviceId === service.id)}
+        tasks={liveTasks}
+        archivedTasks={archivedTasks}
         members={data.members}
         taskComments={data.taskComments}
         todayISO={data.today}
         isFavorite={data.favoriteServiceIds.includes(service.id)}
-        taskCount={data.tasks.filter(t => t.serviceId === service.id).length}
+        taskCount={liveTasks.length}
         initialCardId={cardIdFromRoute}
       />
     </div>
@@ -116,6 +125,7 @@ function BoardBody({
   client,
   service,
   tasks,
+  archivedTasks,
   members,
   taskComments,
   todayISO,
@@ -126,6 +136,9 @@ function BoardBody({
   client: Client;
   service: Service;
   tasks: Task[];
+  /** Archived tasks for this service — rendered only in the Archived-
+   *  cards modal, never in the columns. */
+  archivedTasks: Task[];
   members: Member[];
   taskComments: TaskComment[];
   todayISO: string;
@@ -231,6 +244,8 @@ function BoardBody({
         members={members}
         isFavorite={isFavorite}
         taskCount={taskCount}
+        archivedTasks={archivedTasks}
+        onOpenCardFromArchive={setSelectedTaskId}
       />
       <FiltersBar
         search={search}
@@ -295,12 +310,26 @@ function BoardBody({
 
 // ── Breadcrumb ───────────────────────────────────────────────────────
 
-function Breadcrumb({ client, service, members, isFavorite, taskCount }: {
+function Breadcrumb({
+  client,
+  service,
+  members,
+  isFavorite,
+  taskCount,
+  archivedTasks,
+  onOpenCardFromArchive,
+}: {
   client: Client;
   service: Service;
   members: Member[];
   isFavorite: boolean;
   taskCount: number;
+  /** Archived cards for this service, forwarded from BoardBody so the
+   *  "Archived cards" menu item can show the count and feed the modal. */
+  archivedTasks: Task[];
+  /** Opens a card in BoardBody's detail modal. Used when the user
+   *  clicks an archived card row in the archived-cards modal. */
+  onOpenCardFromArchive: (taskId: string) => void;
 }) {
   // Inline rename on the current-page crumb. Same pattern as the client
   // hero rename: cursor:text + hover tint + ring on focus, no pencil icon.
@@ -315,6 +344,11 @@ function Breadcrumb({ client, service, members, isFavorite, taskCount }: {
   const [membersOpen, setMembersOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  // Archived-cards modal: opened from Board Settings → "Archived cards…".
+  // The list is a direct render of `archivedTasks` (passed in from the
+  // page), so Restore / open-card / permanent-delete flows work without
+  // lifting state higher than the modal itself.
+  const [archivedOpen, setArchivedOpen] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const menuWrapRef = useRef<HTMLDivElement>(null);
   const membersWrapRef = useRef<HTMLDivElement>(null);
@@ -572,6 +606,37 @@ function Breadcrumb({ client, service, members, isFavorite, taskCount }: {
               <EditPenIcon />
               Edit service details…
             </div>
+            <div
+              role="menuitem"
+              tabIndex={0}
+              className="tb-menu-item"
+              onClick={() => { setSettingsOpen(false); setArchivedOpen(true); }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  setSettingsOpen(false);
+                  setArchivedOpen(true);
+                }
+              }}
+            >
+              <ArchiveIcon />
+              Archived cards
+              {archivedTasks.length > 0 && (
+                <span
+                  style={{
+                    marginLeft: 'auto',
+                    fontSize: 11,
+                    color: 'var(--text-faint)',
+                    background: 'var(--bg-faint)',
+                    padding: '2px 8px',
+                    borderRadius: 999,
+                    fontWeight: 600,
+                  }}
+                >
+                  {archivedTasks.length}
+                </span>
+              )}
+            </div>
             <div className="tb-menu-divider" />
             <div
               role="menuitem"
@@ -666,6 +731,24 @@ function Breadcrumb({ client, service, members, isFavorite, taskCount }: {
             navigate(`#clients/${clientId}`);
           }}
           onClose={() => setConfirmDelete(false)}
+        />
+      )}
+
+      {archivedOpen && (
+        <ArchivedCardsModal
+          serviceName={service.name}
+          archivedTasks={archivedTasks}
+          members={members}
+          onClose={() => setArchivedOpen(false)}
+          onOpenCard={(taskId) => {
+            // Closing the archived modal first ensures the card modal
+            // paints on top of a clean overlay; opening an archived card
+            // in the detail view still works because the modal reads
+            // from the store directly (archived field is not a render
+            // gate on the card modal itself).
+            setArchivedOpen(false);
+            onOpenCardFromArchive(taskId);
+          }}
         />
       )}
     </div>
@@ -1313,6 +1396,373 @@ function TrashIcon() {
       <path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2" />
     </svg>
   );
+}
+function ArchiveIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <polyline points="21 8 21 21 3 21 3 8" />
+      <rect x="1" y="3" width="22" height="5" />
+      <line x1="10" y1="12" x2="14" y2="12" />
+    </svg>
+  );
+}
+function UndoIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <path d="M3 7v6h6" />
+      <path d="M21 17a9 9 0 0 0-15-6.7L3 13" />
+    </svg>
+  );
+}
+
+// ── Archived cards modal ─────────────────────────────────────────────
+//
+// Surfaces every archived card on the current service board in one
+// place, with three actions per row: open the card detail modal
+// (for context), restore to the active board (single click, idempotent),
+// or permanently delete (confirmed). Sorted newest-first on archived
+// timestamp so the most recently hidden cards are easiest to find.
+//
+// The modal reads directly off the archivedTasks prop passed in from
+// BoardPage — no internal state, so restoring a card causes the parent
+// to re-render with a shorter list and the row animates out naturally.
+//
+// Shell shared with EditServiceModal (wip-modal-*). The list itself
+// uses flat rows rather than kanban-style tiles; this is a triage view,
+// not a second board.
+
+function ArchivedCardsModal({
+  serviceName,
+  archivedTasks,
+  members,
+  onClose,
+  onOpenCard,
+}: {
+  serviceName: string;
+  archivedTasks: Task[];
+  members: Member[];
+  onClose: () => void;
+  onOpenCard: (taskId: string) => void;
+}) {
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+
+  // Esc always closes. We attach at mount so the modal keyboard pattern
+  // matches EditServiceModal and FlizowCardModal.
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        // If a confirm dialog is open, let its own Esc handler close it
+        // first — don't skip two layers at once.
+        if (confirmDeleteId) return;
+        onClose();
+      }
+    }
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [onClose, confirmDeleteId]);
+
+  function handleBackdropClick(e: React.MouseEvent<HTMLDivElement>) {
+    if (e.target === e.currentTarget) onClose();
+  }
+
+  // Sort newest-first on archivedAt. Guard against legacy rows that lack
+  // the timestamp — treat them as oldest so they sink below everything
+  // else (rare, but we don't want NaN comparisons in the sort).
+  const sorted = useMemo(
+    () =>
+      [...archivedTasks].sort((a, b) =>
+        (b.archivedAt ?? '').localeCompare(a.archivedAt ?? ''),
+      ),
+    [archivedTasks],
+  );
+
+  const pendingDelete = confirmDeleteId
+    ? archivedTasks.find(t => t.id === confirmDeleteId) ?? null
+    : null;
+
+  return (
+    <div
+      className="wip-modal-overlay"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="archived-cards-title"
+      onClick={handleBackdropClick}
+    >
+      <div className="wip-modal" role="document" style={{ maxWidth: 640 }}>
+        <header className="wip-modal-head">
+          <h2 className="wip-modal-title" id="archived-cards-title">
+            Archived cards
+          </h2>
+          <button type="button" className="wip-modal-close" onClick={onClose} aria-label="Close">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="18" y1="6" x2="6" y2="18" />
+              <line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
+          </button>
+        </header>
+
+        <div
+          className="wip-modal-body"
+          style={{ paddingTop: 12, paddingBottom: 12, maxHeight: '60vh', overflow: 'auto' }}
+        >
+          <p
+            style={{
+              margin: '0 0 14px',
+              fontSize: 13,
+              color: 'var(--text-soft)',
+              lineHeight: 1.5,
+            }}
+          >
+            Cards archived from <strong style={{ color: 'var(--text)' }}>{serviceName}</strong>.
+            Archived cards keep all their comments, checklist, and activity —
+            restore one to put it back in its column, or delete it for good.
+          </p>
+
+          {sorted.length === 0 ? (
+            <div
+              style={{
+                padding: '32px 16px',
+                textAlign: 'center',
+                color: 'var(--text-faint)',
+                fontSize: 14,
+                lineHeight: 1.6,
+                background: 'var(--bg-faint)',
+                borderRadius: 10,
+                border: '1px dashed var(--hairline-soft)',
+              }}
+            >
+              No archived cards on this board.
+              <br />
+              Archive a card from its detail modal's kebab menu.
+            </div>
+          ) : (
+            <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', gap: 6 }}>
+              {sorted.map(t => (
+                <ArchivedCardRow
+                  key={t.id}
+                  task={t}
+                  members={members}
+                  onOpen={() => onOpenCard(t.id)}
+                  onRestore={() => flizowStore.unarchiveTask(t.id)}
+                  onRequestDelete={() => setConfirmDeleteId(t.id)}
+                />
+              ))}
+            </ul>
+          )}
+        </div>
+
+        <footer className="wip-modal-foot">
+          <button type="button" className="wip-btn wip-btn-ghost" onClick={onClose}>
+            Done
+          </button>
+        </footer>
+      </div>
+
+      {pendingDelete && (
+        <ConfirmDangerDialog
+          title={`Delete "${pendingDelete.title}" permanently?`}
+          body={
+            <>
+              This removes the card and everything attached to it — comments,
+              checklist, activity history. Restore from archive instead if you
+              just want to hide it for now.
+            </>
+          }
+          confirmLabel="Delete card"
+          onConfirm={() => {
+            flizowStore.deleteTask(pendingDelete.id);
+            setConfirmDeleteId(null);
+          }}
+          onClose={() => setConfirmDeleteId(null)}
+        />
+      )}
+    </div>
+  );
+}
+
+/** One row in the Archived-cards modal. Keeps row-local hover / focus
+ *  behaviour out of the parent so the list can grow without prop-drilling. */
+function ArchivedCardRow({
+  task,
+  members,
+  onOpen,
+  onRestore,
+  onRequestDelete,
+}: {
+  task: Task;
+  members: Member[];
+  onOpen: () => void;
+  onRestore: () => void;
+  onRequestDelete: () => void;
+}) {
+  const primary = task.assigneeId
+    ? members.find(m => m.id === task.assigneeId) ?? null
+    : null;
+  const columnLabel = (id: ColumnId): string => {
+    switch (id) {
+      case 'todo': return 'To Do';
+      case 'inprogress': return 'In Progress';
+      case 'blocked': return 'Blocked';
+      case 'review': return 'Needs Review';
+      case 'done': return 'Done';
+    }
+  };
+  const archivedLabel = task.archivedAt
+    ? formatArchivedTime(task.archivedAt)
+    : 'recently';
+
+  return (
+    <li
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: 10,
+        padding: '10px 12px',
+        borderRadius: 10,
+        border: '1px solid var(--hairline-soft)',
+        background: 'var(--bg-elev)',
+      }}
+    >
+      {/* Primary assignee avatar — same pattern as board tiles. Falls
+          back to a neutral glyph when the card has no owner. */}
+      {primary ? (
+        <span
+          aria-hidden
+          style={{
+            width: 26,
+            height: 26,
+            borderRadius: '50%',
+            background: primary.type === 'operator' ? primary.bg : primary.color,
+            color: primary.type === 'operator' ? primary.color : '#fff',
+            fontSize: 10,
+            fontWeight: 700,
+            display: 'inline-flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            flex: '0 0 26px',
+          }}
+          title={primary.name}
+        >
+          {primary.initials}
+        </span>
+      ) : (
+        <span
+          aria-hidden
+          style={{
+            width: 26,
+            height: 26,
+            borderRadius: '50%',
+            background: 'var(--bg-faint)',
+            color: 'var(--text-faint)',
+            fontSize: 12,
+            display: 'inline-flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            flex: '0 0 26px',
+          }}
+        >
+          ?
+        </span>
+      )}
+
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <button
+          type="button"
+          onClick={onOpen}
+          style={{
+            display: 'block',
+            width: '100%',
+            background: 'transparent',
+            border: 0,
+            padding: 0,
+            margin: 0,
+            textAlign: 'left',
+            font: 'inherit',
+            color: 'var(--text)',
+            cursor: 'pointer',
+          }}
+          aria-label={`Open ${task.title}`}
+        >
+          <div
+            style={{
+              fontSize: 14,
+              fontWeight: 500,
+              color: 'var(--text)',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            {task.title}
+          </div>
+          <div
+            style={{
+              fontSize: 12,
+              color: 'var(--text-faint)',
+              marginTop: 2,
+            }}
+          >
+            {columnLabel(task.columnId)} · archived {archivedLabel}
+          </div>
+        </button>
+      </div>
+
+      <button
+        type="button"
+        className="btn-sm"
+        onClick={onRestore}
+        aria-label={`Restore ${task.title} to the board`}
+        style={{ whiteSpace: 'nowrap' }}
+      >
+        <UndoIcon />
+        Restore
+      </button>
+
+      <button
+        type="button"
+        onClick={onRequestDelete}
+        aria-label={`Delete ${task.title} permanently`}
+        title="Delete permanently"
+        style={{
+          width: 32,
+          height: 32,
+          border: '1px solid var(--hairline-soft)',
+          background: 'var(--bg-elev)',
+          color: 'var(--status-fire)',
+          cursor: 'pointer',
+          borderRadius: 8,
+          display: 'inline-flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          flex: '0 0 32px',
+        }}
+      >
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+          <polyline points="3 6 5 6 21 6" />
+          <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+          <path d="M10 11v6M14 11v6" />
+          <path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2" />
+        </svg>
+      </button>
+    </li>
+  );
+}
+
+/** Friendly relative label for archivedAt. Matches the card-modal
+ *  comment timestamp style so the dates read uniformly across the app. */
+function formatArchivedTime(iso: string): string {
+  const t = new Date(iso).getTime();
+  if (!Number.isFinite(t)) return 'recently';
+  const diffSec = Math.round((Date.now() - t) / 1000);
+  if (diffSec < 60) return 'just now';
+  const diffMin = Math.round(diffSec / 60);
+  if (diffMin < 60) return `${diffMin}m ago`;
+  const diffHr = Math.round(diffMin / 60);
+  if (diffHr < 24) return `${diffHr}h ago`;
+  const diffDays = Math.round(diffSec / 86_400);
+  if (diffDays < 7) return `${diffDays}d ago`;
+  return new Date(iso).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
 }
 
 // Unused underscore marker so Priority isn't an unused import.
