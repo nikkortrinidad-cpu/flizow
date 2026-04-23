@@ -47,6 +47,11 @@ export function BoardPage() {
   const { data } = useFlizow();
 
   const serviceId = route.params.id;
+  // URL-level deep-link: `#board/{svcId}/card/{cardId}` sets this and
+  // we pass it through to BoardBody so the auto-open effect can open
+  // the card on mount. Works for pasted links — sessionStorage alone
+  // wouldn't survive a new-tab open.
+  const cardIdFromRoute = route.params.cardId;
   const service = useMemo(
     () => data.services.find(s => s.id === serviceId),
     [data.services, serviceId],
@@ -75,6 +80,7 @@ export function BoardPage() {
         todayISO={data.today}
         isFavorite={data.favoriteServiceIds.includes(service.id)}
         taskCount={data.tasks.filter(t => t.serviceId === service.id).length}
+        initialCardId={cardIdFromRoute}
       />
     </div>
   );
@@ -115,6 +121,7 @@ function BoardBody({
   todayISO,
   isFavorite,
   taskCount,
+  initialCardId,
 }: {
   client: Client;
   service: Service;
@@ -124,6 +131,7 @@ function BoardBody({
   todayISO: string;
   isFavorite: boolean;
   taskCount: number;
+  initialCardId?: string;
 }) {
   const { store } = useFlizow();
   const [search, setSearch] = useState('');
@@ -133,20 +141,25 @@ function BoardBody({
   // time the user navigates away from this page (unmount handles it).
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
 
-  // Auto-open a card if another surface (touchpoints "On board ↗",
-  // command palette, etc.) dropped its id in sessionStorage. One-shot —
-  // we clear the key immediately so a refresh doesn't re-open it.
+  // Auto-open a card if either (a) another surface (touchpoints
+  // "On board ↗", command palette, etc.) dropped its id in
+  // sessionStorage, or (b) the route is a deep link of the form
+  // `#board/{svcId}/card/{cardId}` (shared via "Copy link"). Route
+  // params survive a new-tab open; sessionStorage doesn't. One-shot
+  // per mount — we clear the key immediately so a refresh doesn't
+  // spuriously re-open.
   useEffect(() => {
-    const pending = sessionStorage.getItem('flizow-open-card');
+    const fromStorage = sessionStorage.getItem('flizow-open-card');
+    if (fromStorage) sessionStorage.removeItem('flizow-open-card');
+    const pending = fromStorage ?? initialCardId;
     if (!pending) return;
-    sessionStorage.removeItem('flizow-open-card');
     if (tasks.some(t => t.id === pending)) {
       setSelectedTaskId(pending);
     }
     // We only need to fire once per board mount — the service id is the
     // mount boundary so we key off it. Re-navigations to the same board
     // with a new pending card will land via the service-id change below.
-  }, [service.id, tasks]);
+  }, [service.id, tasks, initialCardId]);
 
   // Per-task comment count. Built once per comment-array change so card
   // tiles don't each scan the whole list — O(n+m) instead of O(n*m).

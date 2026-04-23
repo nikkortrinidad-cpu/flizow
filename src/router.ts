@@ -35,6 +35,14 @@ function parse(hash: string): Route {
       if (rest.length > 0) return { name: 'client-detail', params: { id: rest[0] }, hash };
       return { name: 'clients', params: {}, hash };
     case 'board':
+      // `#board/{svcId}/card/{cardId}` deep-links directly to a card.
+      // We don't support this on the initial tier — it's reached via
+      // the card modal's "Copy link" menu — but when the receiver (or
+      // the original user later) opens the URL, the board mounts with
+      // that card pre-opened.
+      if (rest.length >= 3 && rest[1] === 'card') {
+        return { name: 'board', params: { id: rest[0], cardId: rest[2] }, hash };
+      }
       if (rest.length > 0) return { name: 'board', params: { id: rest[0] }, hash };
       return { name: 'board', params: {}, hash };
     case 'ops':

@@ -630,6 +630,64 @@ class FlizowStore {
     return m?.name || 'Unknown';
   }
 
+  /**
+   * Clone a task into a brand-new card on the same service. The copy
+   * lands in To Do with a "(copy)" suffix, so it's easy to tell apart
+   * from the original and doesn't pollute Done/Review. Checklist items
+   * come along but get fresh ids; comments + activity do not — a
+   * duplicate is a new card that happens to start with the same text,
+   * not a branch of the old thread.
+   *
+   * Returns the new task id so callers can open it in the modal.
+   */
+  duplicateTask(id: string): string | null {
+    const src = this.data.tasks.find(t => t.id === id);
+    if (!src) return null;
+    const now = new Date().toISOString();
+    const newId = `t-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`;
+    const copy: Task = {
+      id: newId,
+      serviceId: src.serviceId,
+      clientId: src.clientId,
+      title: `${src.title} (copy)`,
+      // Always land in To Do — duplicating a Done card back into Done
+      // would create a phantom "completed" card that was never done.
+      columnId: 'todo',
+      priority: src.priority,
+      assigneeId: src.assigneeId,
+      labels: [...(src.labels ?? [])],
+      // Clear the due date so the duplicate doesn't show up as overdue
+      // the moment it's created. The user can pick a new one.
+      dueDate: '',
+      createdAt: now,
+      severity: src.severity,
+      // Deliberately skip blockerReason — duplicates aren't blocked
+      // by default, no matter the source's state.
+      blockerReason: undefined,
+      // Schedule meta is source-specific — don't carry it over.
+      _schedule: undefined,
+      startDate: undefined,
+      description: src.description,
+      checklist: src.checklist
+        ? src.checklist.map(item => ({
+            id: `ck-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`,
+            text: item.text,
+            done: false,  // reset progress — a fresh card starts fresh
+            assigneeId: item.assigneeId,
+          }))
+        : undefined,
+      assigneeIds: src.assigneeIds ? [...src.assigneeIds] : undefined,
+    };
+    this.data.tasks.push(copy);
+    const service = this.data.services.find(s => s.id === copy.serviceId);
+    if (service && !service.taskIds.includes(newId)) {
+      service.taskIds.push(newId);
+    }
+    this.logActivity(newId, 'created', `duplicated from "${src.title}"`);
+    this.save();
+    return newId;
+  }
+
   deleteTask(id: string) {
     const t = this.data.tasks.find(t => t.id === id);
     if (!t) return;

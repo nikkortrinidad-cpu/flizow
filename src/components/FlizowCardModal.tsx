@@ -142,7 +142,15 @@ export default function FlizowCardModal({ taskId, onClose }: Props) {
   // ── More (titlebar kebab) menu ────────────────────────────────────
   const [moreOpen, setMoreOpen] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  useEffect(() => { setMoreOpen(false); setShowDeleteConfirm(false); }, [taskId]);
+  // Transient copy-confirmation state for the "Copy link" menu item.
+  // Flips true for ~1.6s after a successful clipboard write so the
+  // label reads "Link copied" instead of snapping back to "Copy link".
+  const [copiedLink, setCopiedLink] = useState(false);
+  useEffect(() => {
+    setMoreOpen(false);
+    setShowDeleteConfirm(false);
+    setCopiedLink(false);
+  }, [taskId]);
 
   // ── New-checklist-item input state ────────────────────────────────
   const [newCheckText, setNewCheckText] = useState('');
@@ -239,13 +247,79 @@ export default function FlizowCardModal({ taskId, onClose }: Props) {
             </button>
             {moreOpen && (
               <div className="tb-menu open" onClick={(e) => e.stopPropagation()}>
-                <div className="tb-menu-item" aria-disabled="true" style={{ opacity: 0.5, cursor: 'not-allowed' }}>
+                <div
+                  className="tb-menu-item"
+                  role="menuitem"
+                  tabIndex={0}
+                  onClick={() => {
+                    // Duplicate lands in To Do with a "(copy)" suffix and
+                    // reset progress. We close the current card and open
+                    // the new one so the user can rename it immediately.
+                    const newId = flizowStore.duplicateTask(taskId);
+                    setMoreOpen(false);
+                    if (newId) {
+                      onClose();
+                      // Hand the new id to the board auto-open channel
+                      // and re-navigate to the same board — the useEffect
+                      // on BoardPage picks it up and opens the modal.
+                      sessionStorage.setItem('flizow-open-card', newId);
+                      if (task?.serviceId) {
+                        // Force hash re-parse so BoardPage re-runs its
+                        // mount-time auto-open effect even if we're on
+                        // the same board. Works by setting to '#' first.
+                        const target = `#board/${task.serviceId}`;
+                        if (window.location.hash === target) {
+                          window.location.hash = '';
+                          window.location.hash = target;
+                        } else {
+                          window.location.hash = target;
+                        }
+                      }
+                    }
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      (e.currentTarget as HTMLElement).click();
+                    }
+                  }}
+                >
                   Duplicate card
-                  <span style={{ marginLeft: 'auto', fontSize: 11, color: 'var(--text-faint)' }}>soon</span>
                 </div>
-                <div className="tb-menu-item" aria-disabled="true" style={{ opacity: 0.5, cursor: 'not-allowed' }}>
-                  Copy link
-                  <span style={{ marginLeft: 'auto', fontSize: 11, color: 'var(--text-faint)' }}>soon</span>
+                <div
+                  className="tb-menu-item"
+                  role="menuitem"
+                  tabIndex={0}
+                  onClick={async () => {
+                    // Deep-link URL points at the board and drops the
+                    // card id as a path segment in the hash so the
+                    // router can parse it: `#board/{svcId}/card/{cardId}`.
+                    // Users paste this into Slack or email; when the
+                    // owning user (or a teammate signed in later) opens
+                    // it, BoardPage mounts with that card pre-opened via
+                    // its initialCardId auto-open effect.
+                    if (!task) return;
+                    const base = window.location.href.split('#')[0];
+                    const url = `${base}#board/${task.serviceId}/card/${task.id}`;
+                    try {
+                      if (navigator.clipboard?.writeText) {
+                        await navigator.clipboard.writeText(url);
+                      }
+                      setCopiedLink(true);
+                      window.setTimeout(() => setCopiedLink(false), 1600);
+                    } catch {
+                      // Silent fail — the menu stays open long enough
+                      // for the user to retry or close manually.
+                    }
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      (e.currentTarget as HTMLElement).click();
+                    }
+                  }}
+                >
+                  {copiedLink ? 'Link copied' : 'Copy link'}
                 </div>
                 <div className="tb-menu-divider" />
                 <div className="tb-menu-item" aria-disabled="true" style={{ opacity: 0.5, cursor: 'not-allowed' }}>
@@ -254,12 +328,21 @@ export default function FlizowCardModal({ taskId, onClose }: Props) {
                 </div>
                 <div
                   className="tb-menu-item danger"
+                  role="menuitem"
+                  tabIndex={0}
                   onClick={() => {
                     // Close the menu first so the confirm dialog paints on top
                     // of a clean toolbar, then open the in-app confirm. No more
                     // native window.confirm — design system owns this dialog.
                     setMoreOpen(false);
                     setShowDeleteConfirm(true);
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      setMoreOpen(false);
+                      setShowDeleteConfirm(true);
+                    }
                   }}
                 >
                   Delete card
