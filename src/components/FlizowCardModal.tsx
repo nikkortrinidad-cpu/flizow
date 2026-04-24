@@ -895,27 +895,33 @@ export default function FlizowCardModal({ taskId, onClose, kind = 'task', onDupl
 
           {/* ── Sidebar ──────────────────────────────────────────── */}
           {/* Comments + activity are backed by `data.taskComments` /
-              `data.taskActivity`, both keyed to client task ids. Until
-              the Ops board has its own comment + activity streams, the
-              sidebar renders a short placeholder so the card shell stays
-              visually symmetric without lying about features we haven't
-              built yet. */}
+              `data.taskActivity`. Ops cards get the Activity tab now
+              (writes go through the shared `logActivity` helper); the
+              Comments tab stays client-only until the Ops board has a
+              comment stream to read from. */}
           <div className="card-modal-sidebar">
             {isOps ? (
-              <div style={{
-                padding: '32px 24px',
-                color: 'var(--text-faint)',
-                fontSize: 13,
-                lineHeight: 1.55,
-                textAlign: 'center',
-              }}>
-                <div style={{ fontWeight: 600, marginBottom: 6, color: 'var(--text-soft)' }}>
-                  Comments and activity
+              <>
+                <div className="sidebar-tabs" role="tablist" aria-label="Card sidebar">
+                  {/* Single-tab switcher rather than a bare heading — keeps
+                      visual parity with the two-tab client view and leaves
+                      a slot for Comments to slide in next to it. */}
+                  <button
+                    type="button"
+                    className="sidebar-tab active"
+                    role="tab"
+                    aria-selected={true}
+                  >
+                    Activity Log
+                  </button>
                 </div>
-                <div>
-                  The Ops board doesn't track these yet. They'll turn on once the team starts using the board daily.
+                <div
+                  className="sidebar-content active"
+                  role="tabpanel"
+                >
+                  <ActivityPanel taskId={task.id} members={data.members} activity={data.taskActivity} />
                 </div>
-              </div>
+              </>
             ) : (
               <>
                 <div className="sidebar-tabs" role="tablist" aria-label="Card sidebar">

@@ -526,7 +526,12 @@ class FlizowStore {
   // feeds read like a log file, and log files shouldn't re-hydrate.
 
   private logActivity(taskId: string, kind: TaskActivityKind, text: string) {
-    const task = this.data.tasks.find(t => t.id === taskId);
+    // Either kind of task may own an activity row now. We check both so
+    // a post-cascade-delete call still no-ops, but an ops card editing
+    // its title doesn't get swallowed because it's not in `data.tasks`.
+    const task =
+      this.data.tasks.find(t => t.id === taskId) ||
+      this.data.opsTasks.find(t => t.id === taskId);
     if (!task) return; // guard — e.g. activity logged after cascade delete
     const entry: TaskActivity = {
       id: `ac-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`,
@@ -796,31 +801,117 @@ class FlizowStore {
 
   // ── Ops tasks ────────────────────────────────────────────────────────
   //
-  // Same shape as the Task mutators above, but against `data.opsTasks`
-  // instead of `data.tasks`. No activity logging for v1 — the Ops board
-  // modal hides the Activity tab, so the infrastructure would be unused.
-  // When we wire ops comments + activity, `logActivity` gets widened to
-  // accept an opsTaskId and these mutators call it the way updateTask
-  // already does.
+  // Same shape as the Task mutators above, against `data.opsTasks`. Now
+  // emits activity entries through the same `logActivity` helper —
+  // FlizowCardModal renders the Ops card Activity tab off the shared
+  // `data.taskActivity` pile, filtered by task id. Comments are still
+  // client-only (no ops comment stream yet).
 
   addOpsTask(task: OpsTask) {
     this.data.opsTasks = [...this.data.opsTasks, task];
+    this.logActivity(task.id, 'created', 'created this card');
     this.save();
   }
 
   updateOpsTask(id: string, patch: Partial<OpsTask>) {
     const idx = this.data.opsTasks.findIndex(t => t.id === id);
     if (idx === -1) return;
+    const original = this.data.opsTasks[idx];
+    // Snapshot the same field set `updateTask` diffs for client cards,
+    // minus the ones ops tasks don't carry. Feeds the `logActivity`
+    // calls after the patch lands so the Activity tab tells the same
+    // story whether the card lives on a client service or the Ops board.
+    const before = {
+      columnId: original.columnId,
+      priority: original.priority,
+      title: original.title,
+      description: original.description,
+      dueDate: original.dueDate,
+      startDate: original.startDate,
+      assigneeIds: Array.isArray(original.assigneeIds)
+        ? [...original.assigneeIds]
+        : (original.assigneeId ? [original.assigneeId] : []),
+      labels: [...(original.labels ?? [])],
+    };
     // Replace-in-array (not mutate-in-place) so `data.opsTasks` gets a
     // fresh reference. Without this, OpsPage's `useMemo([tasks])`
     // caches the pre-move bucketing — a card dragged to a new column
     // only surfaces after a hard refresh. Same reasoning as updateTask().
-    const updated: OpsTask = { ...this.data.opsTasks[idx], ...patch };
+    const updated: OpsTask = { ...original, ...patch };
     this.data.opsTasks = [
       ...this.data.opsTasks.slice(0, idx),
       updated,
       ...this.data.opsTasks.slice(idx + 1),
     ];
+    const after = {
+      columnId: updated.columnId,
+      priority: updated.priority,
+      title: updated.title,
+      description: updated.description,
+      dueDate: updated.dueDate,
+      startDate: updated.startDate,
+      assigneeIds: Array.isArray(updated.assigneeIds)
+        ? [...updated.assigneeIds]
+        : (updated.assigneeId ? [updated.assigneeId] : []),
+      labels: [...(updated.labels ?? [])],
+    };
+
+    if (before.columnId !== after.columnId) {
+      this.logActivity(id, 'moved', `moved this card to ${columnLabel(after.columnId)}`);
+    }
+    if (before.priority !== after.priority && after.priority) {
+      this.logActivity(id, 'priority', `set priority to ${priorityLabel(after.priority)}`);
+    }
+    if (before.title !== after.title) {
+      this.logActivity(id, 'title', `renamed this card to "${after.title}"`);
+    }
+    if ((before.description ?? '') !== (after.description ?? '')) {
+      const hadBefore = !!before.description?.trim();
+      const hasAfter = !!after.description?.trim();
+      const text = !hadBefore && hasAfter
+        ? 'added a description'
+        : hadBefore && !hasAfter
+          ? 'cleared the description'
+          : 'edited the description';
+      this.logActivity(id, 'description', text);
+    }
+    if ((before.dueDate ?? '') !== (after.dueDate ?? '')) {
+      const text = !before.dueDate && after.dueDate
+        ? `set the due date to ${formatDayLabel(after.dueDate)}`
+        : before.dueDate && !after.dueDate
+          ? 'removed the due date'
+          : `changed the due date to ${formatDayLabel(after.dueDate || '')}`;
+      this.logActivity(id, 'dueDate', text);
+    }
+    if ((before.startDate ?? '') !== (after.startDate ?? '')) {
+      const text = !before.startDate && after.startDate
+        ? `set the start date to ${formatDayLabel(after.startDate)}`
+        : before.startDate && !after.startDate
+          ? 'removed the start date'
+          : `changed the start date to ${formatDayLabel(after.startDate || '')}`;
+      this.logActivity(id, 'startDate', text);
+    }
+    const beforeA = new Set(before.assigneeIds);
+    const afterA = new Set(after.assigneeIds);
+    for (const mid of afterA) {
+      if (!beforeA.has(mid)) {
+        this.logActivity(id, 'assignee', `added ${this.memberDisplay(mid)}`);
+      }
+    }
+    for (const mid of beforeA) {
+      if (!afterA.has(mid)) {
+        this.logActivity(id, 'assignee', `removed ${this.memberDisplay(mid)}`);
+      }
+    }
+    const beforeL = new Set(before.labels);
+    const afterL = new Set(after.labels);
+    for (const lid of afterL) {
+      if (!beforeL.has(lid)) this.logActivity(id, 'label', `added label ${labelText(lid)}`);
+    }
+    for (const lid of beforeL) {
+      if (!afterL.has(lid)) this.logActivity(id, 'label', `removed label ${labelText(lid)}`);
+    }
+
     this.save();
   }
 
@@ -879,6 +970,7 @@ class FlizowStore {
       archived: false,
     };
     this.data.opsTasks = [...this.data.opsTasks, copy];
+    this.logActivity(newId, 'created', `duplicated from "${src.title}"`);
     this.save();
     return newId;
   }
@@ -886,22 +978,44 @@ class FlizowStore {
   deleteOpsTask(id: string) {
     const before = this.data.opsTasks.length;
     this.data.opsTasks = this.data.opsTasks.filter(t => t.id !== id);
-    if (this.data.opsTasks.length !== before) this.save();
+    if (this.data.opsTasks.length === before) return;
+    // Matches deleteTask's cascade — a card's activity has nowhere to
+    // live without the card.
+    this.data.taskActivity = this.data.taskActivity.filter(a => a.taskId !== id);
+    this.save();
   }
 
   archiveOpsTask(id: string) {
-    const t = this.data.opsTasks.find(t => t.id === id);
-    if (!t || t.archived) return;
-    t.archived = true;
-    t.archivedAt = new Date().toISOString();
+    const idx = this.data.opsTasks.findIndex(t => t.id === id);
+    if (idx === -1 || this.data.opsTasks[idx].archived) return;
+    const updated: OpsTask = {
+      ...this.data.opsTasks[idx],
+      archived: true,
+      archivedAt: new Date().toISOString(),
+    };
+    this.data.opsTasks = [
+      ...this.data.opsTasks.slice(0, idx),
+      updated,
+      ...this.data.opsTasks.slice(idx + 1),
+    ];
+    this.logActivity(id, 'archived', 'archived this card');
     this.save();
   }
 
   unarchiveOpsTask(id: string) {
-    const t = this.data.opsTasks.find(t => t.id === id);
-    if (!t || !t.archived) return;
-    t.archived = false;
-    t.archivedAt = undefined;
+    const idx = this.data.opsTasks.findIndex(t => t.id === id);
+    if (idx === -1 || !this.data.opsTasks[idx].archived) return;
+    const updated: OpsTask = {
+      ...this.data.opsTasks[idx],
+      archived: false,
+      archivedAt: undefined,
+    };
+    this.data.opsTasks = [
+      ...this.data.opsTasks.slice(0, idx),
+      updated,
+      ...this.data.opsTasks.slice(idx + 1),
+    ];
+    this.logActivity(id, 'archived', 'restored this card from archive');
     this.save();
   }
 
