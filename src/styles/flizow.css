@@ -12278,9 +12278,11 @@
   .template-checklist-item {
     display: flex; align-items: center; gap: var(--sp-md);
     padding: var(--sp-7) var(--sp-base); border-radius: 8px;
-    transition: background 0.1s;
   }
-  .template-checklist-item:hover { background: var(--bg-soft); }
+  /* No :hover rule — items are pure <div>s with no onClick and no
+     keyboard wire, so a hover tint would promise an interaction
+     that isn't there. Put this back when/if the checklist items
+     become interactive. Audit: templates M5. */
   .template-checklist-item .dot {
     width: 15px; height: 15px; border-radius: 4px;
     background: var(--bg-elev);

@@ -357,8 +357,11 @@ function DetailPane({ template }: { template: TemplateDef }) {
             <div className="template-hero-title">{template.name}</div>
             <div className="template-hero-meta">
               <span className="template-category-chip">{template.category}</span>
-              <span className="sep" />
-              <span className="template-last-edited">Last edited —</span>
+              {/* "Last edited —" used to render a literal em-dash in
+                  place of a timestamp because TEMPLATE_DEF has no
+                  lastEdited field. The em-dash read as broken data,
+                  not as "no data yet." Removed until real timestamps
+                  flow through the admin editor. Audit: templates M4. */}
             </div>
           </div>
         </div>
@@ -444,25 +447,14 @@ function DetailPane({ template }: { template: TemplateDef }) {
           </div>
         </div>
 
-        {/* Activity (empty state for now) */}
-        <div className="template-section">
-          <div className="template-section-header">
-            <div className="template-section-title">Activity</div>
-            <div className="template-section-sub">Recent changes to this template</div>
-          </div>
-          <div className="template-activity-list">
-            <div
-              style={{
-                padding: '14px 12px',
-                color: 'var(--text-faint)',
-                fontSize: 'var(--fs-md)',
-                lineHeight: 'var(--lh-body)',
-              }}
-            >
-              No activity yet. Edits you make to this template will show up here.
-            </div>
-          </div>
-        </div>
+        {/* Activity section deleted — the empty state rendered
+            "No activity yet. Edits you make to this template will
+            show up here." on every template, but TEMPLATES is a
+            hard-coded first-pass array with no write path, so the
+            list will never populate. Same "unbuilt feature shown as
+            empty state" trap we cleaned up on Analytics and Weekly
+            WIP. Put the section back when the admin editor ships
+            the timestamps. Audit: templates M3. */}
       </section>
     </div>
   );
