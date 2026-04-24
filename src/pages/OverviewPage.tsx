@@ -554,23 +554,51 @@ type AttentionCard = {
 // the same client 3x when they have three overdue items, which trains
 // the eye to ignore repeats instead of act on them.
 function buildAttentionCards(clients: Client[], tasks: Task[]): AttentionCard[] {
-  const fire = clients.filter((c) => c.status === 'fire');
-  const risk = clients.filter((c) => c.status === 'risk');
-  const ordered = [...fire, ...risk];
-
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   const todayMs = today.getTime();
 
-  return ordered.map((c) => {
-    const isCritical = c.status === 'fire';
-    const openTasks = tasks.filter((t) => t.clientId === c.id && t.columnId !== 'done');
-    const overdue = openTasks.filter((t) => {
-      const due = new Date(t.dueDate);
-      due.setHours(0, 0, 0, 0);
-      return due.getTime() < todayMs;
+  // Enrich each at-risk/on-fire client with the urgency metrics we'll
+  // need for sorting AND for card copy. Computing overdue/blocked once
+  // here saves the second pass in the old flow.
+  const enriched = clients
+    .filter((c) => c.status === 'fire' || c.status === 'risk')
+    .map((c) => {
+      const openTasks = tasks.filter((t) => t.clientId === c.id && t.columnId !== 'done');
+      const overdue = openTasks.filter((t) => {
+        const due = new Date(t.dueDate);
+        due.setHours(0, 0, 0, 0);
+        return due.getTime() < todayMs;
+      });
+      const blocked = openTasks.filter((t) => t.columnId === 'blocked');
+      let oldestDueMs = Infinity;
+      for (const t of overdue) {
+        const due = new Date(t.dueDate);
+        due.setHours(0, 0, 0, 0);
+        if (due.getTime() < oldestDueMs) oldestDueMs = due.getTime();
+      }
+      return { client: c, overdue, blocked, oldestDueMs };
     });
-    const blocked = openTasks.filter((t) => t.columnId === 'blocked');
+
+  // Sort by severity (fire before risk), then by total urgent items
+  // desc, then by oldest overdue asc. The old flow was just
+  // `[...fire, ...risk]` — which meant a client with 1 overdue could
+  // appear above one with 7 overdue inside the same bucket, purely
+  // because of `data.clients` array order. The block caps at 6 cards,
+  // so a truly-urgent client at position 7 was invisible until "View
+  // all." Audit: overview M3.
+  enriched.sort((a, b) => {
+    const sevA = a.client.status === 'fire' ? 0 : 1;
+    const sevB = b.client.status === 'fire' ? 0 : 1;
+    if (sevA !== sevB) return sevA - sevB;
+    const urgA = a.overdue.length + a.blocked.length;
+    const urgB = b.overdue.length + b.blocked.length;
+    if (urgA !== urgB) return urgB - urgA;
+    return a.oldestDueMs - b.oldestDueMs;
+  });
+
+  return enriched.map(({ client: c, overdue, blocked, oldestDueMs }) => {
+    const isCritical = c.status === 'fire';
 
     let title: string;
     if (overdue.length && blocked.length) {
@@ -585,17 +613,11 @@ function buildAttentionCards(clients: Client[], tasks: Task[]): AttentionCard[] 
       title = 'Drifting — time for a check-in';
     }
 
-    // Age label: anchored on the oldest overdue task if we have one, so
-    // the AM sees the worst-case staleness at a glance. Falls back to a
-    // status hint when there's nothing measurably late.
+    // Age label anchors on the oldest overdue task so the AM sees
+    // worst-case staleness at a glance. Falls back to a status hint
+    // when nothing is measurably late.
     let ageLabel: string;
     if (overdue.length) {
-      let oldestDueMs = Infinity;
-      for (const t of overdue) {
-        const due = new Date(t.dueDate);
-        due.setHours(0, 0, 0, 0);
-        if (due.getTime() < oldestDueMs) oldestDueMs = due.getTime();
-      }
       const days = Math.max(1, Math.floor((todayMs - oldestDueMs) / 86_400_000));
       ageLabel = days === 1 ? '1 day overdue' : `${days} days overdue`;
     } else if (blocked.length) {
