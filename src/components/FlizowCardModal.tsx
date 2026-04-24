@@ -75,9 +75,14 @@ interface Props {
   onClose: () => void;
   /** Which pile the card lives in. Omit for client tasks (the default). */
   kind?: CardKind;
+  /** Fired after a successful Duplicate action. Client tasks route
+   *  through the BoardPage hash nav (so they can open on a different
+   *  board), but ops duplicates stay on the same page — OpsPage passes
+   *  this to swap the currently-open modal to the new card. */
+  onDuplicated?: (newId: string) => void;
 }
 
-export default function FlizowCardModal({ taskId, onClose, kind = 'task' }: Props) {
+export default function FlizowCardModal({ taskId, onClose, kind = 'task', onDuplicated }: Props) {
   const { data, store } = useFlizow();
   const isOps = kind === 'opsTask';
   const task = isOps
@@ -337,10 +342,11 @@ export default function FlizowCardModal({ taskId, onClose, kind = 'task' }: Prop
             </button>
             {moreOpen && (
               <div className="tb-menu open" onClick={(e) => e.stopPropagation()}>
-                {/* Duplicate + Copy link both depend on `serviceId` — hide
-                    both for ops cards until the Ops board has its own
-                    routing and duplication story. */}
-                {!isOps && (
+                {/* Duplicate works for both kinds now — ops uses a
+                    callback (OpsPage swaps selectedId); client tasks
+                    re-nav the hash so BoardPage's auto-open effect runs.
+                    Copy link still depends on a deep-link URL we don't
+                    have for ops yet, so it stays client-only below. */}
                 <div
                   className="tb-menu-item"
                   role="menuitem"
@@ -349,25 +355,33 @@ export default function FlizowCardModal({ taskId, onClose, kind = 'task' }: Prop
                     // Duplicate lands in To Do with a "(copy)" suffix and
                     // reset progress. We close the current card and open
                     // the new one so the user can rename it immediately.
-                    const newId = flizowStore.duplicateTask(taskId);
+                    const newId = isOps
+                      ? flizowStore.duplicateOpsTask(taskId)
+                      : flizowStore.duplicateTask(taskId);
                     setMoreOpen(false);
-                    if (newId) {
-                      onClose();
-                      // Hand the new id to the board auto-open channel
-                      // and re-navigate to the same board — the useEffect
-                      // on BoardPage picks it up and opens the modal.
-                      sessionStorage.setItem('flizow-open-card', newId);
-                      if (task && 'serviceId' in task && task.serviceId) {
-                        // Force hash re-parse so BoardPage re-runs its
-                        // mount-time auto-open effect even if we're on
-                        // the same board. Works by setting to '#' first.
-                        const target = `#board/${task.serviceId}`;
-                        if (window.location.hash === target) {
-                          window.location.hash = '';
-                          window.location.hash = target;
-                        } else {
-                          window.location.hash = target;
-                        }
+                    if (!newId) return;
+                    if (isOps) {
+                      // Ops page owns the selected card state — hand the
+                      // new id over and it swaps the modal without a
+                      // close/reopen flicker.
+                      onDuplicated?.(newId);
+                      return;
+                    }
+                    onClose();
+                    // Hand the new id to the board auto-open channel
+                    // and re-navigate to the same board — the useEffect
+                    // on BoardPage picks it up and opens the modal.
+                    sessionStorage.setItem('flizow-open-card', newId);
+                    if (task && 'serviceId' in task && task.serviceId) {
+                      // Force hash re-parse so BoardPage re-runs its
+                      // mount-time auto-open effect even if we're on
+                      // the same board. Works by setting to '#' first.
+                      const target = `#board/${task.serviceId}`;
+                      if (window.location.hash === target) {
+                        window.location.hash = '';
+                        window.location.hash = target;
+                      } else {
+                        window.location.hash = target;
                       }
                     }
                   }}
@@ -380,7 +394,6 @@ export default function FlizowCardModal({ taskId, onClose, kind = 'task' }: Prop
                 >
                   Duplicate card
                 </div>
-                )}
                 {!isOps && (
                 <div
                   className="tb-menu-item"

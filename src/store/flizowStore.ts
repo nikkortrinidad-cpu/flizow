@@ -832,6 +832,57 @@ class FlizowStore {
     this.updateOpsTask(id, { priority });
   }
 
+  /**
+   * Clone an ops task. Same shape as duplicateTask(): copy drops into
+   * To Do with a "(copy)" suffix, clears progress counters, resets
+   * timestamps. No activity log — ops cards don't log activity yet.
+   *
+   * Returns the new id so callers can open it in the modal.
+   */
+  duplicateOpsTask(id: string): string | null {
+    const src = this.data.opsTasks.find(t => t.id === id);
+    if (!src) return null;
+    const now = new Date().toISOString();
+    const newId = `op-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`;
+    const copy: OpsTask = {
+      id: newId,
+      title: `${src.title} (copy)`,
+      // Always land in To Do. A duplicate of a Done card has no business
+      // claiming to be already-done — same rule as client tasks.
+      columnId: 'todo',
+      priority: src.priority,
+      assigneeId: src.assigneeId,
+      assigneeIds: src.assigneeIds ? [...src.assigneeIds] : undefined,
+      labels: [...src.labels],
+      // Fresh dates — the copy is a new card even if the text is old.
+      dueDate: undefined,
+      startDate: undefined,
+      createdAt: now,
+      // Ops-specific overrides reset: a freshly-created card can't claim
+      // it's been blocked for 3 days.
+      enteredDaysAgo: undefined,
+      overrideMod: undefined,
+      overrideLabel: undefined,
+      // Counters reset. Checklist items carry over with new ids but
+      // every box gets un-checked — progress doesn't duplicate.
+      comments: undefined,
+      attachments: undefined,
+      description: src.description,
+      checklist: src.checklist
+        ? src.checklist.map(item => ({
+            id: `ck-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`,
+            text: item.text,
+            done: false,
+            assigneeId: item.assigneeId,
+          }))
+        : undefined,
+      archived: false,
+    };
+    this.data.opsTasks = [...this.data.opsTasks, copy];
+    this.save();
+    return newId;
+  }
+
   deleteOpsTask(id: string) {
     const before = this.data.opsTasks.length;
     this.data.opsTasks = this.data.opsTasks.filter(t => t.id !== id);

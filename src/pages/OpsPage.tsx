@@ -1,4 +1,4 @@
-import { useMemo, useState, type ReactElement } from 'react';
+import { useEffect, useMemo, useRef, useState, type ReactElement } from 'react';
 import { DndContext, DragOverlay, PointerSensor, useSensor, useSensors, closestCenter, useDraggable, useDroppable } from '@dnd-kit/core';
 import type { DragEndEvent, DragStartEvent } from '@dnd-kit/core';
 import { daysBetween, formatMonthDay } from '../utils/dateFormat';
@@ -174,6 +174,9 @@ export function OpsPage() {
           taskId={selectedId}
           kind="opsTask"
           onClose={() => setSelectedId(null)}
+          // Duplicate swaps the open modal over to the new card so the
+          // user can rename it without a close/reopen flicker.
+          onDuplicated={(newId) => setSelectedId(newId)}
         />
       )}
     </div>
@@ -294,6 +297,114 @@ function Column({
             onOpen={() => onOpenTask(task.id)}
           />
         ))}
+        {/* House rule: + Add Card only lives in the To Do column. Cards
+            move forward via drag or the status picker, not by being
+            created mid-column. */}
+        {columnId === 'todo' && <AddOpsCardInline />}
+      </div>
+    </div>
+  );
+}
+
+// ── Add Ops Card inline form ─────────────────────────────────────────
+// Mirrors the shape of BoardPage's AddCardInline but without the
+// serviceId/clientId coupling — an ops card is standalone. Title-only on
+// creation: everything else (priority, labels, due date, assignee,
+// description, checklist) falls through to the modal.
+
+function AddOpsCardInline() {
+  const [open, setOpen] = useState(false);
+  const [title, setTitle] = useState('');
+  const inputRef = useRef<HTMLTextAreaElement>(null);
+
+  useEffect(() => {
+    if (open && inputRef.current) inputRef.current.focus();
+  }, [open]);
+
+  function submit() {
+    const trimmed = title.trim();
+    if (!trimmed) {
+      setOpen(false);
+      return;
+    }
+    const now = new Date();
+    const id = `op-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`;
+    flizowStore.addOpsTask({
+      id,
+      title: trimmed,
+      columnId: 'todo',
+      priority: 'medium',
+      assigneeId: null,
+      labels: [],
+      createdAt: now.toISOString(),
+    });
+    setTitle('');
+    setOpen(false);
+  }
+
+  if (!open) {
+    return (
+      <button type="button" className="add-card-btn" onClick={() => setOpen(true)}>
+        ＋ Add Card
+      </button>
+    );
+  }
+
+  return (
+    <div
+      style={{
+        border: '1px solid var(--hairline)',
+        borderRadius: 12,
+        background: 'var(--bg-elev)',
+        padding: 12,
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 10,
+      }}
+    >
+      <textarea
+        ref={inputRef}
+        value={title}
+        onChange={(e) => setTitle(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submit(); }
+          if (e.key === 'Escape') { setOpen(false); setTitle(''); }
+        }}
+        placeholder="What needs to get done?"
+        rows={2}
+        style={{
+          resize: 'none',
+          border: '1px solid var(--hairline-soft)',
+          borderRadius: 8,
+          padding: '8px 10px',
+          fontFamily: 'inherit',
+          fontSize: 'var(--fs-base)',
+          color: 'var(--text)',
+          background: 'var(--bg)',
+          outline: 'none',
+        }}
+      />
+      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
+        <button
+          type="button"
+          className="btn-sm"
+          onClick={() => { setOpen(false); setTitle(''); }}
+        >
+          Cancel
+        </button>
+        <button
+          type="button"
+          className="btn-sm"
+          onClick={submit}
+          disabled={!title.trim()}
+          style={{
+            background: title.trim() ? 'var(--highlight)' : 'var(--bg-soft)',
+            color: title.trim() ? '#fff' : 'var(--text-faint)',
+            borderColor: title.trim() ? 'var(--highlight)' : 'var(--hairline)',
+          }}
+        >
+          Add card
+        </button>
       </div>
     </div>
   );
