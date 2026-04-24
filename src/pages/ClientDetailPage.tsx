@@ -2276,6 +2276,14 @@ function AddContactModal({ clientId, existingPrimary, contact, onClose }: {
     isEdit ? !!contact.primary : !hasPrimary,
   );
   const [nameError, setNameError] = useState(false);
+  // Email and phone both save to the contact record that drives the
+  // Weekly WIP ping queue downstream. An email of "j@a" or a phone of
+  // "abc" used to save silently — the queue would later fail with no
+  // user-facing signal. Validating on save (not on blur) keeps typing
+  // friction low while still catching garbage before it hits the store.
+  // Audit: add-contact-modal M2.
+  const [emailError, setEmailError] = useState(false);
+  const [phoneError, setPhoneError] = useState(false);
   // When non-null, a demotion confirm dialog is stacked over the form.
   // Tracked as a trimmed-name string so we can reuse it as the saved
   // payload (no point running the validation twice).
@@ -2343,6 +2351,26 @@ function AddContactModal({ clientId, existingPrimary, contact, onClose }: {
       setNameError(true);
       nameRef.current?.focus();
       window.setTimeout(() => setNameError(false), 1400);
+      return;
+    }
+    // Email is optional — empty passes. When filled, require a shape
+    // that could plausibly reach an inbox. The regex is deliberately
+    // loose (local@domain.tld with no spaces or extra @s) because
+    // tighter RFC-accurate checks reject valid addresses in the wild.
+    const trimmedEmail = email.trim();
+    if (trimmedEmail && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(trimmedEmail)) {
+      setEmailError(true);
+      window.setTimeout(() => setEmailError(false), 2000);
+      return;
+    }
+    // Phone is optional. When filled, require at least 7 digits after
+    // stripping everything non-numeric — enough to catch "abc" and
+    // finger-slips like "555" without gate-keeping real international
+    // formats like "+44 20 1234".
+    const trimmedPhone = phone.trim();
+    if (trimmedPhone && trimmedPhone.replace(/\D/g, '').length < 7) {
+      setPhoneError(true);
+      window.setTimeout(() => setPhoneError(false), 2000);
       return;
     }
     if (wouldDemote(trimmedName)) {
@@ -2413,7 +2441,21 @@ function AddContactModal({ clientId, existingPrimary, contact, onClose }: {
               placeholder="e.g. Jamie Chen"
               style={nameError ? { borderColor: 'var(--status-fire)' } : undefined}
               aria-invalid={nameError || undefined}
+              aria-describedby={nameError ? 'contact-name-error' : undefined}
             />
+            {/* Live region for the name-empty error. Without role="alert"
+                a screen-reader user pressing Save on an empty form hears
+                silence — the red border flashes, then disappears. Audit:
+                add-contact-modal M4. */}
+            {nameError && (
+              <span
+                id="contact-name-error"
+                role="alert"
+                style={{ fontSize: 'var(--fs-sm)', color: 'var(--status-fire)', marginTop: 4 }}
+              >
+                Name is required.
+              </span>
+            )}
           </label>
 
           <label className="wip-field">
@@ -2434,9 +2476,21 @@ function AddContactModal({ clientId, existingPrimary, contact, onClose }: {
                 type="email"
                 className="wip-field-input"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(e) => { setEmail(e.target.value); if (emailError) setEmailError(false); }}
                 placeholder="jamie@acme.com"
+                style={emailError ? { borderColor: 'var(--status-fire)' } : undefined}
+                aria-invalid={emailError || undefined}
+                aria-describedby={emailError ? 'contact-email-error' : undefined}
               />
+              {emailError && (
+                <span
+                  id="contact-email-error"
+                  role="alert"
+                  style={{ fontSize: 'var(--fs-sm)', color: 'var(--status-fire)', marginTop: 4 }}
+                >
+                  Enter a valid email, or leave it blank.
+                </span>
+              )}
             </label>
             <label className="wip-field">
               <span className="wip-field-label">Phone</span>
@@ -2444,37 +2498,62 @@ function AddContactModal({ clientId, existingPrimary, contact, onClose }: {
                 type="tel"
                 className="wip-field-input"
                 value={phone}
-                onChange={(e) => setPhone(e.target.value)}
+                onChange={(e) => { setPhone(e.target.value); if (phoneError) setPhoneError(false); }}
                 placeholder="+1 555 1234"
+                style={phoneError ? { borderColor: 'var(--status-fire)' } : undefined}
+                aria-invalid={phoneError || undefined}
+                aria-describedby={phoneError ? 'contact-phone-error' : undefined}
               />
+              {phoneError && (
+                <span
+                  id="contact-phone-error"
+                  role="alert"
+                  style={{ fontSize: 'var(--fs-sm)', color: 'var(--status-fire)', marginTop: 4 }}
+                >
+                  Enter at least 7 digits, or leave it blank.
+                </span>
+              )}
             </label>
           </div>
 
-          <label
-            className="wip-field"
-            style={{ flexDirection: 'row', alignItems: 'center', gap: 10, cursor: 'pointer' }}
-          >
-            <input
-              type="checkbox"
-              checked={primary}
-              onChange={(e) => setPrimary(e.target.checked)}
-              style={{ margin: 0, cursor: 'pointer' }}
-            />
-            <span style={{ fontSize: 'var(--fs-md)', color: 'var(--text)' }}>
-              Set as primary contact
-            </span>
-            <span style={{ fontSize: 'var(--fs-sm)', color: 'var(--text-faint)' }}>
-              {/* Naming the existing primary in the hint means a
-                  distracted user sees the consequence before saving, not
-                  just in a post-save toast. The stacked confirm still
-                  runs on save either way. */}
+          {/* Checkbox + hint used to share one <label> on a single
+              line, which made a screen reader read the whole row as
+              one run-on accessible name ("Set as primary contact \u2014
+              replaces Jamie as primary"). It also wrapped awkwardly at
+              narrow widths when the hint got long. Splitting the label
+              from the hint and wiring aria-describedby gives the reader
+              a clean "label, then description" beat and lets the hint
+              flow below on every width. Audit: add-contact-modal M5. */}
+          <div className="wip-field" style={{ gap: 4 }}>
+            <label
+              style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: 10, cursor: 'pointer' }}
+            >
+              <input
+                type="checkbox"
+                checked={primary}
+                onChange={(e) => setPrimary(e.target.checked)}
+                style={{ margin: 0, cursor: 'pointer' }}
+                aria-describedby="contact-primary-hint"
+              />
+              <span style={{ fontSize: 'var(--fs-md)', color: 'var(--text)' }}>
+                Set as primary contact
+              </span>
+            </label>
+            <span
+              id="contact-primary-hint"
+              style={{ fontSize: 'var(--fs-sm)', color: 'var(--text-faint)', marginLeft: 26 }}
+            >
+              {/* Naming the existing primary here means a distracted
+                  user sees the consequence before saving, not just in
+                  the post-save confirm. The stacked demotion confirm
+                  still runs on save either way. */}
               {isEdit && contact?.primary
-                ? '— this is the primary contact'
+                ? 'This is the primary contact.'
                 : existingPrimary
-                  ? `— replaces ${existingPrimary.name} as primary`
-                  : '— gets CC\u2019d on Weekly WIP pings'}
+                  ? `Replaces ${existingPrimary.name} as primary.`
+                  : 'Gets CC\u2019d on Weekly WIP pings.'}
             </span>
-          </label>
+          </div>
         </div>
 
         <footer className="wip-modal-foot">
