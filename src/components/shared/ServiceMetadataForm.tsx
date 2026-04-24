@@ -166,10 +166,17 @@ export function ServiceMetadataForm({
             />
           </label>
 
+          {/* Custom-styled radio group. `role="radio"` in ARIA is
+              supposed to behave like a native radio: only the selected
+              option sits in the tab order, and arrow keys move the
+              selection. The pre-audit version put both buttons in the
+              tab order and ignored arrows, so a keyboard user couldn't
+              drive it the way a screen reader announced it. Audit:
+              edit-service-modal M2. */}
           <div className="wip-field" role="radiogroup" aria-label="Service type">
             <span className="wip-field-label">Type</span>
             <div style={{ display: 'flex', gap: 8 }}>
-              {(['retainer', 'project'] as ServiceType[]).map(opt => {
+              {(['retainer', 'project'] as ServiceType[]).map((opt, idx, all) => {
                 const checked = type === opt;
                 return (
                   <button
@@ -177,7 +184,27 @@ export function ServiceMetadataForm({
                     type="button"
                     role="radio"
                     aria-checked={checked}
+                    tabIndex={checked ? 0 : -1}
                     onClick={() => setType(opt)}
+                    onKeyDown={(e) => {
+                      // ArrowRight/Down advance, ArrowLeft/Up retreat,
+                      // both wrap. Home/End jump to the endpoints. Same
+                      // shape as native radio groups. Also moves focus
+                      // to the new selection so the tabindex=0 the
+                      // next render applies lands under the user.
+                      const keys = ['ArrowRight', 'ArrowDown', 'ArrowLeft', 'ArrowUp', 'Home', 'End'];
+                      if (!keys.includes(e.key)) return;
+                      e.preventDefault();
+                      let nextIdx = idx;
+                      if (e.key === 'ArrowRight' || e.key === 'ArrowDown') nextIdx = (idx + 1) % all.length;
+                      else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') nextIdx = (idx - 1 + all.length) % all.length;
+                      else if (e.key === 'Home') nextIdx = 0;
+                      else if (e.key === 'End') nextIdx = all.length - 1;
+                      setType(all[nextIdx]);
+                      const siblings = e.currentTarget.parentElement?.children;
+                      const target = siblings?.[nextIdx] as HTMLElement | undefined;
+                      target?.focus();
+                    }}
                     style={{
                       flex: 1,
                       padding: '10px 14px',
@@ -216,13 +243,46 @@ export function ServiceMetadataForm({
                 <option key={t.value} value={t.value}>{t.label}</option>
               ))}
             </select>
-            <span style={{ fontSize: 'var(--fs-sm)', color: 'var(--text-faint)', marginTop: 4, display: 'block' }}>
-              {mode === 'add'
-                ? 'Seeds the board with starter columns and a few example cards.'
-                : templateChanged
-                  ? 'Changing the template relabels this service. Existing cards and onboarding items stay put.'
+            {/* Template hint sits in one of two visual tiers. The
+                "you're about to change templates" case used to render
+                in the same gray as the default hint, which meant a
+                distracted user wouldn't notice the copy had shifted
+                from "this is what template does" to "you just changed
+                the template." The warning state now reads as a pale-
+                amber callout so the tone matches the stakes. Audit:
+                edit-service-modal M3. */}
+            {mode === 'edit' && templateChanged ? (
+              <div
+                role="note"
+                style={{
+                  marginTop: 8,
+                  padding: '8px 12px',
+                  borderRadius: 8,
+                  border: '1px solid var(--status-risk)',
+                  background: 'var(--status-risk-soft, rgba(255, 159, 10, 0.08))',
+                  color: 'var(--text)',
+                  fontSize: 'var(--fs-sm)',
+                  display: 'flex',
+                  alignItems: 'flex-start',
+                  gap: 8,
+                }}
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--status-risk)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ flexShrink: 0, marginTop: 2 }}>
+                  <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+                  <line x1="12" y1="9" x2="12" y2="13" />
+                  <line x1="12" y1="17" x2="12.01" y2="17" />
+                </svg>
+                <span>
+                  Changing the template relabels this service. Existing cards and onboarding items stay put.
+                </span>
+              </div>
+            ) : (
+              <span style={{ fontSize: 'var(--fs-sm)', color: 'var(--text-faint)', marginTop: 4, display: 'block' }}>
+                {mode === 'add'
+                  ? 'Seeds the board with starter columns and a few example cards.'
                   : 'Drives the POOL label on cards and the onboarding checklist.'}
-            </span>
+              </span>
+            )}
           </label>
 
           {showProgress && (
@@ -241,7 +301,7 @@ export function ServiceMetadataForm({
                   step={5}
                   value={progress}
                   onChange={(e) => setProgress(Number(e.target.value))}
-                  aria-label="Progress percentage"
+                  aria-label="Progress percentage, slider"
                   style={{ flex: 1 }}
                 />
                 <div style={{ display: 'flex', alignItems: 'center', gap: 4, minWidth: 60 }}>
@@ -251,10 +311,19 @@ export function ServiceMetadataForm({
                     max={100}
                     step={5}
                     value={progress}
-                    onChange={(e) => setProgress(Number(e.target.value))}
+                    onChange={(e) => {
+                      // Clamp on change so the number box can't hold an
+                      // out-of-range value between keystroke and save.
+                      // Without this, typing "200" sat in state until
+                      // handleSave clamped it, which briefly let the
+                      // number and the slider disagree. Audit: edit-
+                      // service-modal M5.
+                      const n = Number(e.target.value);
+                      setProgress(Math.max(0, Math.min(100, Number.isNaN(n) ? 0 : n)));
+                    }}
                     className="wip-field-input"
                     style={{ width: 60, textAlign: 'right' }}
-                    aria-label="Progress percentage"
+                    aria-label="Progress percentage, exact value"
                   />
                   <span style={{ color: 'var(--text-faint)', fontSize: 'var(--fs-sm)' }}>%</span>
                 </div>
