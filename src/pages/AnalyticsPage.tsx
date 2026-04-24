@@ -10,7 +10,7 @@ import { formatMonthDay, daysBetween } from '../utils/dateFormat';
  * A single scrollable page that answers three questions the founder asks
  * on Monday morning:
  *
- *   1. Are we shipping on time?        → KPI row (five cards)
+ *   1. Are we shipping on time?        → KPI row (four cards)
  *   2. What's landing this week?       → Upcoming deliverables
  *   3. Who's drowning?                 → Team workload
  *
@@ -24,11 +24,12 @@ import { formatMonthDay, daysBetween } from '../utils/dateFormat';
  * - Hero size on the title, calm muted color on the sub. Belief: the
  *   operator came here to decide something, so the decision signal (the
  *   KPI number) gets the most ink.
- * - Delta chips carry the verdict; green means "the thing we want is
- *   happening," red means "the thing we don't want is happening."
- *   Direction ≠ sign: more "on-time" is good, more "blocked" is bad.
- * - Workload bar colors encode urgency — over (red), tight (amber), ok
- *   (green), soft (blue). Same palette everywhere this shape shows up.
+ * - Honest data only. We used to render delta chips ("+3% vs. prior"),
+ *   per-KPI sparklines, and a percent-of-40h workload bar — none of
+ *   which we could actually measure. No weekly snapshots means no real
+ *   deltas. No time tracking means no real capacity. Audit analytics.md
+ *   H1 pulled them all. What's left is what we can defend: counts of
+ *   open tasks, close rates, due dates, and flagged clients.
  */
 
 type DateWindow = '7d' | '30d' | '90d' | 'all';
@@ -76,8 +77,8 @@ export function AnalyticsPage() {
   );
 
   const kpis = useMemo(
-    () => computeKpis(filteredTasks, data.members, data.clients, todayISO),
-    [filteredTasks, data.members, data.clients, todayISO],
+    () => computeKpis(filteredTasks, data.clients, todayISO),
+    [filteredTasks, data.clients, todayISO],
   );
 
   const workload = useMemo(
@@ -135,7 +136,6 @@ export function AnalyticsPage() {
             services={data.services}
             members={data.members}
             clients={data.clients}
-            workload={workload}
             todayISO={todayISO}
             onClose={() => setDrillKpi(null)}
           />
@@ -162,7 +162,6 @@ export function AnalyticsPage() {
             services={data.services}
             members={data.members}
             clients={data.clients}
-            workload={workload}
             todayISO={todayISO}
             onClose={() => setDrillMember(null)}
           />
@@ -452,14 +451,11 @@ function OptionRow({ label, subLabel, avatar, selected, onSelect }: {
 // ── KPI cards ────────────────────────────────────────────────────────────
 
 interface Kpi {
-  key: 'ontime' | 'cap' | 'blocked' | 'deadlines' | 'clients';
+  key: 'ontime' | 'blocked' | 'deadlines' | 'clients';
   label: string;
   value: number | string;
   unit: string;
-  deltaPct: number;
-  deltaTone: 'up' | 'down' | 'good-up' | 'good-down' | 'flat';
   foot: string;
-  spark: number[];
 }
 
 function KpiCard({ kpi, isOpen, onClick }: {
@@ -481,54 +477,19 @@ function KpiCard({ kpi, isOpen, onClick }: {
         {kpi.value}
         <span className="anlx-kpi-value-unit">{kpi.unit}</span>
       </div>
-      <DeltaChip pct={kpi.deltaPct} tone={kpi.deltaTone} />
-      <svg className="anlx-kpi-spark" viewBox="0 0 120 26" preserveAspectRatio="none">
-        <SparkPaths series={kpi.spark} w={120} h={26} />
-      </svg>
       <div className="anlx-kpi-foot">{kpi.foot}</div>
     </button>
   );
 }
 
-function DeltaChip({ pct, tone }: { pct: number; tone: Kpi['deltaTone'] }) {
-  if (pct === 0 || tone === 'flat') {
-    return <span className="anlx-kpi-delta flat">— no change</span>;
-  }
-  const up = pct > 0;
-  return (
-    <span className={`anlx-kpi-delta ${tone}`}>
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round">
-        {up ? <polyline points="6 15 12 9 18 15" /> : <polyline points="6 9 12 15 18 9" />}
-      </svg>
-      {up ? '+' : ''}{pct}% vs prior
-    </span>
-  );
-}
-
-function SparkPaths({ series, w, h }: { series: number[]; w: number; h: number }) {
-  if (series.length < 2) return null;
-  const min = Math.min(...series);
-  const max = Math.max(...series);
-  const range = max - min || 1;
-  const n = series.length;
-  const pts = series.map((v, i) => {
-    const x = (i / (n - 1)) * w;
-    const y = h - ((v - min) / range) * h;
-    return [x, y] as const;
-  });
-  const line = pts.map((p, i) => `${i === 0 ? 'M' : 'L'}${p[0].toFixed(1)} ${p[1].toFixed(1)}`).join(' ');
-  const area = `${line} L ${w} ${h} L 0 ${h} Z`;
-  return (
-    <>
-      <path d={area} fill="currentColor" fillOpacity="0.1" />
-      <path d={line} stroke="currentColor" strokeWidth="1.5" fill="none" strokeLinecap="round" strokeLinejoin="round" />
-    </>
-  );
-}
+// DeltaChip + SparkPaths used to live here. The chip rendered a
+// "+3% vs prior" signal calculated from hardcoded tiers
+// (onTimePct > 80 ? 3 : …), not a real week-over-week comparison.
+// SparkPaths rendered a curve from seedHistory() — same fake history.
+// Both deleted per audit analytics.md H1.
 
 function computeKpis(
   tasks: Task[],
-  members: Member[],
   clients: Client[],
   todayISO: string,
 ): Kpi[] {
@@ -541,14 +502,10 @@ function computeKpis(
   const onTime = closed.filter(t => daysBetween(todayISO, t.dueDate) >= 0);
   const onTimePct = closed.length ? Math.round((onTime.length / closed.length) * 100) : 100;
 
-  // 2 — Over capacity: teammates over 100% of a 40h week.
-  const workload = buildWorkload(tasks, members);
-  const over = workload.filter(r => r.pct > 100).length;
-
-  // 3 — Blocked now: open tasks in the blocked column (or severity critical).
+  // 2 — Blocked now: open tasks in the blocked column (or severity critical).
   const blocked = openTasks.filter(t => t.columnId === 'blocked' || t.severity === 'critical');
 
-  // 4 — Due next 7 days.
+  // 3 — Due next 7 days.
   const soon = openTasks.filter(t => {
     if (!t.dueDate) return false;
     const delta = daysBetween(todayISO, t.dueDate);
@@ -556,53 +513,36 @@ function computeKpis(
   });
   const overdue = openTasks.filter(t => t.dueDate && daysBetween(todayISO, t.dueDate) < 0);
 
-  // 5 — Clients flagged (fire or risk).
+  // 4 — Clients flagged (fire or risk).
   const atRisk = clients.filter(c => c.status === 'fire' || c.status === 'risk');
 
+  // The "Over capacity" KPI used to sit between on-time and blocked. We
+  // were computing it from a fixed 4h/task allocation against a hardcoded
+  // 40h week, which invented both the numerator and the denominator. Real
+  // capacity needs time tracking we don't have. Pulled per audit analytics.md H1.
   return [
     {
       key: 'ontime',
       label: 'On-time rate',
       value: onTimePct, unit: '%',
-      deltaPct: onTimePct > 80 ? 3 : onTimePct > 60 ? -1 : -4,
-      deltaTone: onTimePct > 80 ? 'good-up' : 'good-down',
-      spark: seedHistory('ontime', 70, 95),
       foot: `${closed.length} closed in window · ${onTime.length} on time`,
-    },
-    {
-      key: 'cap',
-      label: 'Over capacity',
-      value: over, unit: over === 1 ? 'person' : 'people',
-      deltaPct: over > 1 ? 1 : 0,
-      deltaTone: over > 1 ? 'up' : 'flat',
-      spark: seedHistory('cap', 0, 3),
-      foot: workload.length ? `of ${workload.length} teammates this week` : 'No load this week',
     },
     {
       key: 'blocked',
       label: 'Blocked now',
       value: blocked.length, unit: blocked.length === 1 ? 'task' : 'tasks',
-      deltaPct: blocked.length > 3 ? 2 : -1,
-      deltaTone: blocked.length > 3 ? 'up' : 'down',
-      spark: seedHistory('blocked', 1, 8),
       foot: blocked.length ? `Oldest: ${humanAge(blocked, todayISO)}` : 'Nothing stuck',
     },
     {
       key: 'deadlines',
       label: 'Due next 7 days',
       value: soon.length, unit: soon.length === 1 ? 'task' : 'tasks',
-      deltaPct: 4,
-      deltaTone: soon.length > 8 ? 'up' : 'flat',
-      spark: seedHistory('deadlines', 4, 18),
       foot: overdue.length ? `${overdue.length} already overdue` : 'No overdue in scope',
     },
     {
       key: 'clients',
       label: 'Clients flagged',
       value: atRisk.length, unit: atRisk.length === 1 ? 'client' : 'clients',
-      deltaPct: atRisk.length > 1 ? 1 : 0,
-      deltaTone: atRisk.length > 1 ? 'up' : 'flat',
-      spark: seedHistory('clients', 0, 4),
       foot: atRisk.slice(0, 3).map(c => c.name).join(' · ') || 'All clients on track',
     },
   ];
@@ -621,14 +561,13 @@ function computeKpis(
  * already in flizow.css.
  */
 function DrillDownPanel({
-  kpiKey, tasks, services, members, clients, workload, todayISO, onClose,
+  kpiKey, tasks, services, members, clients, todayISO, onClose,
 }: {
   kpiKey: Kpi['key'];
   tasks: Task[];
   services: Service[];
   members: Member[];
   clients: Client[];
-  workload: WorkloadRow[];
   todayISO: string;
   onClose: () => void;
 }) {
@@ -638,12 +577,11 @@ function DrillDownPanel({
   const content = useMemo<DrillContent>(() => {
     switch (kpiKey) {
       case 'ontime': return buildOnTimeDrill(tasks, todayISO);
-      case 'cap':    return buildCapacityDrill(tasks, workload);
       case 'blocked': return buildBlockedDrill(tasks);
       case 'deadlines': return buildDeadlinesDrill(tasks, todayISO);
       case 'clients': return buildClientsDrill(tasks, clients);
     }
-  }, [kpiKey, tasks, clients, workload, todayISO]);
+  }, [kpiKey, tasks, clients, todayISO]);
 
   // Dismiss on Escape — same convention as the filter popovers and the
   // card modal. Outside-click dismissal doesn't apply here because the
@@ -739,35 +677,10 @@ function buildOnTimeDrill(tasks: Task[], todayISO: string): DrillContent {
   };
 }
 
-function buildCapacityDrill(tasks: Task[], workload: WorkloadRow[]): DrillContent {
-  // Open tasks assigned to anyone currently over 100%. No open-task view
-  // of capacity would leave the operator staring at a number with no way
-  // to act — this turns the KPI into a to-do for rebalancing.
-  const overIds = new Set(workload.filter(r => r.pct > 100).map(r => r.id));
-  const rows = tasks.filter(t => isOpen(t) && t.assigneeId && overIds.has(t.assigneeId));
-  rows.sort((a, b) => {
-    const pa = workload.find(r => r.id === a.assigneeId)?.pct ?? 0;
-    const pb = workload.find(r => r.id === b.assigneeId)?.pct ?? 0;
-    if (pa !== pb) return pb - pa; // most-overloaded first
-    return (a.dueDate || '9999').localeCompare(b.dueDate || '9999');
-  });
-  return {
-    kind: 'tasks',
-    title: 'Open tasks owned by over-capacity teammates',
-    unit: 'task', unitPlural: 'tasks',
-    empty: 'No one is over capacity — nothing to rebalance.',
-    rows: rows.map(t => ({
-      task: t,
-      status: {
-        label: (() => {
-          const pct = workload.find(r => r.id === t.assigneeId)?.pct ?? 0;
-          return `${pct}% load`;
-        })(),
-        tone: 'late',
-      },
-    })),
-  };
-}
+// buildCapacityDrill() used to live here, rendering open tasks owned by
+// anyone over 100% load. With the "Over capacity" KPI gone (analytics.md
+// H1 — no real time tracking means no real percent-of-40h), the drill
+// has no anchor. Pulled alongside it.
 
 function buildBlockedDrill(tasks: Task[]): DrillContent {
   const blocked = tasks.filter(t =>
@@ -848,19 +761,17 @@ function buildClientsDrill(tasks: Task[], clients: Client[]): DrillContent {
  * section so the clicked row stays on screen.
  */
 function MemberDrillPanel({
-  memberId, tasks, services, members, clients, workload, todayISO, onClose,
+  memberId, tasks, services, members, clients, todayISO, onClose,
 }: {
   memberId: string;
   tasks: Task[];
   services: Service[];
   members: Member[];
   clients: Client[];
-  workload: WorkloadRow[];
   todayISO: string;
   onClose: () => void;
 }) {
   const member = members.find(m => m.id === memberId) ?? null;
-  const wlRow = workload.find(r => r.id === memberId) ?? null;
 
   // Open tasks assigned to this member only. Due-date-sorted so whatever's
   // next in their queue reads first; undated tasks fall to the bottom.
@@ -879,8 +790,11 @@ function MemberDrillPanel({
     return () => document.removeEventListener('keydown', onKey);
   }, [onClose]);
 
+  // Title carries count, not a percent. Without time tracking we can't
+  // report real load, so we say what we actually know: how many tasks
+  // are on this person's plate right now. Matches WorkloadRowView.
   const title = member
-    ? `${member.name} — open tasks${wlRow ? ` · ${wlRow.pct}% load` : ''}`
+    ? `${member.name} — ${rows.length} open ${rows.length === 1 ? 'task' : 'tasks'}`
     : 'Member drill-down';
 
   return (
@@ -1223,12 +1137,13 @@ interface WorkloadRow {
   initials: string;
   role?: string;
   color: string;
-  hours: number;
+  /** Count of open tasks assigned to this teammate. The only load signal
+   *  we can honestly produce without time tracking — see buildWorkload. */
   wip: number;
-  pct: number;
-  budget: number;
-  tone: 'soft' | 'ok' | 'tight' | 'over';
-  spark: number[];
+  /** Relative share: this person's WIP ÷ the top WIP on the team, 0–100.
+   *  Drives the bar width so the busiest teammate fills the row. Not a
+   *  percent-of-capacity — we're not claiming to know their capacity. */
+  sharePct: number;
 }
 
 function WorkloadSection({ rows, openMemberId, onToggleMember }: {
@@ -1236,25 +1151,22 @@ function WorkloadSection({ rows, openMemberId, onToggleMember }: {
   openMemberId: string | null;
   onToggleMember: (id: string) => void;
 }) {
-  const over = rows.filter(r => r.pct > 100).length;
-  const tight = rows.filter(r => r.pct >= 85 && r.pct <= 100).length;
-
+  // The section used to shout "N over capacity · M tight." Those counts
+  // came from a fake percent-of-40h metric. Without time tracking we
+  // can't say who's over — only who has more open cards than everyone
+  // else. The subtitle names the limit honestly instead.
   return (
     <section className="anlx-section" aria-labelledby="anlx-wl-title">
       <div className="anlx-section-head">
         <div className="anlx-section-title" id="anlx-wl-title">Team workload</div>
         <div className="anlx-section-sub">
-          Hours booked vs. 40-hour week · WIP = open tasks · 4-week trend
-          {over > 0 && ` · ${over} over capacity`}
-          {tight > 0 && ` · ${tight} tight`}
+          Open tasks per teammate. Hours aren't tracked, so this is card count, not time.
         </div>
       </div>
       <div className="anlx-wl-head" aria-hidden="true">
         <div className="anlx-wl-head-cell">Person</div>
-        <div className="anlx-wl-head-cell">Load</div>
-        <div className="anlx-wl-head-cell num">Used</div>
-        <div className="anlx-wl-head-cell num">WIP</div>
-        <div className="anlx-wl-head-cell num spark">4wk</div>
+        <div className="anlx-wl-head-cell">Share of open work</div>
+        <div className="anlx-wl-head-cell num">Tasks</div>
         <div className="anlx-wl-head-cell" />
       </div>
       <div className="anlx-wl-list">
@@ -1276,14 +1188,12 @@ function WorkloadRowView({ row, isOpen, onClick }: {
   isOpen: boolean;
   onClick: () => void;
 }) {
-  const barPct = Math.min(row.pct, 100);
-
   return (
     <button
       type="button"
       className="anlx-wl-row"
       aria-expanded={isOpen}
-      aria-label={`${row.name}, ${row.pct}% load, ${row.wip} open ${row.wip === 1 ? 'task' : 'tasks'}. ${isOpen ? 'Close' : 'Open'} member drill-down.`}
+      aria-label={`${row.name}, ${row.wip} open ${row.wip === 1 ? 'task' : 'tasks'}. ${isOpen ? 'Close' : 'Open'} member drill-down.`}
       onClick={onClick}
     >
       <div className="anlx-wl-who">
@@ -1295,18 +1205,14 @@ function WorkloadRowView({ row, isOpen, onClick }: {
           {row.role && <div className="anlx-wl-who-role">{row.role}</div>}
         </div>
       </div>
+      {/* Bar fills relative to the busiest teammate — the row at max WIP
+          draws all the way across. We used to tint it red/amber/green by
+          a made-up percent-of-capacity; now it stays muted so the number
+          beside it does the talking. */}
       <div className="anlx-wl-bar">
-        <div className={`anlx-wl-bar-fill ${row.tone}`} style={{ width: `${barPct}%` }} />
-        <div className="anlx-wl-bar-budget" />
-      </div>
-      <div className={`anlx-wl-pct${row.tone === 'over' ? ' over' : row.tone === 'tight' ? ' tight' : ''}`}>
-        {row.pct}%
+        <div className="anlx-wl-bar-fill" style={{ width: `${row.sharePct}%` }} />
       </div>
       <div className="anlx-wl-num">{row.wip}</div>
-      <svg className="anlx-wl-spark" viewBox="0 0 80 22" preserveAspectRatio="none"
-        style={{ color: toneColor(row.tone) }}>
-        <SparkPaths series={row.spark} w={80} h={22} />
-      </svg>
       <div className="anlx-wl-chev">
         <svg
           viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -1323,15 +1229,6 @@ function WorkloadRowView({ row, isOpen, onClick }: {
   );
 }
 
-function toneColor(tone: WorkloadRow['tone']): string {
-  switch (tone) {
-    case 'over': return '#ff453a';
-    case 'tight': return '#ff9f0a';
-    case 'ok': return '#30d158';
-    case 'soft': return '#64d2ff';
-  }
-}
-
 function buildWorkload(tasks: Task[], members: Member[]): WorkloadRow[] {
   const rows: Record<string, WorkloadRow> = {};
   for (const m of members) {
@@ -1341,35 +1238,32 @@ function buildWorkload(tasks: Task[], members: Member[]): WorkloadRow[] {
       initials: m.initials,
       role: m.role,
       color: m.color,
-      hours: 0,
       wip: 0,
-      pct: 0,
-      budget: 40,
-      tone: 'soft',
-      spark: [],
+      sharePct: 0,
     };
   }
 
-  // Simple allocation: each open task with an assignee contributes a fixed
-  // 4h to their bucket. Mockup uses 55/45 splits for primary/secondary
-  // owners, but our Task model today only carries a single assignee — good
-  // enough for a first pass.
+  // Count open tasks per teammate. We used to also accrue a fake 4h per
+  // card toward a 40h week, then render a percent-of-capacity bar — but
+  // the hour allocation was invented and the capacity was never tracked.
+  // Task count is the one signal we can back up.
   for (const t of tasks) {
     if (!isOpen(t)) continue;
     if (!t.assigneeId) continue;
     const row = rows[t.assigneeId];
     if (!row) continue;
-    row.hours += 4;
     row.wip += 1;
   }
 
   const list = members.map(m => rows[m.id]);
+  // Bar is relative to the busiest teammate, not absolute capacity.
+  // Clamps to 1 so a team where everyone has zero open tasks doesn't
+  // divide-by-zero — every bar just stays empty.
+  const maxWip = Math.max(1, ...list.map(r => r.wip));
   for (const r of list) {
-    r.pct = Math.round((r.hours / r.budget) * 100);
-    r.tone = r.pct > 100 ? 'over' : r.pct >= 85 ? 'tight' : r.pct >= 50 ? 'ok' : 'soft';
-    r.spark = seedHistory('wl-' + r.id, Math.max(20, r.pct - 30), Math.min(120, r.pct + 15));
+    r.sharePct = Math.round((r.wip / maxWip) * 100);
   }
-  list.sort((a, b) => b.pct - a.pct);
+  list.sort((a, b) => b.wip - a.wip);
   return list;
 }
 
@@ -1387,18 +1281,10 @@ function humanAge(list: Task[], todayISO: string): string {
   return `${d} day${d === 1 ? '' : 's'}`;
 }
 
-/** Deterministic pseudo-history for sparklines. Same seed always produces
- *  the same curve, so the Analytics page doesn't reshuffle on re-render. */
-function seedHistory(seed: string, lo: number, hi: number): number[] {
-  let h = 0;
-  for (let i = 0; i < seed.length; i++) h = ((h << 5) - h + seed.charCodeAt(i)) | 0;
-  let x = Math.abs(h) >>> 0;
-  const n = 12;
-  const out: number[] = [];
-  for (let i = 0; i < n; i++) {
-    x = (x * 1103515245 + 12345) >>> 0;
-    const r = x / 0xffffffff;
-    out.push(lo + r * (hi - lo));
-  }
-  return out;
-}
+// seedHistory() used to live here: a deterministic pseudo-random
+// generator feeding 12-point sparklines for every KPI card and
+// workload row. There's no historical data behind it, so the curves
+// decorated a blank surface with the shape of information. Deleted
+// as part of audit analytics.md H1 — Analytics' job is to support
+// decisions, and fake data on a decision surface is worse than no
+// data. Bring back when we capture a real weekly snapshot.
