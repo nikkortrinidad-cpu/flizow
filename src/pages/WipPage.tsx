@@ -50,7 +50,7 @@ interface AgendaItem {
 }
 
 type AgendaStatus =
-  | 'new' | 'blocked' | 'overdue' | 'review'
+  | 'new' | 'blocked' | 'critical' | 'overdue' | 'review'
   | 'due-this' | 'due-next' | 'on-track' | 'manual';
 
 interface AgendaGroup {
@@ -685,10 +685,20 @@ function buildAgenda(
 }
 
 function urgentStatus(t: Task, todayISO: string): AgendaStatus {
+  // A task is in the urgent group for three reasons (see buildAgenda
+  // "Urgent" branch): blocked column, severity=critical, or overdue.
+  // The label has to reflect *which* reason — the old fallback returned
+  // 'blocked' for everything that wasn't overdue/review, which turned
+  // severity-critical on-time tasks into BLOCKED pills. The AM then
+  // walked into the meeting with the wrong framing. Audit: wip.md M4.
   if (t.columnId === 'blocked') return 'blocked';
   if (t.dueDate && daysBetween(todayISO, t.dueDate) < 0) return 'overdue';
   if (t.columnId === 'review') return 'review';
-  return 'blocked';
+  if (t.severity === 'critical') return 'critical';
+  // Genuinely unreachable given the current buildAgenda selector, but
+  // 'on-track' is the honest fallback if a future selector adds a new
+  // path into this group without updating this switch.
+  return 'on-track';
 }
 
 function onTrackStatus(t: Task, todayISO: string): AgendaStatus {
@@ -702,6 +712,7 @@ function statusLabel(s: AgendaStatus): string {
   switch (s) {
     case 'new':       return 'NEW';
     case 'blocked':   return 'BLOCKED';
+    case 'critical':  return 'CRITICAL';
     case 'overdue':   return 'OVERDUE';
     case 'review':    return 'REVIEW';
     case 'due-this':  return 'DUE THIS WK';

@@ -11067,6 +11067,10 @@
     font-variant-numeric: tabular-nums;
   }
   .wip-agenda-status[data-status="blocked"]     { background: color-mix(in srgb, #d93025 14%, transparent); color: #c92a1e; }
+  /* CRITICAL is hotter than BLOCKED on purpose — it tracks severity, not
+     stuckness. Matches --status-fire already used for critical severity
+     on Overview and Client Detail. */
+  .wip-agenda-status[data-status="critical"]    { background: color-mix(in srgb, var(--status-fire) 14%, transparent); color: var(--status-fire); }
   .wip-agenda-status[data-status="overdue"]     { background: color-mix(in srgb, #d93025 12%, transparent); color: #c92a1e; }
   .wip-agenda-status[data-status="review"]      { background: color-mix(in srgb, #b54708 14%, transparent); color: #b54708; }
   .wip-agenda-status[data-status="due-this"]    { background: color-mix(in srgb, #0b84ff 14%, transparent); color: #0a6edb; }
