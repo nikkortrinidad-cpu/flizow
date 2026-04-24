@@ -92,10 +92,16 @@ export function TouchpointModal({
     return () => window.clearTimeout(t);
   }, [isEdit]);
 
-  // Escape / Cmd+Enter. Esc closes, Cmd+Enter saves.
+  // Escape / Cmd+Enter. Esc closes, Cmd+Enter saves. When the attendee
+  // picker is open, Escape belongs to the picker (see effect below),
+  // so we skip the modal-wide Escape handling in that case — otherwise
+  // a user who opens the picker, realises the list is stale, and hits
+  // Esc to dismiss it would lose the entire in-progress log. Audit:
+  // touchpoints M1.
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
       if (e.key === 'Escape') {
+        if (pickerOpen) return;
         e.preventDefault();
         onClose();
         return;
@@ -108,10 +114,13 @@ export function TouchpointModal({
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [topic, kind, occurredAt, attendeeIds, onClose]);
+  }, [topic, kind, occurredAt, attendeeIds, onClose, pickerOpen]);
 
-  // Close the attendee picker on outside-click. The query input stays
-  // part of the modal; clicking the input doesn't close it.
+  // Close the attendee picker on outside-click OR on Escape. The query
+  // input stays part of the modal; clicking the input doesn't close it.
+  // The Escape branch runs in the capture phase with stopPropagation so
+  // it wins the race against the modal-level Escape handler — the
+  // picker owns Escape while it's open. Audit: touchpoints M1.
   useEffect(() => {
     if (!pickerOpen) return;
     function onPointer(e: PointerEvent) {
@@ -119,8 +128,18 @@ export function TouchpointModal({
         setPickerOpen(false);
       }
     }
+    function onPickerKey(e: KeyboardEvent) {
+      if (e.key === 'Escape') {
+        e.stopPropagation();
+        setPickerOpen(false);
+      }
+    }
     document.addEventListener('pointerdown', onPointer);
-    return () => document.removeEventListener('pointerdown', onPointer);
+    document.addEventListener('keydown', onPickerKey, true);
+    return () => {
+      document.removeEventListener('pointerdown', onPointer);
+      document.removeEventListener('keydown', onPickerKey, true);
+    };
   }, [pickerOpen]);
 
   // Candidates for the attendee picker: every member + every contact of
@@ -183,9 +202,13 @@ export function TouchpointModal({
       return;
     }
     const iso = fromDatetimeLocal(occurredAt);
-    // Anything in the future is "scheduled". Matches the original
-    // flow's split into log vs. schedule without needing a toggle.
-    const scheduled = new Date(iso).getTime() > Date.now();
+    // Use the memoised willBeScheduled rather than recomputing fresh
+    // here — otherwise a user who opens the modal at 10:58 for an
+    // 11:00 meeting, types the TL;DR for three minutes, and saves at
+    // 11:01 sees the CTA say "Schedule meeting" but the store
+    // records scheduled:false. The label and the persisted flag have
+    // to come from the same source of truth. Audit: touchpoints M2.
+    const scheduled = willBeScheduled;
 
     if (isEdit && touchpoint) {
       flizowStore.updateTouchpoint(touchpoint.id, {

@@ -87,12 +87,14 @@ export function TouchpointsTab({
 
   return (
     <div className="detail-section" data-tab="touchpoints">
+      {/* Section subtitle used to echo the same "{N} touchpoints this
+          quarter · {M} open action items" string that the cadence pill
+          below shows with an icon. Two identical strings within ~40px
+          read as a bug, not a title/subtitle pair. The cadence pill is
+          the richer render (icon + live count), so it keeps the metric;
+          the header now just names the section. Audit: touchpoints M3. */}
       <div className="detail-section-header">
         <div className="detail-section-title">Touchpoints</div>
-        <div className="detail-section-sub">
-          {quarterCount} touchpoint{quarterCount === 1 ? '' : 's'} this quarter
-          {openActions > 0 && ` · ${openActions} open action item${openActions === 1 ? '' : 's'}`}
-        </div>
       </div>
 
       <div className="meetings-section">
@@ -518,11 +520,15 @@ function TldrField({ touchpoint, store }: {
       {hasTldr
         ? touchpoint.tldr
         : (
-          <span
-            className="meeting-tldr--empty"
-            data-empty="true"
-            data-placeholder="Add TL;DR — why this meeting mattered."
-          >
+          // Placeholder used to live in data-placeholder AND span
+          // children, with data-empty as a third hook. Nothing in the
+          // CSS reads either attribute — the visible text comes from
+          // the children — so both attributes were dead weight, and
+          // the duplication would render twice if any future rule
+          // naively added `content: attr(data-placeholder)` to this
+          // class. Keeping the children as the single source. Audit:
+          // touchpoints M4.
+          <span className="meeting-tldr--empty">
             Add TL;DR — why this meeting mattered.
           </span>
         )
