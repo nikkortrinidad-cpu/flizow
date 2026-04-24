@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useRoute, navigate } from '../router';
 import { useFlizow } from '../store/useFlizow';
 import type {
-  Client, Service, Task, Member, FlizowData, ClientStatus,
+  Client, Service, Task, Member, FlizowData, ClientStatus, ColumnId,
   OnboardingItem, Contact, QuickLink,
 } from '../types/flizow';
 import { flizowStore, type FlizowStore } from '../store/flizowStore';
@@ -151,7 +151,7 @@ function ClientDetail({ client, data, store }: DetailProps) {
             favoriteIds={data.favoriteServiceIds}
             onToggleFavorite={(id) => store.toggleServiceFavorite(id)}
           />
-          <ActivitySection client={client} tasks={liveTasks} members={data.members} todayISO={data.today} />
+          <ActivitySection client={client} tasks={liveTasks} todayISO={data.today} />
         </>
       )}
 
@@ -1002,30 +1002,43 @@ function humanTemplate(key: string): string {
   return MAP[key] ?? key;
 }
 
-// ── Overview · Recent Activity ────────────────────────────────────────────
+// ── Overview · Latest tasks ───────────────────────────────────────────────
+//
+// This started life as "Recent Activity" — five rows rendering:
+//
+//   [dot] **Sam** flagged a blocker on "Brief"        Feb 10
+//
+// The label said "activity", but there was no activity log: we were
+// pulling the 5 newest tasks, labelling each with a verb derived from
+// its *current* column, and timestamping with `createdAt`. A task
+// created six months ago that moved to Review yesterday would render
+// "moved to review … Feb 10" — the verb described an event from
+// yesterday, the timestamp was the creation date six months prior,
+// and the user had no way to know. Audit: client-detail.md H1.
+//
+// Reframed to what the data actually is: the latest N tasks on this
+// client, showing title + current column + creation age. Honest. Still
+// fills the sidebar. When a real activity log ships, *that* gets its
+// own section with real event timestamps.
 
-function ActivitySection({ client, tasks, members, todayISO }: {
+function ActivitySection({ client, tasks, todayISO }: {
   client: Client;
   tasks: Task[];
-  members: Member[];
   todayISO: string;
 }) {
-  // We don't have a real activity log yet — synthesize a light feed from
-  // the latest task events for this client so the section doesn't stay
-  // empty. This gets ripped out the moment activity logging lands.
   const items = useMemo(
-    () => synthesizeActivity(client, tasks, members, todayISO),
-    [client, tasks, members, todayISO],
+    () => latestTasks(client, tasks, todayISO),
+    [client, tasks, todayISO],
   );
 
   if (items.length === 0) {
     return (
       <div className="detail-section">
         <div className="detail-section-header">
-          <div className="detail-section-title">Recent Activity</div>
+          <div className="detail-section-title">Latest tasks</div>
         </div>
         <div style={{ padding: 20, color: 'var(--text-soft)', fontSize: 14 }}>
-          Nothing logged yet. As the team works, this feed will fill in.
+          No cards on this client yet. New tasks land here as work kicks off.
         </div>
       </div>
     );
@@ -1034,7 +1047,7 @@ function ActivitySection({ client, tasks, members, todayISO }: {
   return (
     <div className="detail-section">
       <div className="detail-section-header">
-        <div className="detail-section-title">Recent Activity</div>
+        <div className="detail-section-title">Latest tasks</div>
       </div>
       <div className="activity-list">
         {items.map((item) => (
@@ -1044,8 +1057,8 @@ function ActivitySection({ client, tasks, members, todayISO }: {
               style={item.dotColor ? { background: item.dotColor } : undefined}
             />
             <div className="activity-text">
-              <strong>{item.actor}</strong>{' '}
-              <span className="subject">{item.subject}</span>
+              <strong>{item.title}</strong>{' '}
+              <span className="subject">· {item.columnLabel}</span>
             </div>
             <span className="activity-time">{item.time}</span>
           </div>
@@ -1057,46 +1070,39 @@ function ActivitySection({ client, tasks, members, todayISO }: {
 
 interface ActivityItem {
   key: string;
-  actor: string;
-  subject: string;
+  title: string;
+  columnLabel: string;
   time: string;
   dotColor?: string;
 }
 
-function synthesizeActivity(
+function latestTasks(
   client: Client,
   tasks: Task[],
-  members: Member[],
   todayISO: string,
 ): ActivityItem[] {
-  const recent = tasks
+  return tasks
     .filter(t => t.clientId === client.id)
     .slice()
     .sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1))
-    .slice(0, 5);
-
-  return recent.map((task, i) => {
-    const assignee = task.assigneeId
-      ? members.find(m => m.id === task.assigneeId)
-      : null;
-    const actor = assignee?.name.split(' ')[0] ?? 'Someone';
-    const subject = verbFor(task) + ' "' + task.title + '"';
-    return {
-      key: `${task.id}-${i}`,
-      actor,
-      subject,
+    .slice(0, 5)
+    .map((task) => ({
+      key: task.id,
+      title: task.title,
+      columnLabel: columnLabelFor(task.columnId),
       time: quickTime(task.createdAt, todayISO),
       dotColor: dotFor(task),
-    };
-  });
+    }));
 }
 
-function verbFor(task: Task): string {
-  if (task.columnId === 'blocked') return 'flagged a blocker on';
-  if (task.columnId === 'review')  return 'moved to review';
-  if (task.columnId === 'done')    return 'marked complete';
-  if (task.columnId === 'inprogress') return 'started';
-  return 'opened';
+function columnLabelFor(id: ColumnId): string {
+  switch (id) {
+    case 'todo':       return 'To Do';
+    case 'inprogress': return 'In Progress';
+    case 'blocked':    return 'Blocked';
+    case 'review':     return 'Needs Review';
+    case 'done':       return 'Done';
+  }
 }
 
 function dotFor(task: Task): string | undefined {
