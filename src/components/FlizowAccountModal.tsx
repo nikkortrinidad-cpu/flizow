@@ -136,7 +136,12 @@ export default function FlizowAccountModal({ onClose }: Props) {
   return (
     <div
       className="acct-overlay"
-      style={{ display: 'flex' }}
+      // `data-open` is the trigger the flizow.css rule uses to unhide
+      // the overlay (display + opacity) and scale the inner modal to 1.
+      // Previously we forced `display: flex` inline, which won the
+      // visibility battle but left opacity at 0 and the modal at 0.97x —
+      // the modal rendered, but invisibly.
+      data-open="true"
       aria-hidden={false}
       onClick={onClose}
     >
