@@ -46,10 +46,16 @@ const DEFAULT_FILTERS: AnalyticsFilters = {
   dateWindow: '30d',
 };
 
+// Labels say what the filter actually does. The range is
+// `[today - 14, today + N]` — a two-week lookback plus the chosen
+// horizon. Pre-audit the pills read "Next 7 days" while quietly
+// including two weeks of overdue context, so the KPI for overdues
+// moved when the user toggled the filter even though nothing in the
+// label suggested it would. Audit: analytics.md M3.
 const DATE_OPTIONS: Array<{ value: DateWindow; label: string }> = [
-  { value: '7d',  label: 'Next 7 days' },
-  { value: '30d', label: 'Next 30 days' },
-  { value: '90d', label: 'Next 90 days' },
+  { value: '7d',  label: 'Overdue + next 7 days' },
+  { value: '30d', label: 'Overdue + next 30 days' },
+  { value: '90d', label: 'Overdue + next 90 days' },
   { value: 'all', label: 'All time' },
 ];
 
@@ -965,12 +971,16 @@ function UpcomingSection({ tasks, services, members, clients, todayISO }: {
   }, [tasks, todayISO]);
 
   const rows = useMemo(() => {
+    // No trailing `.slice(0, 25)` — the list is already scoped by
+    // bucket + the page-level filter, and the `.anlx-up-list`
+    // container already caps visible height (scrollable at 360px).
+    // A silent truncation hid that "This week" had 40 items while
+    // showing 25. Audit: analytics.md M5.
     return tasks
       .filter(isOpen)
       .filter(t => inBucket(t, bucket, todayISO))
       .slice()
-      .sort((a, b) => a.dueDate.localeCompare(b.dueDate))
-      .slice(0, 25);
+      .sort((a, b) => a.dueDate.localeCompare(b.dueDate));
   }, [tasks, bucket, todayISO]);
 
   return (
@@ -1123,8 +1133,13 @@ function phaseOf(task: Task): string {
 function inBucket(task: Task, bucket: UpcomingBucket, todayISO: string): boolean {
   if (!task.dueDate) return false;
   const diff = daysBetween(todayISO, task.dueDate);
-  if (bucket === 'today') return diff >= 0 && diff <= 0; // just today
-  if (bucket === 'week') return diff >= 0 && diff <= 6;
+  // Overdues fold into "today" — they are, operationally, today's
+  // problem. Pre-audit the bucket required `diff === 0` and overdue
+  // tasks disappeared from every tab while the KPI grid above still
+  // counted them. The two halves of the page now agree. Audit:
+  // analytics.md M2.
+  if (bucket === 'today') return diff <= 0;
+  if (bucket === 'week') return diff >= 1 && diff <= 6;
   if (bucket === 'next') return diff >= 7 && diff <= 13;
   return false;
 }
