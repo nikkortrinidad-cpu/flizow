@@ -191,15 +191,6 @@ function SearchIcon() {
   );
 }
 
-function PlusIcon() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-      <line x1="12" y1="5" x2="12" y2="19" />
-      <line x1="5" y1="12" x2="19" y2="12" />
-    </svg>
-  );
-}
-
 function ChevronDown({ className }: { className?: string }) {
   return (
     <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
@@ -278,6 +269,12 @@ function ListPane({
         <div className="templates-list-subtitle">Reusable blueprints for onboarding and kanban boards</div>
       </div>
 
+      {/* No "+ Add template" button yet — templates are defined in
+          types/flizow.ts as constants and there's no editor UI to open.
+          A styled button that did nothing was worse than a missing
+          button: it read as Tier-1 CTA (same class as Clients' New
+          Client) and every click was a broken promise. Add back here
+          when the editor lands. Audit: templates.md H1. */}
       <div className="templates-list-toolbar">
         <label className="list-pane-search">
           <SearchIcon />
@@ -289,10 +286,6 @@ function ListPane({
             onChange={(e) => onQuery(e.target.value)}
           />
         </label>
-        <button type="button" className="list-pane-add-btn" aria-label="Add template">
-          <PlusIcon />
-          <span>Add template</span>
-        </button>
       </div>
 
       <div className="templates-list" role="list">
