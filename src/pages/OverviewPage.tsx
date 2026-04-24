@@ -150,13 +150,18 @@ export function OverviewPage() {
             <div className="block-sub"><span>Across {health.active} active clients</span></div>
           </div>
           <div className="health-strip">
+            {/* Each health cell deep-links to the pre-filtered Clients
+                page via `#clients/view/<id>`. Before this, the aria-label
+                promised a filtered drill-in but the onClick landed on the
+                unfiltered page, which SR users read as a lie and sighted
+                users read as a wasted click. Audit: overview.md H1. */}
             <HealthCell
               label="On Fire"
               value={health.fire}
               sub="needs you now"
               valueClass="urgent"
               iconClass="alert"
-              onClick={() => navigate('#clients')}
+              onClick={() => navigate('#clients/view/fire')}
               ariaLabel="View On Fire clients"
               icon={<path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z" />}
             />
@@ -165,7 +170,7 @@ export function OverviewPage() {
               label="At Risk"
               value={health.risk}
               sub="need review"
-              onClick={() => navigate('#clients')}
+              onClick={() => navigate('#clients/view/risk')}
               ariaLabel="View At Risk clients"
               icon={<>
                 <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
@@ -178,7 +183,7 @@ export function OverviewPage() {
               label="On Track"
               value={health.track}
               sub="clients healthy"
-              onClick={() => navigate('#clients')}
+              onClick={() => navigate('#clients/view/track')}
               ariaLabel="View On Track clients"
               icon={<polyline points="20 6 9 17 4 12" />}
             />

@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useRoute, navigate } from '../router';
 import { flizowStore } from '../store/flizowStore';
 import { useFlizow } from '../store/useFlizow';
@@ -40,12 +40,37 @@ const SAVED_VIEWS: SavedViewDef[] = [
   { id: 'paused',  label: 'Paused',     status: 'paused' },
 ];
 
+const SAVED_VIEW_IDS: ReadonlySet<SavedViewId> = new Set(SAVED_VIEWS.map(v => v.id));
+
+/** Narrow an untrusted URL segment back to a SavedViewId, or fall back
+ *  to 'all'. Keeps the router's `params.view` type-safe without the
+ *  consumer having to repeat the validation inline. */
+function parseViewParam(raw: string | undefined): SavedViewId {
+  if (raw && SAVED_VIEW_IDS.has(raw as SavedViewId)) return raw as SavedViewId;
+  return 'all';
+}
+
 export function ClientsPage() {
   const { data, store } = useFlizow();
   const route = useRoute();
   const selectedId = route.params.id ?? null;
 
-  const [activeView, setActiveView] = useState<SavedViewId>('all');
+  // The saved-view chip state is seeded from the URL so Overview's health
+  // cells ("On Fire", "At Risk", "On Track") can deep-link into the
+  // filtered list (router parses `#clients/view/<id>`). After mount, the
+  // chips update local state — they don't rewrite the URL, because most
+  // chip changes are transient filter-tweaks, not shareable views. The
+  // effect below re-syncs if a fresh URL with a different view param
+  // arrives while we're already mounted (back button, paste, etc.).
+  const viewFromRoute = parseViewParam(route.params.view);
+  const [activeView, setActiveView] = useState<SavedViewId>(viewFromRoute);
+  useEffect(() => {
+    if (viewFromRoute !== activeView) setActiveView(viewFromRoute);
+    // We only want to react when the URL's view param changes, not when
+    // a chip click flips activeView. Depending on viewFromRoute alone
+    // gives the right behaviour.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [viewFromRoute]);
   const [search, setSearch] = useState('');
   const [showAddClient, setShowAddClient] = useState(false);
   // Demo loader sits in the empty state so a first-time user lands on

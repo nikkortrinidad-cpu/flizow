@@ -32,6 +32,13 @@ function parse(hash: string): Route {
     case 'overview':
       return { name: 'overview', params: {}, hash };
     case 'clients':
+      // `#clients/view/<id>` pre-selects a saved view (fire, risk, track,
+      // onboard, paused, all, mine). Driven by Overview's health cells so
+      // a user clicking "On Fire · 3" lands on the filtered list, not
+      // the unfiltered one. Audit: overview.md H1.
+      if (rest[0] === 'view' && rest[1]) {
+        return { name: 'clients', params: { view: rest[1] }, hash };
+      }
       if (rest.length > 0) return { name: 'client-detail', params: { id: rest[0] }, hash };
       return { name: 'clients', params: {}, hash };
     case 'board':
