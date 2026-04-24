@@ -12,6 +12,7 @@ import { EditServiceModal } from '../components/EditServiceModal';
 import { ConfirmDangerDialog } from '../components/ConfirmDangerDialog';
 import { labelById } from '../constants/labels';
 import { useDismissable } from '../hooks/useDismissable';
+import { InlineCardComposer } from '../components/shared/InlineCardComposer';
 
 /**
  * Service Kanban board — per-client workspace for a single service. Shows
@@ -1517,109 +1518,31 @@ function CardTile({
 
 function AddCardInline({ serviceId, clientId, seed }: { serviceId: string; clientId: string; seed?: Partial<Task> }) {
   const { store } = useFlizow();
-  const [open, setOpen] = useState(false);
-  const [title, setTitle] = useState('');
-  const inputRef = useRef<HTMLTextAreaElement>(null);
-
-  useEffect(() => {
-    if (open && inputRef.current) inputRef.current.focus();
-  }, [open]);
-
-  function submit() {
-    const trimmed = title.trim();
-    if (!trimmed) {
-      setOpen(false);
-      return;
-    }
-    const now = new Date();
-    const iso = now.toISOString().slice(0, 10);
-    const id = `task-${Math.random().toString(36).slice(2, 10)}`;
-    // Seed wins over defaults — e.g. adding a card under the High lane
-    // in swimlane mode pre-sets priority to 'high' so the new card
-    // lands in that lane instead of defaulting to medium and needing a
-    // follow-up drag to fix.
-    store.addTask({
-      id,
-      serviceId,
-      clientId,
-      title: trimmed,
-      columnId: 'todo',
-      priority: 'medium',
-      assigneeId: null,
-      labels: [],
-      dueDate: iso,
-      createdAt: now.toISOString(),
-      ...(seed ?? {}),
-    });
-    setTitle('');
-    setOpen(false);
-  }
-
-  if (!open) {
-    return (
-      <button type="button" className="add-card-btn" onClick={() => setOpen(true)}>
-        ＋ Add Card
-      </button>
-    );
-  }
-
   return (
-    <div
-      style={{
-        border: '1px solid var(--hairline)',
-        borderRadius: 12,
-        background: 'var(--bg-elev)',
-        padding: 12,
-        display: 'flex',
-        flexDirection: 'column',
-        gap: 10,
+    <InlineCardComposer
+      onSubmit={(trimmed) => {
+        const now = new Date();
+        const iso = now.toISOString().slice(0, 10);
+        const id = `task-${Math.random().toString(36).slice(2, 10)}`;
+        // Seed wins over defaults — e.g. adding a card under the High
+        // lane in swimlane mode pre-sets priority to 'high' so the new
+        // card lands in that lane instead of defaulting to medium and
+        // needing a follow-up drag to fix.
+        store.addTask({
+          id,
+          serviceId,
+          clientId,
+          title: trimmed,
+          columnId: 'todo',
+          priority: 'medium',
+          assigneeId: null,
+          labels: [],
+          dueDate: iso,
+          createdAt: now.toISOString(),
+          ...(seed ?? {}),
+        });
       }}
-    >
-      <textarea
-        ref={inputRef}
-        value={title}
-        onChange={(e) => setTitle(e.target.value)}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submit(); }
-          if (e.key === 'Escape') { setOpen(false); setTitle(''); }
-        }}
-        placeholder="What needs to get done?"
-        rows={2}
-        style={{
-          resize: 'none',
-          border: '1px solid var(--hairline-soft)',
-          borderRadius: 8,
-          padding: '8px 10px',
-          fontFamily: 'inherit',
-          fontSize: 'var(--fs-base)',
-          color: 'var(--text)',
-          background: 'var(--bg)',
-          outline: 'none',
-        }}
-      />
-      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
-        <button
-          type="button"
-          className="btn-sm"
-          onClick={() => { setOpen(false); setTitle(''); }}
-        >
-          Cancel
-        </button>
-        <button
-          type="button"
-          className="btn-sm"
-          onClick={submit}
-          disabled={!title.trim()}
-          style={{
-            background: title.trim() ? 'var(--highlight)' : 'var(--bg-soft)',
-            color: title.trim() ? '#fff' : 'var(--text-faint)',
-            borderColor: title.trim() ? 'var(--highlight)' : 'var(--hairline)',
-          }}
-        >
-          Add card
-        </button>
-      </div>
-    </div>
+    />
   );
 }
 
