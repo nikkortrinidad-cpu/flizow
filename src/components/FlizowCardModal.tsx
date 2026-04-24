@@ -5,6 +5,7 @@ import { flizowStore } from '../store/flizowStore';
 import { BOARD_LABELS, labelById } from '../constants/labels';
 import { ConfirmDangerDialog } from './ConfirmDangerDialog';
 import FlizowShareModal from './FlizowShareModal';
+import { useActivatableRow } from '../hooks/useActivatableRow';
 
 /** The modal supports two card "kinds": client tasks (the default) and
  *  internal Ops board tasks. Ops cards skip the client/service header,
@@ -191,6 +192,16 @@ export default function FlizowCardModal({ taskId, onClose, kind = 'task', onDupl
   // ── Status / Priority dropdown toggles ────────────────────────────
   const [statusOpen, setStatusOpen] = useState(false);
   const [priorityOpen, setPriorityOpen] = useState(false);
+
+  // Non-button rows (divs) need explicit Enter/Space handling to be
+  // keyboard-activatable. useActivatableRow returns the role/tabIndex/
+  // onKeyDown/aria-label bundle; we still wire onClick separately so
+  // the mouse path stays obvious at the call site.
+  const toggleStatus = () => { setStatusOpen(v => !v); setPriorityOpen(false); };
+  const togglePriority = () => { setPriorityOpen(v => !v); setStatusOpen(false); };
+  const statusRowProps = useActivatableRow(toggleStatus, { label: 'Change status' });
+  const priorityRowProps = useActivatableRow(togglePriority, { label: 'Change priority' });
+  const editDescRowProps = useActivatableRow(() => setEditingDesc(true), { label: 'Edit description' });
 
   // ── Assignee + Label pickers ──────────────────────────────────────
   const [assigneePickerOpen, setAssigneePickerOpen] = useState(false);
@@ -543,10 +554,8 @@ export default function FlizowCardModal({ taskId, onClose, kind = 'task', onDupl
                   <div style={{ position: 'relative' }}>
                     <div
                       className="meta-value meta-edit"
-                      tabIndex={0}
-                      role="button"
-                      aria-label="Change status"
-                      onClick={() => { setStatusOpen(v => !v); setPriorityOpen(false); }}
+                      onClick={toggleStatus}
+                      {...statusRowProps}
                     >
                       <span className={`status-dot ${currentStatus.dot}`} />
                       <span>{currentStatus.label}</span>
@@ -577,10 +586,8 @@ export default function FlizowCardModal({ taskId, onClose, kind = 'task', onDupl
                   <div style={{ position: 'relative' }}>
                     <div
                       className="meta-value meta-edit"
-                      tabIndex={0}
-                      role="button"
-                      aria-label="Change priority"
-                      onClick={() => { setPriorityOpen(v => !v); setStatusOpen(false); }}
+                      onClick={togglePriority}
+                      {...priorityRowProps}
                     >
                       <span className={`status-dot ${currentPriority.dot}`} />
                       <span>{currentPriority.label}</span>
@@ -803,11 +810,9 @@ export default function FlizowCardModal({ taskId, onClose, kind = 'task', onDupl
                 ) : (
                   <div
                     className="description-box"
-                    tabIndex={0}
-                    role="button"
-                    aria-label="Edit description"
                     onClick={() => setEditingDesc(true)}
                     style={!task.description ? { color: 'var(--text-faint)', fontStyle: 'italic' } : undefined}
+                    {...editDescRowProps}
                   >
                     {task.description || 'Click to add a description…'}
                   </div>

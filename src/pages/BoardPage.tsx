@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type ReactElement, type ReactNode } from 'react';
-import { DndContext, DragOverlay, PointerSensor, useSensor, useSensors, closestCenter, useDraggable, useDroppable } from '@dnd-kit/core';
+import { DndContext, DragOverlay, PointerSensor, KeyboardSensor, useSensor, useSensors, closestCenter, useDraggable, useDroppable } from '@dnd-kit/core';
 import type { DragEndEvent, DragStartEvent } from '@dnd-kit/core';
 import { useRoute, navigate } from '../router';
 import { useFlizow } from '../store/useFlizow';
@@ -448,6 +448,12 @@ function BoardBody({
     // drags need a real gesture. 5px is enough to feel deliberate without
     // requiring a full hold.
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    // Keyboard drag: Space picks up, arrow keys move, Space drops, Esc
+    // cancels. Without this sensor a keyboard-only user cannot move
+    // cards between columns at all. dnd-kit's default coordinate getter
+    // works for the freeform Board layout (columns side-by-side, cards
+    // top-to-bottom); no custom getter needed.
+    useSensor(KeyboardSensor),
   );
 
   const filteredTasks = useMemo(

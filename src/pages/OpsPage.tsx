@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type ReactElement } from 'react';
-import { DndContext, DragOverlay, PointerSensor, useSensor, useSensors, closestCenter, useDraggable, useDroppable } from '@dnd-kit/core';
+import { DndContext, DragOverlay, PointerSensor, KeyboardSensor, useSensor, useSensors, closestCenter, useDraggable, useDroppable } from '@dnd-kit/core';
 import type { DragEndEvent, DragStartEvent } from '@dnd-kit/core';
 import { daysBetween, formatMonthDay } from '../utils/dateFormat';
 import { BoardFilters, applyFilters, EMPTY_FILTERS, type BoardFilterState } from '../components/BoardFilters';
@@ -55,6 +55,12 @@ export function OpsPage() {
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    // Keyboard drag: Space picks up, arrow keys move, Space drops, Esc
+    // cancels — matches BoardPage. Without it, keyboard-only users
+    // cannot reorder Ops cards at all. DraggableCard's onKeyDown is a
+    // separate layer (Enter/Space to open the modal); dnd-kit only
+    // claims keys once a drag is active.
+    useSensor(KeyboardSensor),
   );
 
   // Archived ops cards stay in the pile (same rule as client tasks) but
@@ -422,11 +428,18 @@ function DraggableCard({
   onOpen: () => void;
 }) {
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({ id: task.id });
+  // Split dnd-kit's listener map so we can compose our own onKeyDown
+  // without clobbering the keyboard sensor. Enter opens the modal;
+  // Space/Arrow/Escape stay with dnd-kit so keyboard-only users can
+  // still pick up, move, and drop cards.
+  const { onKeyDown: dndKeyDown, ...dragListeners } = (listeners ?? {}) as {
+    onKeyDown?: (e: React.KeyboardEvent<HTMLElement>) => void;
+  } & Record<string, unknown>;
   return (
     <div
       ref={setNodeRef}
       {...attributes}
-      {...listeners}
+      {...dragListeners}
       style={{ opacity: isDragging ? 0 : 1 }}
       // The click handler lives on the wrapper div (not the inner tile)
       // so we can intercept *before* dnd-kit would treat a drag-start as
@@ -442,10 +455,16 @@ function DraggableCard({
         onOpen();
       }}
       onKeyDown={(e) => {
-        if (e.key === 'Enter' || e.key === ' ') {
+        if (e.key === 'Enter') {
           e.preventDefault();
           onOpen();
+          return;
         }
+        // Forward Space/Arrow/Escape to dnd-kit's KeyboardSensor so it
+        // can drive drag-pickup/move/drop. Enter is the "open modal"
+        // gesture; Space is the "pick up the card" gesture. Common
+        // split for elements that are both activatable and draggable.
+        dndKeyDown?.(e);
       }}
       role="button"
       tabIndex={0}

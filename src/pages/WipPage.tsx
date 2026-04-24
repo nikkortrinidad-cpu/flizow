@@ -4,6 +4,7 @@ import { flizowStore } from '../store/flizowStore';
 import { useFlizow } from '../store/useFlizow';
 import type { Client, ManualAgendaItem, Service, Task } from '../types/flizow';
 import { daysBetween } from '../utils/dateFormat';
+import { useActivatableRow } from '../hooks/useActivatableRow';
 
 /**
  * Weekly WIP — the standing-meeting agenda page.
@@ -445,23 +446,33 @@ function FlatRow({ item, onRemove, onActivate }: {
   onRemove: () => void;
   onActivate?: () => void;
 }) {
-  function handleClick(e: React.MouseEvent) {
-    // Skip clicks that land on the remove button — they handle themselves.
-    if ((e.target as HTMLElement).closest('.wip-agenda-remove')) return;
+  // The activate path — used by both click and keyboard. Falls back to
+  // opening the client page when the row isn't a manual agenda item.
+  function activate() {
     if (onActivate) {
       onActivate();
     } else if (item.clientId) {
       navigate(`#clients/${item.clientId}`);
     }
   }
+  function handleClick(e: React.MouseEvent) {
+    // Skip clicks that land on the remove button — they handle themselves.
+    if ((e.target as HTMLElement).closest('.wip-agenda-remove')) return;
+    activate();
+  }
+  // Destination-aware aria-label so the SR announces where Enter will
+  // land. "Edit agenda item: …" for manual rows, "Open client: …" for
+  // the auto-populated new-client rows (previously unlabeled).
+  const label = item.kind === 'manual'
+    ? `Edit agenda item: ${item.label}`
+    : item.clientId ? `Open client: ${item.label}` : undefined;
+  const rowProps = useActivatableRow(activate, { label });
   return (
     <div
       className="wip-agenda-flat-row"
       onClick={handleClick}
-      role="button"
-      tabIndex={0}
       style={{ cursor: 'pointer' }}
-      aria-label={item.kind === 'manual' ? `Edit agenda item: ${item.label}` : undefined}
+      {...rowProps}
     >
       <DragHandle />
       <span className="wip-agenda-status" data-status={item.status}>{statusLabel(item.status)}</span>
@@ -487,16 +498,21 @@ function CardRow({ item, onRemove }: {
   item: AgendaItem;
   onRemove: () => void;
 }) {
+  function activate() {
+    if (item.serviceId) navigate(`#board/${item.serviceId}`);
+  }
+  const rowProps = useActivatableRow(activate, {
+    label: item.serviceId ? `Open service board: ${item.label}` : undefined,
+  });
   return (
     <div
       className="wip-agenda-card-row"
       onClick={(e) => {
         if ((e.target as HTMLElement).closest('.wip-agenda-remove')) return;
-        if (item.serviceId) navigate(`#board/${item.serviceId}`);
+        activate();
       }}
-      role="button"
-      tabIndex={0}
       style={{ cursor: 'pointer' }}
+      {...rowProps}
     >
       <DragHandle />
       <span className="wip-agenda-status" data-status={item.status}>{statusLabel(item.status)}</span>
