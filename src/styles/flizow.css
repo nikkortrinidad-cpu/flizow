@@ -1156,6 +1156,23 @@
     background: var(--hover-blue); color: #fff;
   }
 
+  /* Right-aligned count pill inside menu items (e.g. "Archived cards
+     · 4"). Shares the pill shape with .members-count-pill but without
+     the btn-sm hover coupling, and with margin-left:auto so it hugs
+     the right edge of the menu row. Replaces the inline-styled pill
+     that used to live in BoardPage. Audit: board M4. */
+  .menu-count-pill {
+    margin-left: auto;
+    display: inline-flex; align-items: center; justify-content: center;
+    min-width: 18px; height: 18px;
+    padding: 0 8px;
+    background: var(--bg-faint);
+    color: var(--text-faint);
+    border-radius: 980px;
+    font-size: 11px; font-weight: 600;
+    letter-spacing: 0;
+  }
+
   /* Board-toolbar Settings menu. Uses the shared .tb-menu recipe for
      the dropdown itself (same as the breadcrumb ⋯ menu) and just needs
      the positioning wrapper here. Icon sits before the menu label. */

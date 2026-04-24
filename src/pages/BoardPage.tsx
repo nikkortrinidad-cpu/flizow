@@ -709,7 +709,6 @@ function Breadcrumb({
   // (type, template, progress, next deliverable) via EditServiceModal.
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(service.name);
-  const [menuOpen, setMenuOpen] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [membersOpen, setMembersOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -720,7 +719,6 @@ function Breadcrumb({
   // lifting state higher than the modal itself.
   const [archivedOpen, setArchivedOpen] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
-  const menuWrapRef = useRef<HTMLDivElement>(null);
   const membersWrapRef = useRef<HTMLDivElement>(null);
   const settingsWrapRef = useRef<HTMLDivElement>(null);
 
@@ -741,7 +739,6 @@ function Breadcrumb({
   useEffect(() => {
     setDraft(service.name);
     setEditing(false);
-    setMenuOpen(false);
     setMembersOpen(false);
     setSettingsOpen(false);
   }, [service.id, service.name]);
@@ -755,11 +752,13 @@ function Breadcrumb({
     return () => window.clearTimeout(t);
   }, [editing]);
 
-  // Outside-click + Esc for the three popovers in this subtree: the
-  // overflow (kebab) menu, the Members popover, and Board Settings.
-  // All three share the same dismissal semantics — useDismissable
-  // replaces what used to be three near-identical useEffects.
-  useDismissable(menuWrapRef, menuOpen, () => setMenuOpen(false));
+  // Outside-click + Esc for the two popovers in this subtree: the
+  // Members popover and Board Settings. Shared dismissal semantics
+  // via useDismissable. The breadcrumb ⋯ used to be a third popover,
+  // but its only item ("Edit service details…") was already
+  // duplicated in Board Settings — two paths to one modal. Merged
+  // the crumb menu into Board Settings and removed the kebab. Audit:
+  // board M1.
   useDismissable(membersWrapRef, membersOpen, () => setMembersOpen(false));
   useDismissable(settingsWrapRef, settingsOpen, () => setSettingsOpen(false));
 
@@ -834,45 +833,12 @@ function Breadcrumb({
                 {service.name}
               </span>
             )}
-            {/* Overflow menu for the service metadata the inline rename
-                can't cover: type, template, progress, next deliverable.
-                Visually quiet — a 22px dot button that only reveals its
-                tint on hover, so the rename stays the primary affordance. */}
-            {!editing && (
-              <div ref={menuWrapRef} className="breadcrumb-menu-wrap">
-                <button
-                  type="button"
-                  className="breadcrumb-menu-btn"
-                  aria-label="Service actions"
-                  aria-haspopup="menu"
-                  aria-expanded={menuOpen}
-                  onClick={() => setMenuOpen(v => !v)}
-                >
-                  <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" width="14" height="14">
-                    <circle cx="5" cy="12" r="1.6" />
-                    <circle cx="12" cy="12" r="1.6" />
-                    <circle cx="19" cy="12" r="1.6" />
-                  </svg>
-                </button>
-                <div className={`tb-menu${menuOpen ? ' open' : ''}`} role="menu">
-                  <div
-                    role="menuitem"
-                    tabIndex={0}
-                    className="tb-menu-item"
-                    onClick={() => { setMenuOpen(false); setShowEditModal(true); }}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' || e.key === ' ') {
-                        e.preventDefault();
-                        setMenuOpen(false);
-                        setShowEditModal(true);
-                      }
-                    }}
-                  >
-                    Edit service details…
-                  </div>
-                </div>
-              </div>
-            )}
+            {/* The breadcrumb ⋯ menu used to sit here, holding a
+                single "Edit service details…" item that was also
+                present in Board Settings. Two paths to one modal —
+                and a kebab with one item reads as a drawer with
+                nothing inside. Removed; Board Settings is the sole
+                entry point now. Audit: board M1. */}
           </li>
         </ol>
       </nav>
@@ -940,19 +906,7 @@ function Breadcrumb({
               <ArchiveIcon />
               Archived cards
               {archivedTasks.length > 0 && (
-                <span
-                  style={{
-                    marginLeft: 'auto',
-                    fontSize: 11,
-                    color: 'var(--text-faint)',
-                    background: 'var(--bg-faint)',
-                    padding: '2px 8px',
-                    borderRadius: 999,
-                    fontWeight: 600,
-                  }}
-                >
-                  {archivedTasks.length}
-                </span>
+                <span className="menu-count-pill">{archivedTasks.length}</span>
               )}
             </div>
             <div className="tb-menu-divider" />
