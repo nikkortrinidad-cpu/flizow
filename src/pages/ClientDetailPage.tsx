@@ -439,12 +439,33 @@ function Hero({ client, am, onRequestDelete }: {
               {client.name}
             </span>
           )}
+          {/* Pair the chip with a visible "Status" eyebrow so it reads
+              as a derived read-only indicator rather than a
+              tappable-looking pill. The old tooltip-only explanation
+              fired after a ~500ms hover delay and wasn't reachable
+              from the keyboard at all. Audit: client-detail M3. */}
           <span
-            className={`status-chip ${client.status}`}
-            title="Auto-computed from attention items, onboarding progress, and activity"
+            className="status-chip-wrap"
+            style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}
           >
-            <span className="dot" />
-            {statusLabel}
+            <span
+              style={{
+                fontSize: 'var(--fs-xs)',
+                fontWeight: 600,
+                letterSpacing: '0.08em',
+                textTransform: 'uppercase',
+                color: 'var(--text-faint)',
+              }}
+            >
+              Status
+            </span>
+            <span
+              className={`status-chip ${client.status}`}
+              title="Auto-computed from attention items, onboarding progress, and activity"
+            >
+              <span className="dot" />
+              {statusLabel}
+            </span>
           </span>
         </div>
         <div className="hero-meta">

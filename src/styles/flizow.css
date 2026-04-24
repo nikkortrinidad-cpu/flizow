@@ -7599,15 +7599,12 @@
     background: color-mix(in srgb, var(--status-track) 20%, transparent);
     color: var(--status-track);
   }
-  /* Show/hide sections based on active tab. Sections with no data-tab
-     are treated as overview-only. data-tab supports space-separated
-     values, e.g. data-tab="overview about" to appear in both. */
-  .client-detail-page[data-active-tab="overview"] .detail-section[data-tab]:not([data-tab~="overview"]) { display: none; }
-  .client-detail-page[data-active-tab="about"] .detail-section:not([data-tab~="about"]) { display: none; }
-  .client-detail-page[data-active-tab="notes"] .detail-section:not([data-tab~="notes"]) { display: none; }
-  .client-detail-page[data-active-tab="touchpoints"] .detail-section:not([data-tab~="touchpoints"]) { display: none; }
-  .client-detail-page[data-active-tab="stats"] .detail-section:not([data-tab~="stats"]) { display: none; }
-  .client-detail-page[data-active-tab="onboarding"] .detail-section:not([data-tab~="onboarding"]) { display: none; }
+  /* Tab gating lives in React — ClientDetailPage conditionally mounts
+     each tab's contents. The `data-active-tab` + `data-tab` display:none
+     filter that used to sit here was a parallel hiding layer: it could
+     only ever hide already-mounted sections, but React unmounts them
+     anyway, so the rule was a no-op. Deleted to avoid drifting between
+     "what React mounts" and "what CSS shows." Audit: client-detail M2. */
 
   /* Sections (reuse .block pattern for consistency) */
   .detail-section { margin-bottom: 36px; }
