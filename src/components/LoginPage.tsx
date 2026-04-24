@@ -4,11 +4,14 @@ import { useAuth } from '../contexts/AuthContext';
 /**
  * Login screen. One card, one action.
  *
- * The previous layout had the brand block floating above a separate card
- * with a redundant "Sign in to continue" heading, and "Powered by Firebase"
- * orphaned below — three disconnected islands on a gray sea. This version
- * collapses brand + action into a single composition so the user's eye
- * lands on one thing: the button that actually does the job.
+ * Composition: brand (icon + title + subtitle) anchors the sign-in action
+ * inside a single card. Meta footer sits below, intentionally de-emphasized.
+ *
+ * Note on styling: the exact card dimensions, corner radius, and layered
+ * shadow are in `style={}` not Tailwind arbitrary-value classes. The JIT
+ * scanner silently dropped `max-w-[380px]` and `shadow-[0_...]` on the
+ * previous revision, which made the card render full-width. Inline styles
+ * can't fail to compile.
  */
 export function LoginPage() {
   const { signInWithGoogle } = useAuth();
@@ -28,23 +31,41 @@ export function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#f5f5f7] flex items-center justify-center px-6 py-12">
-      <div className="w-full max-w-[380px]">
-        {/* Unified card: brand anchors the action, microcopy closes the trust loop.
-            Layered shadow (crisp edge + soft ambient) makes the card read cleanly
-            against #f5f5f7 without needing a border. */}
-        <div className="bg-white rounded-[20px] shadow-[0_1px_2px_rgba(0,0,0,0.04),0_12px_32px_rgba(0,0,0,0.06)] px-10 py-12">
+    <div
+      className="min-h-screen flex items-center justify-center px-6 py-12"
+      style={{ backgroundColor: '#f5f5f7' }}
+    >
+      <div className="w-full mx-auto" style={{ maxWidth: '400px' }}>
+        {/* Card: unified brand + action so nothing orphans on the gray page.
+            Layered shadow = crisp 1px edge + soft 12/32 ambient — reads as a
+            card without needing a border. */}
+        <div
+          className="bg-white"
+          style={{
+            borderRadius: '22px',
+            padding: '40px 36px 32px',
+            boxShadow:
+              '0 1px 2px rgba(0, 0, 0, 0.04), 0 12px 32px rgba(0, 0, 0, 0.06)',
+          }}
+        >
           <div className="flex flex-col items-center">
-            {/* App mark — 72px is Apple's typical icon size for sign-in cards;
-                soft drop shadow adds depth without competing with the CTA. */}
+            {/* App mark — 64px, soft drop shadow so it lifts off the card. */}
             <div
-              className="w-[72px] h-[72px] bg-[#1d1d1f] rounded-[18px] flex items-center justify-center shadow-[0_4px_12px_rgba(0,0,0,0.12)]"
+              className="flex items-center justify-center"
               aria-hidden="true"
+              style={{
+                width: 64,
+                height: 64,
+                background: '#1d1d1f',
+                borderRadius: 16,
+                boxShadow: '0 4px 12px rgba(0, 0, 0, 0.12)',
+              }}
             >
               <svg
-                className="w-9 h-9 text-white"
+                width="32"
+                height="32"
                 fill="none"
-                stroke="currentColor"
+                stroke="white"
                 viewBox="0 0 24 24"
               >
                 <path
@@ -56,12 +77,27 @@ export function LoginPage() {
               </svg>
             </div>
 
-            {/* Brand pair — 28/15, tight tracking on the h1, 4px gap to the subtitle
-                so they read as one unit (Gestalt proximity). */}
-            <h1 className="mt-6 text-[28px] font-semibold tracking-[-0.02em] text-[#1d1d1f] leading-[1.1]">
+            {/* Brand pair — title + subtitle are one Gestalt unit (4px gap). */}
+            <h1
+              style={{
+                marginTop: 20,
+                fontSize: 26,
+                fontWeight: 600,
+                letterSpacing: '-0.02em',
+                color: '#1d1d1f',
+                lineHeight: 1.15,
+              }}
+            >
               Flizow
             </h1>
-            <p className="mt-1 text-[15px] text-[#86868b] leading-normal">
+            <p
+              style={{
+                marginTop: 4,
+                fontSize: 15,
+                color: '#86868b',
+                lineHeight: 1.4,
+              }}
+            >
               Project Management
             </p>
           </div>
@@ -69,35 +105,70 @@ export function LoginPage() {
           {error && (
             <div
               role="alert"
-              className="mt-8 px-3.5 py-2.5 bg-[#ff3b30]/8 text-[#c41e14] text-[13px] rounded-xl text-center leading-snug"
+              style={{
+                marginTop: 24,
+                padding: '10px 14px',
+                backgroundColor: 'rgba(255, 59, 48, 0.08)',
+                color: '#c41e14',
+                fontSize: 13,
+                lineHeight: 1.4,
+                borderRadius: 12,
+                textAlign: 'center',
+              }}
             >
               {error}
             </div>
           )}
 
-          {/* Primary and only action. Pill button, 48px tall — comfortable thumb
-              target and matches Apple's App Store / Settings button height. */}
+          {/* Primary and only action. Pill button, 48px tall. */}
           <button
             onClick={handleGoogleSignIn}
             disabled={loading}
             aria-busy={loading}
-            className="mt-10 w-full h-12 flex items-center justify-center gap-2.5 bg-[#1d1d1f] text-white rounded-full text-[15px] font-medium hover:bg-[#333336] active:bg-black transition-colors disabled:opacity-60 disabled:cursor-not-allowed focus:outline-none focus-visible:ring-2 focus-visible:ring-[#1d1d1f] focus-visible:ring-offset-2 focus-visible:ring-offset-white"
+            className="focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
+            style={{
+              marginTop: 32,
+              width: '100%',
+              height: 48,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 10,
+              background: loading ? '#333336' : '#1d1d1f',
+              color: 'white',
+              borderRadius: 999,
+              fontSize: 15,
+              fontWeight: 500,
+              border: 'none',
+              cursor: loading ? 'not-allowed' : 'pointer',
+              opacity: loading ? 0.75 : 1,
+              transition: 'background-color 120ms ease',
+            }}
+            onMouseEnter={(e) => {
+              if (!loading) e.currentTarget.style.background = '#333336';
+            }}
+            onMouseLeave={(e) => {
+              if (!loading) e.currentTarget.style.background = '#1d1d1f';
+            }}
           >
             {loading ? (
               <>
                 <span
-                  className="w-[18px] h-[18px] border-2 border-white/30 border-t-white rounded-full animate-spin motion-reduce:animate-none motion-reduce:border-t-white/70"
                   aria-hidden="true"
+                  className="animate-spin motion-reduce:animate-none"
+                  style={{
+                    width: 18,
+                    height: 18,
+                    border: '2px solid rgba(255, 255, 255, 0.3)',
+                    borderTopColor: 'white',
+                    borderRadius: '50%',
+                  }}
                 />
                 <span>Signing in…</span>
               </>
             ) : (
               <>
-                <svg
-                  className="w-[18px] h-[18px]"
-                  viewBox="0 0 24 24"
-                  aria-hidden="true"
-                >
+                <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true">
                   <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 01-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4" />
                   <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" />
                   <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05" />
@@ -108,16 +179,31 @@ export function LoginPage() {
             )}
           </button>
 
-          {/* Trust microcopy — single line, 12px, muted. Closes the question
-              "what happens when I sign in" without hijacking attention. */}
-          <p className="mt-5 text-[12px] text-[#86868b] text-center leading-relaxed">
+          {/* Trust microcopy — closes the "what happens next" question quietly. */}
+          <p
+            style={{
+              marginTop: 20,
+              fontSize: 12,
+              color: '#86868b',
+              textAlign: 'center',
+              lineHeight: 1.5,
+            }}
+          >
             Your data syncs securely across all your devices.
           </p>
         </div>
 
-        {/* Meta footer — tracked slightly, smaller than microcopy, sits outside
-            the card because it's about the service, not the sign-in action. */}
-        <p className="mt-6 text-[11px] text-[#86868b] text-center tracking-wide">
+        {/* Meta footer — sits outside the card because it's about the service,
+            not the sign-in action. Smaller than microcopy, tracked, muted. */}
+        <p
+          style={{
+            marginTop: 20,
+            fontSize: 11,
+            color: '#86868b',
+            textAlign: 'center',
+            letterSpacing: '0.02em',
+          }}
+        >
           Powered by Firebase · Hosted on GitHub Pages
         </p>
       </div>
