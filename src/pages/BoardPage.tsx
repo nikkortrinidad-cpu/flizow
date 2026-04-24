@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type ReactElement } from 'react';
+import { useEffect, useMemo, useRef, useState, type ReactElement, type ReactNode } from 'react';
 import { DndContext, DragOverlay, PointerSensor, useSensor, useSensors, closestCenter, useDraggable, useDroppable } from '@dnd-kit/core';
 import type { DragEndEvent, DragStartEvent } from '@dnd-kit/core';
 import { useRoute, navigate } from '../router';
@@ -7,9 +7,10 @@ import { flizowStore } from '../store/flizowStore';
 import type { ColumnId, Priority, Task, Client, Service, Member, TaskComment } from '../types/flizow';
 import { daysBetween, formatMonthDay } from '../utils/dateFormat';
 import FlizowCardModal from '../components/FlizowCardModal';
-import { BoardFilters, applyFilters, EMPTY_FILTERS, type BoardFilterState } from '../components/BoardFilters';
+import { BoardFilters, applyFilters, EMPTY_FILTERS, type BoardFilterState, type GroupBy } from '../components/BoardFilters';
 import { EditServiceModal } from '../components/EditServiceModal';
 import { ConfirmDangerDialog } from '../components/ConfirmDangerDialog';
+import { labelById } from '../constants/labels';
 
 /**
  * Service Kanban board — per-client workspace for a single service. Shows
@@ -31,10 +32,13 @@ import { ConfirmDangerDialog } from '../components/ConfirmDangerDialog';
  *     on mount via sessionStorage / route deep-link
  *   - Archive / unarchive flow with triage modal from Board Settings
  *   - Per-column WIP limits via the column ⋯ popover
+ *   - Swimlanes: Group by priority / assignee / label. Setting lives on
+ *     the service so each board remembers its own layout; dragging a
+ *     card across a lane boundary patches the grouping field on the
+ *     task (so lanes are direct-manipulation, not just a filter)
  *
  * Not yet:
  *   - Column color / reorder editing
- *   - Swimlanes (group-by assignee / priority)
  */
 
 // ── Column definitions ───────────────────────────────────────────────
@@ -46,6 +50,244 @@ const COLUMNS: Array<{ id: ColumnId; title: string; dot: string; emptyHide?: boo
   { id: 'review',     title: 'Needs Review', dot: 'review' },
   { id: 'done',       title: 'Done',         dot: 'done' },
 ];
+
+// ── Swimlane helpers ─────────────────────────────────────────────────
+//
+// Swimlanes = horizontal rows in the board, one per distinct value of
+// a grouping field (priority / assignee / label). Dragging a card from
+// one lane to another patches the grouping field on the task, so lanes
+// read as direct manipulation — the card "becomes" whatever the target
+// lane represents. The flat, groupBy='none' layout is preserved as the
+// default because most single-operator boards don't need the extra
+// vertical chrome.
+//
+// Lane keys are synthetic strings:
+//   priority: 'urgent' | 'high' | 'medium' | 'low' | 'nopriority'
+//   assignee: <memberId> | 'unassigned'
+//   label:    <labelId>  | 'nolabel'
+// Droppable ids in swimlane mode: `lane:<key>|col:<columnId>`.
+
+type ActiveGroupBy = Exclude<GroupBy, 'none'>;
+
+interface Lane {
+  /** Stable lane id used for collapse state, droppable ids, React keys. */
+  key: string;
+  /** Human label shown in the header. */
+  label: string;
+  /** Optional React node rendered before the label — a priority dot,
+   *  member avatar, or label pill. */
+  accent: ReactNode | null;
+  /** Whether to also render the plain label text after the accent.
+   *  False for label lanes (the accent is a pill that already contains
+   *  the name); true for priority / assignee lanes where the accent is
+   *  a bare dot/avatar. */
+  showLabelText: boolean;
+  /** Count of tasks visible in this lane (across all columns). */
+  totalCount: number;
+  /** Tasks bucketed by column for this lane. */
+  tasksByColumn: Map<ColumnId, Task[]>;
+}
+
+const PRIORITY_ORDER: Priority[] = ['urgent', 'high', 'medium', 'low'];
+const PRIORITY_LANE_TITLES: Record<Priority, string> = {
+  urgent: 'Urgent',
+  high:   'High',
+  medium: 'Medium',
+  low:    'Low',
+};
+
+/** Which lane a task belongs to under the given grouping mode. For
+ *  labels we pick the first label as the task's "home" lane so each
+ *  task appears in exactly one lane — multi-label rendering would
+ *  duplicate cards and make drag semantics ambiguous. */
+function laneKeyFor(t: Task, mode: ActiveGroupBy): string {
+  if (mode === 'priority') return t.priority ?? 'nopriority';
+  if (mode === 'assignee') return t.assigneeId ?? 'unassigned';
+  // label
+  return t.labels[0] ?? 'nolabel';
+}
+
+/** Build the lane list for the current data + mode. Priority always
+ *  shows all four buckets even when empty so the user has a drop
+ *  target to escalate into; assignee and label lanes surface only
+ *  values actually present (plus the sentinel "Unassigned"/"No label"
+ *  bucket when any such task exists). */
+function computeLanes(
+  tasks: Task[],
+  mode: ActiveGroupBy,
+  members: Member[],
+): Lane[] {
+  const bucket = (predicate: (t: Task) => boolean): Map<ColumnId, Task[]> => {
+    const map = new Map<ColumnId, Task[]>();
+    COLUMNS.forEach(c => map.set(c.id, []));
+    tasks.forEach(t => {
+      if (!predicate(t)) return;
+      const arr = map.get(t.columnId);
+      if (arr) arr.push(t);
+    });
+    return map;
+  };
+  const totalOf = (m: Map<ColumnId, Task[]>) => {
+    let n = 0;
+    m.forEach(arr => { n += arr.length; });
+    return n;
+  };
+
+  if (mode === 'priority') {
+    const lanes: Lane[] = PRIORITY_ORDER.map(p => {
+      const byCol = bucket(t => (t.priority ?? 'nopriority') === p);
+      return {
+        key: p,
+        label: PRIORITY_LANE_TITLES[p],
+        accent: <span className={`status-dot dot-${p}`} aria-hidden />,
+        showLabelText: true,
+        totalCount: totalOf(byCol),
+        tasksByColumn: byCol,
+      };
+    });
+    // Rarely, a legacy task might have no priority at all; surface it
+    // as its own lane so nothing goes missing from the board.
+    const noPriorityCount = tasks.filter(t => !t.priority).length;
+    if (noPriorityCount > 0) {
+      const byCol = bucket(t => !t.priority);
+      lanes.push({
+        key: 'nopriority',
+        label: 'No priority',
+        accent: <span className="status-dot" style={{ background: 'var(--bg-soft)', border: '1px solid var(--hairline)' }} aria-hidden />,
+        showLabelText: true,
+        totalCount: noPriorityCount,
+        tasksByColumn: byCol,
+      });
+    }
+    return lanes;
+  }
+
+  if (mode === 'assignee') {
+    // Distinct assignee ids that have at least one task on this board.
+    // A roster-wide listing would light up lanes the user doesn't need.
+    const ids = new Set<string>();
+    tasks.forEach(t => { if (t.assigneeId) ids.add(t.assigneeId); });
+    const lanes: Lane[] = Array.from(ids)
+      .map(id => {
+        const m = members.find(x => x.id === id);
+        const byCol = bucket(t => t.assigneeId === id);
+        return {
+          key: id,
+          label: m?.name ?? 'Unknown',
+          showLabelText: true,
+          accent: m ? (
+            <span
+              aria-hidden
+              style={{
+                width: 20, height: 20, borderRadius: '50%',
+                background: m.type === 'operator' ? (m.bg ?? 'var(--bg-soft)') : m.color,
+                color: m.type === 'operator' ? m.color : '#fff',
+                fontSize: 10, fontWeight: 700,
+                display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+              }}
+            >
+              {m.initials}
+            </span>
+          ) : null,
+          totalCount: totalOf(byCol),
+          tasksByColumn: byCol,
+        };
+      })
+      .sort((a, b) => a.label.localeCompare(b.label));
+    const hasUnassigned = tasks.some(t => !t.assigneeId);
+    if (hasUnassigned) {
+      const byCol = bucket(t => !t.assigneeId);
+      lanes.push({
+        key: 'unassigned',
+        label: 'Unassigned',
+        showLabelText: true,
+        accent: (
+          <span
+            aria-hidden
+            style={{
+              width: 20, height: 20, borderRadius: '50%',
+              background: 'var(--bg-faint)', color: 'var(--text-faint)',
+              fontSize: 12, display: 'inline-flex',
+              alignItems: 'center', justifyContent: 'center',
+              border: '1px dashed var(--hairline)',
+            }}
+          >·</span>
+        ),
+        totalCount: totalOf(byCol),
+        tasksByColumn: byCol,
+      });
+    }
+    return lanes;
+  }
+
+  // label
+  const labelIds = new Set<string>();
+  tasks.forEach(t => { if (t.labels[0]) labelIds.add(t.labels[0]); });
+  const labelLanes: Lane[] = Array.from(labelIds)
+    .map(id => {
+      const l = labelById(id);
+      const byCol = bucket(t => t.labels[0] === id);
+      return {
+        key: id,
+        // Render the name via the pill so color/text stay in sync with
+        // the card tiles' label pills. Label text is suppressed beside
+        // it so the reader hears the name once, not twice.
+        label: l?.name ?? id,
+        accent: <span className={`label-pill ${l?.cls ?? ''}`}>{l?.name ?? id}</span>,
+        showLabelText: false,
+        totalCount: totalOf(byCol),
+        tasksByColumn: byCol,
+      };
+    })
+    .sort((a, b) => a.label.localeCompare(b.label));
+  const hasNoLabel = tasks.some(t => t.labels.length === 0);
+  if (hasNoLabel) {
+    const byCol = bucket(t => t.labels.length === 0);
+    labelLanes.push({
+      key: 'nolabel',
+      label: 'No label',
+      accent: <span className="label-pill" style={{ background: 'var(--bg-faint)', color: 'var(--text-faint)' }}>No label</span>,
+      showLabelText: false,
+      totalCount: totalOf(byCol),
+      tasksByColumn: byCol,
+    });
+  }
+  return labelLanes;
+}
+
+/** Translate a lane drop into the field patch that writes the target
+ *  lane's value onto the dragged task. For labels we do a symmetric
+ *  replace — drop the source lane's label, bring the target lane's
+ *  label to position 0 — so the card unambiguously lives in one lane
+ *  while keeping any other labels the user put on it. */
+function patchForLaneChange(
+  source: Task,
+  sourceLaneKey: string,
+  targetLaneKey: string,
+  mode: ActiveGroupBy,
+): Partial<Task> | null {
+  if (sourceLaneKey === targetLaneKey) return null;
+
+  if (mode === 'priority') {
+    if (targetLaneKey === 'nopriority') return null; // no sentinel write
+    return { priority: targetLaneKey as Priority };
+  }
+
+  if (mode === 'assignee') {
+    if (targetLaneKey === 'unassigned') {
+      return { assigneeId: null, assigneeIds: [] };
+    }
+    // Keep assigneeIds in sync with the primary so the card tile +
+    // filters see the update immediately.
+    return { assigneeId: targetLaneKey, assigneeIds: [targetLaneKey] };
+  }
+
+  // label
+  const existing = source.labels ?? [];
+  const cleared = existing.filter(l => l !== sourceLaneKey && l !== targetLaneKey);
+  if (targetLaneKey === 'nolabel') return { labels: cleared };
+  return { labels: [targetLaneKey, ...cleared] };
+}
 
 // ── Page ─────────────────────────────────────────────────────────────
 
@@ -160,6 +402,16 @@ function BoardBody({
   // Selected card in the detail modal. null = modal closed. Reset any
   // time the user navigates away from this page (unmount handles it).
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
+  // Swimlane grouping mode for this board. Persisted on the service so
+  // each board remembers its layout across sessions. Switching to
+  // 'none' flips the board back to its flat-columns shape.
+  const groupBy: GroupBy = service.groupBy ?? 'none';
+  // Per-lane collapsed state. Not persisted — collapse is a read-time
+  // convenience (hide a big backlog lane I'm not reviewing today), not
+  // a board-wide setting. Reset when the grouping mode changes because
+  // the lane keys belong to a different semantic space.
+  const [collapsedLanes, setCollapsedLanes] = useState<Set<string>>(() => new Set());
+  useEffect(() => { setCollapsedLanes(new Set()); }, [groupBy]);
 
   // Auto-open a card if either (a) another surface (touchpoints
   // "On board ↗", command palette, etc.) dropped its id in
@@ -204,7 +456,8 @@ function BoardBody({
   );
 
   // Bucket tasks into columns (skip Blocked column in rendering if empty
-  // and there's no explicit need to show the dropzone).
+  // and there's no explicit need to show the dropzone). Used only in
+  // flat mode; swimlane mode computes per-lane buckets below.
   const tasksByColumn = useMemo(() => {
     const byCol = new Map<ColumnId, Task[]>();
     COLUMNS.forEach(c => byCol.set(c.id, []));
@@ -215,6 +468,14 @@ function BoardBody({
     return byCol;
   }, [filteredTasks]);
 
+  // Swimlanes — only computed when groupBy is active. The computation
+  // is cheap (one pass per lane) but gated anyway so the flat-mode
+  // path stays pure.
+  const lanes = useMemo(
+    () => groupBy === 'none' ? [] : computeLanes(filteredTasks, groupBy, members),
+    [filteredTasks, groupBy, members],
+  );
+
   function handleDragStart(e: DragStartEvent) {
     setActiveId(String(e.active.id));
   }
@@ -224,20 +485,51 @@ function BoardBody({
     const taskId = String(e.active.id);
     const overId = e.over ? String(e.over.id) : null;
     if (!overId) return;
-    // Droppable ids are `col:<columnId>`; cards are the task id directly.
-    // Accept drop onto either — dropping onto a card means "put it in that
-    // card's column".
+    // Droppable ids come in three shapes:
+    //   `col:<columnId>`              — flat mode column drop
+    //   `lane:<key>|col:<columnId>`   — swimlane mode column drop
+    //   `<taskId>`                    — dropped onto another card (any mode)
+    // Dropping onto a card means "put it in that card's column (and
+    // lane, if swimlanes are active)" — minimal surprise.
     let targetCol: ColumnId | null = null;
-    if (overId.startsWith('col:')) {
+    let targetLaneKey: string | null = null;
+    if (overId.startsWith('lane:')) {
+      const pipe = overId.indexOf('|col:');
+      if (pipe > 0) {
+        targetLaneKey = overId.slice(5, pipe);
+        targetCol = overId.slice(pipe + 5) as ColumnId;
+      }
+    } else if (overId.startsWith('col:')) {
       targetCol = overId.slice(4) as ColumnId;
     } else {
       const target = tasks.find(t => t.id === overId);
-      if (target) targetCol = target.columnId;
+      if (target) {
+        targetCol = target.columnId;
+        if (groupBy !== 'none') targetLaneKey = laneKeyFor(target, groupBy);
+      }
     }
     if (!targetCol) return;
     const source = tasks.find(t => t.id === taskId);
-    if (!source || source.columnId === targetCol) return;
-    store.moveTask(taskId, targetCol);
+    if (!source) return;
+
+    const colChanged = source.columnId !== targetCol;
+    let lanePatch: Partial<Task> | null = null;
+    if (groupBy !== 'none' && targetLaneKey) {
+      const sourceLaneKey = laneKeyFor(source, groupBy);
+      lanePatch = patchForLaneChange(source, sourceLaneKey, targetLaneKey, groupBy);
+    }
+
+    // Merge column-change and lane-change into a single patch so the
+    // store emits one activity event per dimension, not two separate
+    // renders. moveTask delegates to updateTask which already diffs
+    // every field and logs granularly.
+    if (colChanged && lanePatch) {
+      store.updateTask(taskId, { columnId: targetCol, ...lanePatch });
+    } else if (colChanged) {
+      store.moveTask(taskId, targetCol);
+    } else if (lanePatch) {
+      store.updateTask(taskId, lanePatch);
+    }
   }
 
   const activeTask = activeId ? tasks.find(t => t.id === activeId) : undefined;
@@ -260,6 +552,8 @@ function BoardBody({
         filters={filters}
         onFiltersChange={setFilters}
         members={members}
+        groupBy={groupBy}
+        onGroupByChange={(next) => flizowStore.updateService(service.id, { groupBy: next })}
       />
 
       <DndContext
@@ -268,29 +562,90 @@ function BoardBody({
         onDragStart={handleDragStart}
         onDragEnd={handleDragEnd}
       >
-        <div className="board">
-          {COLUMNS.map((col) => {
-            const colTasks = tasksByColumn.get(col.id) ?? [];
-            if (col.emptyHide && colTasks.length === 0) return null;
-            return (
-              <Column
-                key={col.id}
-                columnId={col.id}
-                title={col.title}
-                dot={col.dot}
-                tasks={colTasks}
-                todayISO={todayISO}
-                assigneeOf={assigneeOf}
-                commentCountByTask={commentCountByTask}
-                serviceId={service.id}
-                clientId={client.id}
-                onOpenCard={setSelectedTaskId}
-                limit={service.columnLimits?.[col.id]}
-                onSetLimit={(next) => flizowStore.setColumnLimit(service.id, col.id, next)}
-              />
-            );
-          })}
-        </div>
+        {groupBy === 'none' ? (
+          <div className="board">
+            {COLUMNS.map((col) => {
+              const colTasks = tasksByColumn.get(col.id) ?? [];
+              if (col.emptyHide && colTasks.length === 0) return null;
+              return (
+                <Column
+                  key={col.id}
+                  columnId={col.id}
+                  title={col.title}
+                  dot={col.dot}
+                  tasks={colTasks}
+                  todayISO={todayISO}
+                  assigneeOf={assigneeOf}
+                  commentCountByTask={commentCountByTask}
+                  serviceId={service.id}
+                  clientId={client.id}
+                  onOpenCard={setSelectedTaskId}
+                  limit={service.columnLimits?.[col.id]}
+                  onSetLimit={(next) => flizowStore.setColumnLimit(service.id, col.id, next)}
+                />
+              );
+            })}
+          </div>
+        ) : (
+          <div className="board has-swimlanes">
+            {lanes.length === 0 ? (
+              <SwimlaneEmptyState groupBy={groupBy} />
+            ) : (
+              lanes.map((lane) => {
+                const isCollapsed = collapsedLanes.has(lane.key);
+                return (
+                  <Swimlane
+                    key={lane.key}
+                    lane={lane}
+                    collapsed={isCollapsed}
+                    onToggleCollapsed={() => {
+                      setCollapsedLanes(prev => {
+                        const next = new Set(prev);
+                        if (next.has(lane.key)) next.delete(lane.key);
+                        else next.add(lane.key);
+                        return next;
+                      });
+                    }}
+                  >
+                    {COLUMNS.map((col) => {
+                      const colTasks = lane.tasksByColumn.get(col.id) ?? [];
+                      // Hide the Blocked column within a lane when it's
+                      // empty, matching the flat-mode rule. Other columns
+                      // always render so the lane has consistent drop
+                      // targets.
+                      if (col.emptyHide && colTasks.length === 0) return null;
+                      return (
+                        <Column
+                          key={col.id}
+                          columnId={col.id}
+                          title={col.title}
+                          dot={col.dot}
+                          tasks={colTasks}
+                          todayISO={todayISO}
+                          assigneeOf={assigneeOf}
+                          commentCountByTask={commentCountByTask}
+                          serviceId={service.id}
+                          clientId={client.id}
+                          onOpenCard={setSelectedTaskId}
+                          // In swimlane mode, WIP caps stay authoritative
+                          // at the column level but we don't surface the
+                          // editor here — switching to Group: None is the
+                          // single place to edit limits so lanes don't
+                          // race on per-lane ⋯ buttons.
+                          limit={undefined}
+                          onSetLimit={() => {}}
+                          hideLimitMenu
+                          laneKey={lane.key}
+                          laneSeed={seedFromLane(lane, groupBy)}
+                        />
+                      );
+                    })}
+                  </Swimlane>
+                );
+              })
+            )}
+          </div>
+        )}
 
         <DragOverlay dropAnimation={null}>
           {activeTask ? (
@@ -854,12 +1209,16 @@ function FiltersBar({
   filters,
   onFiltersChange,
   members,
+  groupBy,
+  onGroupByChange,
 }: {
   search: string;
   onSearch: (v: string) => void;
   filters: BoardFilterState;
   onFiltersChange: (next: BoardFilterState) => void;
   members: Member[];
+  groupBy: GroupBy;
+  onGroupByChange: (next: GroupBy) => void;
 }) {
   return (
     <div className="filters-bar" role="search" aria-label="Board filters">
@@ -881,6 +1240,8 @@ function FiltersBar({
         state={filters}
         onChange={onFiltersChange}
         members={members}
+        groupBy={groupBy}
+        onGroupByChange={onGroupByChange}
       />
     </div>
   );
@@ -901,6 +1262,9 @@ function Column({
   onOpenCard,
   limit,
   onSetLimit,
+  hideLimitMenu = false,
+  laneKey,
+  laneSeed,
 }: {
   columnId: ColumnId;
   title: string;
@@ -914,8 +1278,22 @@ function Column({
   onOpenCard: (taskId: string) => void;
   limit: number | undefined;
   onSetLimit: (next: number | null) => void;
+  /** Hide the WIP-limit ⋯ menu. Set from the swimlane renderer so we
+   *  don't show N identical editors (one per lane) that all edit the
+   *  same global limit. */
+  hideLimitMenu?: boolean;
+  /** Lane-prefix for the droppable id when the board is in swimlane
+   *  mode. Undefined in flat mode. */
+  laneKey?: string;
+  /** Patch to apply to cards created inline from this column's lane —
+   *  pre-sets priority/assignee/label so a card added under "High"
+   *  lands there instead of requiring a follow-up edit. */
+  laneSeed?: Partial<Task>;
 }) {
-  const { setNodeRef, isOver } = useDroppable({ id: `col:${columnId}` });
+  // Lane-prefixed droppable id keeps swimlane drops unambiguous; in
+  // flat mode the original `col:<id>` shape is preserved.
+  const droppableId = laneKey ? `lane:${laneKey}|col:${columnId}` : `col:${columnId}`;
+  const { setNodeRef, isOver } = useDroppable({ id: droppableId });
   const [limitEditorOpen, setLimitEditorOpen] = useState(false);
   const isOverLimit = limit !== undefined && tasks.length > limit;
   return (
@@ -928,22 +1306,24 @@ function Column({
             {limit !== undefined ? `${tasks.length} / ${limit}` : tasks.length}
           </div>
         </div>
-        <div className="column-menu-wrap">
-          <button
-            className={`column-menu${limitEditorOpen ? ' open' : ''}`}
-            aria-label="Column options"
-            aria-expanded={limitEditorOpen ? 'true' : 'false'}
-            onClick={() => setLimitEditorOpen((v) => !v)}
-          >⋯</button>
-          {limitEditorOpen && (
-            <WipLimitEditor
-              columnTitle={title}
-              currentLimit={limit}
-              onSave={(next) => { onSetLimit(next); setLimitEditorOpen(false); }}
-              onClose={() => setLimitEditorOpen(false)}
-            />
-          )}
-        </div>
+        {!hideLimitMenu && (
+          <div className="column-menu-wrap">
+            <button
+              className={`column-menu${limitEditorOpen ? ' open' : ''}`}
+              aria-label="Column options"
+              aria-expanded={limitEditorOpen ? 'true' : 'false'}
+              onClick={() => setLimitEditorOpen((v) => !v)}
+            >⋯</button>
+            {limitEditorOpen && (
+              <WipLimitEditor
+                columnTitle={title}
+                currentLimit={limit}
+                onSave={(next) => { onSetLimit(next); setLimitEditorOpen(false); }}
+                onClose={() => setLimitEditorOpen(false)}
+              />
+            )}
+          </div>
+        )}
       </div>
       <div className="column-cards">
         {tasks.map(task => (
@@ -957,7 +1337,7 @@ function Column({
           />
         ))}
         {columnId === 'todo' && (
-          <AddCardInline serviceId={serviceId} clientId={clientId} />
+          <AddCardInline serviceId={serviceId} clientId={clientId} seed={laneSeed} />
         )}
       </div>
     </div>
@@ -1180,7 +1560,7 @@ function CardTile({
 
 // ── Add Card inline form ────────────────────────────────────────────
 
-function AddCardInline({ serviceId, clientId }: { serviceId: string; clientId: string }) {
+function AddCardInline({ serviceId, clientId, seed }: { serviceId: string; clientId: string; seed?: Partial<Task> }) {
   const { store } = useFlizow();
   const [open, setOpen] = useState(false);
   const [title, setTitle] = useState('');
@@ -1199,6 +1579,10 @@ function AddCardInline({ serviceId, clientId }: { serviceId: string; clientId: s
     const now = new Date();
     const iso = now.toISOString().slice(0, 10);
     const id = `task-${Math.random().toString(36).slice(2, 10)}`;
+    // Seed wins over defaults — e.g. adding a card under the High lane
+    // in swimlane mode pre-sets priority to 'high' so the new card
+    // lands in that lane instead of defaulting to medium and needing a
+    // follow-up drag to fix.
     store.addTask({
       id,
       serviceId,
@@ -1210,6 +1594,7 @@ function AddCardInline({ serviceId, clientId }: { serviceId: string; clientId: s
       labels: [],
       dueDate: iso,
       createdAt: now.toISOString(),
+      ...(seed ?? {}),
     });
     setTitle('');
     setOpen(false);
@@ -1281,6 +1666,102 @@ function AddCardInline({ serviceId, clientId }: { serviceId: string; clientId: s
       </div>
     </div>
   );
+}
+
+// ── Swimlane shell ───────────────────────────────────────────────────
+
+/** A single horizontal lane rendering a subset of the board's tasks.
+ *  Header click collapses the body — matches the "Group by" pattern
+ *  users expect from Linear/Height. We keep the header a div with
+ *  role="button" rather than a native <button> so the children can
+ *  include the pill/avatar markup without inheriting button defaults. */
+function Swimlane({
+  lane,
+  collapsed,
+  onToggleCollapsed,
+  children,
+}: {
+  lane: Lane;
+  collapsed: boolean;
+  onToggleCollapsed: () => void;
+  children: ReactNode;
+}) {
+  return (
+    <div
+      className={`swimlane${collapsed ? ' collapsed' : ''}`}
+      data-swimlane-id={lane.key}
+    >
+      <div
+        className="swimlane-header"
+        role="button"
+        tabIndex={0}
+        aria-expanded={!collapsed}
+        aria-label={`${collapsed ? 'Expand' : 'Collapse'} ${lane.label} lane`}
+        onClick={onToggleCollapsed}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            onToggleCollapsed();
+          }
+        }}
+      >
+        <svg className="swimlane-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+          <polyline points="6 9 12 15 18 9" />
+        </svg>
+        <div className="swimlane-title" style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+          {lane.accent}
+          {/* Skip the plain text for label lanes (the accent is a pill
+              that already contains the name). Priority + assignee
+              accents are a bare dot/avatar, so we still render the
+              readable text label next to them. */}
+          {lane.showLabelText && <span>{lane.label}</span>}
+        </div>
+        <div className="swimlane-count">{lane.totalCount}</div>
+      </div>
+      <div className="swimlane-body">{children}</div>
+    </div>
+  );
+}
+
+/** Placeholder shown when the filter/search has emptied every lane.
+ *  Keeps the board from reading as broken when everything is gone. */
+function SwimlaneEmptyState({ groupBy }: { groupBy: ActiveGroupBy }) {
+  const byLabel = groupBy === 'priority' ? 'priority' : groupBy === 'assignee' ? 'assignee' : 'label';
+  return (
+    <div
+      style={{
+        margin: '24px 32px',
+        padding: '24px 20px',
+        border: '1px dashed var(--hairline-soft)',
+        borderRadius: 12,
+        color: 'var(--text-faint)',
+        fontSize: 13,
+        textAlign: 'center',
+        background: 'var(--bg-elev)',
+      }}
+    >
+      No cards to group by {byLabel}. Clear the filters or add a card to bring lanes back.
+    </div>
+  );
+}
+
+/** Translate a lane into the field patch applied to cards added inline
+ *  from that lane's To Do column. Mirrors `patchForLaneChange` but
+ *  without a "source" — we're seeding a brand-new task, not moving
+ *  one. Sentinel keys (unassigned / nolabel / nopriority) seed nothing
+ *  because the defaults already match those meanings. */
+function seedFromLane(lane: Lane, mode: ActiveGroupBy): Partial<Task> | undefined {
+  if (mode === 'priority') {
+    if (lane.key === 'nopriority') return undefined;
+    return { priority: lane.key as Priority };
+  }
+  if (mode === 'assignee') {
+    if (lane.key === 'unassigned') return undefined;
+    return { assigneeId: lane.key, assigneeIds: [lane.key] };
+  }
+  // label
+  if (lane.key === 'nolabel') return undefined;
+  return { labels: [lane.key] };
 }
 
 // ── Due-date descriptor ──────────────────────────────────────────────

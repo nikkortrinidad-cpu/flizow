@@ -159,6 +159,14 @@ export interface Service {
    *  a content retainer and a dev project have very different cadences
    *  for what "too much at once" looks like. */
   columnLimits?: Partial<Record<ColumnId, number>>;
+  /** Swimlane grouping for this board. Absent / `'none'` renders the
+   *  flat columns layout. When set, the board stacks horizontal lanes
+   *  per distinct value of the grouping field (priority / assignee /
+   *  label), and dragging a card across lanes writes that field back
+   *  to the task. Per-service so a focused project stays flat while a
+   *  busy retainer can group by owner without forcing every board into
+   *  the same mode. */
+  groupBy?: 'none' | 'priority' | 'assignee' | 'label';
 }
 
 /** Metadata a schedule-seeded task carries so the Overview Schedule can

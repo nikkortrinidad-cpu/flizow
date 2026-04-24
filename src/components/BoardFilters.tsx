@@ -25,6 +25,12 @@ export type DueBucket = 'overdue' | 'today' | 'week' | 'later' | 'none';
 
 export type SortMode = 'manual' | 'priority' | 'due' | 'created';
 
+/** Board swimlane grouping. `none` = flat columns; the other modes
+ *  stack horizontal swimlanes per distinct value of that field. Kept
+ *  in this module so both the chip here and the lane-builder on the
+ *  page import it from one place. */
+export type GroupBy = 'none' | 'priority' | 'assignee' | 'label';
+
 export interface BoardFilterState {
   assigneeIds: string[];
   labelIds: string[];
@@ -69,6 +75,13 @@ const SORT_LABELS: Record<SortMode, string> = {
   priority: 'Priority',
   due: 'Due date',
   created: 'Newest',
+};
+
+const GROUP_BY_LABELS: Record<GroupBy, string> = {
+  none: 'None',
+  priority: 'Priority',
+  assignee: 'Assignee',
+  label: 'Label',
 };
 
 /** Shape the filter bar expects for each task it's asked to filter.
@@ -199,16 +212,29 @@ interface Props {
     priorities?: boolean;
     dueDate?: boolean;
     sort?: boolean;
+    groupBy?: boolean;
   };
+  /** Optional Swimlane grouping control. The chip only renders when
+   *  both `groupBy` and `onGroupByChange` are provided — the Ops board
+   *  (which keeps a flat layout for now) just omits them. Kept next to
+   *  Sort because they're the two "how is this board arranged" knobs,
+   *  even though groupBy is persistent board config while sort is
+   *  local session state. */
+  groupBy?: GroupBy;
+  onGroupByChange?: (next: GroupBy) => void;
 }
 
-export function BoardFilters({ state, onChange, members, show }: Props) {
+export function BoardFilters({ state, onChange, members, show, groupBy, onGroupByChange }: Props) {
   const want = {
     assignees: show?.assignees ?? true,
     labels: show?.labels ?? true,
     priorities: show?.priorities ?? true,
     dueDate: show?.dueDate ?? true,
     sort: show?.sort ?? true,
+    // Group-By only shows when the parent wires both value + setter.
+    // The explicit `show?.groupBy === false` opt-out lets a board hide
+    // the chip without clearing the wiring.
+    groupBy: (show?.groupBy ?? true) && groupBy !== undefined && !!onGroupByChange,
   };
 
   const count = filterCount(state);
@@ -375,29 +401,54 @@ export function BoardFilters({ state, onChange, members, show }: Props) {
         </ChipMenu>
       )}
 
+      {/* Tail cluster — "arrangement" controls (group + sort). Shares a
+          single spacer that's rendered once when either chip is shown,
+          so the visual gap between filters and arrangement controls
+          doesn't double-up. */}
+      {(want.sort || want.groupBy) && <div className="filter-spacer" />}
+
+      {want.groupBy && (
+        <ChipMenu
+          label="Group:"
+          icon={<LanesIcon />}
+          active={groupBy !== 'none'}
+          summary={<strong style={{ fontWeight: 600, color: 'var(--text)' }}>{GROUP_BY_LABELS[groupBy!]}</strong>}
+        >
+          {(['none', 'priority', 'assignee', 'label'] as GroupBy[]).map((g) => (
+            <button
+              key={g}
+              type="button"
+              className="filter-group-item"
+              data-active={groupBy === g ? 'true' : 'false'}
+              onClick={() => onGroupByChange?.(g)}
+            >
+              {GROUP_BY_LABELS[g]}
+              <CheckIcon />
+            </button>
+          ))}
+        </ChipMenu>
+      )}
+
       {want.sort && (
-        <>
-          <div className="filter-spacer" />
-          <ChipMenu
-            label="Sort:"
-            icon={<SortIcon />}
-            active={state.sort !== 'manual'}
-            summary={<strong style={{ fontWeight: 600, color: 'var(--text)' }}>{SORT_LABELS[state.sort]}</strong>}
-          >
-            {(['manual', 'priority', 'due', 'created'] as SortMode[]).map((s) => (
-              <button
-                key={s}
-                type="button"
-                className="filter-group-item"
-                data-active={state.sort === s ? 'true' : 'false'}
-                onClick={() => onChange({ ...state, sort: s })}
-              >
-                {SORT_LABELS[s]}
-                <CheckIcon />
-              </button>
-            ))}
-          </ChipMenu>
-        </>
+        <ChipMenu
+          label="Sort:"
+          icon={<SortIcon />}
+          active={state.sort !== 'manual'}
+          summary={<strong style={{ fontWeight: 600, color: 'var(--text)' }}>{SORT_LABELS[state.sort]}</strong>}
+        >
+          {(['manual', 'priority', 'due', 'created'] as SortMode[]).map((s) => (
+            <button
+              key={s}
+              type="button"
+              className="filter-group-item"
+              data-active={state.sort === s ? 'true' : 'false'}
+              onClick={() => onChange({ ...state, sort: s })}
+            >
+              {SORT_LABELS[s]}
+              <CheckIcon />
+            </button>
+          ))}
+        </ChipMenu>
       )}
 
       {count > 0 && (
@@ -507,6 +558,17 @@ function CalIcon() {
       <line x1="16" y1="2" x2="16" y2="6" />
       <line x1="8" y1="2" x2="8" y2="6" />
       <line x1="3" y1="10" x2="21" y2="10" />
+    </svg>
+  );
+}
+function LanesIcon() {
+  // Three horizontal rows — reads as "stacked swimlanes" without leaning
+  // on the sort icon's visual vocabulary.
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <rect x="3" y="4" width="18" height="4" rx="1" />
+      <rect x="3" y="10" width="18" height="4" rx="1" />
+      <rect x="3" y="16" width="18" height="4" rx="1" />
     </svg>
   );
 }
