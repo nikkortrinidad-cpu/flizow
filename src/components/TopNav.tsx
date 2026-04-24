@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useRoute } from '../router';
 import FlizowNotificationsPanel from './FlizowNotificationsPanel';
@@ -18,7 +18,9 @@ const ACTIVE_NAV_BY_ROUTE: Record<string, string> = {
 };
 
 interface TopNavProps {
-  /** Fires when the avatar button is clicked; parent renders the modal. */
+  /** Fires when the "Account settings" menu item is picked; parent renders
+   *  the modal. The avatar itself no longer opens the modal directly — it
+   *  opens a small popover that then routes to settings or sign-out. */
   onOpenAccount?: () => void;
   /** Notifications panel is owned by TopNav (needs `.notif-wrap` as the
    *  positioning anchor), but state is lifted to the parent so other
@@ -39,10 +41,50 @@ export function TopNav({
 }: TopNavProps = {}) {
   const route = useRoute();
   const active = ACTIVE_NAV_BY_ROUTE[route.name] ?? '';
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
+  const displayName = user?.displayName || user?.email?.split('@')[0] || 'Signed in';
+  const email = user?.email || '';
   const initials = deriveInitials(user?.displayName || user?.email || 'U');
   const notifBtnRef = useRef<HTMLButtonElement>(null);
   const [unreadNotifs, setUnreadNotifs] = useState(0);
+
+  // Avatar popover menu. Local state — nobody else needs to drive it.
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuWrapRef = useRef<HTMLDivElement>(null);
+
+  // Close on outside click + Escape. Mousedown (not click) so the handler
+  // fires before any inner button's click, which keeps the toggle snappy.
+  useEffect(() => {
+    if (!menuOpen) return;
+    const onDown = (e: MouseEvent) => {
+      if (!menuWrapRef.current) return;
+      if (!menuWrapRef.current.contains(e.target as Node)) setMenuOpen(false);
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setMenuOpen(false);
+    };
+    document.addEventListener('mousedown', onDown);
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('mousedown', onDown);
+      document.removeEventListener('keydown', onKey);
+    };
+  }, [menuOpen]);
+
+  const handleAccountSettings = () => {
+    setMenuOpen(false);
+    onOpenAccount?.();
+  };
+
+  const handleSignOut = async () => {
+    setMenuOpen(false);
+    try {
+      await logout();
+    } catch {
+      // Firebase surfaces its own toast on failure; swallow here so the
+      // menu stays closed either way.
+    }
+  };
 
   return (
     <div className="header">
@@ -108,14 +150,65 @@ export function TopNav({
             />
           )}
         </div>
-        <button
-          className="avatar"
-          type="button"
-          aria-label="Account settings"
-          onClick={onOpenAccount}
-          disabled={!onOpenAccount}
-          title={onOpenAccount ? 'Account settings' : 'Account coming soon'}
-        >{initials}</button>
+        <div className="account-menu-wrap" ref={menuWrapRef}>
+          <button
+            className="avatar"
+            type="button"
+            aria-label="Account menu"
+            aria-haspopup="menu"
+            aria-expanded={menuOpen}
+            onClick={() => setMenuOpen((v) => !v)}
+            title="Account menu"
+          >{initials}</button>
+          <div
+            className="account-menu"
+            role="menu"
+            data-open={menuOpen ? 'true' : 'false'}
+            aria-hidden={!menuOpen}
+          >
+            <div className="account-menu-identity">
+              <div className="account-menu-identity-avatar" aria-hidden="true">{initials}</div>
+              <div className="account-menu-identity-text">
+                <div className="account-menu-identity-name">{displayName}</div>
+                {email && <div className="account-menu-identity-email">{email}</div>}
+              </div>
+            </div>
+            <div className="account-menu-divider" role="separator" />
+            <button
+              className="account-menu-item"
+              type="button"
+              role="menuitem"
+              onClick={handleAccountSettings}
+              disabled={!onOpenAccount}
+            >
+              <span className="account-menu-item-label">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <circle cx="12" cy="12" r="3"/>
+                  <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+                </svg>
+                <span>Account settings</span>
+              </span>
+              <svg className="account-menu-item-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <polyline points="9 18 15 12 9 6"/>
+              </svg>
+            </button>
+            <button
+              className="account-menu-item"
+              type="button"
+              role="menuitem"
+              onClick={handleSignOut}
+            >
+              <span className="account-menu-item-label">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                  <polyline points="16 17 21 12 16 7"/>
+                  <line x1="21" y1="12" x2="9" y2="12"/>
+                </svg>
+                <span>Sign out</span>
+              </span>
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   );
