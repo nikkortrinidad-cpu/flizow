@@ -54,12 +54,35 @@ export default function FlizowAccountModal({ onClose }: Props) {
 
   const [section, setSection] = useState<Section>('profile');
   const closeBtnRef = useRef<HTMLButtonElement | null>(null);
+  const modalRef = useRef<HTMLDivElement | null>(null);
 
-  // Esc closes + initial focus on the safe dismissal target.
+  // Esc closes + initial focus on the safe dismissal target +
+  // focus trap so Tab cycles within the modal instead of escaping
+  // to the background page. Audit: account HIGH (no focus trap).
   useEffect(() => {
     closeBtnRef.current?.focus();
     function onKey(e: KeyboardEvent) {
-      if (e.key === 'Escape') { e.preventDefault(); onClose(); }
+      if (e.key === 'Escape') { e.preventDefault(); onClose(); return; }
+      if (e.key !== 'Tab') return;
+      // Focus trap. Collect every focusable inside the modal, then
+      // wrap Tab/Shift+Tab around the ends. Skip if no modal yet
+      // mounted or no focusables (defensive).
+      const root = modalRef.current;
+      if (!root) return;
+      const focusables = root.querySelectorAll<HTMLElement>(
+        'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+      );
+      if (focusables.length === 0) return;
+      const first = focusables[0];
+      const last = focusables[focusables.length - 1];
+      const active = document.activeElement as HTMLElement | null;
+      if (e.shiftKey && active === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && active === last) {
+        e.preventDefault();
+        first.focus();
+      }
     }
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
@@ -146,6 +169,7 @@ export default function FlizowAccountModal({ onClose }: Props) {
       onClick={onClose}
     >
       <div
+        ref={modalRef}
         className="acct-modal"
         role="dialog"
         aria-modal="true"
@@ -166,17 +190,17 @@ export default function FlizowAccountModal({ onClose }: Props) {
         </header>
 
         <div className="acct-body">
-          <nav className="acct-nav" role="tablist" aria-label="Settings sections">
-            <NavItem label="Profile" active={section === 'profile'} onClick={() => setSection('profile')}>
+          <nav className="acct-nav" role="tablist" aria-label="Settings sections" aria-orientation="vertical">
+            <NavItem section="profile" label="Profile" active={section === 'profile'} onClick={() => setSection('profile')}>
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>
             </NavItem>
-            <NavItem label="Preferences" active={section === 'preferences'} onClick={() => setSection('preferences')}>
+            <NavItem section="preferences" label="Preferences" active={section === 'preferences'} onClick={() => setSection('preferences')}>
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12a9 9 0 1 1-9-9"/><path d="M12 3v4"/><path d="M12 17v4"/><path d="M3 12h4"/><path d="M17 12h4"/></svg>
             </NavItem>
-            <NavItem label="Notifications" active={section === 'notifications'} onClick={() => setSection('notifications')}>
+            <NavItem section="notifications" label="Notifications" active={section === 'notifications'} onClick={() => setSection('notifications')}>
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
             </NavItem>
-            <NavItem label="Sign-in" active={section === 'signin'} onClick={() => setSection('signin')}>
+            <NavItem section="signin" label="Sign-in" active={section === 'signin'} onClick={() => setSection('signin')}>
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="10" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
             </NavItem>
           </nav>
@@ -185,10 +209,24 @@ export default function FlizowAccountModal({ onClose }: Props) {
 
             {/* ── Profile ────────────────────────────────────────── */}
             {section === 'profile' && (
-              <section className="acct-section" role="tabpanel" data-active="true">
+              <section
+                className="acct-section"
+                role="tabpanel"
+                id="acct-panel-profile"
+                aria-labelledby="acct-tab-profile"
+                tabIndex={0}
+                data-active="true"
+              >
                 <div className="acct-section-header">
                   <h3 className="acct-section-title">Profile</h3>
                   <p className="acct-section-sub">How you appear across Flizow — visible to your team and clients you share work with.</p>
+                  {/* Honest signal that profile-field saving isn't wired
+                      yet — without this, users edit, navigate away, come
+                      back to defaults, and don't know why. Audit:
+                      account MED (silent persistence gap). */}
+                  <p className="acct-section-sub" style={{ marginTop: 6, color: 'var(--text-faint)', fontStyle: 'italic' }}>
+                    Profile field saving lands in the next pass. Theme &amp; sign-out work today.
+                  </p>
                 </div>
 
                 <div className="acct-avatar-block">
@@ -214,24 +252,57 @@ export default function FlizowAccountModal({ onClose }: Props) {
                 </div>
 
                 <div className="acct-form-grid">
-                  <Field label="Full name">
-                    <input type="text" className="acct-input" value={nameDraft} onChange={(e) => setNameDraft(e.target.value)} />
+                  <Field label="Full name" htmlFor="acct-name">
+                    <input
+                      id="acct-name"
+                      type="text"
+                      className="acct-input"
+                      value={nameDraft}
+                      onChange={(e) => setNameDraft(e.target.value)}
+                      autoComplete="name"
+                    />
                   </Field>
-                  <Field label="Preferred name">
-                    <input type="text" className="acct-input" value={preferredDraft} onChange={(e) => setPreferredDraft(e.target.value)} />
+                  <Field label="Preferred name" htmlFor="acct-preferred">
+                    <input
+                      id="acct-preferred"
+                      type="text"
+                      className="acct-input"
+                      value={preferredDraft}
+                      onChange={(e) => setPreferredDraft(e.target.value)}
+                      autoComplete="nickname"
+                    />
                   </Field>
-                  <Field label="Email" full>
-                    <input type="email" className="acct-input" value={email} readOnly />
+                  <Field label="Email" full htmlFor="acct-email">
+                    <input
+                      id="acct-email"
+                      type="email"
+                      className="acct-input"
+                      value={email}
+                      readOnly
+                      autoComplete="email"
+                    />
                     <div className="acct-field-hint">
                       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="10" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
                       Managed by Google. Change it from your Google account.
                     </div>
                   </Field>
-                  <Field label="Role / title">
-                    <input type="text" className="acct-input" value={roleDraft} onChange={(e) => setRoleDraft(e.target.value)} />
+                  <Field label="Role / title" htmlFor="acct-role">
+                    <input
+                      id="acct-role"
+                      type="text"
+                      className="acct-input"
+                      value={roleDraft}
+                      onChange={(e) => setRoleDraft(e.target.value)}
+                      autoComplete="organization-title"
+                    />
                   </Field>
-                  <Field label="Time zone">
-                    <select className="acct-input" value={tzDraft} onChange={(e) => setTzDraft(e.target.value)}>
+                  <Field label="Time zone" htmlFor="acct-tz">
+                    <select
+                      id="acct-tz"
+                      className="acct-input"
+                      value={tzDraft}
+                      onChange={(e) => setTzDraft(e.target.value)}
+                    >
                       <option value="pst">Pacific · Los Angeles</option>
                       <option value="mst">Mountain · Denver</option>
                       <option value="cst">Central · Chicago</option>
@@ -312,7 +383,14 @@ export default function FlizowAccountModal({ onClose }: Props) {
 
             {/* ── Preferences ────────────────────────────────────── */}
             {section === 'preferences' && (
-              <section className="acct-section" role="tabpanel" data-active="true">
+              <section
+                className="acct-section"
+                role="tabpanel"
+                id="acct-panel-preferences"
+                aria-labelledby="acct-tab-preferences"
+                tabIndex={0}
+                data-active="true"
+              >
                 <div className="acct-section-header">
                   <h3 className="acct-section-title">Preferences</h3>
                   <p className="acct-section-sub">Changes save instantly.</p>
@@ -353,7 +431,14 @@ export default function FlizowAccountModal({ onClose }: Props) {
 
             {/* ── Notifications ──────────────────────────────────── */}
             {section === 'notifications' && (
-              <section className="acct-section" role="tabpanel" data-active="true">
+              <section
+                className="acct-section"
+                role="tabpanel"
+                id="acct-panel-notifications"
+                aria-labelledby="acct-tab-notifications"
+                tabIndex={0}
+                data-active="true"
+              >
                 <div className="acct-section-header">
                   <h3 className="acct-section-title">Notifications</h3>
                   <p className="acct-section-sub">We err on the side of quiet. Opt in to what's useful.</p>
@@ -379,7 +464,14 @@ export default function FlizowAccountModal({ onClose }: Props) {
 
             {/* ── Sign-in ────────────────────────────────────────── */}
             {section === 'signin' && (
-              <section className="acct-section" role="tabpanel" data-active="true">
+              <section
+                className="acct-section"
+                role="tabpanel"
+                id="acct-panel-signin"
+                aria-labelledby="acct-tab-signin"
+                tabIndex={0}
+                data-active="true"
+              >
                 <div className="acct-section-header">
                   <h3 className="acct-section-title">Sign-in</h3>
                   <p className="acct-section-sub">Flizow uses Google to sign you in. Your password lives with Google.</p>
@@ -439,19 +531,27 @@ export default function FlizowAccountModal({ onClose }: Props) {
 // ── Internal helpers ─────────────────────────────────────────────────
 
 function NavItem({
-  label, active, onClick, children,
+  section, label, active, onClick, children,
 }: {
+  section: Section;
   label: string;
   active: boolean;
   onClick: () => void;
   children: React.ReactNode;
 }) {
+  // tabId / panelId pair so the section panels below can claim
+  // aria-labelledby={tabId} and we can claim aria-controls={panelId}.
+  // Closes the WAI-ARIA tabs pattern that was previously orphaned.
+  // Audit: account HIGH (broken tab/tabpanel pairing).
   return (
     <button
       role="tab"
       type="button"
       className="acct-nav-item"
+      id={`acct-tab-${section}`}
       aria-selected={active}
+      aria-controls={`acct-panel-${section}`}
+      tabIndex={active ? 0 : -1}
       onClick={onClick}
     >
       {children}
@@ -461,15 +561,19 @@ function NavItem({
 }
 
 function Field({
-  label, full, children,
+  label, full, htmlFor, children,
 }: {
   label: string;
   full?: boolean;
+  /** id of the input the label should target. When provided, click on
+   *  the label focuses the input and screen readers announce the
+   *  pairing. Audit: account MED (orphaned labels). */
+  htmlFor?: string;
   children: React.ReactNode;
 }) {
   return (
     <div className={`acct-form-field${full ? ' acct-field-full' : ''}`}>
-      <label className="acct-field-label">{label}</label>
+      <label className="acct-field-label" htmlFor={htmlFor}>{label}</label>
       {children}
     </div>
   );
