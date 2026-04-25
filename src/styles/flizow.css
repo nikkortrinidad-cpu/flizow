@@ -12044,157 +12044,13 @@
   }
   .anlx-av.sm { width: 18px; height: 18px; font-size: 9px; }
 
-  /* ── Save view button (in filter bar) ──
-     Same neutral shape as filter pills so it doesn't compete; reveals
-     its full label on hover. Tier 2 hover-only ring.                    */
-  .anlx-save-view {
-    display: inline-flex; align-items: center; gap: var(--sp-xs);
-    height: 28px; padding: 0 var(--sp-md);
-    border-radius: 999px;
-    background: transparent; border: 1px solid transparent;
-    color: var(--text-muted); cursor: pointer;
-    font: inherit; font-size: var(--fs-sm); font-weight: 500; line-height: 1;
-    transition: background 140ms ease, border-color 140ms ease, color 140ms ease;
-  }
-  .anlx-save-view svg { width: 14px; height: 14px; stroke-width: 2; }
-  .anlx-save-view:hover {
-    color: var(--highlight);
-    border-color: color-mix(in srgb, var(--highlight) 35%, transparent);
-    background: color-mix(in srgb, var(--highlight) 6%, transparent);
-  }
-
-  /* ── Saved views row ──
-     Tier 3 tint when a chip matches the current filter combo (active
-     selection inside the view). × button reveals on chip hover.         */
-  .anlx-saved-views {
-    display: flex; align-items: center; gap: var(--sp-sm); flex-wrap: wrap;
-    margin: calc(var(--sp-2xl) * -1) 0 var(--sp-2xl);
-    padding: var(--sp-md) 0;
-    border-bottom: 1px solid var(--hairline);
-  }
-  .anlx-sv-label {
-    font-size: var(--fs-micro); font-weight: 600; letter-spacing: 0.04em;
-    text-transform: uppercase; color: var(--text-soft);
-    margin-right: var(--sp-xs);
-  }
-  .anlx-sv-chip-wrap {
-    display: inline-flex; align-items: stretch;
-    border-radius: 999px; overflow: hidden;
-    border: 1px solid var(--hairline);
-    background: var(--bg-elev);
-    transition: border-color 140ms ease, background 140ms ease;
-  }
-  .anlx-sv-chip-wrap:hover { border-color: color-mix(in srgb, var(--text) 14%, var(--hairline)); }
-  .anlx-sv-chip-wrap.is-active {
-    background: color-mix(in srgb, var(--highlight) 12%, transparent);
-    border-color: color-mix(in srgb, var(--highlight) 26%, transparent);
-  }
-  .anlx-sv-chip {
-    appearance: none; border: 0; background: transparent;
-    padding: 0 var(--sp-sm) 0 var(--sp-md); height: 28px;
-    font: inherit; font-size: var(--fs-sm); font-weight: 500;
-    color: var(--text); cursor: pointer;
-    display: inline-flex; align-items: center;
-  }
-  .anlx-sv-chip-wrap.is-active .anlx-sv-chip { color: var(--highlight); }
-  .anlx-sv-del {
-    appearance: none; border: 0; background: transparent;
-    padding: 0 var(--sp-sm) 0 2px; height: 28px;
-    color: var(--text-faint); cursor: pointer;
-    display: inline-flex; align-items: center; justify-content: center;
-    opacity: 0; transition: opacity 120ms ease, color 120ms ease;
-  }
-  .anlx-sv-del svg { width: 12px; height: 12px; stroke-width: 2.5; }
-  .anlx-sv-chip-wrap:hover .anlx-sv-del { opacity: 1; }
-  .anlx-sv-del:hover { color: #ff453a; }
-
-  /* ── Alerts banner ──
-     Neutral chrome, colored dot signals tone. Click opens the relevant
-     KPI drill. Proactive and quiet; disappears when no breach.          */
-  .anlx-alerts {
-    display: flex; flex-wrap: wrap; gap: var(--sp-sm);
-    margin-bottom: var(--sp-xl);
-  }
-  .anlx-alert-chip {
-    appearance: none; cursor: pointer;
-    display: inline-flex; align-items: center; gap: var(--sp-sm);
-    padding: 6px 12px;
-    background: var(--bg-elev); border: 1px solid var(--hairline);
-    border-radius: 999px;
-    font: inherit; font-size: var(--fs-sm); color: var(--text);
-    transition: border-color 140ms ease, background 140ms ease;
-  }
-  .anlx-alert-chip:hover {
-    border-color: color-mix(in srgb, var(--text) 18%, var(--hairline));
-    background: var(--bg-soft);
-  }
-  .anlx-alert-chip svg { width: 12px; height: 12px; color: var(--text-faint); stroke-width: 2.5; }
-  .anlx-alert-dot {
-    width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
-    background: var(--text-muted);
-  }
-  .anlx-alert-chip.fire .anlx-alert-dot { background: #ff453a; box-shadow: 0 0 0 3px color-mix(in srgb, #ff453a 14%, transparent); }
-  .anlx-alert-chip.warn .anlx-alert-dot { background: #ff9f0a; box-shadow: 0 0 0 3px color-mix(in srgb, #ff9f0a 14%, transparent); }
-
-  /* ── Inline row actions (reveal on hover) ──
-     Tier 2 ring (Blue Hierarchy). Hidden at rest — the row stays clean
-     and the primary action remains "click to open task". Actions surface
-     only when the user means to act.                                     */
-  .anlx-row-actions {
-    display: inline-flex; align-items: center; gap: 4px;
-    opacity: 0;
-    transition: opacity 140ms ease;
-    justify-content: flex-end;
-  }
-  .anlx-up-row:hover .anlx-row-actions,
-  .anlx-drill-row:hover .anlx-row-actions,
-  .anlx-up-row:focus-within .anlx-row-actions,
-  .anlx-drill-row:focus-within .anlx-row-actions,
-  .anlx-row-actions:has(.anlx-row-act[aria-expanded="true"]) { opacity: 1; }
-  .anlx-row-act {
-    appearance: none; border: 1px solid var(--hairline);
-    background: var(--bg-elev); color: var(--text-muted);
-    width: 26px; height: 26px; padding: 0;
-    border-radius: 6px; cursor: pointer;
-    display: inline-flex; align-items: center; justify-content: center;
-    transition: border-color 120ms ease, color 120ms ease, background 120ms ease;
-  }
-  .anlx-row-act svg { width: 13px; height: 13px; stroke-width: 2; }
-  .anlx-row-act:hover {
-    color: var(--highlight);
-    border-color: color-mix(in srgb, var(--highlight) 40%, transparent);
-    background: color-mix(in srgb, var(--highlight) 6%, transparent);
-  }
-
-  .anlx-action-menu { min-width: 220px; }
-
-  /* ── Toast + undo ──
-     Fixed bottom-center. Slides up briefly. Undo is Tier 4 text-only
-     link — it's a small inline affordance, not a primary CTA.           */
-  .anlx-toast {
-    position: fixed; bottom: 24px; left: 50%;
-    transform: translate(-50%, 20px);
-    display: inline-flex; align-items: center; gap: var(--sp-md);
-    padding: var(--sp-sm) var(--sp-md) var(--sp-sm) var(--sp-lg);
-    background: var(--bg-elev); border: 1px solid var(--hairline);
-    border-radius: 10px;
-    box-shadow: 0 8px 20px rgba(0,0,0,0.12), 0 2px 6px rgba(0,0,0,0.06);
-    font-size: var(--fs-sm);
-    opacity: 0; pointer-events: none;
-    transition: opacity 200ms ease, transform 200ms ease;
-    z-index: 70; max-width: 90vw;
-  }
-  .anlx-toast.show {
-    opacity: 1; transform: translate(-50%, 0);
-    pointer-events: auto;
-  }
-  .anlx-toast-msg { color: var(--text); }
-  .anlx-toast-undo {
-    appearance: none; border: 0; background: transparent;
-    color: var(--highlight); font: inherit; cursor: pointer;
-    padding: 4px 8px; border-radius: 6px;
-  }
-  .anlx-toast-undo:hover { background: color-mix(in srgb, var(--highlight) 8%, transparent); }
+  /* Five unshipped-feature CSS blocks used to sit here (~120 lines):
+     .anlx-save-view saved-filter-combo button, .anlx-saved-views +
+     .anlx-sv-* chip row, .anlx-alerts + .anlx-alert-* banner,
+     .anlx-row-actions + .anlx-row-act + .anlx-action-menu inline
+     hover actions, .anlx-toast + .anlx-toast-undo bottom-center
+     toast. None are rendered — each was a mockup surface that never
+     landed in AnalyticsPage.tsx. Audit: analytics M1. */
 
   /* ── Responsive ── */
   @media (max-width: 1200px) {
@@ -12206,11 +12062,9 @@
     .anlx-kpi-grid { grid-template-columns: repeat(2, 1fr); }
     .anlx-up-row { grid-template-columns: 64px minmax(0, 1fr) 40px; }
     .anlx-up-row .anlx-up-owner,
-    .anlx-up-row .anlx-up-phase,
-    .anlx-up-row .anlx-row-actions { display: none; }
+    .anlx-up-row .anlx-up-phase { display: none; }
     .anlx-drill-row { grid-template-columns: minmax(0, 1fr) 100px 40px; }
-    .anlx-drill-row .anlx-drill-row-owner,
-    .anlx-drill-row .anlx-row-actions { display: none; }
+    .anlx-drill-row .anlx-drill-row-owner { display: none; }
     .anlx-wl-head, .anlx-wl-row {
       grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr) 56px 48px 20px;
     }
@@ -12219,8 +12073,6 @@
   @media (max-width: 700px) {
     .anlx-kpi-grid { grid-template-columns: 1fr; }
     .anlx-filters { gap: var(--sp-xs); }
-    .anlx-save-view { padding: 0 var(--sp-sm); }
-    .anlx-save-view svg + * { display: none; }
   }
 
   /* ── Reduced motion ── */
