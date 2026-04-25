@@ -11966,6 +11966,96 @@
     width: 100%;
     justify-content: center;
   }
+
+  /* Archived strip — collapses at the bottom of the list pane.
+     Hidden by default; expand reveals each archived record with a
+     Restore button (and Delete on user-created rows). Audit:
+     templates M2 (commit 4). */
+  .templates-archive-strip {
+    margin-top: auto;
+    border-top: 1px solid var(--hairline-soft);
+    background: var(--bg-faint);
+  }
+  .templates-archive-toggle {
+    display: flex; align-items: center; gap: 8px;
+    width: 100%;
+    padding: 12px 16px;
+    background: transparent; border: none;
+    color: var(--text-soft);
+    font: inherit; font-size: var(--fs-sm); font-weight: 600;
+    letter-spacing: 0.04em; text-transform: uppercase;
+    cursor: pointer;
+    transition: color 0.12s, background 0.12s;
+  }
+  .templates-archive-toggle:hover {
+    background: var(--bg-soft);
+    color: var(--text);
+  }
+  .templates-archive-chevron {
+    width: 12px; height: 12px;
+    color: var(--text-faint);
+    transition: transform 0.18s ease;
+  }
+  .templates-archive-chevron.is-open { transform: rotate(180deg); }
+  .templates-archive-count {
+    margin-left: auto;
+    background: var(--bg-soft);
+    color: var(--text-muted);
+    font-size: var(--fs-xs);
+    font-weight: 600;
+    padding: 1px 7px;
+    border-radius: 980px;
+  }
+  .templates-archive-list {
+    list-style: none; margin: 0;
+    padding: 4px 8px 12px;
+    display: flex; flex-direction: column; gap: 2px;
+  }
+  .templates-archive-row {
+    display: flex; align-items: center; gap: 8px;
+    padding: 8px 10px;
+    border-radius: 8px;
+    background: transparent;
+    transition: background 0.12s;
+  }
+  .templates-archive-row:hover { background: var(--bg-soft); }
+  .templates-archive-name {
+    flex: 1; min-width: 0;
+    font-size: var(--fs-sm);
+    color: var(--text-soft);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .templates-archive-actions {
+    display: inline-flex; gap: 4px;
+    opacity: 0;
+    transition: opacity 0.12s;
+  }
+  .templates-archive-row:hover .templates-archive-actions,
+  .templates-archive-row:focus-within .templates-archive-actions { opacity: 1; }
+  .templates-archive-action {
+    background: transparent; border: 1px solid var(--hairline);
+    border-radius: 6px;
+    padding: 3px 8px;
+    font: inherit; font-size: var(--fs-xs); font-weight: 500;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: background 0.12s, border-color 0.12s, color 0.12s;
+  }
+  .templates-archive-action:hover {
+    background: var(--bg-elev);
+    border-color: var(--hover-blue);
+    color: var(--hover-blue);
+  }
+  .templates-archive-action.is-danger:hover {
+    background: var(--status-fire-soft);
+    border-color: var(--status-fire);
+    color: var(--status-fire);
+  }
+  .templates-archive-action:focus-visible {
+    outline: 2px solid var(--highlight);
+    outline-offset: 2px;
+    opacity: 1;
+  }
   .template-phase-num {
     width: 22px; height: 22px; border-radius: 6px;
     display: inline-flex; align-items: center; justify-content: center;

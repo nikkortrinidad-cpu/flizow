@@ -4,6 +4,7 @@ import { useFlizow } from '../store/useFlizow';
 import { resolveTemplates, isBuiltInTemplate, blankTemplate } from '../data/templates';
 import { useCanEditTemplates } from '../hooks/useCanEditTemplates';
 import { InlineText } from '../components/shared/InlineText';
+import { ConfirmDangerDialog } from '../components/ConfirmDangerDialog';
 import { flizowStore } from '../store/flizowStore';
 import type { TemplateRecord, TemplateIcon } from '../types/flizow';
 
@@ -189,6 +190,47 @@ export function TemplatesPage() {
     navigate(`#templates/${id}`);
   }
 
+  // Archive list — used by the "Show archived" disclosure at the
+  // bottom of the list pane. Pulled with includeArchived so we can
+  // surface the archived items separately from the live picker.
+  const allWithArchived = useMemo(
+    () => resolveTemplates(data.templateOverrides, { includeArchived: true }),
+    [data.templateOverrides],
+  );
+  const archived = useMemo(
+    () => allWithArchived.filter((t) => t.archived),
+    [allWithArchived],
+  );
+
+  // Archive flow follows the file-system trash metaphor:
+  //   1. Click "Archive" on a live template → it moves to the
+  //      Archived strip at the bottom of the list pane. One click.
+  //   2. From the Archived strip, click "Restore" to bring it back
+  //      to the picker, OR (user-created only) click "Delete
+  //      permanently" to fire a ConfirmDangerDialog and then purge.
+  //   Built-in templates can never be hard-purged — the underlying
+  //   default in BUILT_IN_TEMPLATES is the safety net.
+  const [purgeTarget, setPurgeTarget] = useState<TemplateRecord | null>(null);
+
+  function handleArchive(record: TemplateRecord) {
+    flizowStore.archiveTemplate(record);
+    // Move the user to the next live template so they're not staring
+    // at the same archived record they just hid. Falls back to no-op
+    // if all templates end up archived (the empty-state branch above
+    // handles that on next render).
+    const nextLive = templates.find((t) => t.id !== record.id && !t.archived);
+    if (nextLive) navigate(`#templates/${nextLive.id}`);
+  }
+
+  function handleRestore(record: TemplateRecord) {
+    flizowStore.restoreTemplate(record);
+    navigate(`#templates/${record.id}`);
+  }
+
+  function handlePurgeRequest(record: TemplateRecord) {
+    setPurgeTarget(record);
+  }
+
   // Defensive empty-state — built-in templates can't be hard-deleted,
   // but if all five are archived AND no user-created records exist
   // we'd reach here with `selected` undefined. Show a one-line "no
@@ -213,9 +255,40 @@ export function TemplatesPage() {
           onQuery={setQuery}
           canEdit={canEdit}
           onNewTemplate={handleNewTemplate}
+          archived={archived}
+          onRestore={handleRestore}
+          onPurge={handlePurgeRequest}
         />
-        <DetailPane template={selected} />
+        <DetailPane template={selected} onArchive={handleArchive} />
       </div>
+      {/* Hard-purge confirm — only fires for user-created templates
+          via ListPane's archived strip. Built-in templates can never
+          reach this dialog. */}
+      {purgeTarget && (
+        <ConfirmDangerDialog
+          title={`Delete "${purgeTarget.name}" permanently?`}
+          body={
+            <>
+              <p style={{ margin: 0 }}>
+                This template will be removed from the store. Existing
+                services that were created from it keep their
+                onboarding and phases — those snapshots aren't tied to
+                the template at runtime.
+              </p>
+              <p style={{ margin: '10px 0 0' }}>
+                You can't undo this. To bring it back, you'll need to
+                rebuild it from scratch.
+              </p>
+            </>
+          }
+          confirmLabel="Delete permanently"
+          onConfirm={() => {
+            flizowStore.purgeTemplate(purgeTarget.id);
+            setPurgeTarget(null);
+          }}
+          onClose={() => setPurgeTarget(null)}
+        />
+      )}
     </div>
   );
 }
@@ -229,6 +302,9 @@ function ListPane({
   onQuery,
   canEdit,
   onNewTemplate,
+  archived,
+  onRestore,
+  onPurge,
 }: {
   templates: TemplateDef[];
   selectedId: string;
@@ -236,7 +312,14 @@ function ListPane({
   onQuery: (q: string) => void;
   canEdit: boolean;
   onNewTemplate: () => void;
+  archived: TemplateDef[];
+  onRestore: (record: TemplateDef) => void;
+  onPurge: (record: TemplateDef) => void;
 }) {
+  // Archived strip is collapsed by default. The toggle reveals the
+  // hidden records at the bottom of the list — same pattern Finder
+  // uses for the Trash sidebar entry.
+  const [showArchived, setShowArchived] = useState(false);
   return (
     <aside className="templates-list-pane" aria-label="Service templates">
       <div className="templates-list-header">
@@ -312,13 +395,77 @@ function ListPane({
           );
         })}
       </div>
+
+      {/* Archived strip — hidden by default, expands on click. Same
+          metaphor as Finder's Trash sidebar entry. Each row offers
+          "Restore"; user-created rows also offer the destructive
+          "Delete permanently" path through ConfirmDangerDialog at the
+          page level. Audit: templates M2 (commit 4/4). */}
+      {archived.length > 0 && (
+        <div className="templates-archive-strip">
+          <button
+            type="button"
+            className="templates-archive-toggle"
+            aria-expanded={showArchived}
+            onClick={() => setShowArchived((v) => !v)}
+          >
+            <ChevronDown
+              className={`templates-archive-chevron${showArchived ? ' is-open' : ''}`}
+            />
+            Archived
+            <span className="templates-archive-count">{archived.length}</span>
+          </button>
+          {showArchived && (
+            <ul className="templates-archive-list">
+              {archived.map((t) => (
+                <li key={t.id} className="templates-archive-row">
+                  <span className="templates-archive-name" title={t.name}>{t.name}</span>
+                  <div className="templates-archive-actions">
+                    <button
+                      type="button"
+                      className="templates-archive-action"
+                      onClick={() => onRestore(t)}
+                      aria-label={`Restore ${t.name}`}
+                    >
+                      Restore
+                    </button>
+                    {/* Hard-purge only on user-created rows. Built-in
+                        templates can always be restored — that's the
+                        safety net that lets us never offer purge for
+                        them. */}
+                    {t.userCreated && (
+                      <button
+                        type="button"
+                        className="templates-archive-action is-danger"
+                        onClick={() => onPurge(t)}
+                        aria-label={`Delete ${t.name} permanently`}
+                      >
+                        Delete
+                      </button>
+                    )}
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
     </aside>
   );
 }
 
 // ── Detail pane (right) ──────────────────────────────────────────────
 
-function DetailPane({ template }: { template: TemplateDef }) {
+function DetailPane({
+  template,
+  onArchive,
+}: {
+  template: TemplateDef;
+  /** Caller owns the confirm dialog because for user-created
+   *  templates we want a proper destructive confirm before purging.
+   *  Built-in templates archive directly; the parent decides. */
+  onArchive: (template: TemplateDef) => void;
+}) {
   // Phase open/close is per-template so switching templates doesn't keep
   // stale open states; `key` on the panel tree would work too, but this
   // is cheaper and keyed to the id.
@@ -488,6 +635,24 @@ function DetailPane({ template }: { template: TemplateDef }) {
                   title="Restore this template to its built-in defaults"
                 >
                   Reset to default
+                </button>
+              )}
+              {/* Archive: hides from the picker but keeps the record
+                  so existing services can still resolve their
+                  template name. Both built-in and user-created
+                  records archive with one click; the destructive
+                  "Delete permanently" affordance for user-created
+                  records lives on the archived strip below, behind
+                  ConfirmDangerDialog. Audit: templates M2
+                  (decision 2: soft delete). */}
+              {canEdit && (
+                <button
+                  type="button"
+                  className="template-reset-btn template-archive-btn"
+                  onClick={() => onArchive(template)}
+                  title="Hide this template from the picker"
+                >
+                  Archive
                 </button>
               )}
             </div>

@@ -2,7 +2,7 @@
 
 **Window:** 2026-04-24 audit → 2026-04-25 ship.
 **Rubric:** `~/Documents/Claude/skills/apple-design-principles.md` 8-step (belief → 10 HIG → blue tiers → grids → checklist → rank → verify → ship).
-**Output:** 12 audit docs in `docs/audit/`, plus one cross-cutting patterns doc (`PATTERNS.md`). This file is the ship log — what went live across the six waves.
+**Output:** 12 audit docs in `docs/audit/`, plus one cross-cutting patterns doc (`PATTERNS.md`). This file is the ship log — what went live across the seven waves.
 
 ---
 
@@ -15,6 +15,7 @@
 5. **Wave 4 — dead-CSS sweep + LOWs.** Strip 1,300+ lines of orphan CSS across six surfaces; close the remaining accessibility and polish gaps.
 6. **Wave 5 — deferred-queue closeout.** Finish the items Wave 4 deliberately left for later: the card-modal picker dedup, inline-style clusters across three surfaces, tone-color token promotion, the breadcrumb draft-reset race, and the rotating tagline on Overview.
 7. **Wave 6 — long-tail closeout.** Empty the deferred queue. Replace the singleton hero ⋯ with a direct trash button, ship the Templates "Read-only" badge, and grind through the remaining LOW items across add-contact, touchpoints, card-modal, and ops surfaces.
+8. **Wave 7 — Templates admin editor (M2 follow-on).** The "build the full editor" path that Wave 6's M2 explicitly deferred. Ships full CRUD: inline editing of every field, add/remove/reorder of phases + structure changes on subtasks/onboarding/brief, "+ New template" flow, soft-delete with an Archived strip, and a destructive purge for user-created records.
 
 ---
 
@@ -113,13 +114,34 @@
 
 ---
 
+## Wave 7 — Templates admin editor (4 commits)
+
+Built after Wave 6 retired the deferred queue, in response to a
+direct ask. The five product decisions that gated this work:
+**(1)** snapshot semantics for edits, **(2)** soft-delete with Archive
+strip + Delete-permanently confirm for user-created records,
+**(3)** open today / admin-only later via `useCanEditTemplates()`,
+**(4)** new-template flow uses the same inline-edit shape (no
+separate wizard), **(5)** Reset-to-default for built-in templates.
+
+| Commit | What |
+|---|---|
+| `5f813b0` | **1/4** — store schema + persistence + hook. New `TemplateRecord` type, `templateOverrides: TemplateRecord[]` on `FlizowData`, `BUILT_IN_TEMPLATES` extracted to `src/data/builtInTemplates.ts`, resolver in `src/data/templates.ts`, store actions (`upsertTemplate` / `resetTemplate` / `archiveTemplate` / `restoreTemplate` / `purgeTemplate`), `useCanEditTemplates()` hook returning `true` today. No UI behavior change. |
+| `13dbb15` | **2/4** — inline editing for every field. New `<InlineText>` shared component (cursor:text + soft hover tint + focus ring; commits on Enter/blur, reverts on Esc; `disabled={!canEdit}` for the gate). Wired across template name, category, phases description, each phase name, each subtask, each onboarding item, each brief field. Read-only tag now conditional on `editedAt === null`. Reset-to-default button for built-in records that have actually been edited. |
+| `04fc2b0` | **3/4** — structure changes + new-template flow. Hover-revealed ↑/↓/× controls on each phase. "+ Add phase / subtask / item / field" rows at the bottom of every list. "+ New template" button in the list-pane toolbar mints a blank user-created record via `crypto.randomUUID()` and navigates to it. |
+| `<this commit>` | **4/4** — archive surface. "Archive" button in the detail-pane hero hides the template from the picker (one click). Collapsible Archived strip at the bottom of the list pane shows hidden records with Restore + (user-created only) "Delete permanently" via `ConfirmDangerDialog`. Built-in templates can never be hard-purged — `BUILT_IN_TEMPLATES` is the always-recoverable safety net. |
+
+---
+
 ## Deferred, on purpose (now empty)
 
-The audit-flagged queue is empty. Items intentionally not shipped:
+The audit-flagged queue is empty, and the Wave 6 product-call deferral on Templates M2 is now fulfilled. Items intentionally not shipped remain:
 
 - **Add-contact L5** — A "(Space toggles)" hint on the primary checkbox. Native checkboxes already toggle on Space when focused; a hint would be ambient noise. Audit itself rated this Low.
 - **Per-page inline-style residue** — Single-prop situational styles (e.g. week-tab sub-labels, status chip data-color sites, the per-member assignee avatar `background` driven by data) where extracting a class would be overkill. These are intentional inline-style choices, not technical debt.
-- **Templates M2 follow-on** — The full admin editor (move TEMPLATES into the store + build CRUD). Out of audit scope; was a product call. The Read-only tag is the honest middle ground until that lands.
+- **Templates editor: per-edit history / version revert** — Wave 7 only stores the latest record. There's no audit trail of "Discovery was renamed to Kickoff at 2026-04-25 14:32." If history surfaces later (probably as a side-effect of multi-user edits), it would extend `TemplateRecord` with a revisions array and the existing snapshot semantics still apply. Not worth building speculatively.
+- **Templates editor: drag-and-drop phase reorder** — Wave 7 ships ↑/↓ buttons (keyboard-accessible by default, no dnd-kit dependency for a list of 5–7 items). If the user feedback says "I want to drag," this is a one-day pull from `@dnd-kit/sortable` against the same store actions.
+- **Templates editor: per-template permissions** — `useCanEditTemplates()` returns `true` for everyone today. The hook is the one place to wire role-gating when roles ship. Decision 3 in the product call: open today, admin-only later.
 
 ---
 
@@ -128,11 +150,12 @@ The audit-flagged queue is empty. Items intentionally not shipped:
 - **Surfaces audited:** 13 (Overview, Clients, Client detail, Board, Ops, Weekly WIP, Analytics, Templates, FlizowCardModal, EditServiceModal, AddContactModal, AddQuickLinkModal, TouchpointModal + TouchpointsTab).
 - **Findings ranked:** 13 × (1 HIGH + 5 MED + 5 LOW + 3 V's) = 13 H / 65 M / 65 L / 39 V's.
 - **HIGHs shipped:** 13 of 13.
-- **MEDs shipped:** ~52 of 65 (the rest were either dead-CSS strips folded into Wave 4 or surface-specific items that resolved during shared refactors).
+- **MEDs shipped:** 53 of 65 (the rest were either dead-CSS strips folded into Wave 4 or surface-specific items that resolved during shared refactors). Templates M2 specifically completed in Wave 7 as the full admin editor (the product-call deferral from Wave 6).
 - **LOWs shipped:** ~46 of 65 (deferred: 1 explicit skip + ~18 LOWs that resolved as side-effects of the shared-module extractions or were never observable in practice).
 - **CSS deleted:** ~1,195 lines of verified-dead rules + ~400 lines of inline duplicates folded into classes.
-- **Shared modules extracted:** 1 util (`avatar.ts`), 5 hooks (`useModalFocusTrap`, `useModalKeyboard`, `useModalAutofocus`, `useDismissable`, `useActivatableRow`), 3 components (`ServiceMetadataForm`, `InlineCardComposer`, `SearchablePicker`), 1 router helper (`navigateForceReparse`).
+- **Shared modules extracted:** 1 util (`avatar.ts`), 5 hooks (`useModalFocusTrap`, `useModalKeyboard`, `useModalAutofocus`, `useDismissable`, `useActivatableRow`, `useCanEditTemplates`), 4 components (`ServiceMetadataForm`, `InlineCardComposer`, `SearchablePicker`, `InlineText`), 1 router helper (`navigateForceReparse`).
 - **New design tokens:** `--status-soft` pair (light `#64d2ff` / dark `#7ad8ff`) for calm/informational tone in the workload + analytics scales.
+- **New first-class data:** `TemplateRecord[]` in `flizowStore.data.templateOverrides` with full CRUD + soft-delete via the Wave 7 admin editor.
 
 ---
 
@@ -140,6 +163,6 @@ The audit-flagged queue is empty. Items intentionally not shipped:
 
 > **"Does this respect the person using the app?"**
 
-Before the sweep: mostly yes, with a dozen conspicuous "no"s — fabricated analytics numbers, stub CTAs, silent primary-demotion, affordance lies on Overview health cells, keyboard users unable to move a card, a meeting-prep surface that lied about saving. After all six waves: the "no"s the audit caught are closed, the dead CSS no longer misleads a future reader, picker behavior can't drift across twin surfaces, tone colors live in one source of truth, the most-trafficked modal portals correctly, primary-demotion is guarded, and stale checklist labels can be cleaned up.
+Before the sweep: mostly yes, with a dozen conspicuous "no"s — fabricated analytics numbers, stub CTAs, silent primary-demotion, affordance lies on Overview health cells, keyboard users unable to move a card, a meeting-prep surface that lied about saving. After all seven waves: the "no"s the audit caught are closed, the dead CSS no longer misleads a future reader, picker behavior can't drift across twin surfaces, tone colors live in one source of truth, the most-trafficked modal portals correctly, primary-demotion is guarded, and the Templates page that *looked* editable now actually is — with snapshot semantics protecting in-flight services, soft-delete keeping changes recoverable, and `useCanEditTemplates()` ready for the eventual role gate.
 
-The audit-flagged queue is empty. The next coherent pass would target whatever the user's *next* batch of feedback surfaces — either net-new design observations or the natural follow-ons to features that ship after this audit (e.g., the admin Templates editor will inherit the Read-only tag pattern, archive flows can fold back into the now-empty hero overflow position).
+The audit-flagged queue is empty. The Wave 6 deferred-product-call (Templates M2 full editor) is shipped. The next coherent pass would target whatever the user's *next* batch of feedback surfaces.
