@@ -138,7 +138,12 @@ export function OpsPage() {
   const activeTask = activeId ? tasks.find(t => t.id === activeId) : undefined;
 
   return (
-    <div className="view view-ops active">
+    // .view + .active are the shared wrapper for per-route mounting
+    // (see :root view/.active rules). .view-ops used to be a hook
+    // for the legacy HTML mockup at public/projectflow-test.html
+    // and has no CSS consumers in src/ — keeping the minimum shell
+    // React needs. Audit: ops M2.
+    <div className="view active">
       <Header stats={stats} />
       <FiltersBar
         search={search}
@@ -154,7 +159,10 @@ export function OpsPage() {
         onDragStart={handleDragStart}
         onDragEnd={handleDragEnd}
       >
-        <div className="board" id="opsBoard">
+        {/* id="opsBoard" used to ride along here for the legacy static
+            mockup to latch `document.getElementById` onto — no React
+            consumer. Dropped. Audit: ops M2. */}
+        <div className="board">
           {COLUMNS.map(col => {
             const colTasks = tasksByColumn.get(col.id) ?? [];
             return (
