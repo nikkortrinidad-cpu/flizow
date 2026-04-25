@@ -1,4 +1,22 @@
-import { useLayoutEffect, useMemo, useState } from 'react';
+import { forwardRef, useLayoutEffect, useMemo, useState } from 'react';
+import {
+  DndContext,
+  KeyboardSensor,
+  PointerSensor,
+  closestCenter,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+  type DragStartEvent,
+} from '@dnd-kit/core';
+import {
+  SortableContext,
+  arrayMove,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import { useRoute, navigate } from '../router';
 import { useFlizow } from '../store/useFlizow';
 import { resolveTemplates, isBuiltInTemplate, blankTemplate } from '../data/templates';
@@ -6,7 +24,7 @@ import { useCanEditTemplates } from '../hooks/useCanEditTemplates';
 import { InlineText } from '../components/shared/InlineText';
 import { ConfirmDangerDialog } from '../components/ConfirmDangerDialog';
 import { flizowStore } from '../store/flizowStore';
-import type { TemplateRecord, TemplateIcon } from '../types/flizow';
+import type { TemplateRecord, TemplateIcon, TemplatePhase } from '../types/flizow';
 
 /**
  * Service Templates — reusable blueprints that hydrate a new service on a
@@ -118,18 +136,17 @@ function CloseIcon() {
   );
 }
 
-function ArrowUpIcon() {
+/** Six-dots drag handle icon. Universal "this is draggable" cue —
+ *  same shape used by Trello, Linear, Asana, etc. */
+function DragHandleIcon() {
   return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden width="12" height="12">
-      <polyline points="18 15 12 9 6 15" />
-    </svg>
-  );
-}
-
-function ArrowDownIcon() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden width="12" height="12">
-      <polyline points="6 9 12 15 18 9" />
+    <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden width="14" height="14">
+      <circle cx="9" cy="6" r="1.4" />
+      <circle cx="15" cy="6" r="1.4" />
+      <circle cx="9" cy="12" r="1.4" />
+      <circle cx="15" cy="12" r="1.4" />
+      <circle cx="9" cy="18" r="1.4" />
+      <circle cx="15" cy="18" r="1.4" />
     </svg>
   );
 }
@@ -479,10 +496,6 @@ function DetailPane({
   const canEdit = useCanEditTemplates();
   const isBuiltIn = isBuiltInTemplate(template.id);
   const hasBeenEdited = template.editedAt !== null;
-  // "Reset to default" only makes sense for built-in templates (there's
-  // no default for user-created records) and only when there are
-  // actual edits to revert.
-  const canReset = isBuiltIn && hasBeenEdited && canEdit;
 
   function togglePhase(index: number) {
     setOpenPhases((prev) => {
@@ -550,11 +563,9 @@ function DetailPane({
     const phases = template.phases.filter((_, i) => i !== index);
     save({ phases });
   }
-  function movePhase(index: number, direction: -1 | 1) {
-    const target = index + direction;
-    if (target < 0 || target >= template.phases.length) return;
-    const phases = template.phases.slice();
-    [phases[index], phases[target]] = [phases[target], phases[index]];
+  function reorderPhases(fromIndex: number, toIndex: number) {
+    if (fromIndex === toIndex) return;
+    const phases = arrayMove(template.phases, fromIndex, toIndex);
     save({ phases });
   }
   function addSubtask(phaseIndex: number) {
@@ -623,15 +634,25 @@ function DetailPane({
                   Click any field to edit
                 </span>
               )}
-              {/* Reset-to-default only renders on built-in templates
-                  the user has actually edited. Audit: templates M2
-                  (decision 5: yes to Reset to default). */}
-              {canReset && (
+              {/* Reset-to-default — always visible on built-in
+                  templates so users discover the affordance from
+                  the first visit, but disabled when there's nothing
+                  to reset. Used to be conditional on hasBeenEdited
+                  ({canReset && ...}); user feedback flagged that
+                  the button was invisible on never-edited templates,
+                  so they couldn't tell the safety net existed.
+                  Audit: templates M2 + post-Wave-7 user feedback. */}
+              {isBuiltIn && canEdit && (
                 <button
                   type="button"
                   className="template-reset-btn"
                   onClick={() => flizowStore.resetTemplate(template.id)}
-                  title="Restore this template to its built-in defaults"
+                  disabled={!hasBeenEdited}
+                  title={
+                    hasBeenEdited
+                      ? 'Restore this template to its built-in defaults'
+                      : 'No edits to reset — this template is at its built-in shape'
+                  }
                 >
                   Reset to default
                 </button>
@@ -673,124 +694,19 @@ function DetailPane({
               />
             </div>
           </div>
-          <div className="template-phase-list">
-            {template.phases.map((phase, i) => {
-              const expanded = openSet.has(i);
-              const panelId = `template-${template.id}-phase-${i}-subtasks`;
-              const isFirst = i === 0;
-              const isLast = i === template.phases.length - 1;
-              return (
-                <div key={i} className={`template-phase${expanded ? ' expanded' : ''}`}>
-                  <div className="template-phase-row">
-                    <div className="template-phase-num">{i + 1}</div>
-                    <div className="template-phase-name">
-                      <InlineText
-                        value={phase.name}
-                        onSave={(name) => savePhaseName(i, name)}
-                        disabled={!canEdit}
-                        ariaLabel={`Phase ${i + 1} name`}
-                      />
-                    </div>
-                    <div className="template-phase-meta">{phase.subtasks.length} subtasks</div>
-                    {/* Hover-revealed structure controls. Up/down for
-                        reorder (disabled at the endpoints), × for
-                        remove. Auto-hidden in read-only mode. Audit:
-                        templates M2 (commit 3). */}
-                    {canEdit && (
-                      <div className="template-phase-actions">
-                        <button
-                          type="button"
-                          className="template-phase-action"
-                          onClick={() => movePhase(i, -1)}
-                          disabled={isFirst}
-                          aria-label={`Move ${phase.name} up`}
-                          title="Move up"
-                        >
-                          <ArrowUpIcon />
-                        </button>
-                        <button
-                          type="button"
-                          className="template-phase-action"
-                          onClick={() => movePhase(i, 1)}
-                          disabled={isLast}
-                          aria-label={`Move ${phase.name} down`}
-                          title="Move down"
-                        >
-                          <ArrowDownIcon />
-                        </button>
-                        <button
-                          type="button"
-                          className="template-phase-action is-remove"
-                          onClick={() => removePhase(i)}
-                          aria-label={`Remove ${phase.name}`}
-                          title="Remove phase"
-                        >
-                          <CloseIcon />
-                        </button>
-                      </div>
-                    )}
-                    {/* Chevron lives in its own button so the click
-                        target for expand/collapse doesn't collide with
-                        the InlineText edit gesture on the name. */}
-                    <button
-                      type="button"
-                      className="template-phase-expand"
-                      aria-expanded={expanded}
-                      aria-controls={panelId}
-                      aria-label={expanded ? `Collapse ${phase.name} subtasks` : `Expand ${phase.name} subtasks`}
-                      onClick={() => togglePhase(i)}
-                    >
-                      <ChevronDown className="template-phase-chevron" />
-                    </button>
-                  </div>
-                  <div id={panelId} className="template-phase-subtasks">
-                    {phase.subtasks.map((st, j) => (
-                      <div key={j} className="template-phase-subtask">
-                        <span className="dot" />
-                        <InlineText
-                          value={st}
-                          onSave={(text) => saveSubtask(i, j, text)}
-                          disabled={!canEdit}
-                          ariaLabel={`Subtask ${j + 1} of ${phase.name}`}
-                        />
-                        {canEdit && (
-                          <button
-                            type="button"
-                            className="template-row-remove"
-                            onClick={() => removeSubtask(i, j)}
-                            aria-label={`Remove subtask ${st}`}
-                            title="Remove subtask"
-                          >
-                            <CloseIcon />
-                          </button>
-                        )}
-                      </div>
-                    ))}
-                    {canEdit && (
-                      <button
-                        type="button"
-                        className="template-add-row"
-                        onClick={() => addSubtask(i)}
-                      >
-                        <PlusIcon />
-                        Add subtask
-                      </button>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
-            {canEdit && (
-              <button
-                type="button"
-                className="template-add-row template-add-row--phase"
-                onClick={addPhase}
-              >
-                <PlusIcon />
-                Add phase
-              </button>
-            )}
-          </div>
+          <PhaseList
+            template={template}
+            openSet={openSet}
+            canEdit={canEdit}
+            onTogglePhase={togglePhase}
+            onSavePhaseName={savePhaseName}
+            onRemovePhase={removePhase}
+            onReorderPhases={reorderPhases}
+            onSaveSubtask={saveSubtask}
+            onAddSubtask={addSubtask}
+            onRemoveSubtask={removeSubtask}
+            onAddPhase={addPhase}
+          />
         </div>
 
         {/* Onboarding */}
@@ -926,3 +842,385 @@ function DetailPane({
     </div>
   );
 }
+
+// ── Phase list (drag-and-drop) ───────────────────────────────────────
+
+/**
+ * Wraps the phase list in dnd-kit's DndContext + SortableContext so
+ * each row is draggable. Drop indicator is a horizontal blue line
+ * rendered above the over-target via a CSS pseudo-element gated on
+ * `data-drop-active="true"`.
+ *
+ * Wave 7's first cut used ↑/↓ buttons. User feedback after that ship
+ * asked for direct manipulation — drag the row to the spot you want
+ * it. Same gesture as the kanban board, same dnd-kit primitives.
+ */
+function PhaseList({
+  template,
+  openSet,
+  canEdit,
+  onTogglePhase,
+  onSavePhaseName,
+  onRemovePhase,
+  onReorderPhases,
+  onSaveSubtask,
+  onAddSubtask,
+  onRemoveSubtask,
+  onAddPhase,
+}: {
+  template: TemplateRecord;
+  openSet: Set<number>;
+  canEdit: boolean;
+  onTogglePhase: (i: number) => void;
+  onSavePhaseName: (i: number, name: string) => void;
+  onRemovePhase: (i: number) => void;
+  onReorderPhases: (from: number, to: number) => void;
+  onSaveSubtask: (phaseIndex: number, subIndex: number, text: string) => void;
+  onAddSubtask: (phaseIndex: number) => void;
+  onRemoveSubtask: (phaseIndex: number, subIndex: number) => void;
+  onAddPhase: () => void;
+}) {
+  // Stable row IDs derived from index. Phases don't have persistent
+  // ids, so the reorder handler uses positions directly. dnd-kit
+  // tolerates index-based ids fine because `arrayMove` is computed
+  // from the active/over indices we look up at drop time.
+  const phaseIds = useMemo(
+    () => template.phases.map((_, i) => `phase-${i}`),
+    [template.phases],
+  );
+
+  // Pointer + keyboard sensors. KeyboardSensor uses the standard
+  // sortableKeyboardCoordinates so Space picks up the row, arrows
+  // move it, Space drops it, Esc cancels — same as the kanban
+  // board's keyboard story. Audit memo is consistent across drag
+  // surfaces.
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
+
+  const [activeId, setActiveId] = useState<string | null>(null);
+
+  function handleDragStart(e: DragStartEvent) {
+    setActiveId(String(e.active.id));
+  }
+
+  function handleDragEnd(e: DragEndEvent) {
+    setActiveId(null);
+    if (!e.over) return;
+    const fromIndex = phaseIds.indexOf(String(e.active.id));
+    const toIndex = phaseIds.indexOf(String(e.over.id));
+    if (fromIndex === -1 || toIndex === -1) return;
+    onReorderPhases(fromIndex, toIndex);
+  }
+
+  function handleDragCancel() {
+    setActiveId(null);
+  }
+
+  // When canEdit is false (future admin gate), skip dnd entirely so
+  // read-only viewers don't get a drag affordance they can't act on.
+  if (!canEdit) {
+    return (
+      <div className="template-phase-list">
+        {template.phases.map((phase, i) => (
+          <PhaseBody
+            key={i}
+            phase={phase}
+            index={i}
+            template={template}
+            openSet={openSet}
+            canEdit={false}
+            onTogglePhase={onTogglePhase}
+            onSavePhaseName={onSavePhaseName}
+            onRemovePhase={onRemovePhase}
+            onSaveSubtask={onSaveSubtask}
+            onAddSubtask={onAddSubtask}
+            onRemoveSubtask={onRemoveSubtask}
+          />
+        ))}
+      </div>
+    );
+  }
+
+  return (
+    <DndContext
+      sensors={sensors}
+      collisionDetection={closestCenter}
+      onDragStart={handleDragStart}
+      onDragEnd={handleDragEnd}
+      onDragCancel={handleDragCancel}
+    >
+      <SortableContext items={phaseIds} strategy={verticalListSortingStrategy}>
+        <div className="template-phase-list">
+          {template.phases.map((phase, i) => (
+            <SortablePhase
+              key={phaseIds[i]}
+              id={phaseIds[i]}
+              phase={phase}
+              index={i}
+              template={template}
+              openSet={openSet}
+              activeId={activeId}
+              onTogglePhase={onTogglePhase}
+              onSavePhaseName={onSavePhaseName}
+              onRemovePhase={onRemovePhase}
+              onSaveSubtask={onSaveSubtask}
+              onAddSubtask={onAddSubtask}
+              onRemoveSubtask={onRemoveSubtask}
+            />
+          ))}
+          <button
+            type="button"
+            className="template-add-row template-add-row--phase"
+            onClick={onAddPhase}
+          >
+            <PlusIcon />
+            Add phase
+          </button>
+        </div>
+      </SortableContext>
+    </DndContext>
+  );
+}
+
+/** A phase row wrapped in useSortable. The drag handle on the right
+ *  carries the listeners — only that handle starts a drag, so the
+ *  user can still freely click the InlineText name and the chevron
+ *  expand without accidentally picking the row up. */
+function SortablePhase({
+  id,
+  phase,
+  index,
+  template,
+  openSet,
+  activeId,
+  onTogglePhase,
+  onSavePhaseName,
+  onRemovePhase,
+  onSaveSubtask,
+  onAddSubtask,
+  onRemoveSubtask,
+}: {
+  id: string;
+  phase: TemplatePhase;
+  index: number;
+  template: TemplateRecord;
+  openSet: Set<number>;
+  activeId: string | null;
+  onTogglePhase: (i: number) => void;
+  onSavePhaseName: (i: number, name: string) => void;
+  onRemovePhase: (i: number) => void;
+  onSaveSubtask: (phaseIndex: number, subIndex: number, text: string) => void;
+  onAddSubtask: (phaseIndex: number) => void;
+  onRemoveSubtask: (phaseIndex: number, subIndex: number) => void;
+}) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    setActivatorNodeRef,
+    transform,
+    transition,
+    isDragging,
+    isOver,
+    over,
+    active,
+  } = useSortable({ id });
+
+  const style: React.CSSProperties = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  };
+
+  // "Drop above" indicator: the line shows above the over-target
+  // when dragging an item from below it (i.e., the dragged item
+  // would settle BEFORE this row). When dragging from above, the
+  // indicator shows below the over-target. We compute "from where"
+  // by comparing the active and over indices at render time.
+  const dropAbove = isOver
+    && active
+    && over
+    && phaseIds(template).indexOf(String(active.id)) > index;
+  const dropBelow = isOver
+    && active
+    && over
+    && phaseIds(template).indexOf(String(active.id)) < index;
+
+  return (
+    <PhaseBody
+      ref={setNodeRef}
+      phase={phase}
+      index={index}
+      template={template}
+      openSet={openSet}
+      canEdit={true}
+      style={style}
+      isDragging={isDragging}
+      isActive={activeId === id}
+      dropAbove={dropAbove ?? false}
+      dropBelow={dropBelow ?? false}
+      dragHandleProps={{ ...attributes, ...listeners, ref: setActivatorNodeRef }}
+      onTogglePhase={onTogglePhase}
+      onSavePhaseName={onSavePhaseName}
+      onRemovePhase={onRemovePhase}
+      onSaveSubtask={onSaveSubtask}
+      onAddSubtask={onAddSubtask}
+      onRemoveSubtask={onRemoveSubtask}
+    />
+  );
+}
+
+// Tiny helper so SortablePhase can compute the active index without
+// pulling the whole phase list into props. `template` is in scope
+// already; this just walks its phases.
+function phaseIds(template: TemplateRecord): string[] {
+  return template.phases.map((_, i) => `phase-${i}`);
+}
+
+type PhaseBodyProps = {
+  phase: TemplatePhase;
+  index: number;
+  template: TemplateRecord;
+  openSet: Set<number>;
+  canEdit: boolean;
+  style?: React.CSSProperties;
+  isDragging?: boolean;
+  isActive?: boolean;
+  dropAbove?: boolean;
+  dropBelow?: boolean;
+  /** dnd-kit's drag-handle props bundle. Includes the listeners,
+   *  attributes, and a ref-callback for the activator node. We
+   *  destructure the ref out and spread the rest onto the handle
+   *  button. */
+  dragHandleProps?: {
+    ref?: (node: HTMLElement | null) => void;
+  } & Record<string, unknown>;
+  onTogglePhase: (i: number) => void;
+  onSavePhaseName: (i: number, name: string) => void;
+  onRemovePhase: (i: number) => void;
+  onSaveSubtask: (phaseIndex: number, subIndex: number, text: string) => void;
+  onAddSubtask: (phaseIndex: number) => void;
+  onRemoveSubtask: (phaseIndex: number, subIndex: number) => void;
+};
+
+/** Visual body of a phase row. Used by both the dnd-kit-wrapped
+ *  SortablePhase and the canEdit:false fallback. forwardRef so the
+ *  sortable wrapper can attach setNodeRef on the outer div. */
+const PhaseBody = forwardRef<HTMLDivElement, PhaseBodyProps>(function PhaseBody(props, ref) {
+  const {
+    phase, index, template, openSet, canEdit,
+    style, isDragging, isActive, dropAbove, dropBelow, dragHandleProps,
+    onTogglePhase, onSavePhaseName, onRemovePhase,
+    onSaveSubtask, onAddSubtask, onRemoveSubtask,
+  } = props;
+  const expanded = openSet.has(index);
+  const panelId = `template-${template.id}-phase-${index}-subtasks`;
+  // Pull the activator ref out of the drag-handle bundle so we can
+  // attach it to the button element. The rest of the props (sensor
+  // listeners + a11y attributes) spread onto the button.
+  const handleRef = dragHandleProps?.ref;
+  const handleRest = dragHandleProps ? { ...dragHandleProps } : undefined;
+  if (handleRest) delete (handleRest as { ref?: unknown }).ref;
+  return (
+    <div
+      ref={ref}
+      className={[
+        'template-phase',
+        expanded ? 'expanded' : '',
+        isDragging ? 'is-dragging' : '',
+        isActive ? 'is-active' : '',
+        dropAbove ? 'drop-above' : '',
+        dropBelow ? 'drop-below' : '',
+      ].filter(Boolean).join(' ')}
+      style={style}
+    >
+      <div className="template-phase-row">
+        <div className="template-phase-num">{index + 1}</div>
+        <div className="template-phase-name">
+          <InlineText
+            value={phase.name}
+            onSave={(name) => onSavePhaseName(index, name)}
+            disabled={!canEdit}
+            ariaLabel={`Phase ${index + 1} name`}
+          />
+        </div>
+        <div className="template-phase-meta">{phase.subtasks.length} subtasks</div>
+        {canEdit && (
+          <div className="template-phase-actions">
+            <button
+              type="button"
+              className="template-phase-action is-remove"
+              onClick={() => onRemovePhase(index)}
+              aria-label={`Remove ${phase.name}`}
+              title="Remove phase"
+            >
+              <CloseIcon />
+            </button>
+            {/* Drag handle. Only this element activates the drag, so
+                clicking the row body (name, chevron) doesn't steal
+                the gesture. ⋮⋮ icon is the universal "drag me" cue.
+                The handle is omitted on the canEdit:false fallback
+                where dragHandleProps is undefined. */}
+            {handleRest && (
+              <button
+                ref={handleRef}
+                type="button"
+                className="template-phase-drag"
+                aria-label={`Drag ${phase.name} to reorder`}
+                title="Drag to reorder"
+                {...handleRest}
+              >
+                <DragHandleIcon />
+              </button>
+            )}
+          </div>
+        )}
+        <button
+          type="button"
+          className="template-phase-expand"
+          aria-expanded={expanded}
+          aria-controls={panelId}
+          aria-label={expanded ? `Collapse ${phase.name} subtasks` : `Expand ${phase.name} subtasks`}
+          onClick={() => onTogglePhase(index)}
+        >
+          <ChevronDown className="template-phase-chevron" />
+        </button>
+      </div>
+      <div id={panelId} className="template-phase-subtasks">
+        {phase.subtasks.map((st, j) => (
+          <div key={j} className="template-phase-subtask">
+            <span className="dot" />
+            <InlineText
+              value={st}
+              onSave={(text) => onSaveSubtask(index, j, text)}
+              disabled={!canEdit}
+              ariaLabel={`Subtask ${j + 1} of ${phase.name}`}
+            />
+            {canEdit && (
+              <button
+                type="button"
+                className="template-row-remove"
+                onClick={() => onRemoveSubtask(index, j)}
+                aria-label={`Remove subtask ${st}`}
+                title="Remove subtask"
+              >
+                <CloseIcon />
+              </button>
+            )}
+          </div>
+        ))}
+        {canEdit && (
+          <button
+            type="button"
+            className="template-add-row"
+            onClick={() => onAddSubtask(index)}
+          >
+            <PlusIcon />
+            Add subtask
+          </button>
+        )}
+      </div>
+    </div>
+  );
+});

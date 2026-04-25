@@ -11801,13 +11801,20 @@
     letter-spacing: 0.04em;
     transition: background 0.12s, color 0.12s;
   }
-  .template-reset-btn:hover {
+  .template-reset-btn:hover:not(:disabled) {
     background: var(--bg-faint);
     color: var(--text);
   }
   .template-reset-btn:focus-visible {
     outline: 2px solid var(--highlight);
     outline-offset: 2px;
+  }
+  /* Disabled state — surfaces the affordance from first visit but
+     reads as "not actionable right now." Tooltip on the button
+     explains why (`No edits to reset`). */
+  .template-reset-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
   }
   .template-hero-meta .sep {
     width: 3px; height: 3px; border-radius: 50%;
@@ -11879,10 +11886,11 @@
     outline-offset: 2px;
   }
 
-  /* Hover-revealed structure controls — up/down/× on phases.
-     Hidden at rest so the row reads as data, not a control surface;
-     opacity ramps up on hover or focus-within. Audit: templates M2
-     (commit 3, structure changes). */
+  /* Hover-revealed structure controls — × (remove) + drag handle.
+     Wave 7 first cut had ↑/↓ buttons; user feedback asked for drag-
+     and-drop, so the up/down buttons were dropped and a 6-dots drag
+     handle took the same slot. The remove × stays on hover-reveal.
+     Audit: templates M2 (commit 3 → drag refactor). */
   .template-phase-actions {
     display: inline-flex; align-items: center; gap: 2px;
     opacity: 0;
@@ -11891,6 +11899,12 @@
   }
   .template-phase-row:hover .template-phase-actions,
   .template-phase-row:focus-within .template-phase-actions { opacity: 1; }
+  /* While ANY phase is being dragged, show every drag handle so the
+     user can see the affordances on the resting phases too — drop
+     targets are obvious that way. */
+  .template-phase-list:has(.template-phase.is-dragging) .template-phase-actions {
+    opacity: 1;
+  }
   .template-phase-action {
     width: 22px; height: 22px;
     display: inline-flex; align-items: center; justify-content: center;
@@ -11918,6 +11932,58 @@
     outline: 2px solid var(--highlight);
     outline-offset: 2px;
   }
+
+  /* Drag handle (six-dots ⋮⋮) — replaces the ↑/↓ buttons. Cursor
+     changes to grab/grabbing so the user knows the affordance is
+     drag, not click. The handle button styles match
+     .template-phase-action so the row reads consistently. */
+  .template-phase-drag {
+    width: 22px; height: 22px;
+    display: inline-flex; align-items: center; justify-content: center;
+    background: transparent; border: 1px solid transparent;
+    border-radius: 5px;
+    color: var(--text-faint);
+    cursor: grab;
+    transition: background 0.12s, color 0.12s, border-color 0.12s;
+    touch-action: none; /* required by dnd-kit's PointerSensor on mobile */
+  }
+  .template-phase-drag:hover {
+    background: var(--bg-elev);
+    border-color: var(--hairline);
+    color: var(--text);
+  }
+  .template-phase-drag:active,
+  .template-phase.is-dragging .template-phase-drag { cursor: grabbing; }
+  .template-phase-drag:focus-visible {
+    outline: 2px solid var(--highlight);
+    outline-offset: 2px;
+  }
+
+  /* Drag states. While dragging, the active phase fades to half-
+     opacity and floats above its peers (z-index from dnd-kit's
+     transform). The destination row gets a thick blue line above
+     or below it as a drop indicator — the line is a pseudo-element
+     so it doesn't shift the layout of any siblings. */
+  .template-phase.is-dragging {
+    opacity: 0.5;
+    z-index: 10;
+  }
+  .template-phase {
+    position: relative;
+  }
+  .template-phase.drop-above::before,
+  .template-phase.drop-below::after {
+    content: '';
+    position: absolute;
+    left: 0; right: 0;
+    height: 3px;
+    background: var(--highlight);
+    border-radius: 2px;
+    box-shadow: 0 0 0 2px var(--highlight-soft);
+    pointer-events: none;
+  }
+  .template-phase.drop-above::before { top: -5px; }
+  .template-phase.drop-below::after { bottom: -5px; }
 
   /* Per-row × on subtask / onboarding / brief items. Same hover-
      reveal pattern as the phase actions. */
