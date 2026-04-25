@@ -737,4 +737,9 @@ export interface FlizowData {
    *  read time. Empty by default — a fresh install renders the five
    *  built-in templates as-is. Audit: templates M2 (admin editor). */
   templateOverrides: TemplateRecord[];
+  /** Light vs dark mode. Used to be owned by the legacy BoardStore;
+   *  moved here so we can retire that store. App.tsx reads this and
+   *  syncs to `document.documentElement` (class + data-theme attr).
+   *  Audit: D3 (BoardStore retirement). */
+  theme: 'light' | 'dark';
 }

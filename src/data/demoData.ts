@@ -1114,5 +1114,12 @@ export function generateDemoData(): FlizowData {
     // overlays an empty array onto BUILT_IN_TEMPLATES, surfacing the
     // five built-ins as-is. Audit: templates M2.
     templateOverrides: [],
+    // Theme defaults to light on a fresh demo load. The user's
+    // existing pick survives because migrate() preserves theme from
+    // the parsed payload before running emptyData() defaults — but
+    // demo loads come through replaceAll which calls migrate(), and
+    // migrate prefers `parsed.theme`, so this default only kicks in
+    // when a brand-new user demo-loads without ever touching theme.
+    theme: 'light',
   };
 }

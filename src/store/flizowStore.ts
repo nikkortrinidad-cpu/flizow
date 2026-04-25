@@ -54,6 +54,7 @@ function emptyData(): FlizowData {
     scheduleTaskMap: {},
     favoriteServiceIds: [],
     templateOverrides: [],
+    theme: 'light',
   };
 }
 
@@ -140,7 +141,29 @@ function migrate(parsed: Partial<FlizowData>): FlizowData {
     templateOverrides: Array.isArray(parsed.templateOverrides)
       ? parsed.templateOverrides
       : base.templateOverrides,
+    // Theme migrated here from the legacy BoardStore (audit: D3).
+    // Older docs may not carry a theme field — fall back to light.
+    // We also accept the legacy localStorage key once on load, so a
+    // returning user keeps whatever they had set.
+    theme: parsed.theme === 'dark' ? 'dark' : (legacyTheme() ?? 'light'),
   };
+}
+
+/** One-shot read of the legacy BoardStore's theme cookie. Only used
+ *  by migrate() so a returning user's "dark" preference doesn't get
+ *  reset to light when we drop the legacy store. The localStorage
+ *  payload is the entire BoardState; we just pick `.theme`. */
+function legacyTheme(): 'light' | 'dark' | null {
+  try {
+    const raw = localStorage.getItem('kanban-board-state');
+    if (!raw) return null;
+    const parsed: unknown = JSON.parse(raw);
+    if (parsed && typeof parsed === 'object') {
+      const theme = (parsed as { theme?: unknown }).theme;
+      if (theme === 'dark' || theme === 'light') return theme;
+    }
+  } catch { /* corrupt payload — ignore */ }
+  return null;
 }
 
 /**
@@ -1653,6 +1676,15 @@ class FlizowStore {
 
   reset() {
     this.replaceAll(emptyData());
+  }
+
+  /** Theme — light/dark. Migrated from the legacy BoardStore as part
+   *  of D3 (BoardStore retirement). App.tsx subscribes via useFlizow
+   *  and syncs to <html> on every change. */
+  setTheme(theme: 'light' | 'dark') {
+    if (this.data.theme === theme) return;
+    this.data.theme = theme;
+    this.save();
   }
 
   /** Dev helper: seed the workspace with the 50 demo clients from the

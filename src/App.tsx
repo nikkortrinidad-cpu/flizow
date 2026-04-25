@@ -3,9 +3,8 @@ import { LoginPage } from './components/LoginPage';
 import { TopNav } from './components/TopNav';
 import { PageShell } from './components/PageShell';
 import { useAuth } from './contexts/AuthContext';
-import { useBoard } from './store/useStore';
-import { store } from './store/boardStore';
 import { flizowStore } from './store/flizowStore';
+import { useFlizow } from './store/useFlizow';
 
 // Lazy-load top-level modals. Account settings opens rarely (once a
 // session at most) and the command palette opens on-demand via ⌘K —
@@ -17,8 +16,8 @@ const FlizowCommandPalette  = lazy(() => import('./components/FlizowCommandPalet
 
 function App() {
   const { user, loading } = useAuth();
-  const { state } = useBoard();
-  const isDark = state.theme === 'dark';
+  const { data } = useFlizow();
+  const isDark = data.theme === 'dark';
 
   // Sync theme with html element. We set both the `.dark` class (for existing
   // Tailwind/TipTap dark variants) and `data-theme` (for the mockup CSS which
@@ -28,17 +27,15 @@ function App() {
     document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
   }, [isDark]);
 
-  // Hook up both stores to the signed-in user. The legacy BoardStore still
-  // backs the old /board route until the Flizow kanban reaches parity; the
-  // new FlizowStore backs Overview, Clients, Analytics, the new board, etc.
-  // They write to different Firestore docs (`boards/{uid}` vs `flizow/{uid}`)
-  // so they can't interfere with each other.
+  // Hook the FlizowStore up to the signed-in user. We used to also
+  // hook the legacy BoardStore here (theme was the only thing it
+  // owned), but theme moved into FlizowStore in D3 — one store now,
+  // one Firestore doc (`flizow/{uid}`).
   useEffect(() => {
     const uid = user?.uid ?? null;
     const displayName = user?.displayName || undefined;
     const email = user?.email || undefined;
     const photoURL = user?.photoURL || undefined;
-    store.setUser(uid, displayName, email, photoURL);
     flizowStore.setUser(uid, displayName, email, photoURL);
   }, [user]);
 

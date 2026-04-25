@@ -1,8 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useFlizow } from '../store/useFlizow';
-import { store as boardStore } from '../store/boardStore';
-import { useBoard } from '../store/useStore';
 
 /**
  * FlizowAccountModal — the Account Settings overlay reachable from the
@@ -48,9 +46,8 @@ interface Props {
 
 export default function FlizowAccountModal({ onClose }: Props) {
   const { user, logout } = useAuth();
-  const { store } = useFlizow();
-  const { state: legacyState } = useBoard();
-  const isDark = legacyState.theme === 'dark';
+  const { data, store } = useFlizow();
+  const isDark = data.theme === 'dark';
 
   const [section, setSection] = useState<Section>('profile');
   const closeBtnRef = useRef<HTMLButtonElement | null>(null);
@@ -150,9 +147,9 @@ export default function FlizowAccountModal({ onClose }: Props) {
   function setAppearance(mode: 'light' | 'dark' | 'system') {
     if (mode === 'system') {
       const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-      boardStore.setTheme(prefersDark ? 'dark' : 'light');
+      store.setTheme(prefersDark ? 'dark' : 'light');
     } else {
-      boardStore.setTheme(mode);
+      store.setTheme(mode);
     }
   }
 
