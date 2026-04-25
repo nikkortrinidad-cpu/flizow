@@ -5757,7 +5757,13 @@
     text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px;
   }
   .page-title {
-    font-size: var(--fs-5xl); font-weight: 600; line-height: var(--lh-heading);
+    /* Default page-title is now `--fs-4xl` (28px) — the Overview
+       header was 32px + 16px tagline before, which spent ~140px
+       of viewport on greeting before the first data block. Audit:
+       overview M4. Analytics + Wip pages explicitly bump this back
+       to `--fs-5xl` in their own header scope because those surfaces
+       benefit from the bigger title. */
+    font-size: var(--fs-4xl); font-weight: 600; line-height: var(--lh-heading);
     margin-bottom: 6px; letter-spacing: -0.022em;
     color: var(--text);
   }

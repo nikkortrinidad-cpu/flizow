@@ -10,23 +10,6 @@ const MONTHS = [
   'July', 'August', 'September', 'October', 'November', 'December',
 ];
 
-const TAGLINES = [
-  "Here's what needs you today.",
-  'Your projects at a glance.',
-  "Let's make today count.",
-  "Here's where things stand.",
-  'Your day, mapped out.',
-  "What's on your plate today.",
-  'The rundown for today.',
-  'Stay ahead of the curve.',
-  'Quick look at what matters.',
-  'Everything in one place.',
-  'Your priorities, front and center.',
-  "Here's the view from above.",
-  "Let's keep things moving.",
-  'Your pulse check for today.',
-];
-
 function greetingFor(hour: number): string {
   if (hour < 12) return 'Good morning';
   if (hour < 17) return 'Good afternoon';
@@ -36,12 +19,6 @@ function greetingFor(hour: number): string {
 function firstNameOf(displayName: string | null | undefined): string {
   if (!displayName) return 'there';
   return displayName.split(' ')[0] || 'there';
-}
-
-function taglineForDay(now: Date): string {
-  const startOfYear = new Date(now.getFullYear(), 0, 0);
-  const dayOfYear = Math.floor((now.getTime() - startOfYear.getTime()) / 86_400_000);
-  return TAGLINES[dayOfYear % TAGLINES.length];
 }
 
 export function OverviewPage() {
@@ -57,7 +34,6 @@ export function OverviewPage() {
   const now = new Date();
   const greetingLine = `${DAYS[now.getDay()]}, ${MONTHS[now.getMonth()]} ${now.getDate()}`;
   const title = `${greetingFor(now.getHours())}, ${firstNameOf(user?.displayName)}.`;
-  const tagline = taglineForDay(now);
 
   // Portfolio health counts, computed from live client statuses. `active`
   // is everything that isn't paused — the Overview is about what's in
@@ -137,10 +113,16 @@ export function OverviewPage() {
   return (
     <div className="view view-overview active">
       <main className="page">
+        {/* Two-line header: the greeting eyebrow + the title. The
+            rotating tagline row used to sit below, rendering one of
+            14 strings per day-of-year — ambient decoration with no
+            signal on a page whose job is to surface urgent work.
+            Dropping it also lifts the first data block ~20-40px
+            closer to the top of the viewport. Audit: overview M1 +
+            M4. */}
         <div className="page-header">
           <div className="page-greeting">{greetingLine}</div>
           <div className="page-title">{title}</div>
-          <div className="page-date">{tagline}</div>
         </div>
 
         {/* BLOCK 1 — Portfolio Health */}
