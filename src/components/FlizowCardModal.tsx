@@ -8,6 +8,7 @@ import FlizowShareModal from './FlizowShareModal';
 import { useActivatableRow } from '../hooks/useActivatableRow';
 import { useModalFocusTrap } from '../hooks/useModalFocusTrap';
 import { navigateForceReparse } from '../router';
+import { SearchablePicker } from './shared/SearchablePicker';
 
 /** The modal supports two card "kinds": client tasks (the default) and
  *  internal Ops board tasks. Ops cards skip the client/service header,
@@ -1089,10 +1090,10 @@ function TaskMissingAutoClose({ onClose }: { onClose: () => void }) {
   return null;
 }
 
-/** Searchable multi-select for task assignees. Mirrors the mockup's
- *  `.assignee-dropdown` — anchored under the + button, closes on outside
- *  click or Esc, autofocuses its search field so the user can type
- *  immediately after clicking. */
+/** Searchable multi-select for task assignees. A thin wrapper over
+ *  the shared SearchablePicker — what used to be ~95 lines of
+ *  autofocus/outside-click/Esc/filter boilerplate now lives once in
+ *  components/shared. Audit: card-modal M1. */
 function AssigneePicker({
   members, selectedIds, query, onQueryChange, onToggle, onClose,
 }: {
@@ -1103,94 +1104,57 @@ function AssigneePicker({
   onToggle: (id: string) => void;
   onClose: () => void;
 }) {
-  const ref = useRef<HTMLDivElement | null>(null);
-  const searchRef = useRef<HTMLInputElement | null>(null);
-
-  useEffect(() => {
-    // Autofocus on open so the user can start typing immediately.
-    searchRef.current?.focus();
-    function onDoc(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) onClose();
-    }
-    function onKey(e: KeyboardEvent) {
-      if (e.key === 'Escape') { e.stopPropagation(); onClose(); }
-    }
-    const t = window.setTimeout(() => {
-      document.addEventListener('mousedown', onDoc);
-      document.addEventListener('keydown', onKey, true);
-    }, 0);
-    return () => {
-      window.clearTimeout(t);
-      document.removeEventListener('mousedown', onDoc);
-      document.removeEventListener('keydown', onKey, true);
-    };
-  }, [onClose]);
-
-  const q = query.trim().toLowerCase();
-  const filtered = q
-    ? members.filter(m =>
+  return (
+    <SearchablePicker
+      items={members}
+      classes={{
+        root: 'assignee-dropdown',
+        search: 'assignee-search',
+        list: 'assignee-list',
+        option: 'assignee-option',
+        empty: 'assignee-empty',
+      }}
+      placeholder="Search team members…"
+      query={query}
+      onQueryChange={onQueryChange}
+      matches={(m, q) =>
         m.name.toLowerCase().includes(q) ||
         m.initials.toLowerCase().includes(q) ||
-        (m.role || '').toLowerCase().includes(q),
-      )
-    : members;
-
-  return (
-    <div ref={ref} className="assignee-dropdown open" onClick={(e) => e.stopPropagation()}>
-      <input
-        ref={searchRef}
-        type="text"
-        className="assignee-search"
-        placeholder="Search team members…"
-        value={query}
-        onChange={(e) => onQueryChange(e.target.value)}
-      />
-      <div className="assignee-list">
-        {filtered.length === 0 ? (
-          <div className="assignee-empty">No matches</div>
-        ) : (
-          filtered.map(m => {
-            const selected = selectedIds.includes(m.id);
-            return (
-              <button
-                key={m.id}
-                type="button"
-                className={`assignee-option${selected ? ' is-selected' : ''}`}
-                onClick={() => onToggle(m.id)}
-                // Keep it a proper button rather than a div so it's
-                // keyboard-activatable out of the box.
-                style={{ width: '100%', textAlign: 'left', background: 'transparent', border: 0, padding: 'var(--sp-xs) var(--sp-sm)', cursor: 'pointer', font: 'inherit', color: 'inherit' }}
-              >
-                <span
-                  className="assignee-option-avatar"
-                  style={m.type === 'operator'
-                    ? { background: m.bg, color: m.color }
-                    : { background: m.color, color: '#fff' }}
-                >
-                  {m.initials}
-                </span>
-                <span className="assignee-option-name">
-                  {m.name}
-                  {m.role && (
-                    <span style={{ color: 'var(--text-soft)', fontSize: 'var(--fs-xs)', marginLeft: 6 }}>
-                      · {m.role}
-                    </span>
-                  )}
-                </span>
-                <svg className="assignee-option-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                  <polyline points="20 6 9 17 4 12"/>
-                </svg>
-              </button>
-            );
-          })
-        )}
-      </div>
-    </div>
+        (m.role || '').toLowerCase().includes(q)
+      }
+      getKey={(m) => m.id}
+      isSelected={(m) => selectedIds.includes(m.id)}
+      onToggle={onToggle}
+      renderItem={(m) => (
+        <>
+          <span
+            className="assignee-option-avatar"
+            style={m.type === 'operator'
+              ? { background: m.bg, color: m.color }
+              : { background: m.color, color: '#fff' }}
+          >
+            {m.initials}
+          </span>
+          <span className="assignee-option-name">
+            {m.name}
+            {m.role && (
+              <span style={{ color: 'var(--text-soft)', fontSize: 'var(--fs-xs)', marginLeft: 6 }}>
+                · {m.role}
+              </span>
+            )}
+          </span>
+        </>
+      )}
+      checkClassName="assignee-option-check"
+      emptyLabel="No matches"
+      onClose={onClose}
+    />
   );
 }
 
-/** Searchable multi-select for board labels. Same shell as the assignee
- *  picker — same classes, so the CSS file does all the styling work. */
+/** Searchable multi-select for board labels. Same wrapper pattern as
+ *  AssigneePicker — the shared SearchablePicker carries the
+ *  behaviour, this file owns the label-specific chip + CSS names. */
 function LabelPicker({
   selectedIds, query, onQueryChange, onToggle, onClose,
 }: {
@@ -1200,67 +1164,28 @@ function LabelPicker({
   onToggle: (id: string) => void;
   onClose: () => void;
 }) {
-  const ref = useRef<HTMLDivElement | null>(null);
-  const searchRef = useRef<HTMLInputElement | null>(null);
-
-  useEffect(() => {
-    searchRef.current?.focus();
-    function onDoc(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) onClose();
-    }
-    function onKey(e: KeyboardEvent) {
-      if (e.key === 'Escape') { e.stopPropagation(); onClose(); }
-    }
-    const t = window.setTimeout(() => {
-      document.addEventListener('mousedown', onDoc);
-      document.addEventListener('keydown', onKey, true);
-    }, 0);
-    return () => {
-      window.clearTimeout(t);
-      document.removeEventListener('mousedown', onDoc);
-      document.removeEventListener('keydown', onKey, true);
-    };
-  }, [onClose]);
-
-  const q = query.trim().toLowerCase();
-  const filtered = q
-    ? BOARD_LABELS.filter(l => l.name.toLowerCase().includes(q))
-    : BOARD_LABELS;
-
   return (
-    <div ref={ref} className="label-dropdown open" onClick={(e) => e.stopPropagation()}>
-      <input
-        ref={searchRef}
-        type="text"
-        className="label-dropdown-search"
-        placeholder="Search labels…"
-        value={query}
-        onChange={(e) => onQueryChange(e.target.value)}
-      />
-      <div className="label-dropdown-list">
-        {filtered.length === 0 ? (
-          <div className="label-empty">No matches</div>
-        ) : (
-          filtered.map(l => {
-            const selected = selectedIds.includes(l.id);
-            return (
-              <button
-                key={l.id}
-                type="button"
-                className={`label-option${selected ? ' is-selected' : ''}`}
-                onClick={() => onToggle(l.id)}
-                style={{ width: '100%', textAlign: 'left', background: 'transparent', border: 0, padding: 'var(--sp-xs) var(--sp-sm)', cursor: 'pointer', font: 'inherit', color: 'inherit' }}
-              >
-                <span className={`label-pill ${l.cls}`}>{l.name}</span>
-                <svg className="label-option-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                  <polyline points="20 6 9 17 4 12"/>
-                </svg>
-              </button>
-            );
-          })
-        )}
-      </div>
-    </div>
+    <SearchablePicker
+      items={BOARD_LABELS}
+      classes={{
+        root: 'label-dropdown',
+        search: 'label-dropdown-search',
+        list: 'label-dropdown-list',
+        option: 'label-option',
+        empty: 'label-empty',
+      }}
+      placeholder="Search labels…"
+      query={query}
+      onQueryChange={onQueryChange}
+      matches={(l, q) => l.name.toLowerCase().includes(q)}
+      getKey={(l) => l.id}
+      isSelected={(l) => selectedIds.includes(l.id)}
+      onToggle={onToggle}
+      renderItem={(l) => <span className={`label-pill ${l.cls}`}>{l.name}</span>}
+      checkClassName="label-option-check"
+      emptyLabel="No matches"
+      onClose={onClose}
+    />
   );
 }
 
