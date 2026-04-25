@@ -6861,6 +6861,13 @@
     --status-risk-soft: rgba(255,159,10,0.12);
     --status-track: #30d158;
     --status-track-soft: rgba(48,209,88,0.12);
+    /* --status-soft is the calm "under capacity / informational"
+       cyan used by Analytics workload bars and similar. Added as a
+       first-class token so the analytics tone scale
+       (over/tight/ok/soft) can share one source of truth with the
+       rest of the app. Audit: analytics M4. */
+    --status-soft: #64d2ff;
+    --status-soft-soft: rgba(100,210,255,0.14);
     --status-onboard: #007AFF;
     --status-onboard-soft: rgba(0,122,255,0.1);
     --status-paused: #8e8e93;
@@ -6873,6 +6880,8 @@
     --status-risk-soft: rgba(255,179,64,0.16);
     --status-track: #32d74b;
     --status-track-soft: rgba(50,215,75,0.16);
+    --status-soft: #7ad8ff;
+    --status-soft-soft: rgba(122,216,255,0.18);
     --status-onboard: #0A84FF;
     --status-onboard-soft: rgba(10,132,255,0.18);
     --status-paused: #98989d;
@@ -11935,10 +11944,10 @@
     font-size: var(--fs-xs); font-weight: 600;
   }
   .anlx-kpi-delta svg { width: 10px; height: 10px; stroke-width: 3; }
-  .anlx-kpi-delta.up   { color: #ff453a; }  /* more of a bad thing = red */
-  .anlx-kpi-delta.down { color: #30d158; }  /* less of a bad thing = green */
-  .anlx-kpi-delta.good-up   { color: #30d158; }
-  .anlx-kpi-delta.good-down { color: #ff453a; }
+  .anlx-kpi-delta.up   { color: var(--status-fire); }  /* more of a bad thing = red */
+  .anlx-kpi-delta.down { color: var(--status-track); }  /* less of a bad thing = green */
+  .anlx-kpi-delta.good-up   { color: var(--status-track); }
+  .anlx-kpi-delta.good-down { color: var(--status-fire); }
   .anlx-kpi-delta.flat { color: var(--text-soft); }
   .anlx-kpi-spark {
     margin-top: auto;
@@ -12016,8 +12025,8 @@
   .anlx-drill-row-status {
     font-size: var(--fs-xs); color: var(--text-soft);
   }
-  .anlx-drill-row-status.late { color: #ff453a; font-weight: 600; }
-  .anlx-drill-row-status.soon { color: #ff9f0a; font-weight: 600; }
+  .anlx-drill-row-status.late { color: var(--status-fire); font-weight: 600; }
+  .anlx-drill-row-status.soon { color: var(--status-risk); font-weight: 600; }
   .anlx-drill-row-chev {
     color: var(--text-faint); display: flex; justify-content: flex-end;
   }
@@ -12091,8 +12100,8 @@
     letter-spacing: 0.02em;
     color: var(--text-muted);
   }
-  .anlx-up-when.today { color: #ff453a; }
-  .anlx-up-when.tomorrow { color: #ff9f0a; }
+  .anlx-up-when.today { color: var(--status-fire); }
+  .anlx-up-when.tomorrow { color: var(--status-risk); }
   .anlx-up-when-dow {
     display: block; font-size: var(--fs-nano); font-weight: 500;
     color: var(--text-soft); margin-top: 1px;
@@ -12208,10 +12217,10 @@
     background: var(--text-muted);
     transition: width 400ms cubic-bezier(0.32, 0.72, 0, 1);
   }
-  .anlx-wl-bar-fill.ok    { background: #30d158; }
-  .anlx-wl-bar-fill.soft  { background: #64d2ff; }
-  .anlx-wl-bar-fill.tight { background: #ff9f0a; }
-  .anlx-wl-bar-fill.over  { background: #ff453a; }
+  .anlx-wl-bar-fill.ok    { background: var(--status-track); }
+  .anlx-wl-bar-fill.soft  { background: var(--status-soft); }
+  .anlx-wl-bar-fill.tight { background: var(--status-risk); }
+  .anlx-wl-bar-fill.over  { background: var(--status-fire); }
   .anlx-wl-bar-budget {
     position: absolute; top: -2px; bottom: -2px; left: 100%;
     width: 1.5px; background: var(--text-faint);
@@ -12221,8 +12230,8 @@
     font-size: var(--fs-sm); font-weight: 600; color: var(--text);
     font-variant-numeric: tabular-nums;
   }
-  .anlx-wl-pct.over { color: #ff453a; }
-  .anlx-wl-pct.tight { color: #ff9f0a; }
+  .anlx-wl-pct.over { color: var(--status-fire); }
+  .anlx-wl-pct.tight { color: var(--status-risk); }
   .anlx-wl-num {
     text-align: right;
     font-size: var(--fs-sm); color: var(--text-muted);
