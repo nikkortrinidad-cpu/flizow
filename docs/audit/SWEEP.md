@@ -2,7 +2,7 @@
 
 **Window:** 2026-04-24 audit → 2026-04-25 ship.
 **Rubric:** `~/Documents/Claude/skills/apple-design-principles.md` 8-step (belief → 10 HIG → blue tiers → grids → checklist → rank → verify → ship).
-**Output:** 12 audit docs in `docs/audit/`, plus one cross-cutting patterns doc (`PATTERNS.md`). This file is the ship log — what went live across the four waves.
+**Output:** 12 audit docs in `docs/audit/`, plus one cross-cutting patterns doc (`PATTERNS.md`). This file is the ship log — what went live across the five waves.
 
 ---
 
@@ -13,6 +13,7 @@
 3. **Wave 2 — HIGHs continued + shared refactors.** Dedup the six-modal boilerplate into `useModalFocusTrap`, `useModalKeyboard`, `useModalAutofocus`, `useDismissable`, `useActivatableRow`; extract `ServiceMetadataForm` and `InlineCardComposer` from twin modals + twin composers.
 4. **Wave 3 — MEDs.** Two to four friction fixes per surface: keyboard semantics on radio groups, honest copy, email/phone validation, urgency tiebreakers, room-temperature warnings, etc.
 5. **Wave 4 — dead-CSS sweep + LOWs.** Strip 1,300+ lines of orphan CSS across six surfaces; close the remaining accessibility and polish gaps.
+6. **Wave 5 — deferred-queue closeout.** Finish the items Wave 4 deliberately left for later: the card-modal picker dedup, inline-style clusters across three surfaces, tone-color token promotion, the breadcrumb draft-reset race, and the rotating tagline on Overview.
 
 ---
 
@@ -81,13 +82,29 @@
 
 ---
 
+## Wave 5 — deferred-queue closeout (12 commits)
+
+| Commit | Surface | What |
+|---|---|---|
+| `7db6dff` | FlizowCardModal | **M1** — extract `SearchablePicker` from Assignee/Label dup. ~170 lines of twin boilerplate collapse into one shared component; pickers can't drift on focus timing or keyboard behavior anymore. |
+| `15f2f6d` | FlizowCardModal | **M2** — description click-to-edit (`.description-edit*`) and checklist delete button (`.checklist-delete-btn`) move from ~30 inline-style props to real classes. Textarea gets a proper focus ring. M3 was already wired in Wave 3's focus-trap pass. |
+| `7296723` | TouchpointModal | **M5** — `role="alert"` + aria-describedby on the Topic empty error. SR users now hear "Topic is required" instead of silent red-border flashes. |
+| `d21f8b6` | BoardPage | **M5** — `.board-empty-state`, `.swimlane-empty-state`, `.column.is-over`, `.archived-card-*` classes replace ~200 lines of inline styles. ArchivedCardRow's delete button gets a real hover tint. |
+| `3fd86f2` | ClientDetailPage | **M4** — `.section-header-actions`, `.section-empty-text`, `.inline-link-btn` shared classes absorb four repeating inline clusters. The 12/14/16px gap drift across four wrappers standardizes to `var(--sp-md)`. |
+| `ea5b875` | Analytics + tokens | **M4** — new `--status-soft` token pair; `.anlx-*` tone scale (over/tight/ok/soft) swaps 10 raw-hex call sites to `--status-fire/-risk/-track/-soft`. Dark mode now tracks automatically. |
+| `fab60c1` | BoardPage | **L1 + L2** — breadcrumb draft reset no longer depends on `service.name` (protects in-progress rename from teammate clobber). Two magic `setTimeout` focus delays replaced with `requestAnimationFrame`. |
+| `9426da5` | Overview | **M1 + M4** — drop the 14-string rotating tagline + helper; default `.page-title` shrinks `--fs-5xl`→`--fs-4xl`. First data block rises ~40px toward the fold. Wip + Analytics keep 5xl via their own overrides. |
+| `9a2a999` | OpsPage | **M2** — strip dead `id="opsBoard"` + `view-ops` class left over from the static HTML mockup. |
+| `b556b6e` | Weekly WIP + Ops | **WIP L2 / Ops L5** — `.wip-agenda-status[data-status]` pills move onto `--status-*` tokens (five dark-mode branches collapse to two). `.ops-header-eyebrow` bumps 11px→`--fs-xs` (12px) to match the house default. |
+
+---
+
 ## Deferred, on purpose
 
 - **Client-detail M5** — the hero's overflow ⋯ menu with one item ("Delete client…"). Audit default recommendation was `(c) keep as-is`; the in-code comment at the declaration documents the shape as intentional future-proofing for Archive / Duplicate / Export. Revisit when any of those actions ship.
-- **Card-modal M1, M2, M3** — AssigneePicker/LabelPicker duplication (~180 lines), inline-style clusters (12+ locations), missing focus trap on overlay. All three need a shaped refactor, not a sweep. Queued for the next pass.
-- **Analytics M4** — tone-color duplication across TS + CSS. This is a token-introduction refactor, not a dead-CSS strip. Queued with the other color-token cleanups.
-- **Board L1 / L2** — breadcrumb draft reset race, magic `setTimeout` focus delays. Covered by the broader shared-focus-hook refactor on the queue.
-- **Per-page inline-style clusters** — Called out in most audit docs (Board M5, Client-detail M4, Ops M4, Card-modal M2). These are grind fixes that belong in a typed "inline-style migration" pass.
+- **Templates M2** — hardcoded TEMPLATES array. Audit recommends `(a) hide stubs until the admin surface lands; (b) add a read-only disclaimer; (c) ship the editor`. Product call, not a sweep target.
+- **Long-tail LOWs** — single-service promote silent (touchpoints L2), magic `setTimeout` in a couple of remaining modals (add-contact L1, touchpoints L3), picker cap at 30 attendees (touchpoints L4), `.trim() || undefined` whitespace swallow (add-contact L2), collision-prone contact ID (add-contact L3), Space-to-toggle hint (add-contact L5), magic-string `'member' ? 'Team' : 'Client'` (touchpoints L5), `reply-btn` class name overloaded (card-modal L1), orphan-label click-to-remove (card-modal L2), progress-bar animation (card-modal L3), portal vs non-portal overlays (card-modal L5), and Ops L2/L3/L4 (stats not clickable / `todayISO` helper consolidation / composer focus ring). Each is a 10–30 minute fix; bundled for a future "housekeeping afternoon" rather than spread across ship-log commits.
+- **Per-page inline-style residue** — OverviewPage still has a few situational inline styles (week-tab sub-labels, attention-more link), ClientDetailPage has the hero overflow menu (kept as intentional affordance) and checklist/onboarding bits. These are narrow, single-prop styles where a class would be overkill.
 
 ---
 
@@ -96,10 +113,11 @@
 - **Surfaces audited:** 13 (Overview, Clients, Client detail, Board, Ops, Weekly WIP, Analytics, Templates, FlizowCardModal, EditServiceModal, AddContactModal, AddQuickLinkModal, TouchpointModal + TouchpointsTab).
 - **Findings ranked:** 13 × (1 HIGH + 5 MED + 5 LOW + 3 V's) = 13 H / 65 M / 65 L / 39 V's.
 - **HIGHs shipped:** 12 of 13 (Client-detail M5 intentionally deferred).
-- **MEDs shipped in Wave 3:** 36 of 65.
-- **LOWs shipped in Wave 4:** ~20 of 65.
-- **CSS deleted:** ~1,195 lines of verified-dead rules + ~140 lines of inline duplicates folded into classes.
-- **Shared modules extracted:** 1 util (`avatar.ts`), 5 hooks (`useModalFocusTrap`, `useModalKeyboard`, `useModalAutofocus`, `useDismissable`, `useActivatableRow`), 2 components (`ServiceMetadataForm`, `InlineCardComposer`), 1 router helper (`navigateForceReparse`).
+- **MEDs shipped across Waves 3 + 5:** ~50 of 65.
+- **LOWs shipped across Waves 4 + 5:** ~28 of 65.
+- **CSS deleted:** ~1,195 lines of verified-dead rules + ~350 lines of inline duplicates folded into classes.
+- **Shared modules extracted:** 1 util (`avatar.ts`), 5 hooks (`useModalFocusTrap`, `useModalKeyboard`, `useModalAutofocus`, `useDismissable`, `useActivatableRow`), 3 components (`ServiceMetadataForm`, `InlineCardComposer`, `SearchablePicker`), 1 router helper (`navigateForceReparse`).
+- **New design token:** `--status-soft` pair (light `#64d2ff` / dark `#7ad8ff`) for calm/informational tone in the workload + analytics scales.
 
 ---
 
@@ -107,6 +125,6 @@
 
 > **"Does this respect the person using the app?"**
 
-Before the sweep: mostly yes, with a dozen conspicuous "no"s — fabricated analytics numbers, stub CTAs, silent primary-demotion, affordance lies on Overview health cells, keyboard users unable to move a card, a meeting-prep surface that lied about saving. After the sweep: the "no"s the audit caught are closed, the dead CSS no longer misleads a future reader, and the remaining work is scoped and documented.
+Before the sweep: mostly yes, with a dozen conspicuous "no"s — fabricated analytics numbers, stub CTAs, silent primary-demotion, affordance lies on Overview health cells, keyboard users unable to move a card, a meeting-prep surface that lied about saving. After the sweep: the "no"s the audit caught are closed, the dead CSS no longer misleads a future reader, picker behavior can't drift across twin surfaces, tone colors live in one source of truth, and the remaining work is scoped and documented.
 
-Next pass starts from the *Deferred, on purpose* list.
+Next pass starts from the *Deferred, on purpose* list — mostly a 20-item "housekeeping afternoon" plus the Templates M2 product call.
