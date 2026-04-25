@@ -28,6 +28,7 @@ export function InlineText({
   className,
   ariaLabel,
   multiline = false,
+  gesture = 'click',
 }: {
   value: string;
   onSave: (next: string) => void;
@@ -40,6 +41,17 @@ export function InlineText({
    *  inserts a newline (Shift+Enter still commits, matching the
    *  card composer's gesture). */
   multiline?: boolean;
+  /** Activation gesture for entering edit mode.
+   *  - `'click'` (default): single-click on the value enters edit mode.
+   *    The natural choice when nothing else competes for the click.
+   *  - `'doubleClick'`: double-click enters edit mode. Use when the
+   *    field sits inside a larger clickable container (e.g., the
+   *    template phase name lives inside a row that single-click-
+   *    toggles a checklist panel — single-click belongs to the
+   *    container; the field needs a stronger gesture to claim edit).
+   *    Keyboard activation (Enter/Space when focused) still works
+   *    in both modes. */
+  gesture?: 'click' | 'doubleClick';
 }) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(value);
@@ -91,22 +103,32 @@ export function InlineText({
   }
 
   if (!editing) {
+    const editLabel = gesture === 'doubleClick' ? 'double-click to edit' : 'click to edit';
     return (
       <span
         className={`${className ?? ''} inline-text-readonly`}
         role="button"
         tabIndex={0}
-        aria-label={ariaLabel ? `${ariaLabel} (click to edit)` : 'Click to edit'}
-        onClick={() => setEditing(true)}
+        aria-label={ariaLabel ? `${ariaLabel} (${editLabel})` : editLabel}
+        // Single click vs double click is decided by the `gesture`
+        // prop. We also stop propagation so the parent click target
+        // (e.g., a row that toggles a panel) doesn't fire its
+        // handler when the field claims the click — except in
+        // doubleClick mode, where we WANT the parent to handle the
+        // single click. Keyboard activation always works via
+        // Enter/Space when the span is focused.
+        onClick={gesture === 'click' ? (e) => { e.stopPropagation(); setEditing(true); } : undefined}
+        onDoubleClick={gesture === 'doubleClick' ? (e) => { e.stopPropagation(); setEditing(true); } : undefined}
         onKeyDown={(e) => {
           if (e.key === 'Enter' || e.key === ' ') {
             e.preventDefault();
+            e.stopPropagation();
             setEditing(true);
           }
         }}
       >
         {value || (
-          <span className="inline-text-placeholder">{placeholder ?? 'Click to edit…'}</span>
+          <span className="inline-text-placeholder">{placeholder ?? (gesture === 'doubleClick' ? 'Double-click to edit…' : 'Click to edit…')}</span>
         )}
       </span>
     );

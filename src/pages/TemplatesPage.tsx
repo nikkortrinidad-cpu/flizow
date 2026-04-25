@@ -1191,29 +1191,30 @@ const PhaseBody = forwardRef<HTMLDivElement, PhaseBodyProps>(function PhaseBody(
       ].filter(Boolean).join(' ')}
       style={style}
     >
-      {/* Whole row is the toggle. Clicking anywhere except an
-          interactive child (drag handle / inline-text edit / remove
-          ×) flips the subtask panel open or closed. Replaces the
-          chevron-on-the-right pattern from the previous cut. Keyboard
-          users hit Enter or Space on the row. Inner buttons keep
-          their own focus stops. ARIA: role="button" + aria-expanded
-          + aria-controls so screen readers announce the disclosure
-          relationship. */}
+      {/* Whole row is the toggle. Single-click anywhere — including
+          the phase name — flips the subtask panel. The phase name
+          uses InlineText with `gesture="doubleClick"`, so editing
+          the name needs a double-click; single-click belongs to
+          the row's toggle. The drag handle and × stop propagation
+          via their own buttons.
+          Keyboard: Tab to focus the row, Enter or Space to toggle.
+          ARIA: role="button" + aria-expanded + aria-controls so
+          screen readers announce the disclosure relationship. */}
       <div
         className="template-phase-row"
         role="button"
         tabIndex={0}
         aria-expanded={expanded}
         aria-controls={panelId}
-        aria-label={`${phase.name}, ${expanded ? 'expanded' : 'collapsed'}. ${phase.subtasks.length} subtasks. Click to toggle.`}
+        aria-label={`${phase.name}, ${expanded ? 'expanded' : 'collapsed'}. ${phase.subtasks.length} subtasks. Click to toggle, double-click name to rename.`}
         onClick={(e) => {
-          // Skip if the click originated inside an interactive
-          // descendant — InlineText handles its own click-to-edit;
-          // the × removes the phase; the drag handle starts a drag.
-          // Bubbling those up to "toggle" would be a click-target
-          // collision.
+          // Skip if the click originated inside the actions group or
+          // the drag handle — those have their own semantics. The
+          // InlineText field (phase name) lives inside the row but
+          // uses a double-click gesture, so its single-click bubbles
+          // up to here on purpose.
           if ((e.target as HTMLElement).closest(
-            '.template-phase-name, .template-phase-actions, .template-phase-drag, input, [contenteditable]',
+            '.template-phase-actions, .template-phase-drag, input, [contenteditable]',
           )) return;
           onTogglePhase(index);
         }}
@@ -1247,6 +1248,11 @@ const PhaseBody = forwardRef<HTMLDivElement, PhaseBodyProps>(function PhaseBody(
             onSave={(name) => onSavePhaseName(index, name)}
             disabled={!canEdit}
             ariaLabel={`Phase ${index + 1} name`}
+            // Single-click on the name lets the row's toggle fire
+            // (so the panel opens). Double-click on the name enters
+            // edit mode. Keeps the toggle as the dominant gesture
+            // while keeping the name editable.
+            gesture="doubleClick"
           />
         </div>
         <div className="template-phase-meta">{phase.subtasks.length} subtasks</div>
