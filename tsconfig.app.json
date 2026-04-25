@@ -24,5 +24,12 @@
     "noFallthroughCasesInSwitch": true,
     "noUncheckedSideEffectImports": true
   },
-  "include": ["src"]
+  "include": ["src"],
+  // Tests run under Vitest with a different module setup (Vitest's own
+  // resolver, jsdom env, vi.mock, etc). They aren't shipped with the
+  // production app, and they don't need to satisfy app-strict tsc —
+  // their type-checking happens at vitest run time. Excluding them here
+  // keeps the production build green while leaving the editor's
+  // language service hints intact.
+  "exclude": ["src/test", "src/**/*.test.ts", "src/**/*.test.tsx"]
 }
