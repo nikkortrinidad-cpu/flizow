@@ -47,7 +47,11 @@ function App() {
     );
   }
 
-  if (!user) {
+  // Dev bypass: append `?dev=1` to the URL during local development to
+  // skip the Google sign-in step. Gated by `import.meta.env.DEV` so the
+  // flag is dead code in production builds.
+  const devBypass = import.meta.env.DEV && new URLSearchParams(window.location.search).has('dev');
+  if (!user && !devBypass) {
     return <LoginPage />;
   }
 

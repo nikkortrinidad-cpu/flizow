@@ -7455,7 +7455,12 @@
 
   /* `<InlineText>` helper — same affordance pattern as .inline-edit
      but generic enough that any callsite can drop it in for "click to
-     edit a string." Used by the Templates editor. Audit: templates M2. */
+     edit a string." Used by the Templates editor. The hover tint
+     used to sit at 9% opacity (matching the existing .inline-edit
+     pattern) but in user testing on Templates, that proved too
+     subtle for first-time users to notice. Bumped to a stronger
+     14% tint + a clearer ring so the affordance reads on first
+     hover. Audit: templates M2. */
   .inline-text-readonly {
     cursor: text;
     border-radius: 6px;
@@ -7464,8 +7469,8 @@
     transition: background 0.15s, box-shadow 0.15s;
   }
   .inline-text-readonly:hover {
-    background: color-mix(in srgb, var(--highlight) 9%, transparent);
-    box-shadow: 0 0 0 1px color-mix(in srgb, var(--highlight) 22%, transparent);
+    background: color-mix(in srgb, var(--highlight) 14%, transparent);
+    box-shadow: 0 0 0 1px color-mix(in srgb, var(--highlight) 35%, transparent);
   }
   .inline-text-readonly:focus-visible {
     outline: none;
@@ -11749,21 +11754,32 @@
     color: var(--text-muted);
     letter-spacing: 0.005em;
   }
-  /* Honest "you can read but not edit" badge sitting next to the
-     category chip. Wave 6 added it as a permanent fixture; the
-     M2 admin editor flips it conditional — shows on never-edited
-     templates, disappears the moment the user touches anything.
-     Audit: templates M2. */
-  .template-readonly-tag {
+  /* The Wave 6 "Read-only" tag is dead — the Wave 7 editor made it a
+     lie. Kept the rule for a beat in case any third-party CSS
+     references it; the live page no longer renders the tag.
+     Audit: templates M2 (commit 4 follow-on). */
+  .template-readonly-tag { display: none; }
+
+  /* "Click any field to edit" hint — shows on never-edited templates
+     so the first-time user discovers the gesture. Quiet enough to
+     ignore, visible enough to spot. Disappears the moment the user
+     makes any edit (controlled by `editedAt === null` in TSX).
+     Audit: templates M2 (commit 4 follow-on, in response to user
+     feedback that the editor wasn't discoverable). */
+  .template-edit-hint {
     margin-left: 8px;
-    padding: 2px 8px;
+    padding: 2px 10px;
     border-radius: 980px;
-    background: color-mix(in srgb, var(--status-soft) 14%, transparent);
-    color: var(--status-soft);
+    background: var(--highlight-soft);
+    color: var(--highlight);
     font-size: var(--fs-xs);
-    font-weight: 600;
-    letter-spacing: 0.04em;
-    text-transform: uppercase;
+    font-weight: 500;
+    letter-spacing: 0;
+  }
+  .template-edit-hint::before {
+    content: '↓ ';
+    margin-right: 2px;
+    font-weight: 700;
   }
   /* "Reset to default" lives next to the (now-hidden) Read-only tag
      once a built-in template has been edited. Tier-4 (text-only,

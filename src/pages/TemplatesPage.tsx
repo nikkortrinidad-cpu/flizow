@@ -610,18 +610,17 @@ function DetailPane({
                   ariaLabel="Template category"
                 />
               </span>
-              {/* Read-only tag is honest about the editor state: it
-                  shows on never-edited records (the "ships with the
-                  product" baseline) and disappears the moment the
-                  user touches anything. Drives clarity in the audit
-                  M2 sense — the surface no longer lies about its
-                  state in either direction. */}
-              {!hasBeenEdited && (
-                <span
-                  className="template-readonly-tag"
-                  title="No edits yet. Click any field to start customizing."
-                >
-                  Read-only
+              {/* Wave 6 added a "Read-only" tag here as honesty before
+                  the editor existed. With the Wave 7 editor live, the
+                  tag actively misleads — users read it and conclude
+                  they can't edit, when in fact every field is
+                  click-to-edit. Replaced with a small affordance
+                  hint that only appears on never-edited templates,
+                  so a first-time user sees the gesture is available
+                  and an experienced user doesn't get nagged. */}
+              {!hasBeenEdited && canEdit && (
+                <span className="template-edit-hint" aria-hidden="true">
+                  Click any field to edit
                 </span>
               )}
               {/* Reset-to-default only renders on built-in templates
