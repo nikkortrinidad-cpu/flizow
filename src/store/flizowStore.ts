@@ -4,6 +4,7 @@ import type {
   FlizowData, Client, Service, Task, Member, Contact, QuickLink, Note,
   Touchpoint, ActionItem, TaskComment, TaskActivity, TaskActivityKind,
   ManualAgendaItem, OnboardingItem, ColumnId, Priority, OpsTask,
+  TemplateRecord,
 } from '../types/flizow';
 import { ONBOARDING_TEMPLATES } from '../data/onboardingTemplates';
 import { TASK_POOLS } from '../data/taskPools';
@@ -52,6 +53,7 @@ function emptyData(): FlizowData {
     today: todayISO(),
     scheduleTaskMap: {},
     favoriteServiceIds: [],
+    templateOverrides: [],
   };
 }
 
@@ -132,6 +134,12 @@ function migrate(parsed: Partial<FlizowData>): FlizowData {
     favoriteServiceIds: Array.isArray(parsed.favoriteServiceIds)
       ? parsed.favoriteServiceIds
       : base.favoriteServiceIds,
+    // Older docs predate the templates admin editor — backfill empty.
+    // The resolver in data/templates.ts treats an empty overrides
+    // array as "render the five built-ins as-is."
+    templateOverrides: Array.isArray(parsed.templateOverrides)
+      ? parsed.templateOverrides
+      : base.templateOverrides,
   };
 }
 
@@ -514,6 +522,74 @@ class FlizowStore {
     } else {
       this.data.favoriteServiceIds = current.filter((id) => id !== serviceId);
     }
+    this.save();
+  }
+
+  // ── Template overrides (admin editor) ───────────────────────────────
+  //
+  // The five built-in templates live in src/data/builtInTemplates.ts as
+  // pristine defaults. Edits and user-created templates ride in
+  // data.templateOverrides. The resolver (src/data/templates.ts) overlays
+  // overrides onto built-ins at read time, so a fresh install with an
+  // empty array still surfaces the five built-ins as-is.
+  //
+  // Snapshot semantics: services seed their onboarding/phases at
+  // creation time and never re-read from a template after that. So an
+  // edit here never mutates an in-flight service — it only changes
+  // what NEW services started with this template will be seeded with.
+  // Audit: templates M2.
+
+  /** Upsert an override record. If `id` exists in templateOverrides
+   *  already, the entry is replaced; otherwise it's appended. The
+   *  caller passes the full record (not a patch) so the call site
+   *  is the single source of truth for the new shape. */
+  upsertTemplate(record: TemplateRecord) {
+    const next = { ...record, editedAt: new Date().toISOString() };
+    const idx = this.data.templateOverrides.findIndex((t) => t.id === record.id);
+    if (idx === -1) {
+      this.data.templateOverrides = [...this.data.templateOverrides, next];
+    } else {
+      const copy = this.data.templateOverrides.slice();
+      copy[idx] = next;
+      this.data.templateOverrides = copy;
+    }
+    this.save();
+  }
+
+  /** Drop an override for a built-in template, reverting it to the
+   *  pristine BUILT_IN_TEMPLATES record. No-op for user-created
+   *  templates (they have no default to roll back to — purgeTemplate
+   *  is the action for those). */
+  resetTemplate(id: string) {
+    this.data.templateOverrides = this.data.templateOverrides.filter(
+      (t) => t.id !== id,
+    );
+    this.save();
+  }
+
+  /** Soft-delete: hide from the picker, keep the record so existing
+   *  services can still resolve their template name. Works on both
+   *  built-in templates (which become an override row) and
+   *  user-created records (which already live in overrides). The
+   *  caller passes the resolved record (built-in or override) so we
+   *  don't lose its current shape on archive. */
+  archiveTemplate(record: TemplateRecord) {
+    this.upsertTemplate({ ...record, archived: true });
+  }
+
+  /** Bring an archived template back into the picker. Inverse of
+   *  archiveTemplate. */
+  restoreTemplate(record: TemplateRecord) {
+    this.upsertTemplate({ ...record, archived: false });
+  }
+
+  /** Hard-delete a user-created template. Built-in templates can't be
+   *  purged — call archiveTemplate instead. The caller is expected to
+   *  check `userCreated` first. */
+  purgeTemplate(id: string) {
+    this.data.templateOverrides = this.data.templateOverrides.filter(
+      (t) => t.id !== id,
+    );
     this.save();
   }
 

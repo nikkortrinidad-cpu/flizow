@@ -64,6 +64,53 @@ export type TemplateKey =
   | 'web-design-full-stack'
   | 'brand-refresh';
 
+/** Icon kinds for the Templates split-view pane. The set is closed for
+ *  v1 because the SVG sprites are inline in TemplatesPage; adding a new
+ *  icon means adding a sprite, not just a token. */
+export type TemplateIcon = 'web' | 'seo' | 'content' | 'brand' | 'paid';
+
+/** Phase definition inside a service template — drives the labelled
+ *  groupings inside the seeded onboarding block on Client Detail. */
+export interface TemplatePhase {
+  name: string;
+  subtasks: string[];
+}
+
+/** Onboarding checklists that hydrate a new service. `client` items
+ *  ride the from-client column, `us` items ride the from-us column. */
+export interface TemplateOnboarding {
+  client: string[];
+  us: string[];
+}
+
+/** Live shape of a template after the store overlays user edits onto
+ *  built-in defaults. Built-in records carry `userCreated: false`;
+ *  user-created records carry `userCreated: true`. The audit-flagged
+ *  Templates M2 admin editor writes/reads against this type. */
+export interface TemplateRecord {
+  id: string;
+  name: string;
+  category: string;
+  icon: TemplateIcon;
+  phasesSub: string;
+  phases: TemplatePhase[];
+  onboarding: TemplateOnboarding;
+  brief: string[];
+  /** True for user-created records; false for built-ins (or for
+   *  overrides that replace a built-in's content). Drives whether
+   *  "Reset to default" or "Delete" is offered. */
+  userCreated: boolean;
+  /** Soft-delete flag — hides from the picker but keeps the record so
+   *  existing services can still resolve their template name. Built-in
+   *  templates can be archived; user-created records can also be
+   *  hard-purged via a separate store action. */
+  archived: boolean;
+  /** ISO timestamp of the last edit. `null` on never-edited records,
+   *  which drives the "Read-only" badge presence on the Templates
+   *  hero. */
+  editedAt: string | null;
+}
+
 export type IndustryCategory =
   | 'saas'
   | 'ecommerce'
@@ -684,4 +731,10 @@ export interface FlizowData {
    *  click away. Order is insertion — newest star lands at the end of
    *  the strip; re-starring a service bumps it to the end. */
   favoriteServiceIds: string[];
+  /** Edits to built-in templates (overrides) plus any user-created
+   *  templates. Each entry is keyed by id; the resolver in
+   *  `data/templates.ts` overlays these onto BUILT_IN_TEMPLATES at
+   *  read time. Empty by default — a fresh install renders the five
+   *  built-in templates as-is. Audit: templates M2 (admin editor). */
+  templateOverrides: TemplateRecord[];
 }

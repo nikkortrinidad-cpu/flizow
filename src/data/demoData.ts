@@ -1110,5 +1110,9 @@ export function generateDemoData(): FlizowData {
     // on each service card is self-explanatory enough that the user
     // picks their own My Boards strip as they poke around.
     favoriteServiceIds: [],
+    // Demo loads also come in without template edits — the resolver
+    // overlays an empty array onto BUILT_IN_TEMPLATES, surfacing the
+    // five built-ins as-is. Audit: templates M2.
+    templateOverrides: [],
   };
 }

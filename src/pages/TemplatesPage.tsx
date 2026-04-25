@@ -1,139 +1,38 @@
 import { useLayoutEffect, useMemo, useState } from 'react';
 import { useRoute, navigate } from '../router';
+import { useFlizow } from '../store/useFlizow';
+import { resolveTemplates, isBuiltInTemplate } from '../data/templates';
+import type { TemplateRecord, TemplateIcon } from '../types/flizow';
 
 /**
  * Service Templates — reusable blueprints that hydrate a new service on a
- * client. Left pane lists the five templates; right pane opens the one
- * picked via the hash route (`#templates/{id}`). Mirrors the mockup's
+ * client. Left pane lists the templates; right pane opens the one picked
+ * via the hash route (`#templates/{id}`). Mirrors the mockup's
  * `.templates-split-wrapper` layout so the existing CSS does the lifting.
  *
- * Editing is out of scope for the first pass — the five templates are
- * hard-coded here (same content as the mockup). Once the admin UI lands,
- * this data moves into the store.
+ * Template data flows through `resolveTemplates(data.templateOverrides)`:
+ * the five built-in templates live in `data/builtInTemplates.ts` as
+ * pristine defaults; user edits + user-created records live in
+ * `flizowStore.data.templateOverrides`; the resolver overlays them
+ * before render. Inline editing lands in commit 2 of the templates M2
+ * sequence — this commit just plumbs the data path.
  */
 
-// ── Template data ────────────────────────────────────────────────────
+// `TemplateDef` was the old hardcoded shape. The live shape now lives
+// in src/types/flizow.ts as TemplateRecord. The local alias keeps the
+// rest of this file's signatures readable while we plumb the editor in.
+type TemplateDef = TemplateRecord;
+// Flag held for use once inline editing lands in commit 2.
+void isBuiltInTemplate;
 
-type PhaseDef = { name: string; subtasks: string[] };
-type ChecklistDef = { client: string[]; us: string[] };
-type TemplateDef = {
-  id: string;
-  name: string;
-  category: string;
-  icon: 'web' | 'seo' | 'content' | 'brand' | 'paid';
-  phases: PhaseDef[];
-  phasesSub: string;
-  onboarding: ChecklistDef;
-  brief: string[];
-};
-
-const TEMPLATES: TemplateDef[] = [
-  {
-    id: 'web-design-full-stack',
-    name: 'Web Design — Full Stack',
-    category: 'Web Development',
-    icon: 'web',
-    phasesSub: 'Auto-populate into the To Do column when onboarding completes',
-    phases: [
-      { name: 'Discovery', subtasks: ['Kickoff call scheduled', 'Stakeholder interviews complete', 'Requirements doc drafted', 'Competitor scan written up', 'Success metrics agreed'] },
-      { name: 'IA & Wireframes', subtasks: ['Sitemap draft', 'Key user flows mapped', 'Low-fidelity wireframes', 'Content model defined', 'Internal review signed off'] },
-      { name: 'Visual Design', subtasks: ['Moodboard approved', 'Design system foundations', 'Hero + core pages designed', 'Interactive prototype shared', 'Client sign-off'] },
-      { name: 'Development', subtasks: ['Environment + tooling set up', 'Component library built', 'Pages implemented', 'CMS integration', 'Animation + polish pass'] },
-      { name: 'QA', subtasks: ['Cross-browser test', 'Mobile responsiveness pass', 'Accessibility review', 'Performance audit', 'Bug triage resolved'] },
-      { name: 'Launch', subtasks: ['DNS + hosting cutover', 'Analytics + tag verification', 'Go-live checklist', 'Post-launch monitoring', 'Client handoff doc'] },
-    ],
-    onboarding: {
-      client: ['Domain registrar credentials', 'Hosting or CDN access', 'Brand kit — logos, fonts, colors', 'Content inventory spreadsheet'],
-      us: ['Provision staging environment', 'Create GitHub repository', 'Install Analytics & Tag Manager'],
-    },
-    brief: ['Goals', 'Target audience', 'Success metrics', 'Competitors', 'Must-keep features', 'Out of scope', 'Timeline milestones'],
-  },
-  {
-    id: 'seo-retainer-monthly',
-    name: 'SEO Retainer — Monthly',
-    category: 'SEO',
-    icon: 'seo',
-    phasesSub: 'Repeats every month after the first cycle',
-    phases: [
-      { name: 'Audit', subtasks: ['Technical crawl', 'Content inventory', 'Backlink profile', 'Competitor scan', 'Findings report'] },
-      { name: 'Keyword plan', subtasks: ['Seed list collected', 'Search volume pull', 'Intent + funnel grouping', 'Priority matrix', 'Client review'] },
-      { name: 'On-page', subtasks: ['Title & meta updates', 'Internal linking pass', 'Schema markup', 'Image optimization', 'Core Web Vitals fix list'] },
-      { name: 'Content calendar', subtasks: ['Topics prioritized', 'Briefs drafted', 'Assignments made', 'Editorial review', 'Publish queue set'] },
-      { name: 'Link building', subtasks: ['Target list built', 'Outreach sequences', 'Pitch drafting', 'Follow-up cadence', 'Placements tracked'] },
-      { name: 'Monthly report', subtasks: ['Rankings delta', 'Traffic analytics', 'Win highlights', 'Next month plan', 'Client readout'] },
-    ],
-    onboarding: {
-      client: ['Google Search Console access', 'Google Analytics 4 access', 'CMS admin access'],
-      us: ['Configure rank tracker', 'Run baseline audit', 'Map keyword universe'],
-    },
-    brief: ['Business goals', 'Target geographies', 'Priority keywords', 'Competitors to monitor', 'Reporting cadence'],
-  },
-  {
-    id: 'content-8-articles',
-    name: 'Content — 8 articles/mo',
-    category: 'Content',
-    icon: 'content',
-    phasesSub: 'One batch of 8 cards per month',
-    phases: [
-      { name: 'Topic planning', subtasks: ['Topic brainstorm', 'Keyword overlay', 'Priority sort', 'Briefs drafted', 'Client approval'] },
-      { name: 'Outlining', subtasks: ['SERP analysis', 'Outline draft', 'SME input', 'Revision pass', 'Writer handoff'] },
-      { name: 'Drafting', subtasks: ['First draft', 'Fact-check', 'Internal edit', 'SEO pass', 'Client-facing draft'] },
-      { name: 'Editing', subtasks: ['Copy edit', 'Voice & tone pass', 'Structure polish', 'Final proofread', 'Approval request'] },
-      { name: 'Design & imagery', subtasks: ['Hero image', 'In-article graphics', 'Social thumbnails', 'Alt text + captions', 'Image optimization'] },
-      { name: 'Publishing', subtasks: ['CMS upload', 'Meta fields', 'Internal links', 'Schedule post', 'Preview check'] },
-      { name: 'Distribution', subtasks: ['Social push', 'Newsletter clip', 'Repurposed snippets', 'Internal Slack share', 'UTM tracking'] },
-    ],
-    onboarding: {
-      client: ['Editorial voice & tone guide', 'CMS publishing access', 'Subject-matter expert intros'],
-      us: ['Set up editorial calendar', 'Load style guide', 'Prep AI-assisted outline workflow'],
-    },
-    brief: ['Audience personas', 'Tone & voice', 'Key topics', 'Distribution channels', 'SEO targets'],
-  },
-  {
-    id: 'brand-refresh',
-    name: 'Brand Refresh',
-    category: 'Brand',
-    icon: 'brand',
-    phasesSub: 'One-time engagement, roughly 8–12 weeks',
-    phases: [
-      { name: 'Discovery interviews', subtasks: ['Leadership sessions', 'Customer interviews', 'Internal survey', 'Competitive audit', 'Insights synthesis'] },
-      { name: 'Moodboards', subtasks: ['Direction sketches', 'Mood exploration', 'Typography study', 'Color exploration', 'Direction narrowed'] },
-      { name: 'Logo concepts', subtasks: ['Three directions explored', 'Variations developed', 'Refinement round', 'Client pick', 'Final polish'] },
-      { name: 'System design', subtasks: ['Color system', 'Type scale', 'Iconography', 'Illustration style', 'Motion principles'] },
-      { name: 'Guidelines', subtasks: ['Logo usage rules', 'Color rules', 'Type rules', 'Imagery style', "Do's and don'ts"] },
-      { name: 'Rollout kit', subtasks: ['Social templates', 'Email templates', 'Deck template', 'Swag mockups', 'Launch checklist'] },
-    ],
-    onboarding: {
-      client: ['Existing brand history & assets', 'Leadership interviews scheduled', 'Reference brands & inspirations'],
-      us: ['Set up moodboard workspace', 'Run naming audit (if applicable)', 'Draft brand positioning doc'],
-    },
-    brief: ['Brand positioning', 'Audience shift', 'Competitive landscape', 'Must-preserve elements', 'Rollout timeline'],
-  },
-  {
-    id: 'paid-media',
-    name: 'Paid Media',
-    category: 'Paid Media',
-    icon: 'paid',
-    phasesSub: 'Runs on a monthly optimize-and-report cadence after launch',
-    phases: [
-      { name: 'Account audit', subtasks: ['Structure review', 'Conversion setup check', 'Keyword waste scan', 'Creative audit', 'Findings doc'] },
-      { name: 'Account setup', subtasks: ['Campaign structure', 'Ad group build', 'Negative keywords', 'Audience setup', 'Budget pacing rules'] },
-      { name: 'Creative brief', subtasks: ['Messaging pillars', 'Audience hooks', 'Visual direction', 'CTA matrix', 'Internal approval'] },
-      { name: 'Launch', subtasks: ['Final QA', 'Pixel + conversion check', 'Soft launch', 'Performance baseline', 'Full ramp'] },
-      { name: 'Optimize', subtasks: ['Bid adjustments', 'Creative refresh', 'A/B tests', 'Audience refinement', 'Budget reallocation'] },
-      { name: 'Monthly report', subtasks: ['KPI summary', 'Winning creatives', 'Audience insights', 'Next month plan', 'Client readout'] },
-    ],
-    onboarding: {
-      client: ['Google Ads / Meta admin access', 'Pixel & server-side tagging confirmation', 'Brand assets & creative library', 'Monthly budget confirmation'],
-      us: ['Establish UTM taxonomy', 'Validate conversion tracking', 'Connect Looker dashboard'],
-    },
-    brief: ['Target CPA / ROAS', 'Audiences', 'Creative pillars', 'Exclusions', 'Budget pacing rules'],
-  },
-];
+// Live template list now flows from the store via resolveTemplates().
+// The pristine BUILT_IN_TEMPLATES live in src/data/builtInTemplates.ts;
+// edits + user-created records live in flizowStore.data.templateOverrides.
+// See `templates` const inside TemplatesPage below.
 
 // ── Icon sprites (inline so we don't depend on /icons.svg) ────────────
 
-function TemplateIcon({ kind }: { kind: TemplateDef['icon'] }) {
+function TemplateIcon({ kind }: { kind: TemplateIcon }) {
   const common = { fill: 'none', stroke: 'currentColor', strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const };
   switch (kind) {
     case 'web':
@@ -203,14 +102,24 @@ function ChevronDown({ className }: { className?: string }) {
 
 export function TemplatesPage() {
   const route = useRoute();
+  const { data } = useFlizow();
+  // Live template list: built-ins overlaid with any user edits +
+  // user-created records. Archived ones drop out of the picker.
+  // Memoised on `templateOverrides` so a typed character in the
+  // search box doesn't recompute the whole resolve.
+  const templates = useMemo(
+    () => resolveTemplates(data.templateOverrides),
+    [data.templateOverrides],
+  );
+
   // The list URL is `#templates`; the detail URL is `#templates/{id}`.
   // Fall back to the first template so the right pane is never empty.
   const routeId = route.params.id;
   const selectedId = useMemo(() => {
-    if (routeId && TEMPLATES.some((t) => t.id === routeId)) return routeId;
-    return TEMPLATES[0].id;
-  }, [routeId]);
-  const selected = TEMPLATES.find((t) => t.id === selectedId) ?? TEMPLATES[0];
+    if (routeId && templates.some((t) => t.id === routeId)) return routeId;
+    return templates[0]?.id;
+  }, [routeId, templates]);
+  const selected = templates.find((t) => t.id === selectedId) ?? templates[0];
 
   // Keep `body[data-active-view]` pinned to `templates` for the whole
   // time we're on this view. Mirrors ClientsSplit's trick — otherwise
@@ -228,18 +137,32 @@ export function TemplatesPage() {
   const [query, setQuery] = useState('');
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    if (!q) return TEMPLATES;
-    return TEMPLATES.filter(
+    if (!q) return templates;
+    return templates.filter(
       (t) => t.name.toLowerCase().includes(q) || t.category.toLowerCase().includes(q),
     );
-  }, [query]);
+  }, [query, templates]);
+
+  // Defensive empty-state — built-in templates can't be hard-deleted,
+  // but if all five are archived AND no user-created records exist
+  // we'd reach here with `selected` undefined. Show a one-line "no
+  // templates available" notice instead of crashing.
+  if (!selected) {
+    return (
+      <div className="view view-templates active">
+        <main style={{ padding: '64px 32px', maxWidth: 480, margin: '0 auto', color: 'var(--text-soft)' }}>
+          No templates available. Restore one from the archive or create a new template.
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div className="view view-templates active">
       <div className="templates-split-wrapper">
         <ListPane
           templates={filtered}
-          selectedId={selectedId}
+          selectedId={selectedId ?? ''}
           query={query}
           onQuery={setQuery}
         />
