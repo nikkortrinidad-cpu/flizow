@@ -7218,9 +7218,33 @@
     box-shadow: var(--shadow);
   }
   /* .hero-kebab / .kebab-menu / .kebab-menu-item rules used to sit
-     here (~62 lines). The hero uses `.hero-overflow` + `.tb-btn` +
-     `.tb-menu` (shared overflow-menu recipe) — none of the .kebab-*
-     classes have a React consumer. Deleted. Audit: client-detail M1. */
+     here (~62 lines). The hero overflow used to be a `.tb-btn` +
+     `.tb-menu` combination with one item; client-detail M5 swapped
+     it for a direct trash button. .hero-overflow is now just the
+     positioning anchor. */
+  .hero-overflow {
+    position: absolute;
+    top: 16px; right: 16px;
+  }
+  .hero-trash-btn {
+    width: 32px; height: 32px;
+    display: inline-flex; align-items: center; justify-content: center;
+    border-radius: 8px;
+    border: 1px solid transparent;
+    background: transparent;
+    color: var(--text-faint);
+    cursor: pointer;
+    transition: background 0.12s, border-color 0.12s, color 0.12s;
+  }
+  .hero-trash-btn:hover {
+    background: var(--status-fire-soft);
+    border-color: color-mix(in srgb, var(--status-fire) 25%, transparent);
+    color: var(--status-fire);
+  }
+  .hero-trash-btn:focus-visible {
+    outline: 2px solid var(--highlight);
+    outline-offset: 2px;
+  }
 
   /* Confirm dialog (reusable destructive confirmation) */
   .confirm-overlay {

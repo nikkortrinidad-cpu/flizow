@@ -316,31 +316,15 @@ function Hero({ client, am, onRequestDelete }: {
   const [nameDraft, setNameDraft] = useState(client.name);
   const nameInputRef = useRef<HTMLInputElement>(null);
 
-  // Overflow menu (⋯) — lives in the top-right of the hero. Today it
-  // only carries "Delete client…" but is plural in shape so we can drop
-  // Archive, Export, etc. in later without moving the affordance.
-  const [menuOpen, setMenuOpen] = useState(false);
-  useEffect(() => { setMenuOpen(false); }, [client.id]);
-  // Dismiss on outside click or Esc. We scope the outside-click check to
-  // pointerdown so button handlers still fire in the same gesture.
-  const menuRef = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    if (!menuOpen) return;
-    function onDown(e: PointerEvent) {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
-        setMenuOpen(false);
-      }
-    }
-    function onKey(e: KeyboardEvent) {
-      if (e.key === 'Escape') setMenuOpen(false);
-    }
-    window.addEventListener('pointerdown', onDown);
-    window.addEventListener('keydown', onKey);
-    return () => {
-      window.removeEventListener('pointerdown', onDown);
-      window.removeEventListener('keydown', onKey);
-    };
-  }, [menuOpen]);
+  // Hero used to carry a ⋯ overflow menu wired with menuOpen state,
+  // outside-click + Esc dismissal effects, and a single "Delete
+  // client…" item. ~30 lines of menu wiring for one destructive
+  // action — Apple HIG calls this "menu shape over-promising what it
+  // delivers." Replaced with a direct trash icon button + confirm
+  // dialog (the same ConfirmDangerDialog the menu item used to open).
+  // If Archive / Export / Duplicate land later, this can grow back
+  // into a menu without changing the affordance position. Audit:
+  // client-detail M5.
 
   // Keep the draft in sync when the user switches clients without leaving
   // edit mode (unlikely but cheap to guard against).
@@ -520,48 +504,25 @@ function Hero({ client, am, onRequestDelete }: {
         </div>
       </div>
 
-      {/* Overflow menu at the top-right of the hero. Kept tucked behind a
-          ⋯ so destructive actions aren't one click away — the user has to
-          open the menu, pick delete, then confirm in a dialog. Three
-          steps, matching Finder / Mail / most adult apps. */}
-      <div
-        ref={menuRef}
-        className="hero-overflow"
-        style={{ position: 'absolute', top: 16, right: 16 }}
+      {/* Direct trash button — used to be a ⋯ menu with one item.
+          Two clicks (button → confirm) instead of three (kebab → menu
+          item → confirm). The destructive guard still lives in
+          ConfirmDangerDialog upstream of this row. Audit:
+          client-detail M5. */}
+      <button
+        type="button"
+        className="hero-overflow hero-trash-btn"
+        aria-label="Delete client"
+        title="Delete client"
+        onClick={onRequestDelete}
       >
-        <button
-          type="button"
-          className="tb-btn"
-          aria-label="Client options"
-          aria-haspopup="menu"
-          aria-expanded={menuOpen}
-          onClick={() => setMenuOpen(v => !v)}
-          style={{
-            width: 32, height: 32, display: 'inline-flex',
-            alignItems: 'center', justifyContent: 'center',
-            borderRadius: 8, border: 'none', background: 'transparent',
-            color: 'var(--text-muted)', cursor: 'pointer',
-          }}
-        >
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-            <circle cx="5" cy="12" r="1.8" />
-            <circle cx="12" cy="12" r="1.8" />
-            <circle cx="19" cy="12" r="1.8" />
-          </svg>
-        </button>
-        <div className={`tb-menu${menuOpen ? ' open' : ''}`} role="menu">
-          <div
-            className="tb-menu-item danger"
-            role="menuitem"
-            onClick={() => {
-              setMenuOpen(false);
-              onRequestDelete();
-            }}
-          >
-            Delete client…
-          </div>
-        </div>
-      </div>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <polyline points="3 6 5 6 21 6" />
+          <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+          <path d="M10 11v6M14 11v6" />
+          <path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2" />
+        </svg>
+      </button>
     </div>
   );
 }
