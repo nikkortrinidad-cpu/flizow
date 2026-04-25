@@ -734,20 +734,29 @@ function Breadcrumb({
 
   // Sync draft when the service id changes (user navigated to a different
   // board mid-edit, unlikely but cheap to guard).
+  // Reset local UI state only when the user navigates to a different
+  // board. Depending on `service.name` used to clobber an in-progress
+  // rename draft if a teammate renamed the same service mid-edit —
+  // silent data loss, which trips the Forgiveness principle. Board
+  // navigation (id change) is still a clean slate, which is what the
+  // user expects. Audit: board L1.
   useEffect(() => {
     setDraft(service.name);
     setEditing(false);
     setMembersOpen(false);
     setSettingsOpen(false);
-  }, [service.id, service.name]);
+  }, [service.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (!editing) return;
-    const t = window.setTimeout(() => {
+    // rAF defers focus past the current render commit, so the input
+    // exists in the DOM by the time we reach for it. Used to be a
+    // raw setTimeout(20) — an undocumented guess. Audit: board L2.
+    const raf = requestAnimationFrame(() => {
       inputRef.current?.focus();
       inputRef.current?.select();
-    }, 20);
-    return () => window.clearTimeout(t);
+    });
+    return () => cancelAnimationFrame(raf);
   }, [editing]);
 
   // Outside-click + Esc for the two popovers in this subtree: the
@@ -1279,10 +1288,11 @@ function WipLimitEditor({
   const popRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    // 60ms delay so the button's click-outside doesn't immediately
-    // close us before we've rendered our own listeners.
-    const t = setTimeout(() => inputRef.current?.select(), 60);
-    return () => clearTimeout(t);
+    // rAF defers the select past the commit so the input is in the
+    // DOM by the time we reach for it. Replaces a magic
+    // setTimeout(60) whose 60ms was never explained. Audit: board L2.
+    const raf = requestAnimationFrame(() => inputRef.current?.select());
+    return () => cancelAnimationFrame(raf);
   }, []);
 
   useEffect(() => {
