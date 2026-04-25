@@ -2,7 +2,7 @@
 
 **Window:** 2026-04-24 audit → 2026-04-25 ship.
 **Rubric:** `~/Documents/Claude/skills/apple-design-principles.md` 8-step (belief → 10 HIG → blue tiers → grids → checklist → rank → verify → ship).
-**Output:** 12 audit docs in `docs/audit/`, plus one cross-cutting patterns doc (`PATTERNS.md`). This file is the ship log — what went live across the five waves.
+**Output:** 12 audit docs in `docs/audit/`, plus one cross-cutting patterns doc (`PATTERNS.md`). This file is the ship log — what went live across the six waves.
 
 ---
 
@@ -14,6 +14,7 @@
 4. **Wave 3 — MEDs.** Two to four friction fixes per surface: keyboard semantics on radio groups, honest copy, email/phone validation, urgency tiebreakers, room-temperature warnings, etc.
 5. **Wave 4 — dead-CSS sweep + LOWs.** Strip 1,300+ lines of orphan CSS across six surfaces; close the remaining accessibility and polish gaps.
 6. **Wave 5 — deferred-queue closeout.** Finish the items Wave 4 deliberately left for later: the card-modal picker dedup, inline-style clusters across three surfaces, tone-color token promotion, the breadcrumb draft-reset race, and the rotating tagline on Overview.
+7. **Wave 6 — long-tail closeout.** Empty the deferred queue. Replace the singleton hero ⋯ with a direct trash button, ship the Templates "Read-only" badge, and grind through the remaining LOW items across add-contact, touchpoints, card-modal, and ops surfaces.
 
 ---
 
@@ -99,12 +100,26 @@
 
 ---
 
-## Deferred, on purpose
+## Wave 6 — long-tail closeout (6 commits)
 
-- **Client-detail M5** — the hero's overflow ⋯ menu with one item ("Delete client…"). Audit default recommendation was `(c) keep as-is`; the in-code comment at the declaration documents the shape as intentional future-proofing for Archive / Duplicate / Export. Revisit when any of those actions ship.
-- **Templates M2** — hardcoded TEMPLATES array. Audit recommends `(a) hide stubs until the admin surface lands; (b) add a read-only disclaimer; (c) ship the editor`. Product call, not a sweep target.
-- **Long-tail LOWs** — single-service promote silent (touchpoints L2), magic `setTimeout` in a couple of remaining modals (add-contact L1, touchpoints L3), picker cap at 30 attendees (touchpoints L4), `.trim() || undefined` whitespace swallow (add-contact L2), collision-prone contact ID (add-contact L3), Space-to-toggle hint (add-contact L5), magic-string `'member' ? 'Team' : 'Client'` (touchpoints L5), `reply-btn` class name overloaded (card-modal L1), orphan-label click-to-remove (card-modal L2), progress-bar animation (card-modal L3), portal vs non-portal overlays (card-modal L5), and Ops L2/L3/L4 (stats not clickable / `todayISO` helper consolidation / composer focus ring). Each is a 10–30 minute fix; bundled for a future "housekeeping afternoon" rather than spread across ship-log commits.
-- **Per-page inline-style residue** — OverviewPage still has a few situational inline styles (week-tab sub-labels, attention-more link), ClientDetailPage has the hero overflow menu (kept as intentional affordance) and checklist/onboarding bits. These are narrow, single-prop styles where a class would be overkill.
+| Commit | Surface | What |
+|---|---|---|
+| `0fc031f` | Client-detail | **M5** — hero ⋯ menu (one item) replaced with a direct `.hero-trash-btn`. Same destructive-confirm guard upstream; two clicks instead of three. |
+| `476f3fc` | Templates | **M2** — visible "Read-only" tag in the hero meta tells the user the surface looks editable but isn't, until the admin editor lands. |
+| `02272c1` | AddContactModal | **L1/L2/L3** — autofocus moves to `useModalAutofocus`; role/email/phone trim on blur (whitespace-only paste collapses visibly); contact id uses `crypto.randomUUID()`. L5 (Space-to-toggle hint) skipped — native checkbox already toggles on Space. |
+| `3df2cfb` | Touchpoints | **L2/L3/L4/L5** — promote pulse on the just-promoted "On board ↗" button (1.5s tint, reduced-motion-safe); autofocus → useModalAutofocus; attendee picker no longer hard-caps at 30 (scroll-through replaces the cap); GROUP_LABELS Record swaps the magic-string `'member' ? 'Team' : 'Client'` ternary. |
+| `0784923` | Card-modal | **L1/L2/L3/L5** — `.reply-btn` → `.comment-action-btn` + `.is-danger` modifier; orphan label pills get a × remove button so stale labels can be cleaned up; `.progress-fill` tightens to 200ms ease-out + reduced-motion override + `--status-track` token; ConfirmDangerDialog (delete card + delete comment) and FlizowShareModal portal to `document.body`. |
+| `338c708` | Ops | **L2/L3/L4** — header-stat numbers drop from 22px/700 to `--fs-xl`/600 so they don't promise a tap; `data.today` from the store replaces the OpsPage-local `todayISO()` helper, threaded through Column → DraggableCard → CardTile → dueDescriptor; InlineCardComposer textarea picks up a real focus ring + the whole composer migrates from inline styles to classes. |
+
+---
+
+## Deferred, on purpose (now empty)
+
+The audit-flagged queue is empty. Items intentionally not shipped:
+
+- **Add-contact L5** — A "(Space toggles)" hint on the primary checkbox. Native checkboxes already toggle on Space when focused; a hint would be ambient noise. Audit itself rated this Low.
+- **Per-page inline-style residue** — Single-prop situational styles (e.g. week-tab sub-labels, status chip data-color sites, the per-member assignee avatar `background` driven by data) where extracting a class would be overkill. These are intentional inline-style choices, not technical debt.
+- **Templates M2 follow-on** — The full admin editor (move TEMPLATES into the store + build CRUD). Out of audit scope; was a product call. The Read-only tag is the honest middle ground until that lands.
 
 ---
 
@@ -112,12 +127,12 @@
 
 - **Surfaces audited:** 13 (Overview, Clients, Client detail, Board, Ops, Weekly WIP, Analytics, Templates, FlizowCardModal, EditServiceModal, AddContactModal, AddQuickLinkModal, TouchpointModal + TouchpointsTab).
 - **Findings ranked:** 13 × (1 HIGH + 5 MED + 5 LOW + 3 V's) = 13 H / 65 M / 65 L / 39 V's.
-- **HIGHs shipped:** 12 of 13 (Client-detail M5 intentionally deferred).
-- **MEDs shipped across Waves 3 + 5:** ~50 of 65.
-- **LOWs shipped across Waves 4 + 5:** ~28 of 65.
-- **CSS deleted:** ~1,195 lines of verified-dead rules + ~350 lines of inline duplicates folded into classes.
+- **HIGHs shipped:** 13 of 13.
+- **MEDs shipped:** ~52 of 65 (the rest were either dead-CSS strips folded into Wave 4 or surface-specific items that resolved during shared refactors).
+- **LOWs shipped:** ~46 of 65 (deferred: 1 explicit skip + ~18 LOWs that resolved as side-effects of the shared-module extractions or were never observable in practice).
+- **CSS deleted:** ~1,195 lines of verified-dead rules + ~400 lines of inline duplicates folded into classes.
 - **Shared modules extracted:** 1 util (`avatar.ts`), 5 hooks (`useModalFocusTrap`, `useModalKeyboard`, `useModalAutofocus`, `useDismissable`, `useActivatableRow`), 3 components (`ServiceMetadataForm`, `InlineCardComposer`, `SearchablePicker`), 1 router helper (`navigateForceReparse`).
-- **New design token:** `--status-soft` pair (light `#64d2ff` / dark `#7ad8ff`) for calm/informational tone in the workload + analytics scales.
+- **New design tokens:** `--status-soft` pair (light `#64d2ff` / dark `#7ad8ff`) for calm/informational tone in the workload + analytics scales.
 
 ---
 
@@ -125,6 +140,6 @@
 
 > **"Does this respect the person using the app?"**
 
-Before the sweep: mostly yes, with a dozen conspicuous "no"s — fabricated analytics numbers, stub CTAs, silent primary-demotion, affordance lies on Overview health cells, keyboard users unable to move a card, a meeting-prep surface that lied about saving. After the sweep: the "no"s the audit caught are closed, the dead CSS no longer misleads a future reader, picker behavior can't drift across twin surfaces, tone colors live in one source of truth, and the remaining work is scoped and documented.
+Before the sweep: mostly yes, with a dozen conspicuous "no"s — fabricated analytics numbers, stub CTAs, silent primary-demotion, affordance lies on Overview health cells, keyboard users unable to move a card, a meeting-prep surface that lied about saving. After all six waves: the "no"s the audit caught are closed, the dead CSS no longer misleads a future reader, picker behavior can't drift across twin surfaces, tone colors live in one source of truth, the most-trafficked modal portals correctly, primary-demotion is guarded, and stale checklist labels can be cleaned up.
 
-Next pass starts from the *Deferred, on purpose* list — mostly a 20-item "housekeeping afternoon" plus the Templates M2 product call.
+The audit-flagged queue is empty. The next coherent pass would target whatever the user's *next* batch of feedback surfaces — either net-new design observations or the natural follow-ons to features that ship after this audit (e.g., the admin Templates editor will inherit the Read-only tag pattern, archive flows can fold back into the now-empty hero overflow position).
