@@ -10116,7 +10116,10 @@
     background: var(--bg-elev);
   }
   .ops-header-eyebrow {
-    font-size: 11px; font-weight: 500; color: var(--text-muted);
+    /* Bumped from 11px to --fs-xs (12px) to match the house default
+       eyebrow size elsewhere. 11px is WCAG-OK for uppercase labels
+       but out of step with the rest of the app. Audit: ops L5. */
+    font-size: var(--fs-xs); font-weight: 500; color: var(--text-muted);
     text-transform: uppercase; letter-spacing: 0.08em;
     margin: 0 0 6px;
   }
@@ -11005,24 +11008,30 @@
     line-height: 1.3;
     font-variant-numeric: tabular-nums;
   }
-  .wip-agenda-status[data-status="blocked"]     { background: color-mix(in srgb, #d93025 14%, transparent); color: #c92a1e; }
+  /* Agenda-status pill colors used to hardcode ten hex values in
+     light mode plus five dark-mode overrides. Switched to the shared
+     --status-* token family where the tones map cleanly — blocked/
+     overdue share the fire red, review shares the risk amber, new
+     shares the track green. due-this / due-next / manual stay on
+     their own hex pairs because they aren't an operational tone
+     (they're cadence hints and a manual-content marker) and pulling
+     them into the status family would overload it. Audit: wip L2. */
+  .wip-agenda-status[data-status="blocked"]     { background: color-mix(in srgb, var(--status-fire) 14%, transparent); color: var(--status-fire); }
   /* CRITICAL is hotter than BLOCKED on purpose — it tracks severity, not
-     stuckness. Matches --status-fire already used for critical severity
-     on Overview and Client Detail. */
+     stuckness. Shares --status-fire with Overview/Client Detail. */
   .wip-agenda-status[data-status="critical"]    { background: color-mix(in srgb, var(--status-fire) 14%, transparent); color: var(--status-fire); }
-  .wip-agenda-status[data-status="overdue"]     { background: color-mix(in srgb, #d93025 12%, transparent); color: #c92a1e; }
-  .wip-agenda-status[data-status="review"]      { background: color-mix(in srgb, #b54708 14%, transparent); color: #b54708; }
+  .wip-agenda-status[data-status="overdue"]     { background: color-mix(in srgb, var(--status-fire) 12%, transparent); color: var(--status-fire); }
+  .wip-agenda-status[data-status="review"]      { background: color-mix(in srgb, var(--status-risk) 14%, transparent); color: var(--status-risk); }
   .wip-agenda-status[data-status="due-this"]    { background: color-mix(in srgb, #0b84ff 14%, transparent); color: #0a6edb; }
   .wip-agenda-status[data-status="due-next"]    { background: color-mix(in srgb, #5e5ce6 14%, transparent); color: #5e5ce6; }
   .wip-agenda-status[data-status="on-track"]    { background: color-mix(in srgb, var(--text) 6%, transparent); color: var(--text-muted); }
-  .wip-agenda-status[data-status="new"]         { background: color-mix(in srgb, #22a559 14%, transparent); color: #15833f; }
+  .wip-agenda-status[data-status="new"]         { background: color-mix(in srgb, var(--status-track) 14%, transparent); color: var(--status-track); }
   .wip-agenda-status[data-status="manual"]      { background: color-mix(in srgb, #8e4ec6 14%, transparent); color: #8e4ec6; }
-  :root[data-theme="dark"] .wip-agenda-status[data-status="blocked"],
-  :root[data-theme="dark"] .wip-agenda-status[data-status="overdue"] { color: #ff6961; }
-  :root[data-theme="dark"] .wip-agenda-status[data-status="review"]  { color: #ffb266; }
+  /* blocked/overdue/review/new now inherit dark-mode color from the
+     token switch at :root[data-theme="dark"]. Only due-this/due-next
+     still need a dark override because they're on raw hex. */
   :root[data-theme="dark"] .wip-agenda-status[data-status="due-this"] { color: #5eadff; }
   :root[data-theme="dark"] .wip-agenda-status[data-status="due-next"] { color: #a2a0ff; }
-  :root[data-theme="dark"] .wip-agenda-status[data-status="new"]      { color: #7fdda0; }
   .wip-agenda-card-title {
     font-size: var(--fs-sm); color: var(--text);
     letter-spacing: -0.005em;
@@ -11039,7 +11048,7 @@
   .wip-agenda-card-row:hover .wip-agenda-remove,
   .wip-agenda-card-row:focus-within .wip-agenda-remove { opacity: 1; }
   .wip-agenda-remove:hover {
-    background: color-mix(in srgb, #d93025 14%, transparent); color: #c92a1e;
+    background: var(--status-fire-soft); color: var(--status-fire);
   }
 
   /* Flat rows for new-clients and manual items (no service layer) */
