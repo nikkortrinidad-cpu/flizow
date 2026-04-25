@@ -2459,11 +2459,16 @@ function AddContactModal({ clientId, existingPrimary, contact, onClose }: {
         <div className="wip-modal-body">
           <label className="wip-field">
             <span className="wip-field-label">Name</span>
+            {/* maxLength caps are here to prevent the Client detail
+                contact row from overflowing its layout when someone
+                pastes a 500-char string. Generous limits that won't
+                block real names/roles. Audit: add-contact-modal L4. */}
             <input
               ref={nameRef}
               type="text"
               className="wip-field-input"
               value={name}
+              maxLength={120}
               onChange={(e) => { setName(e.target.value); if (nameError) setNameError(false); }}
               placeholder="e.g. Jamie Chen"
               style={nameError ? { borderColor: 'var(--status-fire)' } : undefined}
@@ -2491,6 +2496,7 @@ function AddContactModal({ clientId, existingPrimary, contact, onClose }: {
               type="text"
               className="wip-field-input"
               value={role}
+              maxLength={80}
               onChange={(e) => setRole(e.target.value)}
               placeholder="e.g. VP Marketing"
             />
@@ -2503,6 +2509,7 @@ function AddContactModal({ clientId, existingPrimary, contact, onClose }: {
                 type="email"
                 className="wip-field-input"
                 value={email}
+                maxLength={200}
                 onChange={(e) => { setEmail(e.target.value); if (emailError) setEmailError(false); }}
                 placeholder="jamie@acme.com"
                 style={emailError ? { borderColor: 'var(--status-fire)' } : undefined}
@@ -2525,6 +2532,7 @@ function AddContactModal({ clientId, existingPrimary, contact, onClose }: {
                 type="tel"
                 className="wip-field-input"
                 value={phone}
+                maxLength={40}
                 onChange={(e) => { setPhone(e.target.value); if (phoneError) setPhoneError(false); }}
                 placeholder="+1 555 1234"
                 style={phoneError ? { borderColor: 'var(--status-fire)' } : undefined}

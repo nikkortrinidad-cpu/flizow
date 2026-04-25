@@ -791,8 +791,13 @@ function nextMeetingLabel(todayISO: string): string {
   // Mondays 10:00 is a reasonable default until we wire meeting cadence.
   const today = new Date(todayISO);
   if (Number.isNaN(today.getTime())) return 'Monday · 10:00 AM';
-  const dow = today.getDay(); // 0 = Sun
-  const daysToMon = dow === 1 ? 7 : (8 - dow) % 7 || 7;
+  const dow = today.getDay(); // 0 = Sun, 1 = Mon, … 6 = Sat
+  // If today is Monday we want next Monday (7 days). Otherwise the
+  // number of days until Monday is (8 - dow) % 7, which is always
+  // >= 1 for dow in 2..6 and 1 for dow = 0 (Sunday). The earlier
+  // `|| 7` tail was dead — it only triggered at dow = 1, which the
+  // outer ternary already handled. Audit: wip L5.
+  const daysToMon = dow === 1 ? 7 : (8 - dow) % 7;
   const next = new Date(today);
   next.setDate(today.getDate() + daysToMon);
   return next.toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' }) + ' · 10:00 AM';

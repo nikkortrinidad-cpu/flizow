@@ -9931,8 +9931,11 @@
     letter-spacing: -0.02em;
     line-height: 1;
   }
-  .ops-header-stat--blocked strong { color: #c92a1e; }
-  :root[data-theme="dark"] .ops-header-stat--blocked strong { color: #ff6961; }
+  /* Use the canonical --status-fire token (which already switches at
+     :root[data-theme="dark"]) instead of the raw hex pair that used
+     to live here. One source of truth for the app's fire/overdue red.
+     Audit: ops L1. */
+  .ops-header-stat--blocked strong { color: var(--status-fire); }
   @media (max-width: 720px) {
     .ops-header-bar { flex-direction: column; align-items: flex-start; padding: 20px 24px 16px; }
     .ops-header-stats { gap: 20px; }
