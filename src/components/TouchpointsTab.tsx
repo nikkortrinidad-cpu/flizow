@@ -555,6 +555,11 @@ function ActionItemRow({ item, members, clientServices, store, todayISO }: {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [promoteOpen, setPromoteOpen] = useState(false);
   const promoteWrapRef = useRef<HTMLDivElement>(null);
+  // Tracks whether the "On board ↗" button just appeared as a result
+  // of *this* promote click. The CSS uses .just-promoted to run a
+  // brief highlight pulse so a rapid-clicker sees the state change
+  // instead of a silent label flip. Audit: touchpoints L2.
+  const [justPromoted, setJustPromoted] = useState(false);
 
   // If the action item has a promoted kanban card, delete surfaces that
   // fact in the confirm body so the user isn't surprised the card survives.
@@ -588,10 +593,19 @@ function ActionItemRow({ item, members, clientServices, store, todayISO }: {
   // the feedback. Keeps the user's attention on the meeting they're
   // reviewing. They can click the ↗ later if they want to visit the
   // card.
+  // Light a brief flash on the "On board ↗" button so a rapid-clicker
+  // sees the state change. The flag flips back to false after 1.5s
+  // (matches the CSS animation duration). Audit: touchpoints L2.
+  const flashJustPromoted = () => {
+    setJustPromoted(true);
+    window.setTimeout(() => setJustPromoted(false), 1500);
+  };
+
   const onPromoteClick = () => {
     if (clientServices.length === 0) return; // guarded below — button is disabled
     if (clientServices.length === 1) {
       store.promoteActionItem(item.id, clientServices[0].id);
+      flashJustPromoted();
       return;
     }
     setPromoteOpen(v => !v);
@@ -600,6 +614,7 @@ function ActionItemRow({ item, members, clientServices, store, todayISO }: {
   const onPickService = (serviceId: string) => {
     setPromoteOpen(false);
     store.promoteActionItem(item.id, serviceId);
+    flashJustPromoted();
   };
 
   const onOpenPromotedCard = () => {
@@ -646,7 +661,7 @@ function ActionItemRow({ item, members, clientServices, store, todayISO }: {
         {item.promotedCardId ? (
           <button
             type="button"
-            className="meeting-action-promote"
+            className={`meeting-action-promote${justPromoted ? ' just-promoted' : ''}`}
             title="Open the kanban card this action item became"
             onClick={onOpenPromotedCard}
             style={{ opacity: 0.85 }}

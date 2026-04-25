@@ -8344,6 +8344,21 @@
   /* Button-shaped "On board ↗" affordance — same hover-reveal as the
      promote button so the row stays calm until the user reaches for it. */
   .meeting-action:hover .meeting-action-promote[title*="kanban card"] { opacity: 1; }
+  /* Brief pulse when the user just promoted this action item, so a
+     rapid-clicker sees the state change instead of a silent label
+     flip. Tier-3 highlight tint, 1.5s decay. Audit: touchpoints L2. */
+  .meeting-action-promote.just-promoted {
+    animation: meeting-promote-pulse 1.5s ease-out 1;
+    opacity: 1;
+  }
+  @keyframes meeting-promote-pulse {
+    0%   { background: var(--highlight-soft); color: var(--highlight); }
+    60%  { background: var(--highlight-soft); color: var(--highlight); }
+    100% { background: transparent; color: inherit; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .meeting-action-promote.just-promoted { animation: none; }
+  }
 
   /* Service picker dropdown for multi-service clients. Top tightens up
      so it hangs right under the promote button instead of floating. */

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import type { Touchpoint, TouchpointKind, Member, Contact, Client } from '../types/flizow';
 import { flizowStore } from '../store/flizowStore';
 import { useModalFocusTrap } from '../hooks/useModalFocusTrap';
+import { useModalAutofocus } from '../hooks/useModalAutofocus';
 import { initialsOf, avatarColor } from '../utils/avatar';
 
 /**
@@ -44,6 +45,16 @@ const KIND_OPTIONS: { value: TouchpointKind; label: string }[] = [
   { value: 'inperson', label: 'In person' },
 ];
 
+/** Group label for the attendee picker. Typed Record so a future
+ *  third group (e.g. 'partner', 'vendor') gets a TS error at the
+ *  declaration site instead of falling through the old
+ *  `c.group === 'member' ? 'Team' : 'Client'` ternary. Audit:
+ *  touchpoints L5. */
+const GROUP_LABELS: Record<'member' | 'contact', string> = {
+  member: 'Team',
+  contact: 'Client',
+};
+
 export function TouchpointModal({
   client, touchpoint, defaultScheduled = false, members, contacts, onClose,
 }: Props) {
@@ -81,16 +92,11 @@ export function TouchpointModal({
   const modalRef = useRef<HTMLDivElement>(null);
   useModalFocusTrap(modalRef);
 
-  // Autofocus + select on mount. In edit mode select-all because the
-  // user is here to change something; in add mode the field is empty
-  // so select-all is a no-op but still fine.
-  useEffect(() => {
-    const t = window.setTimeout(() => {
-      topicRef.current?.focus();
-      if (isEdit) topicRef.current?.select();
-    }, 80);
-    return () => window.clearTimeout(t);
-  }, [isEdit]);
+  // Autofocus the topic input. Edit mode select-all so the user can
+  // re-type immediately; add mode no-op because the field is empty.
+  // Used to be a hand-rolled setTimeout(80); the shared hook owns
+  // the timing now. Audit: touchpoints L3.
+  useModalAutofocus(topicRef, { select: isEdit });
 
   // Escape / Cmd+Enter. Esc closes, Cmd+Enter saves. When the attendee
   // picker is open, Escape belongs to the picker (see effect below),
@@ -364,8 +370,15 @@ export function TouchpointModal({
                 />
               </div>
               {pickerOpen && candidates.length > 0 && (
+                // List used to hard-cap at 30 entries with a "keep
+                // typing to narrow N more" line. On a 40-contact
+                // client the bottom 10 were genuinely unreachable
+                // unless the user typed something. Renders all
+                // candidates now and lets the scrollbar (already on
+                // the container) handle the overflow. Audit:
+                // touchpoints L4.
                 <div className="tb-menu open attendee-picker-menu" role="listbox" style={{ top: 46, left: 0, right: 0, minWidth: 0, maxHeight: 260, overflowY: 'auto' }}>
-                  {candidates.slice(0, 30).map(c => (
+                  {candidates.map(c => (
                     <div
                       key={c.id}
                       className="tb-menu-item attendee-picker-item"
@@ -387,15 +400,10 @@ export function TouchpointModal({
                         <span className="attendee-picker-role">{c.role}</span>
                       )}
                       <span className="attendee-picker-group">
-                        {c.group === 'member' ? 'Team' : 'Client'}
+                        {GROUP_LABELS[c.group]}
                       </span>
                     </div>
                   ))}
-                  {candidates.length > 30 && (
-                    <div className="attendee-picker-more">
-                      Keep typing to narrow {candidates.length - 30} more.
-                    </div>
-                  )}
                 </div>
               )}
             </div>
