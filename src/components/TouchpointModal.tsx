@@ -283,7 +283,22 @@ export function TouchpointModal({
               placeholder="e.g. Weekly sync, Q2 roadmap review"
               style={topicError ? { borderColor: 'var(--status-fire)' } : undefined}
               aria-invalid={topicError || undefined}
+              aria-describedby={topicError ? 'touchpoint-topic-error' : undefined}
             />
+            {/* Live region for empty-topic validation. Matches the
+                same role="alert" pattern AddContactModal uses — a
+                keyboard/SR user hitting Save on an empty form now
+                hears "Topic is required" instead of the red border
+                flashing silently. Audit: touchpoints M5. */}
+            {topicError && (
+              <span
+                id="touchpoint-topic-error"
+                role="alert"
+                style={{ fontSize: 'var(--fs-sm)', color: 'var(--status-fire)', marginTop: 4 }}
+              >
+                Topic is required.
+              </span>
+            )}
           </label>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
