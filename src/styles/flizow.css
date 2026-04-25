@@ -1447,6 +1447,10 @@
     max-height: 100%;
     transition: background 0.3s, border-color 0.3s;
   }
+  /* Drop-target highlight while a card is dragged over this column.
+     Replaces an inline `style={{ borderColor: var(--hover-blue) }}`
+     so the rule lives with its neighbours. Audit: board M5. */
+  .column.is-over { border-color: var(--hover-blue); }
 
   .column-header {
     padding: 20px 20px 14px;
@@ -1834,6 +1838,114 @@
   /* Inside swimlanes, let columns shrink vertically — the row itself
      limits the per-cycle scope so columns stay shorter than the flat layout. */
   .swimlane-body .column { max-height: none; }
+
+  /* Dashed placeholder shown when the filter/search empties every
+     swimlane. Replaces an inline-styled div in BoardPage.
+     Audit: board M5. */
+  .swimlane-empty-state {
+    margin: var(--sp-2xl) var(--sp-4xl);
+    padding: var(--sp-2xl) var(--sp-xl);
+    border: 1px dashed var(--hairline-soft);
+    border-radius: 12px;
+    color: var(--text-faint);
+    font-size: var(--fs-sm);
+    text-align: center;
+    background: var(--bg-elev);
+  }
+
+  /* Board-page empty state ("Pick a service to open its board" /
+     "Service not found"). Swapped from a stack of 4 inline-style
+     props per child into a single-class anchor. Audit: board M5. */
+  .board-empty-state {
+    padding: 64px 32px;
+    max-width: 640px;
+    margin: 0 auto;
+  }
+  .board-empty-state-eyebrow {
+    font-size: var(--fs-xs);
+    color: var(--text-soft);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+  .board-empty-state-title {
+    font-size: var(--fs-3xl);
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    margin: 0 0 12px;
+    color: var(--text);
+  }
+  .board-empty-state-body {
+    font-size: var(--fs-base);
+    color: var(--text-muted);
+    line-height: var(--lh-relaxed);
+    margin-bottom: var(--sp-2xl);
+  }
+
+  /* Archived-cards modal list rows (~130 lines of inline styles
+     collapsed). Covers the row shell, assignee avatar variants,
+     title/meta text stack, and the permanent-delete button.
+     Audit: board M5. */
+  .archived-card-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    border-radius: 10px;
+    border: 1px solid var(--hairline-soft);
+    background: var(--bg-elev);
+  }
+  .archived-card-avatar {
+    width: 26px; height: 26px;
+    border-radius: 50%;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-weight: 700;
+    flex: 0 0 26px;
+  }
+  .archived-card-avatar.has-owner { font-size: 10px; }
+  .archived-card-avatar.no-owner {
+    background: var(--bg-faint);
+    color: var(--text-faint);
+    font-size: 12px;
+  }
+  .archived-card-open {
+    display: block; width: 100%;
+    background: transparent; border: 0;
+    padding: 0; margin: 0;
+    text-align: left;
+    font: inherit; color: var(--text);
+    cursor: pointer;
+  }
+  .archived-card-title {
+    font-size: var(--fs-base);
+    font-weight: 500;
+    color: var(--text);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .archived-card-meta {
+    font-size: var(--fs-xs);
+    color: var(--text-faint);
+    margin-top: 2px;
+  }
+  .archived-card-delete {
+    width: 32px; height: 32px;
+    border: 1px solid var(--hairline-soft);
+    background: var(--bg-elev);
+    color: var(--status-fire);
+    cursor: pointer;
+    border-radius: 8px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 32px;
+    transition: background 0.12s, border-color 0.12s;
+  }
+  .archived-card-delete:hover {
+    background: var(--status-fire-soft);
+    border-color: var(--status-fire);
+  }
   /* Legacy named-swimlane tints (`data-swimlane-id="this-month"` and
      `"backlog"`) removed — swimlane keys are now dynamic values of
      priority / assignee / label, so the hard-coded slugs never match.

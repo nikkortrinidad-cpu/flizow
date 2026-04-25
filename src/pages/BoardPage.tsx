@@ -348,14 +348,12 @@ export function BoardPage() {
 
 function EmptyState({ serviceId }: { serviceId?: string }) {
   return (
-    <main style={{ padding: '64px 32px', maxWidth: 640, margin: '0 auto' }}>
-      <div style={{ fontSize: 12, color: 'var(--text-soft)', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 8 }}>
-        No service selected
-      </div>
-      <h1 style={{ fontSize: 28, fontWeight: 600, letterSpacing: '-0.02em', margin: '0 0 12px', color: 'var(--text)' }}>
+    <main className="board-empty-state">
+      <div className="board-empty-state-eyebrow">No service selected</div>
+      <h1 className="board-empty-state-title">
         {serviceId ? `Service "${serviceId}" not found` : 'Pick a service to open its board'}
       </h1>
-      <p style={{ fontSize: 14, color: 'var(--text-muted)', lineHeight: 1.6, marginBottom: 24 }}>
+      <p className="board-empty-state-body">
         Boards are scoped to a service. Open a client and click a service card to land here.
       </p>
       <a
@@ -1207,7 +1205,7 @@ function Column({
   const [limitEditorOpen, setLimitEditorOpen] = useState(false);
   const isOverLimit = limit !== undefined && tasks.length > limit;
   return (
-    <div className="column" data-dot={dot} ref={setNodeRef} style={isOver ? { borderColor: 'var(--hover-blue)' } : undefined}>
+    <div className={`column${isOver ? ' is-over' : ''}`} data-dot={dot} ref={setNodeRef}>
       <div className="column-header">
         <div className="column-title-group">
           <span className="column-dot" />
@@ -1560,18 +1558,7 @@ function Swimlane({
 function SwimlaneEmptyState({ groupBy }: { groupBy: ActiveGroupBy }) {
   const byLabel = groupBy === 'priority' ? 'priority' : groupBy === 'assignee' ? 'assignee' : 'label';
   return (
-    <div
-      style={{
-        margin: '24px 32px',
-        padding: '24px 20px',
-        border: '1px dashed var(--hairline-soft)',
-        borderRadius: 12,
-        color: 'var(--text-faint)',
-        fontSize: 13,
-        textAlign: 'center',
-        background: 'var(--bg-elev)',
-      }}
-    >
+    <div className="swimlane-empty-state">
       No cards to group by {byLabel}. Clear the filters or add a card to bring lanes back.
     </div>
   );
@@ -1933,96 +1920,36 @@ function ArchivedCardRow({
     : 'recently';
 
   return (
-    <li
-      style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: 10,
-        padding: '10px 12px',
-        borderRadius: 10,
-        border: '1px solid var(--hairline-soft)',
-        background: 'var(--bg-elev)',
-      }}
-    >
+    <li className="archived-card-row">
       {/* Primary assignee avatar — same pattern as board tiles. Falls
-          back to a neutral glyph when the card has no owner. */}
+          back to a neutral glyph when the card has no owner. The
+          per-member color still needs inline styling because it
+          comes from data, but the shell is in CSS now. */}
       {primary ? (
         <span
           aria-hidden
+          className="archived-card-avatar has-owner"
           style={{
-            width: 26,
-            height: 26,
-            borderRadius: '50%',
             background: primary.type === 'operator' ? primary.bg : primary.color,
             color: primary.type === 'operator' ? primary.color : '#fff',
-            fontSize: 10,
-            fontWeight: 700,
-            display: 'inline-flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            flex: '0 0 26px',
           }}
           title={primary.name}
         >
           {primary.initials}
         </span>
       ) : (
-        <span
-          aria-hidden
-          style={{
-            width: 26,
-            height: 26,
-            borderRadius: '50%',
-            background: 'var(--bg-faint)',
-            color: 'var(--text-faint)',
-            fontSize: 12,
-            display: 'inline-flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            flex: '0 0 26px',
-          }}
-        >
-          ?
-        </span>
+        <span aria-hidden className="archived-card-avatar no-owner">?</span>
       )}
 
       <div style={{ flex: 1, minWidth: 0 }}>
         <button
           type="button"
+          className="archived-card-open"
           onClick={onOpen}
-          style={{
-            display: 'block',
-            width: '100%',
-            background: 'transparent',
-            border: 0,
-            padding: 0,
-            margin: 0,
-            textAlign: 'left',
-            font: 'inherit',
-            color: 'var(--text)',
-            cursor: 'pointer',
-          }}
           aria-label={`Open ${task.title}`}
         >
-          <div
-            style={{
-              fontSize: 14,
-              fontWeight: 500,
-              color: 'var(--text)',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              whiteSpace: 'nowrap',
-            }}
-          >
-            {task.title}
-          </div>
-          <div
-            style={{
-              fontSize: 12,
-              color: 'var(--text-faint)',
-              marginTop: 2,
-            }}
-          >
+          <div className="archived-card-title">{task.title}</div>
+          <div className="archived-card-meta">
             {columnLabel(task.columnId)} · archived {archivedLabel}
           </div>
         </button>
@@ -2041,22 +1968,10 @@ function ArchivedCardRow({
 
       <button
         type="button"
+        className="archived-card-delete"
         onClick={onRequestDelete}
         aria-label={`Delete ${task.title} permanently`}
         title="Delete permanently"
-        style={{
-          width: 32,
-          height: 32,
-          border: '1px solid var(--hairline-soft)',
-          background: 'var(--bg-elev)',
-          color: 'var(--status-fire)',
-          cursor: 'pointer',
-          borderRadius: 8,
-          display: 'inline-flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          flex: '0 0 32px',
-        }}
       >
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
           <polyline points="3 6 5 6 21 6" />
