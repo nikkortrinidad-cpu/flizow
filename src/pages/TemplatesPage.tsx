@@ -496,6 +496,13 @@ function DetailPane({
   const canEdit = useCanEditTemplates();
   const isBuiltIn = isBuiltInTemplate(template.id);
   const hasBeenEdited = template.editedAt !== null;
+  // When non-null, a confirm dialog is stacked over the editor for
+  // a phase that has subtasks the user is about to discard.
+  const [removePhaseTarget, setRemovePhaseTarget] = useState<{
+    index: number;
+    name: string;
+    subtaskCount: number;
+  } | null>(null);
 
   function togglePhase(index: number) {
     setOpenPhases((prev) => {
@@ -560,8 +567,26 @@ function DetailPane({
     });
   }
   function removePhase(index: number) {
+    const phase = template.phases[index];
+    // Cheap forgiveness: a phase with a single placeholder subtask
+    // doesn't merit a confirm. Only ask when there's content the
+    // user might miss. Audit: HIG #6 (forgiveness) — we'd rather
+    // ask once than restore a phase from "wait, where did my
+    // subtasks go?". Snapshot semantics still apply (existing
+    // services keep their seeded data), so this is purely about
+    // confidence in the editor itself.
+    if (phase && phase.subtasks.length > 0) {
+      setRemovePhaseTarget({ index, name: phase.name, subtaskCount: phase.subtasks.length });
+      return;
+    }
     const phases = template.phases.filter((_, i) => i !== index);
     save({ phases });
+  }
+  function confirmRemovePhase() {
+    if (!removePhaseTarget) return;
+    const phases = template.phases.filter((_, i) => i !== removePhaseTarget.index);
+    save({ phases });
+    setRemovePhaseTarget(null);
   }
   function reorderPhases(fromIndex: number, toIndex: number) {
     if (fromIndex === toIndex) return;
@@ -839,6 +864,37 @@ function DetailPane({
         {/* Activity section deleted in Wave 4 (Templates M3). Will
             return when there's a real audit log to fill it. */}
       </section>
+
+      {/* Confirm dialog for removing a phase with subtasks. Only
+          renders when the user clicks × on a content-rich phase —
+          phases with zero subtasks remove without a confirm because
+          there's nothing to lose. Audit: HIG #6 (forgiveness). */}
+      {removePhaseTarget && (
+        <ConfirmDangerDialog
+          title={`Remove "${removePhaseTarget.name}"?`}
+          body={
+            <>
+              <p style={{ margin: 0 }}>
+                This phase has{' '}
+                <strong>
+                  {removePhaseTarget.subtaskCount}{' '}
+                  {removePhaseTarget.subtaskCount === 1 ? 'subtask' : 'subtasks'}
+                </strong>
+                {' '}that will go with it.
+              </p>
+              <p style={{ margin: '10px 0 0' }}>
+                Existing services that were created from this template
+                keep their seeded phases — those snapshots aren't tied
+                to the template at runtime. Only new services started
+                from this template will be affected.
+              </p>
+            </>
+          }
+          confirmLabel="Remove phase"
+          onConfirm={confirmRemovePhase}
+          onClose={() => setRemovePhaseTarget(null)}
+        />
+      )}
     </div>
   );
 }
@@ -1136,6 +1192,25 @@ const PhaseBody = forwardRef<HTMLDivElement, PhaseBodyProps>(function PhaseBody(
       style={style}
     >
       <div className="template-phase-row">
+        {/* Drag handle as the LEADING affordance — sits before the
+            phase number so the user reads "this row is draggable"
+            before they read the phase content. Persistently visible
+            (faded at rest, full opacity on row hover or when any
+            phase is being dragged) so the affordance isn't hidden
+            behind a hover state. Audit: post-Wave-7 user feedback +
+            HIG #8 (metaphor and affordance). */}
+        {canEdit && handleRest && (
+          <button
+            ref={handleRef}
+            type="button"
+            className="template-phase-drag"
+            aria-label={`Drag ${phase.name} to reorder`}
+            title="Drag to reorder. Keyboard: focus + Space, then arrows, then Space to drop."
+            {...handleRest}
+          >
+            <DragHandleIcon />
+          </button>
+        )}
         <div className="template-phase-num">{index + 1}</div>
         <div className="template-phase-name">
           <InlineText
@@ -1157,23 +1232,6 @@ const PhaseBody = forwardRef<HTMLDivElement, PhaseBodyProps>(function PhaseBody(
             >
               <CloseIcon />
             </button>
-            {/* Drag handle. Only this element activates the drag, so
-                clicking the row body (name, chevron) doesn't steal
-                the gesture. ⋮⋮ icon is the universal "drag me" cue.
-                The handle is omitted on the canEdit:false fallback
-                where dragHandleProps is undefined. */}
-            {handleRest && (
-              <button
-                ref={handleRef}
-                type="button"
-                className="template-phase-drag"
-                aria-label={`Drag ${phase.name} to reorder`}
-                title="Drag to reorder"
-                {...handleRest}
-              >
-                <DragHandleIcon />
-              </button>
-            )}
           </div>
         )}
         <button

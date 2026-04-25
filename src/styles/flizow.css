@@ -11754,20 +11754,12 @@
     color: var(--text-muted);
     letter-spacing: 0.005em;
   }
-  /* The Wave 6 "Read-only" tag is dead — the Wave 7 editor made it a
-     lie. Kept the rule for a beat in case any third-party CSS
-     references it; the live page no longer renders the tag.
-     Audit: templates M2 (commit 4 follow-on). */
-  .template-readonly-tag { display: none; }
-
   /* "Click any field to edit" hint — shows on never-edited templates
-     so the first-time user discovers the gesture. Quiet enough to
-     ignore, visible enough to spot. Disappears the moment the user
-     makes any edit (controlled by `editedAt === null` in TSX).
-     Audit: templates M2 (commit 4 follow-on, in response to user
-     feedback that the editor wasn't discoverable). */
+     so the first-time user discovers the gesture. white-space:nowrap
+     keeps the chip a single line so it can't break in half on narrow
+     viewports; the meta row's flex-wrap drops it to its own line
+     instead of breaking the chip. Audit: post-Wave-7 LOW #3. */
   .template-edit-hint {
-    margin-left: 8px;
     padding: 2px 10px;
     border-radius: 980px;
     background: var(--highlight-soft);
@@ -11775,11 +11767,17 @@
     font-size: var(--fs-xs);
     font-weight: 500;
     letter-spacing: 0;
+    white-space: nowrap;
   }
   .template-edit-hint::before {
     content: '↓ ';
     margin-right: 2px;
     font-weight: 700;
+  }
+  /* Hero meta row needs to wrap on narrow viewports so the hint +
+     buttons don't push past the right edge of the pane. */
+  .template-hero-meta {
+    flex-wrap: wrap;
   }
   /* "Reset to default" lives next to the (now-hidden) Read-only tag
      once a built-in template has been edited. Tier-4 (text-only,
@@ -11816,6 +11814,22 @@
     opacity: 0.4;
     cursor: not-allowed;
   }
+  /* Archive button shares the .template-reset-btn shell but layers
+     a leading icon-feel + warmer hover so users can tell the two
+     apart at a glance — Reset rolls the content back, Archive
+     hides the whole template. Same Tier-4 muted resting state, but
+     the hover lands in a different color family. Audit: post-
+     Wave-7 LOW #2 (Reset/Archive looked identical). */
+  .template-archive-btn::before {
+    content: '⌫';
+    margin-right: 5px;
+    font-size: 0.95em;
+    opacity: 0.7;
+  }
+  .template-archive-btn:hover:not(:disabled) {
+    background: color-mix(in srgb, var(--status-risk) 12%, transparent);
+    color: var(--status-risk);
+  }
   .template-hero-meta .sep {
     width: 3px; height: 3px; border-radius: 50%;
     background: var(--text-faint);
@@ -11849,17 +11863,26 @@
   }
   /* Phase row used to be a single <button> for expand/collapse. With
      inline editing the name needs its own click-to-edit gesture, so
-     the row is a div now and only the chevron is a button. The grid
-     layout (number / name / meta / chevron) is unchanged. */
+     the row is a div now and only the chevron is a button.
+     Grid layout (left → right):
+       drag-handle (22px) │ number (22px) │ name (1fr) │ meta (auto) │ actions (24px reserved) │ chevron (14px)
+     The actions column is FIXED-WIDTH (24px = button width) so the
+     hover-revealed × button doesn't cause layout shift when it
+     appears. Audit: post-Wave-7 (LOW #1: layout shift on hover). */
   .template-phase-toggle,
   .template-phase-row {
     display: grid;
-    grid-template-columns: 22px 1fr auto 14px;
+    grid-template-columns: 22px 22px 1fr auto 24px 14px;
     align-items: center; gap: var(--sp-base);
     width: 100%; padding: var(--sp-md) var(--sp-lg);
     background: none; border: 0;
     font: inherit; color: inherit; text-align: left;
     transition: background 0.12s ease;
+  }
+  /* canEdit:false fallback (admin gate) renders the row without a
+     drag handle and without the actions column — five columns. */
+  .template-phase[data-readonly="true"] .template-phase-row {
+    grid-template-columns: 22px 1fr auto 14px;
   }
   .template-phase-toggle { cursor: pointer; }
   .template-phase-toggle:hover { background: var(--hover-tint); }
@@ -11933,10 +11956,12 @@
     outline-offset: 2px;
   }
 
-  /* Drag handle (six-dots ⋮⋮) — replaces the ↑/↓ buttons. Cursor
-     changes to grab/grabbing so the user knows the affordance is
-     drag, not click. The handle button styles match
-     .template-phase-action so the row reads consistently. */
+  /* Drag handle (⋮⋮) sits as the LEADING affordance in the row —
+     before the phase number — so the row reads "drag-able number-
+     name". Persistently visible at 0.4 opacity so the user always
+     knows the row is reorderable; full opacity on row hover or
+     focus-within. Cursor flips to grab/grabbing. Audit: HIG #8
+     (metaphor and affordance) + post-Wave-7 user feedback. */
   .template-phase-drag {
     width: 22px; height: 22px;
     display: inline-flex; align-items: center; justify-content: center;
@@ -11944,8 +11969,14 @@
     border-radius: 5px;
     color: var(--text-faint);
     cursor: grab;
-    transition: background 0.12s, color 0.12s, border-color 0.12s;
+    opacity: 0.4;
+    transition: opacity 140ms ease, background 0.12s, color 0.12s, border-color 0.12s;
     touch-action: none; /* required by dnd-kit's PointerSensor on mobile */
+  }
+  .template-phase-row:hover .template-phase-drag,
+  .template-phase-row:focus-within .template-phase-drag,
+  .template-phase-list:has(.template-phase.is-dragging) .template-phase-drag {
+    opacity: 1;
   }
   .template-phase-drag:hover {
     background: var(--bg-elev);
@@ -11957,6 +11988,7 @@
   .template-phase-drag:focus-visible {
     outline: 2px solid var(--highlight);
     outline-offset: 2px;
+    opacity: 1;
   }
 
   /* Drag states. While dragging, the active phase fades to half-
