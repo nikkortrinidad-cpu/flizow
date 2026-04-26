@@ -3,6 +3,7 @@ import { useFlizow } from '../store/useFlizow';
 import { useAuth } from '../contexts/AuthContext';
 import type { Member } from '../types/flizow';
 import { useModalAutofocus } from '../hooks/useModalAutofocus';
+import { useModalFocusTrap } from '../hooks/useModalFocusTrap';
 
 /**
  * FlizowShareModal — "Share card" dialog launched from the card detail
@@ -212,6 +213,12 @@ export default function FlizowShareModal({ taskId, onClose }: Props) {
   const memberBtnRefs = useRef<Map<string, HTMLButtonElement>>(new Map());
   const menuRef = useRef<HTMLDivElement | null>(null);
   const emailInputRef = useRef<HTMLInputElement | null>(null);
+  /** Modal root — the focus trap reads from this. Audit: share HIGH
+   *  (Tab could escape), MED (no focus return). useModalFocusTrap
+   *  handles both: traps Tab while mounted, restores focus to the
+   *  share button on unmount. */
+  const modalRootRef = useRef<HTMLDivElement | null>(null);
+  useModalFocusTrap(modalRootRef);
 
   // Seed member roles: every task assignee starts at 'edit' (matches the
   // mockup's default). We keep the owner out of this map — they're
@@ -517,7 +524,7 @@ export default function FlizowShareModal({ taskId, onClose }: Props) {
           aria-expanded={activeMenu?.kind === 'member' && activeMenu.id === m.id}
         >
           <span className="role-label">{roleById(role).label}</span>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
             <polyline points="6 9 12 15 18 9" />
           </svg>
         </button>
@@ -545,7 +552,7 @@ export default function FlizowShareModal({ taskId, onClose }: Props) {
           aria-expanded={activeMenu?.kind === 'member' && activeMenu.id === p.id}
         >
           <span className="role-label">{roleById(p.role).label}</span>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
             <polyline points="6 9 12 15 18 9" />
           </svg>
         </button>
@@ -593,7 +600,7 @@ export default function FlizowShareModal({ taskId, onClose }: Props) {
       aria-modal="true"
       onClick={onClose}
     >
-      <div className="share-modal" onClick={(e) => e.stopPropagation()}>
+      <div ref={modalRootRef} className="share-modal" onClick={(e) => e.stopPropagation()}>
 
         {/* ── Header ─────────────────────────────────────────────── */}
         <div className="share-header">
@@ -609,6 +616,26 @@ export default function FlizowShareModal({ taskId, onClose }: Props) {
               <line x1="6" y1="6" x2="18" y2="18" />
             </svg>
           </button>
+        </div>
+
+        {/* Honest-copy banner. The first-pass scope (see top of file)
+            doesn't actually send invites or change permissions — it
+            just shapes the local UI. Without telling the user that,
+            clicking "Invite" looks like a real send and flipping
+            "Anyone with link" looks like a real permission change.
+            Both are lies of omission. Banner stays until we ship the
+            real sharing wiring. Audit: share HIGH ×2 (invite-not-sent
+            + access-toggle-fake). */}
+        <div className="share-preview-banner" role="note">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <circle cx="12" cy="12" r="10" />
+            <line x1="12" y1="8" x2="12" y2="12" />
+            <line x1="12" y1="16" x2="12.01" y2="16" />
+          </svg>
+          <span>
+            Preview only — invites and link permissions don't send or
+            persist yet. Real sharing wires up next.
+          </span>
         </div>
 
         {/* ── Context chip ───────────────────────────────────────── */}
@@ -656,7 +683,7 @@ export default function FlizowShareModal({ taskId, onClose }: Props) {
               aria-label="Choose invite role"
             >
               <span>{currentRole.label}</span>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                 <polyline points="6 9 12 15 18 9" />
               </svg>
             </button>
@@ -742,7 +769,7 @@ export default function FlizowShareModal({ taskId, onClose }: Props) {
               <div className="share-access-title">{currentAccess.title}</div>
               <div className="share-access-sub">{currentAccess.sub}</div>
             </div>
-            <div className="share-access-chevron">
+            <div className="share-access-chevron" aria-hidden="true">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <polyline points="6 9 12 15 18 9" />
               </svg>
@@ -756,6 +783,12 @@ export default function FlizowShareModal({ taskId, onClose }: Props) {
               readOnly
               aria-label="Shareable link"
               value={shareLink}
+              // Click/focus selects the whole URL so the user can ⌘C
+              // immediately. The whole point of this field is to copy
+              // — making them triple-click is friction.
+              // Audit: share MED.
+              onFocus={(e) => e.currentTarget.select()}
+              onClick={(e) => e.currentTarget.select()}
             />
             <button
               type="button"

@@ -5560,6 +5560,24 @@
   .share-close:hover { background: var(--bg-soft); color: var(--text); }
   .share-close svg { width: 16px; height: 16px; }
 
+  /* Honest-copy banner — sits above the context chip when Share's
+     real wiring isn't shipped yet. Amber tint (warning, not error)
+     so it reads as "heads up" rather than "broken." Audit: share
+     HIGH (invite-not-sent + access-toggle-fake). Drop the rule
+     entirely once sharing wires up for real. */
+  .share-preview-banner {
+    display: flex; align-items: center; gap: 8px;
+    margin: 0 24px 8px;
+    padding: 10px 12px;
+    background: rgba(245, 158, 11, 0.10);
+    border: 1px solid rgba(245, 158, 11, 0.30);
+    border-radius: 10px;
+    font-size: var(--fs-sm);
+    color: var(--text);
+    line-height: 1.4;
+  }
+  .share-preview-banner svg { color: #b45309; flex-shrink: 0; }
+
   .share-context {
     display: flex; align-items: center; gap: var(--sp-sm);
     margin: 0 24px 4px;
