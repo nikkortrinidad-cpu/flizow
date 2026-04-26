@@ -2616,6 +2616,11 @@ function AddQuickLinkModal({ clientId, link, onClose }: {
   const [labelError, setLabelError] = useState(false);
   const [urlError, setUrlError] = useState(false);
   const labelRef = useRef<HTMLInputElement>(null);
+  // Modal root for the shared focus trap. The hook also restores focus
+  // to the trigger on unmount — closes both HIGH gaps in one wire-up.
+  // Audit: quicklink HIGH (focus trap + focus return).
+  const modalRootRef = useRef<HTMLDivElement>(null);
+  useModalFocusTrap(modalRootRef);
 
   useEffect(() => {
     const t = window.setTimeout(() => {
@@ -2630,9 +2635,22 @@ function AddQuickLinkModal({ clientId, link, onClose }: {
     const trimmedUrl = url.trim();
     let bad = false;
     if (!trimmedLabel) { setLabelError(true); bad = true; }
-    if (!trimmedUrl)   { setUrlError(true);   bad = true; }
+    // URL: presence-check first, then a soft shape-check. We accept
+    // bare hostnames ("acme.com") because handleSave normalises them
+    // — but we reject inputs that have no dot at all OR contain
+    // whitespace, both of which can't be saved as a real URL. Audit:
+    // quicklink MED (presence-only validation).
+    if (!trimmedUrl) {
+      setUrlError(true); bad = true;
+    } else if (/\s/.test(trimmedUrl) || !/\./.test(trimmedUrl)) {
+      setUrlError(true); bad = true;
+    }
     if (bad) {
-      window.setTimeout(() => { setLabelError(false); setUrlError(false); }, 1400);
+      // No timed auto-clear — errors used to vanish after 1.4s, which
+      // ate the message under the user's hand if they fixed one field
+      // and stopped to read the other. They now clear on the matching
+      // input change (already wired via setX below). Audit: quicklink
+      // MED (timed-clear ate the message).
       if (!trimmedLabel) labelRef.current?.focus();
       return;
     }
@@ -2692,13 +2710,13 @@ function AddQuickLinkModal({ clientId, link, onClose }: {
       aria-labelledby="add-link-title"
       onClick={handleBackdropClick}
     >
-      <div className="wip-modal" role="document" style={{ maxWidth: 460 }}>
+      <div ref={modalRootRef} className="wip-modal" role="document" style={{ maxWidth: 460 }}>
         <header className="wip-modal-head">
           <h2 className="wip-modal-title" id="add-link-title">
             {isEdit ? 'Edit quick link' : 'Add quick link'}
           </h2>
           <button type="button" className="wip-modal-close" onClick={onClose} aria-label="Close">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
               <line x1="18" y1="6" x2="6" y2="18" />
               <line x1="6" y1="6" x2="18" y2="18" />
             </svg>
