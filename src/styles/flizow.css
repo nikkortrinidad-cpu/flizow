@@ -2084,10 +2084,12 @@
      priority / assignee / label, so the hard-coded slugs never match.
      Audit: board M2. */
 
-  /* Empty-column placeholder: appears only when a column has no visible cards.
-     Soft cue so filtered/empty lists don't read as broken dead space. */
-  .column-cards:not(:has(.card)):not(:has(.add-card-form))::before {
-    content: 'No cards yet — drag one in from another list.';
+  /* Empty-column placeholder. The text used to live as a CSS
+     content: rule keyed off :has() / :not() — clever, but the
+     string was invisible to translation tooling and a code smell
+     either way. Now BoardPage renders a `.column-empty` div
+     conditionally; this rule just styles it. Audit: i18n LOW. */
+  .column-empty {
     display: flex;
     align-items: center;
     justify-content: center;

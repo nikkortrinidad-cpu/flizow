@@ -1253,6 +1253,16 @@ function Column({
             onOpen={onOpenCard}
           />
         ))}
+        {/* Empty placeholder for non-To-Do columns. Used to live as a
+            CSS `content:` rule keyed off `:has()`, but a string baked
+            into CSS is invisible to translation tooling and harder to
+            edit copy on. React-side conditional means it shows up
+            anywhere we ever want to translate the app. To-Do is
+            excluded — its AddCardInline already serves as the empty
+            cue. Audit: i18n LOW (CSS-baked string). */}
+        {tasks.length === 0 && columnId !== 'todo' && (
+          <div className="column-empty">No cards yet — drag one in from another list.</div>
+        )}
         {columnId === 'todo' && (
           <AddCardInline serviceId={serviceId} clientId={clientId} seed={laneSeed} />
         )}
