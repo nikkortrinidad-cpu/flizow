@@ -6,109 +6,37 @@ import type {
   NotificationState,
   NotificationType,
 } from '../types/flizow';
+import { useFlizow } from '../store/useFlizow';
+import { deriveNotifications } from '../data/deriveNotifications';
 
 /**
  * Flizow Notifications panel — anchored dropdown rendered inside `.notif-wrap`.
  *
- * Mirrors the mockup at public/flizow-test.html (~line 13044 / 33530):
- *   - Header: "Notifications" + Mark-all-read (disabled when unreadCount === 0)
- *   - Tabs: All / Unread / Mentions (mentions includes replies)
- *   - Body: grouped by Today/Yesterday/Earlier with icon per type
- *   - Footer: "View all in Weekly WIP →"
+ * Header: "Notifications" + Mark-all-read (disabled when unreadCount === 0)
+ * Filters: All / Unread / Mentions (mentions includes replies)
+ * Body: grouped by Today/Yesterday/Earlier with icon per type
+ * Footer: "View all in Weekly WIP →"
  *
- * Data source for this first pass is a local SEED. The panel persists read +
- * dismissed flags to localStorage under `flizow-notifs-v1` so the unread dot
- * doesn't come back after a page reload. When FlizowData grows a notifications
- * slice we'll swap the SEED for store.data.notifications.
+ * Data source: live derive from FlizowData via deriveNotifications() —
+ * surfaces real overdue + due-today tasks assigned to me, real on-fire
+ * clients on my team, plus a daily-digest roll-up. No more hardcoded
+ * SEED. Read/dismissed flags persist to localStorage under
+ * `flizow-notifs-v1`; ids are stable per source row so a notification
+ * the user has seen stays read across reloads.
  */
 
 const STORAGE_KEY = 'flizow-notifs-v1';
-
-const SEED: NotificationItem[] = [
-  {
-    id: 'n-mention-acme',
-    type: 'mention',
-    group: 'Today',
-    ago: '12m',
-    text: '<strong>Roxy</strong> mentioned you in <em>Blog post: Q2 launch</em>',
-    context: 'Acme Corp · Content',
-    href: '#clients/acme-corp',
-  },
-  {
-    id: 'n-assign-bloom',
-    type: 'assign',
-    group: 'Today',
-    ago: '1h',
-    text: '<strong>Kate</strong> assigned you <em>Spring campaign brief</em>',
-    context: 'Bloom Retail · Campaigns',
-    href: '#clients/bloom-retail',
-  },
-  {
-    id: 'n-overdue-summit',
-    type: 'overdue',
-    group: 'Today',
-    ago: '3h',
-    text: '<em>Invoice reminder</em> is 2 days overdue',
-    context: 'Summit Outdoor · Finance',
-    href: '#clients/summit-outdoor',
-  },
-  {
-    id: 'n-reply-techstart',
-    type: 'reply',
-    group: 'Yesterday',
-    ago: 'Yesterday',
-    text: '<strong>Chris</strong> replied to your comment on <em>Homepage redesign</em>',
-    context: 'TechStart Inc · Web',
-    href: '#clients/techstart-inc',
-  },
-  {
-    id: 'n-due-harvest',
-    type: 'due',
-    group: 'Yesterday',
-    ago: 'Yesterday',
-    text: '<em>Welcome email sequence</em> is due in 2 days',
-    context: 'Harvest Co · Email',
-    href: '#clients/harvest-co',
-  },
-  {
-    id: 'n-status-cascade',
-    type: 'status',
-    group: 'Yesterday',
-    ago: 'Yesterday',
-    text: '<strong>Michael</strong> moved <em>Paid social audit</em> to In Progress',
-    context: 'Cascade Coffee · Paid',
-    href: '#clients/cascade-coffee',
-  },
-  {
-    id: 'n-digest',
-    type: 'system',
-    group: 'Earlier',
-    ago: 'Mon',
-    text: 'Daily digest — <strong>4 items</strong> need you today',
-    context: 'Flizow · System',
-    href: '#wip/agenda',
-  },
-  {
-    id: 'n-wip',
-    type: 'system',
-    group: 'Earlier',
-    ago: 'Mon',
-    text: 'Weekly WIP agenda ready to review',
-    context: 'Flizow · System',
-    href: '#wip/agenda',
-  },
-];
-
-/** The three most-recent items start unread on first visit. Everything else
- *  lands read so the panel doesn't feel spammy on first open. */
-const FRESH_UNREAD = new Set(['n-mention-acme', 'n-assign-bloom', 'n-overdue-summit']);
 
 type Filter = 'all' | 'unread' | 'mentions';
 
 const GROUP_ORDER: NotificationGroup[] = ['Today', 'Yesterday', 'Earlier'];
 
+// Empty-state title per filter. "all=Nothing urgent" reads better
+// than "Nothing here yet" now that the panel derives from real data
+// — an empty all-feed means there's genuinely nothing overdue, due
+// today, or on fire. That's a result, not a missing state.
 const EMPTY_COPY: Record<Filter, string> = {
-  all: 'Nothing here yet.',
+  all: "Nothing urgent. You're clear.",
   unread: "You're all caught up.",
   mentions: 'No mentions right now.',
 };
@@ -189,17 +117,11 @@ function saveState(s: NotificationState) {
   }
 }
 
-/** Apply FRESH_UNREAD defaults: any SEED id not yet in state.read gets a
- *  starting value — unread for the three "fresh" items, read for the rest. */
-function withSeedDefaults(s: NotificationState): NotificationState {
-  const read = { ...s.read };
-  for (const n of SEED) {
-    if (read[n.id] === undefined) {
-      read[n.id] = !FRESH_UNREAD.has(n.id);
-    }
-  }
-  return { ...s, read };
-}
+// withSeedDefaults() used to live here — applied a hardcoded "3 items
+// arrive unread" rule on top of the SEED constant. With derived
+// notifications, every newly-derived id is implicitly unread (state.read
+// has no entry → passesFilter treats it as unread). No defaulting
+// needed; behaviour falls naturally out of the data + read map.
 
 interface Props {
   /** Drives the panel's open/closed transition via `data-open`. */
@@ -214,9 +136,20 @@ interface Props {
 }
 
 export default function FlizowNotificationsPanel({ open, onClose, triggerRef, onUnreadChange }: Props) {
-  const [state, setState] = useState<NotificationState>(() => withSeedDefaults(loadState()));
+  const { data, store } = useFlizow();
+  const [state, setState] = useState<NotificationState>(() => loadState());
   const [filter, setFilter] = useState<Filter>('all');
   const panelRef = useRef<HTMLDivElement>(null);
+
+  // Derive the live notification list from store data. Re-runs whenever
+  // tasks / clients / services / today change — surfaces overdue work,
+  // due-today reminders, on-fire client alerts, daily digest. Stable
+  // ids per source row keep read state coherent across re-derives.
+  const memberId = store.getCurrentMemberId();
+  const liveItems = useMemo(
+    () => deriveNotifications(data, memberId),
+    [data, memberId],
+  );
 
   // Persist read/dismissed on every change so the dot stays down across reloads.
   useEffect(() => {
@@ -259,31 +192,37 @@ export default function FlizowNotificationsPanel({ open, onClose, triggerRef, on
     };
   }, [open, onClose, triggerRef]);
 
+  // passesFilter: an item passes the active filter if it's not
+  // dismissed AND matches the filter rule. Unread = "not yet marked
+  // read" (read map either has no entry OR has !== true). Mentions
+  // currently never match — derived items don't include type 'mention'
+  // or 'reply' yet (those need a comment-mention parser we haven't
+  // built). The filter stays in the UI for when we add them.
   const passesFilter = (n: NotificationItem, f: Filter): boolean => {
     if (state.dismissed[n.id]) return false;
     if (f === 'all') return true;
-    if (f === 'unread') return state.read[n.id] === false;
+    if (f === 'unread') return state.read[n.id] !== true;
     if (f === 'mentions') return n.type === 'mention' || n.type === 'reply';
     return true;
   };
 
   const visible = useMemo(
-    () => SEED.filter((n) => passesFilter(n, filter)),
+    () => liveItems.filter((n) => passesFilter(n, filter)),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [filter, state],
+    [filter, state, liveItems],
   );
 
   const countFor = (f: Filter): number =>
-    SEED.filter((n) => passesFilter(n, f)).length;
+    liveItems.filter((n) => passesFilter(n, f)).length;
 
   const unreadCount = useMemo(
     () =>
-      SEED.reduce(
+      liveItems.reduce(
         (acc, n) =>
-          !state.dismissed[n.id] && state.read[n.id] === false ? acc + 1 : acc,
+          !state.dismissed[n.id] && state.read[n.id] !== true ? acc + 1 : acc,
         0,
       ),
-    [state],
+    [state, liveItems],
   );
 
   // Reflect the unread count back to the parent so the bell's dot mirrors
@@ -300,7 +239,7 @@ export default function FlizowNotificationsPanel({ open, onClose, triggerRef, on
   const markAllRead = () => {
     setState((s) => {
       const read = { ...s.read };
-      for (const n of SEED) {
+      for (const n of liveItems) {
         if (!s.dismissed[n.id]) read[n.id] = true;
       }
       return { ...s, read };
