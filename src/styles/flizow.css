@@ -13521,6 +13521,105 @@
     box-shadow: inset 0 0 0 2px rgba(255,255,255,0.9);
   }
 
+  /* ─────────────────────────────────────────────────────────────
+     Print stylesheet — minimum viable.
+     The realistic print targets are the WIP agenda, the client
+     detail one-pager, and the analytics tables. Nobody wants to
+     print the kanban board.
+
+     Strategy:
+       1. Hide all chrome: top nav, skip link, sync banner, modals,
+          search, hover states, drag handles, action buttons.
+       2. Force the light token set regardless of data-theme so the
+          printer doesn't paint a black background.
+       3. Strip shadows, soft tints, hover-only flourishes.
+       4. Let scrolled regions flow (overflow: visible) instead of
+          clipping content at the on-screen viewport.
+       5. Set @page margins so headings don't crash into the edge.
+
+     Audit: print stylesheet (was completely missing).
+     ───────────────────────────────────────────────────────────── */
+  @media print {
+    @page { margin: 18mm; }
+
+    /* Force light treatment regardless of the user's theme so we
+       don't waste toner on dark backgrounds. */
+    :root, :root[data-theme="dark"] {
+      --bg: #ffffff;
+      --bg-elev: #ffffff;
+      --bg-soft: #ffffff;
+      --bg-faint: #ffffff;
+      --text: #1d1d1f;
+      --text-muted: #3a3a3c;
+      --text-soft: #4a4a4e;
+      --text-faint: #6a6a6e;
+      --hairline: rgba(0, 0, 0, 0.18);
+      --hairline-soft: rgba(0, 0, 0, 0.10);
+    }
+
+    /* Chrome — anything that takes a click is useless on paper. */
+    .header,
+    .skip-link,
+    .sync-error-banner,
+    .cmdk-overlay,
+    .acct-overlay,
+    .share-overlay,
+    .wip-modal-overlay,
+    .notif-panel,
+    .welcome-banner,
+    .back-to-top,
+    .list-pane-toggle,
+    .filters-bar,
+    .ops-header-stats,
+    .acct-footer,
+    .share-header .share-close,
+    .wip-modal-foot {
+      display: none !important;
+    }
+
+    /* Strip shadows + most decorative backgrounds. Borders stay
+       so cards still read as cards. */
+    *, *::before, *::after {
+      box-shadow: none !important;
+      text-shadow: none !important;
+    }
+    .block,
+    .card,
+    .members-row,
+    .acct-section,
+    .anlx-card,
+    .week-col,
+    .ops-header-bar {
+      background: transparent !important;
+    }
+
+    /* Let scrolled regions flow on paper instead of clipping at
+       the on-screen viewport height. */
+    .notes-list,
+    .notes-body-editor,
+    .cmdk-results,
+    .acct-body,
+    .anlx-drill,
+    .week-col-body {
+      overflow: visible !important;
+      max-height: none !important;
+    }
+
+    /* Avoid orphaned headings + split rows where reasonable. */
+    h1, h2, h3 { page-break-after: avoid; }
+    .members-row, .anlx-wl-row, .anlx-up-row, .anlx-drill-row {
+      page-break-inside: avoid;
+    }
+
+    /* Links: print the URL after the link text so the reader can
+       follow. Skip on internal hash links — they're useless on paper. */
+    a[href^="http"]::after {
+      content: " (" attr(href) ")";
+      font-size: 0.85em;
+      color: #4a4a4e;
+    }
+  }
+
   /* Sync-error banner — appears at the very top of the app shell when
      the store can't write to localStorage or Firestore. Amber tint so
      it reads as "heads up," not "broken." Sits above the top nav so
