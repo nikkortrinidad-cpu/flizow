@@ -105,13 +105,17 @@ describe('flizowStore initial state', () => {
     expect(data.tasks).toEqual([]);
   });
 
-  it('always has the Ops seed after reset (members + tasks)', () => {
-    // The Ops seed is a deliberate UX choice: the Ops board never
-    // appears empty. If this test ever fails, someone changed seeding
-    // behaviour and the first-run audit (B5) needs revisiting.
+  it('does NOT auto-seed Ops on a fresh reset', () => {
+    // The Ops auto-seed used to populate fake team members + demo
+    // tasks on every empty workspace, ambushing brand-new users.
+    // The first-run gate (post-B5 follow-up) now skips the seed for
+    // fresh installs — only "Try the demo" populates the workspace.
+    // Members start empty (the signed-in user gets added via
+    // upsertOwnMember on auth, which the test doesn't trigger).
     const data = flizowStore.getSnapshot();
-    expect(data.members.length).toBeGreaterThan(0);
-    expect(data.opsTasks.length).toBeGreaterThan(0);
+    expect(data.members).toEqual([]);
+    expect(data.opsTasks).toEqual([]);
+    expect(data.opsSeeded).toBe(true);
   });
 
   it('has an empty templateOverrides array', () => {
@@ -287,9 +291,13 @@ describe('flizowStore reset()', () => {
     expect(data.tasks).toEqual([]);
   });
 
-  it('keeps the Ops seed after reset (matches first-run behaviour)', () => {
+  it('clears opsTasks after reset (post-first-run-gate behaviour)', () => {
+    // Reset goes through replaceAll(emptyData()), which migrate-passes
+    // the empty data — opsSeeded is true on emptyData so the legacy
+    // backfill never fires. A user who deliberately resets gets the
+    // empty state, not a re-seeded set of fake colleagues.
     flizowStore.addClient(baseClient());
     flizowStore.reset();
-    expect(flizowStore.getSnapshot().opsTasks.length).toBeGreaterThan(0);
+    expect(flizowStore.getSnapshot().opsTasks).toEqual([]);
   });
 });

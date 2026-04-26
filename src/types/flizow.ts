@@ -742,4 +742,14 @@ export interface FlizowData {
    *  syncs to `document.documentElement` (class + data-theme attr).
    *  Audit: D3 (BoardStore retirement). */
   theme: 'light' | 'dark';
+  /** One-shot gate for the Ops auto-seed. The Ops board used to
+   *  populate itself with 12+ fake team members + a dozen demo
+   *  tasks on every fresh install — confusing for a real first-run
+   *  user evaluating the app ("who are these people?"). Now seeds
+   *  only run when this flag is unset AND the workspace already has
+   *  data (legacy migration path); brand-new users land on a clean
+   *  empty Ops board. The "Try the demo" CTA in the welcome banner
+   *  is the explicit path to a populated workspace. Once flipped to
+   *  true, the seeds never run again. */
+  opsSeeded: boolean;
 }

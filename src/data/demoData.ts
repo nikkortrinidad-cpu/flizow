@@ -6,6 +6,7 @@ import type {
 } from '../types/flizow';
 import { CLIENT_SEEDS, type ClientSeed } from './demoClientSeeds';
 import { DEMO_AMS, OPS_TEAM } from './demoRosters';
+import { OPS_TASK_SEED } from './opsSeed';
 import { ONBOARDING_TEMPLATES, slugifyLabel } from './onboardingTemplates';
 import { TASK_POOLS as SHARED_TASK_POOLS } from './taskPools';
 
@@ -1099,11 +1100,12 @@ export function generateDemoData(): FlizowData {
     // itself. Keeps the section quiet on first load so the auto-built
     // agenda is what the user sees first.
     manualAgendaItems: [],
-    // Ops board seed lives in src/data/opsSeed.ts and is applied by
-    // flizowStore.migrate() when the ops-team members aren't present —
-    // the demo data doesn't include that roster, so a fresh `Load demo`
-    // run picks up the 12 seeded ops cards on the next render.
-    opsTasks: [],
+    // Ops board seed bundled directly here. Used to come from
+    // flizowStore.migrate(), but that auto-seed is now gated for
+    // brand-new users (so an empty fresh install doesn't get fake
+    // colleagues). The demo path always wants a populated Ops board,
+    // so we include the seed inline.
+    opsTasks: OPS_TASK_SEED.map(t => ({ ...t })),
     today: todayStr,
     scheduleTaskMap,
     // Demo loads come in without anything pinned. The star affordance
@@ -1121,5 +1123,9 @@ export function generateDemoData(): FlizowData {
     // migrate prefers `parsed.theme`, so this default only kicks in
     // when a brand-new user demo-loads without ever touching theme.
     theme: 'light',
+    // Mark Ops as already seeded so the legacy backfill path in
+    // migrate() never tries to re-seed on top of the data we
+    // bundle above.
+    opsSeeded: true,
   };
 }

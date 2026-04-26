@@ -55,6 +55,11 @@ function emptyData(): FlizowData {
     favoriteServiceIds: [],
     templateOverrides: [],
     theme: 'light',
+    // True by default in emptyData — a fresh empty workspace is
+    // explicitly NOT owed an auto-seed. The migrate() path handles
+    // the legacy backfill case where a returning user has data but
+    // no flag yet.
+    opsSeeded: true,
   };
 }
 
@@ -88,31 +93,45 @@ function migrate(parsed: Partial<FlizowData>): FlizowData {
     ...c,
     teamIds: Array.isArray(c.teamIds) ? c.teamIds : [],
   }));
-  // Ops-team + Ops-task seeding. The two seeds are decoupled so a
-  // partial state (members seeded but tasks missing, or vice versa —
-  // can happen across a migration rollout or a device with stale
-  // localStorage) self-heals on next load.
-  //
-  // Member seed: idempotent per id. Compare each OPS_TEAM_MEMBERS entry
-  // against existing members and add only the missing ones. That way a
-  // user who renamed "Ryan Castro" or changed a colour keeps their edit.
-  //
-  // Task seed: one-shot gate via `opsTasks.length === 0`. If the pile is
-  // empty we seed. Users who deliberately delete everything will see the
-  // pile come back on next load — acceptable for v1; we'll gate on a
-  // flag when someone actually needs the "empty on purpose" affordance.
-  const existingMembers = parsed.members ?? base.members;
-  const missingOpsTeam = OPS_TEAM_MEMBERS.filter(
-    seed => !existingMembers.some(m => m.id === seed.id),
-  );
-  const members = missingOpsTeam.length
-    ? [...existingMembers, ...missingOpsTeam]
-    : existingMembers;
 
+  // Ops-seed gate. The auto-seed used to fire on every fresh load
+  // where the seed conditions were met — which meant a brand-new user
+  // signing in for the first time landed on an Ops board pre-populated
+  // with 12 fake colleagues and 12 demo tasks. Confusing against the
+  // "No clients yet" state on every other surface. Now:
+  //   - opsSeeded === true → respect whatever the user has, never seed
+  //   - opsSeeded undefined/false (legacy data only) → run the seed
+  //     ONCE for backward-compat, then flip the flag forever
+  //   - emptyData() defaults opsSeeded to true so brand-new users
+  //     never trigger the legacy backfill path
+  // The "Try the demo" CTA on Overview is the explicit way to populate
+  // the workspace — including Ops, which the demoData generator now
+  // bundles itself instead of relying on this seed.
+  const existingMembers = parsed.members ?? base.members;
+  const isLegacyUnseeded = parsed.opsSeeded !== true;
+  let members = existingMembers;
   let opsTasks = parsed.opsTasks ?? base.opsTasks;
-  if (opsTasks.length === 0) {
-    opsTasks = OPS_TASK_SEED.map(t => ({ ...t }));
+  if (isLegacyUnseeded) {
+    // Members seed: idempotent per id (preserves user renames/colours).
+    const missingOpsTeam = OPS_TEAM_MEMBERS.filter(
+      seed => !existingMembers.some(m => m.id === seed.id),
+    );
+    if (missingOpsTeam.length) {
+      members = [...existingMembers, ...missingOpsTeam];
+    }
+    // Tasks seed: only if the pile is empty AND this is legacy data
+    // (i.e. there's already a workspace built up — clients, services,
+    // notes). Brand-new users with empty everything get NOTHING.
+    const hasWorkspaceData =
+      (parsed.clients?.length ?? 0) > 0 ||
+      (parsed.services?.length ?? 0) > 0 ||
+      (parsed.notes?.length ?? 0) > 0 ||
+      (parsed.contacts?.length ?? 0) > 0;
+    if (opsTasks.length === 0 && hasWorkspaceData) {
+      opsTasks = OPS_TASK_SEED.map(t => ({ ...t }));
+    }
   }
+
   return {
     clients,
     services: parsed.services ?? base.services,
@@ -146,6 +165,11 @@ function migrate(parsed: Partial<FlizowData>): FlizowData {
     // We also accept the legacy localStorage key once on load, so a
     // returning user keeps whatever they had set.
     theme: parsed.theme === 'dark' ? 'dark' : (legacyTheme() ?? 'light'),
+    // Always flip to true after migrate runs. New users opted out of
+    // auto-seed via emptyData; legacy users either got the one-shot
+    // backfill above or didn't qualify. Either way, future loads
+    // respect their state.
+    opsSeeded: true,
   };
 }
 
