@@ -11,7 +11,7 @@ import {
   relativeTimeAgo,
   categoryLabel,
 } from '../utils/clientDerived';
-import type { Client, ClientStatus, IndustryCategory, Member } from '../types/flizow';
+import type { Client, ClientStatus, Contact, IndustryCategory, Member } from '../types/flizow';
 
 /**
  * Clients directory — the left (list) pane of the Mail.app-style split
@@ -497,6 +497,14 @@ function AddClientModal({ members, todayISO, onClose }: {
   const [status, setStatus] = useState<ClientStatus>('onboard');
   const [logoClass, setLogoClass] = useState<typeof LOGO_CLASSES[number]>('logo-indigo');
   const [nameError, setNameError] = useState(false);
+  // Primary-contact fields. All optional — a client can be created with
+  // no contact at all and the user can fill them in from the About tab
+  // later. We build a Contact record on save only when contactName is
+  // non-empty; orphan email/phone with no person attached is meaningless.
+  const [contactName, setContactName] = useState('');
+  const [contactRole, setContactRole] = useState('');
+  const [contactEmail, setContactEmail] = useState('');
+  const [contactPhone, setContactPhone] = useState('');
   const nameRef = useRef<HTMLInputElement>(null);
 
   // AM picker shows only members typed 'am'. Operators live on the team
@@ -532,6 +540,30 @@ function AddClientModal({ members, todayISO, onClose }: {
       teamIds: [],
     };
     flizowStore.addClient(client);
+
+    // If the user filled in a contact name, create a primary Contact for
+    // the new client in the same save. Role/email/phone tag along only
+    // if non-empty — Contact's optional fields are typed `string | undef`,
+    // so we omit empties rather than store empty strings (cleaner roundtrip
+    // through Firestore's `ignoreUndefinedProperties`).
+    const trimmedContactName = contactName.trim();
+    if (trimmedContactName) {
+      const contactId = `ct-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
+      const role  = contactRole.trim();
+      const email = contactEmail.trim();
+      const phone = contactPhone.trim();
+      const contact: Contact = {
+        id: contactId,
+        clientId: id,
+        name: trimmedContactName,
+        primary: true,
+        ...(role  ? { role }  : {}),
+        ...(email ? { email } : {}),
+        ...(phone ? { phone } : {}),
+      };
+      flizowStore.addContact(contact);
+    }
+
     onClose();
     // Land the user on the new client's detail page so they can keep going.
     navigate(`#clients/${id}`);
@@ -578,23 +610,41 @@ function AddClientModal({ members, todayISO, onClose }: {
             />
           </label>
 
-          {/* The free-text Industry input used to live alongside this
-              dropdown. Removed 2026-04-27 — the category label was
-              already doing the same display job, and asking for both
-              confused users into thinking they were different things.
-              The dropdown now owns the row. */}
-          <label className="wip-field">
-            <span className="wip-field-label">Industry</span>
-            <select
-              className="wip-field-input"
-              value={industryCategory}
-              onChange={(e) => setIndustryCategory(e.target.value as IndustryCategory)}
-            >
-              {INDUSTRY_CATEGORIES.map(c => (
-                <option key={c.value} value={c.value}>{c.label}</option>
-              ))}
-            </select>
-          </label>
+          {/* Industry + Status share a row. Both are short-label dropdowns
+              that read better paired than stacked — pairing them halves the
+              vertical reach of the modal and groups the two "what is this
+              account" descriptors next to each other. The free-text
+              Industry input that used to live next to the dropdown was
+              removed 2026-04-27 — the dropdown's label already does the
+              display job everywhere else in the app. */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+            <label className="wip-field">
+              <span className="wip-field-label">Industry</span>
+              <select
+                className="wip-field-input"
+                value={industryCategory}
+                onChange={(e) => setIndustryCategory(e.target.value as IndustryCategory)}
+              >
+                {INDUSTRY_CATEGORIES.map(c => (
+                  <option key={c.value} value={c.value}>{c.label}</option>
+                ))}
+              </select>
+            </label>
+            <label className="wip-field">
+              <span className="wip-field-label">Status</span>
+              <select
+                className="wip-field-input"
+                value={status}
+                onChange={(e) => setStatus(e.target.value as ClientStatus)}
+              >
+                <option value="onboard">Onboarding (first 30 days)</option>
+                <option value="track">On track</option>
+                <option value="risk">At risk</option>
+                <option value="fire">On fire</option>
+                <option value="paused">Paused</option>
+              </select>
+            </label>
+          </div>
 
           <label className="wip-field">
             <span className="wip-field-label">Account Manager</span>
@@ -614,20 +664,71 @@ function AddClientModal({ members, todayISO, onClose }: {
               2026-04-26 — Flizow no longer tracks per-client revenue
               or renewal dates. */}
 
-          <label className="wip-field">
-            <span className="wip-field-label">Status</span>
-            <select
-              className="wip-field-input"
-              value={status}
-              onChange={(e) => setStatus(e.target.value as ClientStatus)}
-            >
-              <option value="onboard">Onboarding (first 30 days)</option>
-              <option value="track">On track</option>
-              <option value="risk">At risk</option>
-              <option value="fire">On fire</option>
-              <option value="paused">Paused</option>
-            </select>
-          </label>
+          {/* Primary contact group. All four fields are optional — the
+              user can save the client and add contacts from the About
+              tab later. We only persist a Contact record when the name
+              is filled (orphan email/phone is meaningless). The "(optional)"
+              affix in the header sets that expectation up-front so users
+              don't feel forced to fill it. */}
+          <div style={{
+            fontSize: 'var(--fs-xs)',
+            fontWeight: 600,
+            color: 'var(--text-muted)',
+            marginTop: 4,
+          }}>
+            Primary contact{' '}
+            <span style={{ fontWeight: 400, color: 'var(--text-faint)' }}>(optional)</span>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+            <label className="wip-field">
+              <span className="wip-field-label">Contact name</span>
+              <input
+                type="text"
+                className="wip-field-input"
+                value={contactName}
+                onChange={(e) => setContactName(e.target.value)}
+                placeholder="e.g. Jamie Chen"
+              />
+            </label>
+            <label className="wip-field">
+              <span className="wip-field-label">Position</span>
+              <input
+                type="text"
+                className="wip-field-input"
+                value={contactRole}
+                onChange={(e) => setContactRole(e.target.value)}
+                placeholder="e.g. VP Marketing"
+              />
+            </label>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+            <label className="wip-field">
+              <span className="wip-field-label">Email address</span>
+              <input
+                type="email"
+                inputMode="email"
+                autoComplete="email"
+                className="wip-field-input"
+                value={contactEmail}
+                onChange={(e) => setContactEmail(e.target.value)}
+                placeholder="jamie@acme.com"
+              />
+            </label>
+            <label className="wip-field">
+              <span className="wip-field-label">Mobile number</span>
+              <input
+                type="tel"
+                inputMode="tel"
+                autoComplete="tel"
+                className="wip-field-input"
+                value={contactPhone}
+                onChange={(e) => setContactPhone(e.target.value)}
+                placeholder="+1 555 123 4567"
+              />
+            </label>
+          </div>
 
           <div className="wip-field">
             <span className="wip-field-label">Logo colour</span>
