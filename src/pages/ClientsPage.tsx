@@ -22,23 +22,28 @@ import type { Client, ClientStatus, IndustryCategory, Member } from '../types/fl
  * flow, pinned cards, and custom saved views lands in later passes.
  */
 
-type SavedViewId = 'all' | 'mine' | 'fire' | 'risk' | 'track' | 'onboard' | 'paused';
+type SavedViewId = 'all' | 'mine' | 'fire' | 'risk' | 'track' | 'onboard' | 'paused' | 'archived';
 
 interface SavedViewDef {
   id: SavedViewId;
   label: string;
-  /** Optional status narrowing. `mine` filters by assignee, not status. */
+  /** Optional status narrowing. `mine` filters by assignee, not status;
+   *  `archived` filters by the archived flag, not status. */
   status?: ClientStatus;
 }
 
 const SAVED_VIEWS: SavedViewDef[] = [
-  { id: 'all',     label: 'All' },
-  { id: 'mine',    label: 'Assigned to me' },
-  { id: 'fire',    label: 'On Fire',    status: 'fire' },
-  { id: 'risk',    label: 'At Risk',    status: 'risk' },
-  { id: 'track',   label: 'On Track',   status: 'track' },
-  { id: 'onboard', label: 'Onboarding', status: 'onboard' },
-  { id: 'paused',  label: 'Paused',     status: 'paused' },
+  { id: 'all',      label: 'All' },
+  { id: 'mine',     label: 'Assigned to me' },
+  { id: 'fire',     label: 'On Fire',    status: 'fire' },
+  { id: 'risk',     label: 'At Risk',    status: 'risk' },
+  { id: 'track',    label: 'On Track',   status: 'track' },
+  { id: 'onboard',  label: 'Onboarding', status: 'onboard' },
+  { id: 'paused',   label: 'Paused',     status: 'paused' },
+  // 'archived' lives at the end — less-frequent destination, and
+  // putting it at the right edge keeps the active views grouped on
+  // the left where the eye lands first.
+  { id: 'archived', label: 'Archived' },
 ];
 
 const SAVED_VIEW_IDS: ReadonlySet<SavedViewId> = new Set(SAVED_VIEWS.map(v => v.id));
@@ -111,7 +116,9 @@ export function ClientsPage() {
         <div className="clients-header">
           <div className="clients-heading">
             <div className="clients-title">Clients</div>
-            <div className="clients-count">{data.clients.length} active</div>
+            <div className="clients-count">
+              {data.clients.filter(c => !c.archived).length} active
+            </div>
           </div>
         </div>
 
@@ -401,7 +408,7 @@ function filterClients(
 ): FilterResult {
   const q = search.trim().toLowerCase();
   const counts: Record<SavedViewId, number> = {
-    all: 0, mine: 0, fire: 0, risk: 0, track: 0, onboard: 0, paused: 0,
+    all: 0, mine: 0, fire: 0, risk: 0, track: 0, onboard: 0, paused: 0, archived: 0,
   };
 
   const matchesSearch = (c: Client): boolean => {
@@ -419,8 +426,18 @@ function filterClients(
   for (const c of clients) {
     if (!matchesSearch(c)) continue;
 
-    // Tally every view this client qualifies for — the chip counts are
-    // independent from which view the user has active right now.
+    // Archived clients live in their own bucket. They never count
+    // toward the active views (All, Mine, status views) and never
+    // render in those views — they only surface when the Archived
+    // chip is the active view.
+    if (c.archived) {
+      counts.archived += 1;
+      if (activeView === 'archived') filtered.push(c);
+      continue;
+    }
+
+    // Tally every active-view this client qualifies for — the chip
+    // counts are independent from which view the user has active.
     counts.all += 1;
     if (matchesMine(c)) counts.mine += 1;
     switch (c.status) {
@@ -438,6 +455,8 @@ function filterClients(
       if (matchesMine(c)) filtered.push(c);
       continue;
     }
+    // 'archived' was handled above — fall through here means a status
+    // view (fire/risk/track/onboard/paused).
     if (def.status && c.status === def.status) filtered.push(c);
   }
 

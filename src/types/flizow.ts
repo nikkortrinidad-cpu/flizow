@@ -263,6 +263,16 @@ export interface Client {
    *  lives on `amId` — this is the "Project team" you see in the About
    *  tab's Team section. Ordered by add-time; dedupe at write. */
   teamIds: string[];
+  /** Soft-archive flag. Archived clients are hidden from the active
+   *  Clients views (All / Mine / On Fire / etc.) and excluded from the
+   *  "{N} active" header count. They surface only in the dedicated
+   *  Archived view chip and remain restorable from the kebab menu on
+   *  their detail page. Unset on active clients — treat absence as
+   *  `archived: false`. */
+  archived?: boolean;
+  /** ISO timestamp when the client was archived. Always set when
+   *  `archived` is true; cleared on unarchive. */
+  archivedAt?: string;
 }
 
 // ── Client-scoped directory data (About tab) ─────────────────────────────

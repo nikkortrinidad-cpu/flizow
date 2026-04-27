@@ -1002,6 +1002,33 @@ class FlizowStore {
     this.save();
   }
 
+  archiveClient(id: string) {
+    // Soft-archive: flip a flag + stamp the time. The client and all
+    // its data (services, tasks, contacts, etc.) stay in the store
+    // exactly as they were so unarchive is a clean reverse. Archived
+    // clients drop out of the main list views via filterClients in
+    // ClientsPage; the dedicated "Archived" saved-view chip surfaces
+    // them when the user wants to restore.
+    const c = this.data.clients.find(c => c.id === id);
+    if (!c) return;
+    c.archived = true;
+    c.archivedAt = new Date().toISOString();
+    this.save();
+  }
+
+  unarchiveClient(id: string) {
+    // Reverse of archiveClient. Use `delete` to actually remove the
+    // properties from the JS object — the type marks them optional, so
+    // active clients carry no `archived` / `archivedAt` keys at all.
+    // Firestore's ignoreUndefinedProperties strips them on the next
+    // write either way; the delete is a belt-and-braces clean shape.
+    const c = this.data.clients.find(c => c.id === id);
+    if (!c) return;
+    delete (c as { archived?: boolean }).archived;
+    delete (c as { archivedAt?: string }).archivedAt;
+    this.save();
+  }
+
   deleteClient(id: string) {
     // Cascade: remove the client's services and tasks too so the data
     // stays consistent. No soft-delete yet — add when the UI does.

@@ -137,7 +137,22 @@ function ClientDetail({ client, data, store }: DetailProps) {
       data-client-panel={client.id}
       data-active-tab={activeTab}
     >
-      <Hero client={client} am={am} onRequestDelete={() => setShowDeleteClient(true)} />
+      <Hero
+        client={client}
+        am={am}
+        // Archive is reversible — fire-and-navigate. The user can find
+        // the client again via the Clients list "Archived" chip and
+        // restore it from the same kebab.
+        onArchive={() => {
+          flizowStore.archiveClient(client.id);
+          navigate('#clients');
+        }}
+        // Unarchive happens in place on the detail page — no nav, the
+        // page just stops reading as archived (the menu item flips
+        // back to "Archive client" on the next render).
+        onUnarchive={() => flizowStore.unarchiveClient(client.id)}
+        onRequestDelete={() => setShowDeleteClient(true)}
+      />
       <TabsRow tabs={TABS} activeTab={activeTab} onChange={setActiveTab} />
 
       {activeTab === 'overview' && (
@@ -305,9 +320,11 @@ function deriveInitialsLocal(name: string): string {
   return (words[0][0] + words[1][0]).toUpperCase();
 }
 
-function Hero({ client, am, onRequestDelete }: {
+function Hero({ client, am, onArchive, onUnarchive, onRequestDelete }: {
   client: Client;
   am: Member | null;
+  onArchive: () => void;
+  onUnarchive: () => void;
   onRequestDelete: () => void;
 }) {
   const statusLabel = statusChipLabel(client.status);
@@ -318,15 +335,33 @@ function Hero({ client, am, onRequestDelete }: {
   const [nameDraft, setNameDraft] = useState(client.name);
   const nameInputRef = useRef<HTMLInputElement>(null);
 
-  // Hero used to carry a ⋯ overflow menu wired with menuOpen state,
-  // outside-click + Esc dismissal effects, and a single "Delete
-  // client…" item. ~30 lines of menu wiring for one destructive
-  // action — Apple HIG calls this "menu shape over-promising what it
-  // delivers." Replaced with a direct trash icon button + confirm
-  // dialog (the same ConfirmDangerDialog the menu item used to open).
-  // If Archive / Export / Duplicate land later, this can grow back
-  // into a menu without changing the affordance position. Audit:
-  // client-detail M5.
+  // Kebab menu state. Two destinations today: Archive/Unarchive
+  // (depending on `client.archived`) and Delete. The trash icon that
+  // briefly lived here in the M5 audit pass got bumped back to a
+  // kebab once Archive joined Delete — one button per action gets
+  // crowded fast and the kebab pattern absorbs growth gracefully.
+  // Archive is reversible so it skips the confirm dialog (HIG rule:
+  // don't gate reversible actions); Delete keeps the existing
+  // ConfirmDangerDialog with cascade summary.
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuWrapRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!menuOpen) return;
+    function onDown(e: PointerEvent) {
+      if (menuWrapRef.current && !menuWrapRef.current.contains(e.target as Node)) {
+        setMenuOpen(false);
+      }
+    }
+    function onKey(e: KeyboardEvent) {
+      if (e.key === 'Escape') setMenuOpen(false);
+    }
+    window.addEventListener('pointerdown', onDown);
+    window.addEventListener('keydown', onKey);
+    return () => {
+      window.removeEventListener('pointerdown', onDown);
+      window.removeEventListener('keydown', onKey);
+    };
+  }, [menuOpen]);
 
   // Keep the draft in sync when the user switches clients without leaving
   // edit mode (unlikely but cheap to guard against).
@@ -495,25 +530,67 @@ function Hero({ client, am, onRequestDelete }: {
         </div>
       </div>
 
-      {/* Direct trash button — used to be a ⋯ menu with one item.
-          Two clicks (button → confirm) instead of three (kebab → menu
-          item → confirm). The destructive guard still lives in
-          ConfirmDangerDialog upstream of this row. Audit:
-          client-detail M5. */}
-      <button
-        type="button"
-        className="hero-overflow hero-trash-btn"
-        aria-label="Delete client"
-        title="Delete client"
-        onClick={onRequestDelete}
-      >
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-          <polyline points="3 6 5 6 21 6" />
-          <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
-          <path d="M10 11v6M14 11v6" />
-          <path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2" />
-        </svg>
-      </button>
+      {/* Kebab menu — Archive/Unarchive + Delete. Reuses the shared
+          .tb-btn / .tb-menu recipe so the dropdown's spacing, hover,
+          and divider treatment stay consistent with the touchpoint
+          and breadcrumb menus elsewhere. .hero-overflow positions the
+          wrapper at top-right of the hero (absolute, top:16 right:16)
+          and creates the positioning context the .tb-menu drops out of. */}
+      <div ref={menuWrapRef} className="hero-overflow">
+        <button
+          type="button"
+          className="tb-btn"
+          aria-label="Client options"
+          aria-haspopup="menu"
+          aria-expanded={menuOpen}
+          onClick={() => setMenuOpen(v => !v)}
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+            <circle cx="12" cy="5"  r="1.8" />
+            <circle cx="12" cy="12" r="1.8" />
+            <circle cx="12" cy="19" r="1.8" />
+          </svg>
+        </button>
+        <div className={`tb-menu${menuOpen ? ' open' : ''}`} role="menu">
+          <div
+            className="tb-menu-item"
+            role="menuitem"
+            tabIndex={0}
+            onClick={() => {
+              setMenuOpen(false);
+              if (client.archived) onUnarchive(); else onArchive();
+            }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                setMenuOpen(false);
+                if (client.archived) onUnarchive(); else onArchive();
+              }
+            }}
+          >
+            {client.archived ? 'Unarchive client' : 'Archive client'}
+          </div>
+          <div className="tb-menu-divider" />
+          <div
+            className="tb-menu-item danger"
+            role="menuitem"
+            tabIndex={0}
+            onClick={() => {
+              setMenuOpen(false);
+              onRequestDelete();
+            }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                setMenuOpen(false);
+                onRequestDelete();
+              }
+            }}
+          >
+            Delete client…
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
