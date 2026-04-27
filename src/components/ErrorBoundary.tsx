@@ -37,13 +37,44 @@ interface Props {
 
 interface State {
   error: Error | null;
+  /** True when the caught error matches the "stale chunk" signature.
+   *  Code-split apps hit this whenever a long-open tab tries to lazy-
+   *  fetch a chunk whose hashed filename has changed on the server
+   *  (typical after a deploy). The right response is to reload, not
+   *  to show a recovery card. Audit: stale-chunk auto-reload. */
+  staleChunk: boolean;
+}
+
+/** sessionStorage key for the auto-reload guard. We stash a timestamp
+ *  whenever we trigger a reload so we don't loop — if the same error
+ *  fires again within RELOAD_LOOP_WINDOW_MS, we fall through to the
+ *  regular recovery card instead of reloading forever. */
+const RELOAD_TS_KEY = 'flizow-stale-chunk-reload-ts';
+const RELOAD_LOOP_WINDOW_MS = 15_000;
+
+/** Pattern-match the error message to decide if this is a stale-
+ *  chunk failure. Three known wordings across browsers + bundlers:
+ *    - Vite (Chrome / Firefox / new Safari): "Failed to fetch
+ *      dynamically imported module"
+ *    - Older Safari: "Importing a module script failed"
+ *    - Webpack legacy: "Loading chunk N failed" (we don't use webpack
+ *      but covering it costs nothing) */
+function isStaleChunkError(err: Error | null | undefined): boolean {
+  if (!err || !err.message) return false;
+  const msg = err.message;
+  return (
+    msg.includes('Failed to fetch dynamically imported module') ||
+    msg.includes('Importing a module script failed') ||
+    msg.includes('Loading chunk') ||
+    msg.includes('ChunkLoadError')
+  );
 }
 
 export class ErrorBoundary extends Component<Props, State> {
-  state: State = { error: null };
+  state: State = { error: null, staleChunk: false };
 
   static getDerivedStateFromError(error: Error): State {
-    return { error };
+    return { error, staleChunk: isStaleChunkError(error) };
   }
 
   componentDidCatch(error: Error, info: ErrorInfo) {
@@ -52,17 +83,107 @@ export class ErrorBoundary extends Component<Props, State> {
     // overlay so the trace stays scannable.
     // eslint-disable-next-line no-console
     console.error('[ErrorBoundary]', error, info.componentStack);
+
+    // Stale-chunk auto-recovery. Vite hashes chunk filenames per build,
+    // so a long-open tab carrying yesterday's index.js will 404 when it
+    // tries to lazy-fetch today's chunks. The ONLY recovery is to load
+    // a fresh index.js — i.e. reload. We do that here instead of
+    // forcing the user through "click Try again, hit the same error,
+    // give up" cycle. Guarded so a genuinely broken deploy doesn't
+    // loop the page forever.
+    if (this.state.staleChunk) {
+      const lastReload = readLastReloadTs();
+      const now = Date.now();
+      if (lastReload && now - lastReload < RELOAD_LOOP_WINDOW_MS) {
+        // Recently reloaded and still seeing the error — something
+        // else is wrong. Fall through to the regular recovery card so
+        // the user has visibility instead of an infinite reload.
+        return;
+      }
+      writeLastReloadTs(now);
+      // Tiny delay so the "we updated, reloading…" copy gets a frame
+      // to paint before the page goes blank. Otherwise the user sees
+      // a flash of nothing.
+      window.setTimeout(() => {
+        window.location.reload();
+      }, 700);
+    }
   }
 
   reset = () => {
-    this.setState({ error: null });
+    this.setState({ error: null, staleChunk: false });
   };
 
   render() {
     if (!this.state.error) return this.props.children;
+    if (this.state.staleChunk) {
+      return <StaleChunkFallback />;
+    }
     if (this.props.fallback) return this.props.fallback(this.state.error, this.reset);
     return <DefaultFallback scope={this.props.scope ?? 'route'} error={this.state.error} reset={this.reset} />;
   }
+}
+
+function readLastReloadTs(): number | null {
+  try {
+    const raw = sessionStorage.getItem(RELOAD_TS_KEY);
+    if (!raw) return null;
+    const n = parseInt(raw, 10);
+    return Number.isFinite(n) ? n : null;
+  } catch { return null; }
+}
+
+function writeLastReloadTs(ts: number): void {
+  try { sessionStorage.setItem(RELOAD_TS_KEY, String(ts)); } catch { /* private mode */ }
+}
+
+/** Brief notice shown for ~700ms before the page reloads. Quieter
+ *  than the full recovery card — this isn't a failure the user has
+ *  to act on; we're just telling them why the page is flashing. */
+function StaleChunkFallback() {
+  return (
+    <div
+      role="status"
+      aria-live="polite"
+      style={{
+        position: 'fixed',
+        inset: 0,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        background: 'var(--bg)',
+        zIndex: 10000,
+      }}
+    >
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 12,
+          padding: '14px 20px',
+          background: 'var(--bg-elev)',
+          border: '1px solid var(--hairline)',
+          borderRadius: 12,
+          boxShadow: 'var(--shadow)',
+          color: 'var(--text)',
+          fontSize: 14,
+        }}
+      >
+        <span
+          aria-hidden="true"
+          style={{
+            width: 18,
+            height: 18,
+            border: '2px solid var(--hairline)',
+            borderTopColor: 'var(--text)',
+            borderRadius: '50%',
+            animation: 'spin 0.8s linear infinite',
+          }}
+        />
+        <span>Flizow was updated. Reloading…</span>
+      </div>
+    </div>
+  );
 }
 
 function DefaultFallback({
