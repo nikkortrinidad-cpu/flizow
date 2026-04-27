@@ -1024,6 +1024,33 @@
     transition: background 0.12s;
   }
   .acct-btn-text:hover { background: var(--bg-soft); }
+  /* Primary footer Save button. Tier 1 in the blue hierarchy: solid
+     fill, white text, brand blue. Disabled when no draft has
+     diverged from the source values, to make "no changes to save"
+     non-actionable instead of misleading. Audit: account
+     transactional Save/Cancel. */
+  .acct-btn-save {
+    padding: 8px 18px; border-radius: 980px;
+    background: #0a84ff; border: 0;
+    color: #fff; font-size: var(--fs-md); font-weight: 600;
+    cursor: pointer;
+    transition: background 0.12s, opacity 0.12s;
+  }
+  .acct-btn-save:hover { background: #0066d6; }
+  .acct-btn-save:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+    background: var(--bg-soft);
+    color: var(--text-muted);
+  }
+  .acct-btn-save:focus-visible {
+    outline: 2px solid #0a84ff;
+    outline-offset: 2px;
+  }
+  .acct-btn-text:focus-visible {
+    outline: 2px solid var(--highlight);
+    outline-offset: 2px;
+  }
   .acct-btn-solid {
     padding: 8px 18px; border-radius: 980px;
     background: #0a84ff; border: 0;

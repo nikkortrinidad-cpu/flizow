@@ -49,11 +49,20 @@ interface Props {
 export default function FlizowAccountModal({ onClose }: Props) {
   const { user, logout } = useAuth();
   const { data, store } = useFlizow();
-  const isDark = data.theme === 'dark';
+  // isDark used to drive the Light/Dark segment buttons directly;
+  // those now key off draftTheme, so this derivation is gone. The
+  // committed theme reads via `data.theme` where needed.
 
   const [section, setSection] = useState<Section>('profile');
   const closeBtnRef = useRef<HTMLButtonElement | null>(null);
   const modalRef = useRef<HTMLDivElement | null>(null);
+
+  // closeRef holds the latest handleClose. The Esc-handling useEffect
+  // below reads through this ref instead of binding to handleClose
+  // directly — that keeps the keydown listener attached for the
+  // modal's lifetime instead of re-attaching on every render. The
+  // ref itself updates each render via the assignment below.
+  const closeRef = useRef<() => void>(() => { onClose(); });
 
   // Esc closes + initial focus on the safe dismissal target +
   // focus trap so Tab cycles within the modal instead of escaping
@@ -61,7 +70,7 @@ export default function FlizowAccountModal({ onClose }: Props) {
   useEffect(() => {
     closeBtnRef.current?.focus();
     function onKey(e: KeyboardEvent) {
-      if (e.key === 'Escape') { e.preventDefault(); onClose(); return; }
+      if (e.key === 'Escape') { e.preventDefault(); closeRef.current(); return; }
       if (e.key !== 'Tab') return;
       // Focus trap. Collect every focusable inside the modal, then
       // wrap Tab/Shift+Tab around the ends. Skip if no modal yet
@@ -109,53 +118,48 @@ export default function FlizowAccountModal({ onClose }: Props) {
   const [tzDraft, setTzDraft] = useState(myMember?.timezone ?? 'pst');
   const [avatarHex, setAvatarHex] = useState(myMember?.color ?? '#5e5ce6');
 
-  // Re-sync drafts when the Member record changes externally. Without
-  // this, a teammate editing your role/timezone wouldn't surface in
-  // your open settings panel until you reloaded.
-  useEffect(() => {
-    if (!myMember) return;
-    setNameDraft((prev) => (prev === myMember.name ? prev : myMember.name));
-    setPreferredDraft((prev) =>
-      prev === (myMember.preferredName ?? '') ? prev : (myMember.preferredName ?? prev),
-    );
-    setRoleDraft((prev) => (prev === (myMember.role ?? '') ? prev : (myMember.role ?? '')));
-    setTzDraft((prev) =>
-      prev === (myMember.timezone ?? prev) ? prev : (myMember.timezone ?? prev),
-    );
-    setAvatarHex((prev) => (prev === myMember.color ? prev : myMember.color));
-    // Intentionally narrow deps — only react to the persisted record
-    // changing, not to draft state changes (would loop).
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [myMember?.name, myMember?.preferredName, myMember?.role, myMember?.timezone, myMember?.color]);
+  // Drafts initialise lazily from the source values on first render
+  // (above) and stay component-local from there. The previous resync
+  // effect would have clobbered typed-but-not-yet-saved drafts under
+  // the new transactional Save/Cancel model — under that contract,
+  // the user's draft is the source of truth until they Save or Cancel.
+  // Concurrent edits to one's own member record are rare in practice,
+  // and the modal session is short, so accepting "stale UI vs. cloud
+  // mid-edit" is the right tradeoff.
 
-  // Patch helper — every Profile field uses the same call shape, so
-  // pulling it into one closure keeps the JSX uncluttered. No-op
-  // when there's no signed-in user (dev-bypass mode).
-  function patchOwnMember(patch: Partial<Member>) {
-    if (!ownUid) return;
-    store.updateMember(ownUid, patch);
-  }
+  // Workspace drafts — lifted up from WorkspaceSection so the modal-
+  // level Save handler can commit them alongside the Profile fields.
+  // Initialised lazily from workspaceMeta on first render; modal-
+  // local from then on (the modal session is short — no re-sync logic
+  // needed). Workspace tab below is fed these as props.
+  const wsMeta = useSyncExternalStore(store.subscribeWorkspace, store.getWorkspaceMeta);
+  const [draftWsName, setDraftWsName] = useState(() => wsMeta?.name ?? '');
+  const [draftWsInitials, setDraftWsInitials] = useState(() => wsMeta?.initials ?? '');
+  const [draftWsColor, setDraftWsColor] = useState(() => wsMeta?.color ?? '#5e5ce6');
 
-  // Preferences. Appearance is the only one wired through — light/dark/system
-  // routes through flizowStore.setTheme(). "System" applies the OS-preferred
-  // scheme once on select, then behaves as a one-shot until a richer
-  // pref-store ships. weekStart used to live here (Sun/Mon segment) — gone
-  // because the Schedule grid is Mon–Fri-only.
+  // Time format — local-only today (no persistence path exists). Keeps
+  // its draft for symmetry with the rest; Save no-ops when the field
+  // hasn't moved off the default.
   const [timeFmt, setTimeFmt] = useState<'12h' | '24h'>('12h');
 
-  // Notification preferences. Default-true semantics — undefined on
-  // a Member record means "show me everything," matching pre-prefs
-  // bell behaviour. Both wired into deriveNotifications: digest gates
-  // the system roll-up line; urgent gates the overdue / due-today /
-  // on-fire cards.
-  const notifDigest = myMember?.notifPrefs?.digest !== false;
-  const notifUrgent = myMember?.notifPrefs?.urgent !== false;
+  // Notification preference drafts. Default-true semantics: undefined
+  // on the Member record means "show me everything," matching the
+  // pre-prefs bell behaviour. Lazy init from current Member state.
+  const [draftNotifDigest, setDraftNotifDigest] = useState(
+    () => myMember?.notifPrefs?.digest !== false,
+  );
+  const [draftNotifUrgent, setDraftNotifUrgent] = useState(
+    () => myMember?.notifPrefs?.urgent !== false,
+  );
 
-  function patchNotifPrefs(patch: { digest?: boolean; urgent?: boolean }) {
-    if (!ownUid) return;
-    const current = myMember?.notifPrefs ?? {};
-    store.updateMember(ownUid, { notifPrefs: { ...current, ...patch } });
-  }
+  // Theme draft. Stops the previous behaviour of switching the theme
+  // immediately on click — under the new Save/Cancel contract,
+  // picking dark in the modal *previews nothing* until Save fires.
+  // Tradeoff acknowledged in the commit message; the strict
+  // transactional model is what the user asked for.
+  const [draftTheme, setDraftTheme] = useState<'light' | 'dark'>(
+    () => (data.theme === 'dark' ? 'dark' : 'light'),
+  );
 
   // Danger-zone state — the Reset confirmation needs a typed confirmation.
   const [resetPhase, setResetPhase] = useState<'idle' | 'confirm'>('idle');
@@ -186,14 +190,134 @@ export default function FlizowAccountModal({ onClose }: Props) {
     onClose();
   }
 
+  /** Stage a theme change in the local draft. Persists via Save. */
   function setAppearance(mode: 'light' | 'dark' | 'system') {
     if (mode === 'system') {
       const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-      store.setTheme(prefersDark ? 'dark' : 'light');
+      setDraftTheme(prefersDark ? 'dark' : 'light');
     } else {
-      store.setTheme(mode);
+      setDraftTheme(mode);
     }
   }
+
+  // ── Dirty detection ───────────────────────────────────────────────
+  // Compare every draft against its source-of-truth value. If any
+  // diverges, the modal is dirty: Save becomes enabled, and Close /
+  // Cancel / Esc / backdrop-click prompts a "discard?" confirm.
+  const sourceWsName = wsMeta?.name ?? '';
+  const sourceWsInitials = wsMeta?.initials ?? '';
+  const sourceWsColor = wsMeta?.color ?? '#5e5ce6';
+  const sourceTheme: 'light' | 'dark' = data.theme === 'dark' ? 'dark' : 'light';
+  const sourceNotifDigest = myMember?.notifPrefs?.digest !== false;
+  const sourceNotifUrgent = myMember?.notifPrefs?.urgent !== false;
+  const dirtyProfile =
+    nameDraft.trim() !== (myMember?.name ?? '').trim() ||
+    preferredDraft.trim() !== (myMember?.preferredName ?? '').trim() ||
+    roleDraft.trim() !== (myMember?.role ?? '').trim() ||
+    tzDraft !== (myMember?.timezone ?? 'pst') ||
+    avatarHex !== (myMember?.color ?? '#5e5ce6');
+  const dirtyWorkspace =
+    draftWsName.trim() !== sourceWsName ||
+    draftWsInitials.trim().toUpperCase() !== sourceWsInitials ||
+    draftWsColor !== sourceWsColor;
+  const dirtyTheme = draftTheme !== sourceTheme;
+  const dirtyNotif =
+    draftNotifDigest !== sourceNotifDigest ||
+    draftNotifUrgent !== sourceNotifUrgent;
+  const isDirty = dirtyProfile || dirtyWorkspace || dirtyTheme || dirtyNotif;
+
+  /** Walk every draft and commit the diffs to the store. Called on
+   *  Save click. Members tab actions (invite/revoke/remove) sit
+   *  outside this path — they execute directly. Same for Sign Out
+   *  and Reset Workspace.
+   *
+   *  Workspace identity goes through its own dedicated method
+   *  (updateWorkspaceIdentity) because it lives on the workspace
+   *  doc, not on the agency-side Member record. Theme uses
+   *  store.setTheme; everything else funnels through one
+   *  store.updateMember call. */
+  async function handleSave() {
+    // Profile + notifications patch (one Member.update call).
+    if (ownUid && (dirtyProfile || dirtyNotif)) {
+      const patch: Partial<Member> = {};
+      if (dirtyProfile) {
+        const trimmedName = nameDraft.trim();
+        if (trimmedName && trimmedName !== myMember?.name) {
+          patch.name = trimmedName;
+          patch.initials = initialsOf(trimmedName);
+        }
+        if (preferredDraft.trim() !== (myMember?.preferredName ?? '').trim()) {
+          patch.preferredName = preferredDraft.trim() || undefined;
+        }
+        if (roleDraft.trim() !== (myMember?.role ?? '').trim()) {
+          patch.role = roleDraft.trim() || undefined;
+        }
+        if (tzDraft !== myMember?.timezone) {
+          patch.timezone = tzDraft;
+        }
+        if (avatarHex !== myMember?.color) {
+          patch.color = avatarHex;
+        }
+      }
+      if (dirtyNotif) {
+        patch.notifPrefs = {
+          digest: draftNotifDigest,
+          urgent: draftNotifUrgent,
+        };
+      }
+      if (Object.keys(patch).length > 0) {
+        store.updateMember(ownUid, patch);
+      }
+    }
+
+    // Workspace identity patch.
+    if (dirtyWorkspace && wsMeta) {
+      const wsPatch: { name?: string; initials?: string; color?: string } = {};
+      const trimmedWsName = draftWsName.trim();
+      if (trimmedWsName && trimmedWsName !== wsMeta.name) {
+        wsPatch.name = trimmedWsName;
+      }
+      const trimmedWsInitials = draftWsInitials.trim().toUpperCase().slice(0, 2);
+      if (trimmedWsInitials && trimmedWsInitials !== wsMeta.initials) {
+        wsPatch.initials = trimmedWsInitials;
+      }
+      if (draftWsColor !== wsMeta.color) {
+        wsPatch.color = draftWsColor;
+      }
+      if (Object.keys(wsPatch).length > 0) {
+        try {
+          await store.updateWorkspaceIdentity(wsPatch);
+        } catch (err) {
+          // eslint-disable-next-line no-console
+          console.error('[FlizowAccountModal] workspace save failed:', err);
+          // The store's syncError banner will surface this to the user;
+          // we still close the modal because the rest of the changes
+          // already landed via the Member.update call above.
+        }
+      }
+    }
+
+    // Theme.
+    if (dirtyTheme) {
+      store.setTheme(draftTheme);
+    }
+
+    onClose();
+  }
+
+  /** Close-with-dirty-check used by the X button, Esc handler, and
+   *  the backdrop click. Cancel button uses the same path. */
+  function handleClose() {
+    if (isDirty && !window.confirm('Discard your unsaved changes?')) {
+      return;
+    }
+    onClose();
+  }
+
+  // Keep the ref in sync each render so the long-lived keydown
+  // listener always calls the freshest version (which sees the
+  // current isDirty value).
+  closeRef.current = handleClose;
 
   return (
     <div
@@ -205,7 +329,7 @@ export default function FlizowAccountModal({ onClose }: Props) {
       // the modal rendered, but invisibly.
       data-open="true"
       aria-hidden={false}
-      onClick={onClose}
+      onClick={handleClose}
     >
       <div
         ref={modalRef}
@@ -222,7 +346,7 @@ export default function FlizowAccountModal({ onClose }: Props) {
             className="acct-close"
             type="button"
             aria-label="Close settings (Esc)"
-            onClick={onClose}
+            onClick={handleClose}
           >
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
           </button>
@@ -294,16 +418,18 @@ export default function FlizowAccountModal({ onClose }: Props) {
                           style={{ background: c.hex }}
                           aria-label={c.id}
                           aria-pressed={avatarHex === c.hex}
-                          onClick={() => {
-                            setAvatarHex(c.hex);
-                            patchOwnMember({ color: c.hex });
-                          }}
+                          onClick={() => setAvatarHex(c.hex)}
                         />
                       ))}
                     </div>
                   </div>
                 </div>
 
+                {/* All Profile inputs are now controlled drafts. They
+                    don't auto-commit anymore — the modal-level Save
+                    button walks every draft and persists the diffs.
+                    Cancel just closes (drafts are local React state,
+                    they evaporate on unmount). */}
                 <div className="acct-form-grid">
                   <Field label="Full name" htmlFor="acct-name">
                     <input
@@ -312,25 +438,6 @@ export default function FlizowAccountModal({ onClose }: Props) {
                       className="acct-input"
                       value={nameDraft}
                       onChange={(e) => setNameDraft(e.target.value)}
-                      onBlur={() => {
-                        // Save on blur — persists to the workspace member record.
-                        // Empty input reverts to whatever's stored (we don't
-                        // accept blank names; falls back to the previous
-                        // value from useEffect when myMember updates).
-                        const trimmed = nameDraft.trim();
-                        if (!trimmed) {
-                          setNameDraft(myMember?.name ?? user?.displayName ?? '');
-                          return;
-                        }
-                        if (trimmed !== myMember?.name) {
-                          patchOwnMember({
-                            name: trimmed,
-                            // Refresh initials when the name changes so
-                            // pickers and avatars stay in sync.
-                            initials: initialsOf(trimmed),
-                          });
-                        }
-                      }}
                       autoComplete="name"
                     />
                   </Field>
@@ -341,12 +448,6 @@ export default function FlizowAccountModal({ onClose }: Props) {
                       className="acct-input"
                       value={preferredDraft}
                       onChange={(e) => setPreferredDraft(e.target.value)}
-                      onBlur={() => {
-                        const trimmed = preferredDraft.trim();
-                        if (trimmed !== (myMember?.preferredName ?? '')) {
-                          patchOwnMember({ preferredName: trimmed || undefined });
-                        }
-                      }}
                       autoComplete="nickname"
                     />
                   </Field>
@@ -371,12 +472,6 @@ export default function FlizowAccountModal({ onClose }: Props) {
                       className="acct-input"
                       value={roleDraft}
                       onChange={(e) => setRoleDraft(e.target.value)}
-                      onBlur={() => {
-                        const trimmed = roleDraft.trim();
-                        if (trimmed !== (myMember?.role ?? '')) {
-                          patchOwnMember({ role: trimmed || undefined });
-                        }
-                      }}
                       autoComplete="organization-title"
                     />
                   </Field>
@@ -385,15 +480,7 @@ export default function FlizowAccountModal({ onClose }: Props) {
                       id="acct-tz"
                       className="acct-input"
                       value={tzDraft}
-                      onChange={(e) => {
-                        // Selects commit on change (not blur) — picking
-                        // an option IS the commit gesture.
-                        const next = e.target.value;
-                        setTzDraft(next);
-                        if (next !== myMember?.timezone) {
-                          patchOwnMember({ timezone: next });
-                        }
-                      }}
+                      onChange={(e) => setTzDraft(e.target.value)}
                     >
                       <option value="pst">Pacific · Los Angeles</option>
                       <option value="mst">Mountain · Denver</option>
@@ -475,7 +562,14 @@ export default function FlizowAccountModal({ onClose }: Props) {
 
             {/* ── Workspace ──────────────────────────────────────── */}
             {section === 'workspace' && (
-              <WorkspaceSection />
+              <WorkspaceSection
+                nameDraft={draftWsName}
+                setNameDraft={setDraftWsName}
+                initialsDraft={draftWsInitials}
+                setInitialsDraft={setDraftWsInitials}
+                colorDraft={draftWsColor}
+                setColorDraft={setDraftWsColor}
+              />
             )}
 
             {/* ── Preferences ────────────────────────────────────── */}
@@ -498,8 +592,8 @@ export default function FlizowAccountModal({ onClose }: Props) {
                   sub="Match your device or pick a fixed theme."
                 >
                   <Segment>
-                    <SegBtn pressed={!isDark} onClick={() => setAppearance('light')}>Light</SegBtn>
-                    <SegBtn pressed={isDark} onClick={() => setAppearance('dark')}>Dark</SegBtn>
+                    <SegBtn pressed={draftTheme === 'light'} onClick={() => setAppearance('light')}>Light</SegBtn>
+                    <SegBtn pressed={draftTheme === 'dark'} onClick={() => setAppearance('dark')}>Dark</SegBtn>
                     <SegBtn pressed={false} onClick={() => setAppearance('system')}>System</SegBtn>
                   </Segment>
                 </Row>
@@ -545,8 +639,8 @@ export default function FlizowAccountModal({ onClose }: Props) {
                   sub="Overdue tasks, due-today work, and on-fire client alerts."
                 >
                   <Toggle
-                    checked={notifUrgent}
-                    onChange={(next) => patchNotifPrefs({ urgent: next })}
+                    checked={draftNotifUrgent}
+                    onChange={setDraftNotifUrgent}
                     label="Urgent items in the bell"
                   />
                 </Row>
@@ -555,8 +649,8 @@ export default function FlizowAccountModal({ onClose }: Props) {
                   sub="Top-of-bell summary line when you have urgent items."
                 >
                   <Toggle
-                    checked={notifDigest}
-                    onChange={(next) => patchNotifPrefs({ digest: next })}
+                    checked={draftNotifDigest}
+                    onChange={setDraftNotifDigest}
                     label="Daily digest"
                   />
                 </Row>
@@ -636,7 +730,22 @@ export default function FlizowAccountModal({ onClose }: Props) {
 
         <footer className="acct-footer">
           <span className="acct-footer-status" role="status" aria-live="polite">{toast ?? ''}</span>
-          <button type="button" className="acct-btn-text" onClick={onClose}>Close</button>
+          <button
+            type="button"
+            className="acct-btn-text"
+            onClick={handleClose}
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            className="acct-btn-save"
+            onClick={handleSave}
+            disabled={!isDirty}
+            aria-label={isDirty ? 'Save changes' : 'No changes to save'}
+          >
+            Save
+          </button>
         </footer>
       </div>
     </div>
@@ -1064,27 +1173,30 @@ function MembersSection() {
 // ── Workspace tab ──────────────────────────────────────────────────────
 
 /** Workspace tab — name + initials + color tile + read-only stats.
- *  Owner-only edits; non-owners see the same fields as read-only.
- *  Image-upload logo deferred (needs Firebase Storage + uploader);
- *  initials + color tile carries 90% of the value for now. */
-function WorkspaceSection() {
+ *  Now a fully controlled component: drafts are owned by the parent
+ *  modal so the modal-level Save button can commit them alongside
+ *  the Profile fields. Owner-only edits; non-owners see the same
+ *  fields as read-only. Image-upload logo deferred (needs Firebase
+ *  Storage + uploader); initials + color tile carries 90% of the
+ *  value for now. */
+function WorkspaceSection({
+  nameDraft,
+  setNameDraft,
+  initialsDraft,
+  setInitialsDraft,
+  colorDraft,
+  setColorDraft,
+}: {
+  nameDraft: string;
+  setNameDraft: (v: string) => void;
+  initialsDraft: string;
+  setInitialsDraft: (v: string) => void;
+  colorDraft: string;
+  setColorDraft: (v: string) => void;
+}) {
   const { data, store } = useFlizow();
   const meta = useSyncExternalStore(store.subscribeWorkspace, store.getWorkspaceMeta);
   const ownUid = store.getCurrentMemberId();
-
-  const [nameDraft, setNameDraft] = useState('');
-  const [initialsDraft, setInitialsDraft] = useState('');
-  const [actionError, setActionError] = useState<string | null>(null);
-
-  // Sync local drafts to the meta whenever it changes externally
-  // (another teammate edited the workspace name, or the doc just
-  // loaded). Without this, a freshly-mounted tab would show empty
-  // inputs even though meta.name is populated.
-  useEffect(() => {
-    if (!meta) return;
-    setNameDraft((prev) => (prev === meta.name ? prev : meta.name));
-    setInitialsDraft((prev) => (prev === meta.initials ? prev : meta.initials));
-  }, [meta?.name, meta?.initials]);
 
   if (!meta) {
     return (
@@ -1115,48 +1227,6 @@ function WorkspaceSection() {
   const serviceCount = data.services.length;
   const memberCount = meta.members.length;
 
-  async function commitName() {
-    setActionError(null);
-    const trimmed = nameDraft.trim();
-    if (!trimmed) {
-      // Don't accept blank; revert.
-      setNameDraft(meta?.name ?? '');
-      return;
-    }
-    if (trimmed === meta?.name) return;
-    try {
-      await store.updateWorkspaceIdentity({ name: trimmed });
-    } catch (err) {
-      setActionError(err instanceof Error ? err.message : 'Could not save name.');
-    }
-  }
-
-  async function commitInitials() {
-    setActionError(null);
-    const trimmed = initialsDraft.trim().toUpperCase().slice(0, 2);
-    if (!trimmed) {
-      setInitialsDraft(meta?.initials ?? '');
-      return;
-    }
-    if (trimmed === meta?.initials) return;
-    setInitialsDraft(trimmed);
-    try {
-      await store.updateWorkspaceIdentity({ initials: trimmed });
-    } catch (err) {
-      setActionError(err instanceof Error ? err.message : 'Could not save initials.');
-    }
-  }
-
-  async function pickColor(hex: string) {
-    setActionError(null);
-    if (hex === meta?.color) return;
-    try {
-      await store.updateWorkspaceIdentity({ color: hex });
-    } catch (err) {
-      setActionError(err instanceof Error ? err.message : 'Could not save color.');
-    }
-  }
-
   return (
     <section
       className="acct-section"
@@ -1175,26 +1245,18 @@ function WorkspaceSection() {
         </p>
       </div>
 
-      {actionError && (
-        <div className="mbrs-error" role="alert">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-            <circle cx="12" cy="12" r="10" />
-            <line x1="12" y1="8" x2="12" y2="12" />
-            <line x1="12" y1="16" x2="12.01" y2="16" />
-          </svg>
-          <span>{actionError}</span>
-        </div>
-      )}
-
       {/* Workspace mark + name block — same shape as the Profile tab's
-          avatar block so the two sections feel like family. */}
+          avatar block so the two sections feel like family. The tile
+          previews the DRAFT identity (live as the user edits) so the
+          Save click feels predictable: what you see is what gets
+          committed. */}
       <div className="acct-avatar-block">
         <div
           className="acct-avatar-large"
-          style={{ background: meta.color, color: '#fff', fontSize: 17 }}
+          style={{ background: colorDraft, color: '#fff', fontSize: 17 }}
           aria-hidden="true"
         >
-          {meta.initials}
+          {initialsDraft || meta.initials}
         </div>
         <div style={{ flex: 1, minWidth: 0 }}>
           <Field label="Workspace name" htmlFor="acct-ws-name">
@@ -1204,7 +1266,6 @@ function WorkspaceSection() {
               className="acct-input"
               value={nameDraft}
               onChange={(e) => setNameDraft(e.target.value)}
-              onBlur={commitName}
               disabled={!isOwner}
               maxLength={60}
               placeholder="e.g. Acme Marketing"
@@ -1222,8 +1283,7 @@ function WorkspaceSection() {
                 type="text"
                 className="acct-input"
                 value={initialsDraft}
-                onChange={(e) => setInitialsDraft(e.target.value.toUpperCase())}
-                onBlur={commitInitials}
+                onChange={(e) => setInitialsDraft(e.target.value.toUpperCase().slice(0, 2))}
                 maxLength={2}
                 style={{ textTransform: 'uppercase', letterSpacing: '0.05em', textAlign: 'center', width: 80 }}
                 aria-label="Workspace initials (2 characters max)"
@@ -1238,8 +1298,8 @@ function WorkspaceSection() {
                     className="acct-avatar-color"
                     style={{ background: c.hex }}
                     aria-label={c.id}
-                    aria-pressed={meta.color === c.hex}
-                    onClick={() => pickColor(c.hex)}
+                    aria-pressed={colorDraft === c.hex}
+                    onClick={() => setColorDraft(c.hex)}
                   />
                 ))}
               </div>
