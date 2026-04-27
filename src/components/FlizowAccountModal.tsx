@@ -1536,10 +1536,13 @@ function DangerZone() {
             <>
               Removes every client, service, kanban card, contact, quick link,
               note, touchpoint, and activity entry across the whole workspace.
+              Demo-seeded teammates (the synthetic AMs + operators that come
+              with "Load demo data") are also cleared.
               <br /><br />
-              <strong>Survives:</strong> members + roles, templates,
-              workspace name + logo, your sign-in. This is the reset you'd
-              run before walking through a fresh add-client → add-service flow.
+              <strong>Survives:</strong> real workspace members + their roles,
+              templates, workspace name + logo, your sign-in. This is the reset
+              you'd run before walking through a fresh add-client → add-service
+              flow.
               <br /><br />
               This can't be undone.
             </>

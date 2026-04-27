@@ -1033,14 +1033,21 @@ class FlizowStore {
 
   /**
    * Wipe every client/service/task plus the records that cascade off
-   * them. Workspace identity (name/logo/owner), members, templates,
-   * theme, today anchor, and the ops-seed flag all stay — this is a
-   * "reset the work" action, not a "delete the account" action.
+   * them. Workspace identity (name/logo/owner), templates, theme,
+   * today anchor, and the ops-seed flag all stay — this is a "reset
+   * the work" action, not a "delete the account" action.
    *
-   * Used today by Account Settings → Workspace → Danger zone, so the
-   * user can walk a clean addService() path against an empty workspace
-   * after unloading demo data. Owner-only at the UI; the store doesn't
-   * gate (gating belongs at the call site, not in the data layer).
+   * Members: kept-ish. The demo-data loader pumps DEMO_AMS + OPS_TEAM
+   * into `data.members` with synthetic ids ('am-1', 'op-3', etc.).
+   * Those need to go on a clear; otherwise the Analytics page's team
+   * workload bar still shows fake teammates after the workspace looks
+   * empty everywhere else. The owner + any real invited teammates
+   * have Firebase UIDs that match an entry in `workspaceMeta.memberUids`
+   * — we keep those, drop the rest.
+   *
+   * Used today by Account Settings → Workspace → Danger zone. Owner-
+   * only at the UI; the store doesn't gate (gating belongs at the
+   * call site, not in the data layer).
    *
    * Single save() at the end syncs to Firestore in one write rather
    * than fourteen.
@@ -1062,6 +1069,13 @@ class FlizowStore {
     this.data.opsTasks = [];
     this.data.scheduleTaskMap = {};
     this.data.favoriteServiceIds = [];
+    // Filter demo members out, keep real workspace members. Synthetic
+    // ids ('am-1' etc.) seeded by loadDemoData aren't in the
+    // workspace's members list; real Firebase UIDs are.
+    const realUids = new Set(
+      (this.workspaceMeta?.members ?? []).map(m => m.uid),
+    );
+    this.data.members = this.data.members.filter(m => realUids.has(m.id));
     this.save();
   }
 
