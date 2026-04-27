@@ -55,11 +55,19 @@ import { InlineCardComposer } from '../components/shared/InlineCardComposer';
  */
 
 // ── Column definitions ───────────────────────────────────────────────
+//
+// All five columns ALWAYS render. Do not add an `emptyHide` flag —
+// previously the Blocked column auto-hid when empty (saved ~1 column
+// of horizontal real estate), but that quietly broke discoverability:
+// a column you can't see is a state you don't know your work can
+// reach, and you can't drag a card to a column that isn't on screen.
+// The mockup ships all five columns unconditionally; the React port
+// matches that. This rule has been re-broken once — keep it locked.
 
-const COLUMNS: Array<{ id: ColumnId; title: string; dot: string; emptyHide?: boolean }> = [
+const COLUMNS: Array<{ id: ColumnId; title: string; dot: string }> = [
   { id: 'todo',       title: 'To Do',        dot: 'todo' },
   { id: 'inprogress', title: 'In Progress',  dot: 'progress' },
-  { id: 'blocked',    title: 'Blocked',      dot: 'blocked', emptyHide: true },
+  { id: 'blocked',    title: 'Blocked',      dot: 'blocked' },
   { id: 'review',     title: 'Needs Review', dot: 'review' },
   { id: 'done',       title: 'Done',         dot: 'done' },
 ];
@@ -583,7 +591,6 @@ function BoardBody({
           <div className="board">
             {COLUMNS.map((col) => {
               const colTasks = tasksByColumn.get(col.id) ?? [];
-              if (col.emptyHide && colTasks.length === 0) return null;
               return (
                 <Column
                   key={col.id}
@@ -626,11 +633,10 @@ function BoardBody({
                   >
                     {COLUMNS.map((col) => {
                       const colTasks = lane.tasksByColumn.get(col.id) ?? [];
-                      // Hide the Blocked column within a lane when it's
-                      // empty, matching the flat-mode rule. Other columns
-                      // always render so the lane has consistent drop
-                      // targets.
-                      if (col.emptyHide && colTasks.length === 0) return null;
+                      // All five columns render in every lane — same
+                      // policy as the flat-mode loop above. See the
+                      // COLUMNS comment for the "always show Blocked"
+                      // rationale.
                       return (
                         <Column
                           key={col.id}
