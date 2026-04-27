@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
-import { ChevronDownIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
+import { CheckIcon, ChevronDownIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
 import { navigate } from '../router';
 import { useFlizow } from '../store/useFlizow';
 import type { Task, Member, Client, Service } from '../types/flizow';
@@ -446,9 +446,7 @@ function OptionRow({ label, subLabel, avatar, selected, onSelect }: {
         <span className="anlx-filter-option-label">{label}</span>
         {subLabel && <span className="anlx-filter-option-sub">{subLabel}</span>}
       </span>
-      <svg className="anlx-filter-option-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-        <polyline points="20 6 9 17 4 12" />
-      </svg>
+      <CheckIcon className="anlx-filter-option-check" aria-hidden="true" />
     </button>
   );
 }

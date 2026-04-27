@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { EllipsisHorizontalIcon, PlusIcon } from '@heroicons/react/24/outline';
+import { CheckIcon, EllipsisHorizontalIcon, PlusIcon } from '@heroicons/react/24/outline';
 import type {
   Client, Touchpoint, ActionItem, Member, Contact, Service, TouchpointKind,
 } from '../types/flizow';
@@ -635,9 +635,7 @@ function ActionItemRow({ item, members, clientServices, store, todayISO }: {
           aria-label={item.done ? 'Mark not done' : 'Mark done'}
           onClick={() => store.toggleActionItem(item.id)}
         >
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-            <polyline points="20 6 9 17 4 12" />
-          </svg>
+          <CheckIcon aria-hidden="true" />
         </button>
         <div className="meeting-action-text">{item.text}</div>
         {assignee && (

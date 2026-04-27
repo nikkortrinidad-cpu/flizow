@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { ChevronDownIcon, EllipsisVerticalIcon, PlusIcon, XMarkIcon } from '@heroicons/react/24/outline';
+import { CheckIcon, ChevronDownIcon, EllipsisVerticalIcon, PlusIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import { useRoute, navigate } from '../router';
 import { useFlizow } from '../store/useFlizow';
 import type {
@@ -1294,9 +1294,7 @@ function OnboardingServiceCard({ group, onToggle, onAdd, onDelete, onRename }: {
       >
         <span className="onb-svc-icon" aria-hidden="true">
           {complete ? (
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <polyline points="20 6 9 17 4 12" />
-            </svg>
+            <CheckIcon aria-hidden="true" />
           ) : (
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <rect x="3" y="5" width="18" height="16" rx="2" />
@@ -1425,9 +1423,7 @@ function OnboardingRow({ item, onToggle, onDelete, onRename }: {
         disabled={editing}
       >
         {item.done && (
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-            <polyline points="20 6 9 17 4 12" />
-          </svg>
+          <CheckIcon aria-hidden="true" />
         )}
       </button>
       {editing ? (

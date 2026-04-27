@@ -1,5 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
-import { ChevronDownIcon } from '@heroicons/react/24/outline';
+// CheckIcon is renamed on import because BoardFilters defines its own
+// `CheckIcon` wrapper component (preserved at the bottom of this file
+// for callsite stability). The wrapper now delegates to the Heroicons
+// component.
+import { CheckIcon as HeroCheckIcon, ChevronDownIcon } from '@heroicons/react/24/outline';
 import type { Member, Priority } from '../types/flizow';
 import { BOARD_LABELS, labelById } from '../constants/labels';
 
@@ -588,9 +592,5 @@ function ChevronDown() {
   );
 }
 function CheckIcon() {
-  return (
-    <svg className="check" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-      <polyline points="20 6 9 17 4 12" />
-    </svg>
-  );
+  return <HeroCheckIcon className="check" aria-hidden="true" />;
 }

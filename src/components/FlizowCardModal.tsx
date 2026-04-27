@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { ChevronRightIcon } from '@heroicons/react/24/outline';
+import { CheckIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
 import { createPortal } from 'react-dom';
 import { useFlizow } from '../store/useFlizow';
 import type { ColumnId, Priority, Member, TaskComment, TaskActivity, Task, OpsTask } from '../types/flizow';
@@ -870,7 +870,7 @@ export default function FlizowCardModal({ taskId, onClose, kind = 'task', onDupl
                   {newCheckActive && (
                     <div className="checklist-row checklist-new-row" style={{ display: 'flex' }}>
                       <button className="checklist-checkbox" aria-label="New task" tabIndex={-1}>
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                        <CheckIcon aria-hidden="true" />
                       </button>
                       <input
                         ref={newCheckInputRef}
@@ -1045,7 +1045,7 @@ function ChecklistRow({
         onClick={onToggle}
         aria-label={done ? 'Mark incomplete' : 'Mark complete'}
       >
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+        <CheckIcon aria-hidden="true" />
       </button>
       {editing ? (
         <input

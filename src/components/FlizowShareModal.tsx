@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
-import { ChevronDownIcon, PlusIcon, TrashIcon } from '@heroicons/react/24/outline';
+import { CheckIcon, ChevronDownIcon, PlusIcon, TrashIcon } from '@heroicons/react/24/outline';
 import { useFlizow } from '../store/useFlizow';
 import { useAuth } from '../contexts/AuthContext';
 import type { Member } from '../types/flizow';
@@ -787,9 +787,7 @@ export default function FlizowShareModal({ taskId, onClose }: Props) {
               aria-label="Copy link"
             >
               {copied ? (
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <polyline points="20 6 9 17 4 12" />
-                </svg>
+                <CheckIcon aria-hidden="true" />
               ) : (
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
@@ -870,9 +868,7 @@ function RoleMenu({
                 {r.label}
                 {isActive && (
                   <span className="share-role-item-check">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                      <polyline points="20 6 9 17 4 12" />
-                    </svg>
+                    <CheckIcon aria-hidden="true" />
                   </span>
                 )}
               </div>
@@ -941,9 +937,7 @@ function AccessMenu({
                 {a.title}
                 {isActive && (
                   <span className="share-role-item-check">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                      <polyline points="20 6 9 17 4 12" />
-                    </svg>
+                    <CheckIcon aria-hidden="true" />
                   </span>
                 )}
               </div>

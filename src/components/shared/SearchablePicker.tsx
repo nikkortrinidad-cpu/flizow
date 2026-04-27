@@ -1,4 +1,5 @@
 import { useEffect, useRef, type ReactNode } from 'react';
+import { CheckIcon } from '@heroicons/react/24/outline';
 
 /**
  * Shared multi-select dropdown with a search input and a scrollable
@@ -139,18 +140,7 @@ export function SearchablePicker<T>({
                 }}
               >
                 {renderItem(item)}
-                <svg
-                  className={checkClassName}
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="3"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  aria-hidden="true"
-                >
-                  <polyline points="20 6 9 17 4 12" />
-                </svg>
+                <CheckIcon className={checkClassName} aria-hidden="true" />
               </button>
             );
           })

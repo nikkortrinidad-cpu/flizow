@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
+import { CheckIcon } from '@heroicons/react/24/outline';
 import { useAuth } from '../contexts/AuthContext';
 import { useFlizow } from '../store/useFlizow';
 import type { AccessLevel, Member } from '../types/flizow';
@@ -813,20 +814,12 @@ export default function FlizowAccountModal({ onClose }: Props) {
           <span className="acct-footer-status" role="status" aria-live="polite">
             {toast && (
               <>
-                <svg
+                <CheckIcon
                   className="acct-footer-status-icon"
-                  width="14"
-                  height="14"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2.4"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
+                  width={14}
+                  height={14}
                   aria-hidden="true"
-                >
-                  <polyline points="20 6 9 17 4 12" />
-                </svg>
+                />
                 {toast}
               </>
             )}

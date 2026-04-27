@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState, type ReactElement, type ReactNode
 // for callsite-stability — many JSX uses still write <TrashIcon />).
 // The wrapper now delegates to the Heroicons component.
 import {
+  CheckIcon as HeroCheckIcon,
   ChevronDownIcon,
   MagnifyingGlassIcon,
   TrashIcon as HeroTrashIcon,
@@ -1690,12 +1691,10 @@ function BlockedIcon() {
     </svg>
   );
 }
-function CheckIcon() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-      <polyline points="20 6 9 17 4 12" />
-    </svg>
-  );
+// Wrapper kept for call-site stability — many JSX uses still write
+// <CheckIcon />. Forwards SVG props through to the Heroicons component.
+function CheckIcon(props: React.SVGProps<SVGSVGElement>) {
+  return <HeroCheckIcon aria-hidden="true" {...props} />;
 }
 function CommentIcon() {
   return (
