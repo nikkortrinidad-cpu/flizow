@@ -7167,14 +7167,16 @@
   /* Height-auto animation for the "View all N tasks" expand toggle
      under Needs Your Attention. Uses the grid-template-rows: 0fr ↔ 1fr
      trick — when 1fr behaves like auto (sized by content), we get a
-     true height-auto transition without measuring with JS. The 1s
-     duration matches the user's request; ease-in-out feels less
-     mechanical than linear on a 1-second curve. The inner div clips
-     overflow so the cards don't spill out during the slide. */
+     true height-auto transition without measuring with JS. 220ms
+     ease-out matches the snappier UI standard (Linear, Notion); was
+     1s originally and felt sluggish. ease-out finishes briskly into
+     the final state, which reads as decisive on both expand and
+     collapse. The inner div clips overflow so the cards don't spill
+     out during the slide. */
   .attn-extras {
     display: grid;
     grid-template-rows: 0fr;
-    transition: grid-template-rows 1s ease-in-out;
+    transition: grid-template-rows 220ms ease-out;
   }
   .attn-extras.expanded {
     grid-template-rows: 1fr;
