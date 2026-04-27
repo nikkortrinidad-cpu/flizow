@@ -1,4 +1,5 @@
 import { useMemo, useState, type ReactElement } from 'react';
+import { MagnifyingGlassIcon } from '@heroicons/react/24/outline';
 import { DndContext, DragOverlay, PointerSensor, KeyboardSensor, useSensor, useSensors, closestCenter, useDraggable, useDroppable } from '@dnd-kit/core';
 import type { DragEndEvent, DragStartEvent } from '@dnd-kit/core';
 import { daysBetween, formatMonthDay } from '../utils/dateFormat';
@@ -250,10 +251,7 @@ function FiltersBar({
   return (
     <div className="filters-bar" role="search" aria-label="Ops board filters">
       <label className="filter-search">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-          <circle cx="11" cy="11" r="8" />
-          <line x1="21" y1="21" x2="16.65" y2="16.65" />
-        </svg>
+        <MagnifyingGlassIcon aria-hidden="true" />
         <input
           type="search"
           placeholder="Search ops cards…"

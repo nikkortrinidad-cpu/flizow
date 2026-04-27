@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { ChevronRightIcon } from '@heroicons/react/24/outline';
 import { createPortal } from 'react-dom';
 import { useFlizow } from '../store/useFlizow';
 import type { ColumnId, Priority, Member, TaskComment, TaskActivity, Task, OpsTask } from '../types/flizow';
@@ -1437,9 +1438,7 @@ function CommentItem({
             onClick={onToggleReplies}
             aria-expanded={repliesOpen}
           >
-            <svg className="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-              <polyline points="9 18 15 12 9 6" />
-            </svg>
+            <ChevronRightIcon className="chev" aria-hidden="true" />
             {repliesOpen ? `Hide ${replies.length} ${replies.length === 1 ? 'reply' : 'replies'}` : `Show ${replies.length} ${replies.length === 1 ? 'reply' : 'replies'}`}
           </button>
         )}

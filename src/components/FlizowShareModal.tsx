@@ -1,4 +1,5 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { ChevronDownIcon, PlusIcon, TrashIcon } from '@heroicons/react/24/outline';
 import { useFlizow } from '../store/useFlizow';
 import { useAuth } from '../contexts/AuthContext';
 import type { Member } from '../types/flizow';
@@ -524,9 +525,7 @@ export default function FlizowShareModal({ taskId, onClose }: Props) {
           aria-expanded={activeMenu?.kind === 'member' && activeMenu.id === m.id}
         >
           <span className="role-label">{roleById(role).label}</span>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-            <polyline points="6 9 12 15 18 9" />
-          </svg>
+          <ChevronDownIcon aria-hidden="true" />
         </button>
       </div>
     );
@@ -552,9 +551,7 @@ export default function FlizowShareModal({ taskId, onClose }: Props) {
           aria-expanded={activeMenu?.kind === 'member' && activeMenu.id === p.id}
         >
           <span className="role-label">{roleById(p.role).label}</span>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-            <polyline points="6 9 12 15 18 9" />
-          </svg>
+          <ChevronDownIcon aria-hidden="true" />
         </button>
       </div>
     );
@@ -683,9 +680,7 @@ export default function FlizowShareModal({ taskId, onClose }: Props) {
               aria-label="Choose invite role"
             >
               <span>{currentRole.label}</span>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                <polyline points="6 9 12 15 18 9" />
-              </svg>
+              <ChevronDownIcon aria-hidden="true" />
             </button>
           </div>
 
@@ -712,10 +707,7 @@ export default function FlizowShareModal({ taskId, onClose }: Props) {
                   <line x1="5" y1="12" x2="19" y2="12" />
                 </svg>
               ) : (
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <line x1="12" y1="5" x2="12" y2="19" />
-                  <line x1="5" y1="12" x2="19" y2="12" />
-                </svg>
+                <PlusIcon aria-hidden="true" />
               )}
               <span>{messageOpen ? 'Hide message' : 'Add a message'}</span>
             </button>
@@ -770,9 +762,7 @@ export default function FlizowShareModal({ taskId, onClose }: Props) {
               <div className="share-access-sub">{currentAccess.sub}</div>
             </div>
             <div className="share-access-chevron" aria-hidden="true">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <polyline points="6 9 12 15 18 9" />
-              </svg>
+              <ChevronDownIcon aria-hidden="true" />
             </div>
           </div>
 
@@ -906,10 +896,7 @@ function RoleMenu({
               }
             }}
           >
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <polyline points="3 6 5 6 21 6" />
-              <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
-            </svg>
+            <TrashIcon aria-hidden="true" />
             <div className="share-role-item-body">
               <div className="share-role-item-title">Remove access</div>
             </div>

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { ChevronRightIcon } from '@heroicons/react/24/outline';
 import { useAuth } from '../contexts/AuthContext';
 import { useRoute } from '../router';
 import { useFlizow } from '../store/useFlizow';
@@ -243,9 +244,7 @@ export function TopNav({
                 </svg>
                 <span>Account settings</span>
               </span>
-              <svg className="account-menu-item-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                <polyline points="9 18 15 12 9 6"/>
-              </svg>
+              <ChevronRightIcon className="account-menu-item-chev" aria-hidden="true" />
             </button>
             <button
               className="account-menu-item"

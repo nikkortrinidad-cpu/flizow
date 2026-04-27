@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { XMarkIcon } from '@heroicons/react/24/outline';
+import { ChevronRightIcon, PlusIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import { navigate } from '../router';
 import { flizowStore } from '../store/flizowStore';
 import { useFlizow } from '../store/useFlizow';
@@ -337,10 +337,7 @@ function AgendaToolbar({ count, onAdd, onStart, onSendPreRead }: {
       </div>
       <div className="wip-agenda-actions">
         <button type="button" className="wip-btn wip-btn-ring" onClick={onAdd}>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-            <line x1="12" y1="5" x2="12" y2="19" />
-            <line x1="5" y1="12" x2="19" y2="12" />
-          </svg>
+          <PlusIcon width={14} height={14} aria-hidden="true" />
           <span>Add agenda item</span>
         </button>
         <button
@@ -1332,9 +1329,7 @@ function LiveMeeting({
               aria-label="Next item"
             >
               <span>Next</span>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                <polyline points="9 18 15 12 9 6" />
-              </svg>
+              <ChevronRightIcon width={14} height={14} aria-hidden="true" />
             </button>
             <button
               type="button"

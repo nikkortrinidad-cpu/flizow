@@ -1,4 +1,5 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { ChevronDownIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
 import { navigate } from '../router';
 import { useFlizow } from '../store/useFlizow';
 import type { Task, Member, Client, Service } from '../types/flizow';
@@ -409,9 +410,7 @@ function AnalyticsFilterPill({ label, active, open, onToggle, onClose, children 
         onClick={onToggle}
       >
         <span className="anlx-filter-pill-text">{label}</span>
-        <svg className="anlx-filter-pill-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-          <polyline points="6 9 12 15 18 9" />
-        </svg>
+        <ChevronDownIcon className="anlx-filter-pill-caret" aria-hidden="true" />
       </button>
       {open && pos && (
         <div
@@ -903,9 +902,7 @@ function DrillTaskRow({ task, service, client, owner, status }: {
       </div>
       <div className="anlx-up-phase">{phaseOf(task)}</div>
       <div className="anlx-drill-row-chev">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round">
-          <polyline points="9 18 15 12 9 6" />
-        </svg>
+        <ChevronRightIcon aria-hidden="true" />
       </div>
     </a>
   );
@@ -940,9 +937,7 @@ function DrillClientRow({ client, openCount }: {
       <div className={`anlx-drill-row-status ${tone}`}>{statusLabel}</div>
       <div className="anlx-up-phase">CLIENT</div>
       <div className="anlx-drill-row-chev">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round">
-          <polyline points="9 18 15 12 9 6" />
-        </svg>
+        <ChevronRightIcon aria-hidden="true" />
       </div>
     </a>
   );
@@ -1090,9 +1085,7 @@ function UpcomingRow({ task, service, client, owner, todayISO }: {
       <div className="anlx-up-phase">{phaseOf(task)}</div>
       <div />
       <div className="anlx-up-chev">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round">
-          <polyline points="9 18 15 12 9 6" />
-        </svg>
+        <ChevronRightIcon aria-hidden="true" />
       </div>
     </a>
   );
@@ -1229,16 +1222,13 @@ function WorkloadRowView({ row, isOpen, onClick }: {
       </div>
       <div className="anlx-wl-num">{row.wip}</div>
       <div className="anlx-wl-chev">
-        <svg
-          viewBox="0 0 24 24" fill="none" stroke="currentColor"
-          strokeLinecap="round" strokeLinejoin="round"
+        <ChevronRightIcon
+          aria-hidden="true"
           style={{
             transform: isOpen ? 'rotate(90deg)' : undefined,
             transition: 'transform 160ms ease',
           }}
-        >
-          <polyline points="9 18 15 12 9 6" />
-        </svg>
+        />
       </div>
     </button>
   );

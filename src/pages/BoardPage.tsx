@@ -1,5 +1,14 @@
 import { useEffect, useMemo, useRef, useState, type ReactElement, type ReactNode } from 'react';
-import { XMarkIcon } from '@heroicons/react/24/outline';
+// TrashIcon is renamed on import because BoardPage defines its own
+// `TrashIcon` wrapper component (preserved at the bottom of this file
+// for callsite-stability — many JSX uses still write <TrashIcon />).
+// The wrapper now delegates to the Heroicons component.
+import {
+  ChevronDownIcon,
+  MagnifyingGlassIcon,
+  TrashIcon as HeroTrashIcon,
+  XMarkIcon,
+} from '@heroicons/react/24/outline';
 import { DndContext, DragOverlay, PointerSensor, KeyboardSensor, useSensor, useSensors, closestCenter, useDraggable, useDroppable } from '@dnd-kit/core';
 import type { DragEndEvent, DragStartEvent } from '@dnd-kit/core';
 import { useRoute, navigate } from '../router';
@@ -1141,10 +1150,7 @@ function FiltersBar({
   return (
     <div className="filters-bar" role="search" aria-label="Board filters">
       <label className="filter-search">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-          <circle cx="11" cy="11" r="8" />
-          <line x1="21" y1="21" x2="16.65" y2="16.65" />
-        </svg>
+        <MagnifyingGlassIcon aria-hidden="true" />
         <input
           type="search"
           placeholder="Search cards…"
@@ -1556,9 +1562,7 @@ function Swimlane({
           }
         }}
       >
-        <svg className="swimlane-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-          <polyline points="6 9 12 15 18 9" />
-        </svg>
+        <ChevronDownIcon className="swimlane-chevron" aria-hidden="true" />
         <div className="swimlane-title" style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
           {lane.accent}
           {/* Skip the plain text for label lanes (the accent is a pill
@@ -1715,15 +1719,11 @@ function EditPenIcon() {
     </svg>
   );
 }
-function TrashIcon() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-      <polyline points="3 6 5 6 21 6" />
-      <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
-      <path d="M10 11v6M14 11v6" />
-      <path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2" />
-    </svg>
-  );
+// Wrapper kept for call-site stability. Forwards SVG props to the
+// Heroicons component so existing call sites that pass width/height
+// or className continue to work without changes.
+function TrashIcon(props: React.SVGProps<SVGSVGElement>) {
+  return <HeroTrashIcon aria-hidden="true" {...props} />;
 }
 function ArchiveIcon() {
   return (
@@ -1991,12 +1991,7 @@ function ArchivedCardRow({
         aria-label={`Delete ${task.title} permanently`}
         title="Delete permanently"
       >
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-          <polyline points="3 6 5 6 21 6" />
-          <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
-          <path d="M10 11v6M14 11v6" />
-          <path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2" />
-        </svg>
+        <TrashIcon width={14} height={14} aria-hidden="true" />
       </button>
     </li>
   );

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { EllipsisHorizontalIcon } from '@heroicons/react/24/outline';
+import { EllipsisHorizontalIcon, PlusIcon } from '@heroicons/react/24/outline';
 import type {
   Client, Touchpoint, ActionItem, Member, Contact, Service, TouchpointKind,
 } from '../types/flizow';
@@ -112,10 +112,7 @@ export function TouchpointsTab({
           </div>
           <div className="meetings-header-actions">
             <button type="button" className="meetings-log-btn" onClick={handleLog}>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                <line x1="12" y1="5" x2="12" y2="19" />
-                <line x1="5" y1="12" x2="19" y2="12" />
-              </svg>
+              <PlusIcon aria-hidden="true" />
               Log touchpoint
             </button>
             <button type="button" className="meetings-log-btn meetings-log-btn--primary" onClick={handleSchedule}>

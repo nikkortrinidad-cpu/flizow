@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { ChevronDownIcon } from '@heroicons/react/24/outline';
 import type { Member, Priority } from '../types/flizow';
 import { BOARD_LABELS, labelById } from '../constants/labels';
 
@@ -583,9 +584,7 @@ function SortIcon() {
 }
 function ChevronDown() {
   return (
-    <svg className="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-      <polyline points="6 9 12 15 18 9" />
-    </svg>
+    <ChevronDownIcon className="chev" aria-hidden="true" />
   );
 }
 function CheckIcon() {

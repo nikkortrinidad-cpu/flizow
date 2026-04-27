@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { EllipsisVerticalIcon, XMarkIcon } from '@heroicons/react/24/outline';
+import { ChevronDownIcon, EllipsisVerticalIcon, PlusIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import { useRoute, navigate } from '../router';
 import { useFlizow } from '../store/useFlizow';
 import type {
@@ -928,9 +928,7 @@ function ServiceCard({ service, editing, onRemove, onMoveUp, onMoveDown, isFavor
               title="Move down"
               onClick={(e) => { e.stopPropagation(); onMoveDown(); }}
             >
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                <polyline points="6 9 12 15 18 9" />
-              </svg>
+              <ChevronDownIcon aria-hidden="true" />
             </button>
           ) : (
             <span className="service-reorder-spacer" aria-hidden="true" />
@@ -1320,9 +1318,7 @@ function OnboardingServiceCard({ group, onToggle, onAdd, onDelete, onRename }: {
           </span>
         </span>
         <span className="onb-svc-chevron" aria-hidden="true">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <polyline points="6 9 12 15 18 9" />
-          </svg>
+          <ChevronDownIcon aria-hidden="true" />
         </span>
       </button>
 
@@ -1538,10 +1534,7 @@ function OnboardingAddItem({ serviceId, group, onAdd }: {
         className="onboarding-add-btn"
         onClick={() => setEditing(true)}
       >
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-          <line x1="12" y1="5" x2="12" y2="19" />
-          <line x1="5" y1="12" x2="19" y2="12" />
-        </svg>
+        <PlusIcon aria-hidden="true" />
         Add item
       </button>
     );

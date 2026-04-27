@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { ChevronRightIcon } from '@heroicons/react/24/outline';
 import type { Client } from '../types/flizow';
 
 /**
@@ -230,9 +231,7 @@ function ChannelCard({ channel }: { channel: Channel }) {
           title={`Open in ${channel.name}`}
         >
           {channel.linkLabel}
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-            <polyline points="9 18 15 12 9 6" />
-          </svg>
+          <ChevronRightIcon aria-hidden="true" />
         </a>
         <span className="stats-channel-foot-meta">Synced {channel.syncedMin} min ago</span>
       </div>
