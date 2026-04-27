@@ -1182,11 +1182,22 @@ class FlizowStore {
       }));
     }
 
+    // Seed the project brief from the template's brief array. Each
+    // entry becomes a single <h2> heading; the AM fills in the body
+    // underneath. Beats opening a blank canvas — the headings are the
+    // template's curated "things this brief should cover" prompts.
+    // No briefUpdatedAt set yet — the brief becomes "officially edited"
+    // only on the first explicit Save through the Brief modal.
+    const seededBrief = liveTemplate?.brief?.length
+      ? liveTemplate.brief.map(heading => `<h2>${heading}</h2><p></p>`).join('')
+      : undefined;
+
     // Replace the service's taskIds with the ids of the seeded cards so
     // the ServiceCard task counters + onboarding group lookups see them.
     const serviceWithTasks: Service = {
       ...service,
       taskIds: seededTasks.map(t => t.id),
+      ...(seededBrief ? { brief: seededBrief } : {}),
     };
 
     // Replace array refs (not `.push`) so `useMemo([data.services])` consumers
@@ -1234,6 +1245,18 @@ class FlizowStore {
     const s = this.data.services.find(s => s.id === id);
     if (!s) return;
     Object.assign(s, patch);
+    this.save();
+  }
+
+  /** Atomic write for the project brief — sets both `brief` (HTML) and
+   *  `briefUpdatedAt` (now) in one save. The "Last updated · 3d ago"
+   *  indicator on the board's brief strip reads `briefUpdatedAt` so
+   *  this needs to advance whenever the brief content changes. */
+  updateServiceBrief(id: string, brief: string) {
+    const s = this.data.services.find(s => s.id === id);
+    if (!s) return;
+    s.brief = brief;
+    s.briefUpdatedAt = new Date().toISOString();
     this.save();
   }
 

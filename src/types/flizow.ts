@@ -336,6 +336,18 @@ export interface Service {
    *  busy retainer can group by owner without forcing every board into
    *  the same mode. */
   groupBy?: 'none' | 'priority' | 'assignee' | 'label';
+  /** Project brief — the AM's free-form spec for this service. HTML
+   *  rich text from the TipTap editor (matches card descriptions).
+   *  Absent / empty = no brief written yet (header strip shows the
+   *  empty-state CTA). Auto-seeded from the template's `brief` array
+   *  on service creation so the editor opens with section headings
+   *  rather than a blank canvas. Edited through the Project Brief
+   *  modal launched from the board header. */
+  brief?: string;
+  /** ISO timestamp the brief was last saved. Drives the "Last updated
+   *  · 3d ago" indicator on the header strip. Absent when no brief
+   *  has been written. */
+  briefUpdatedAt?: string;
 }
 
 /** Metadata a schedule-seeded task carries so the Overview Schedule can

@@ -1513,6 +1513,54 @@
   }
 
   /* KANBAN BOARD */
+  /* ───── Project Brief strip (between filters bar and columns) ─────
+     Full-width row; click anywhere to open the BriefModal. Two states:
+     populated (label + "Last updated · X ago") and empty (label + soft
+     CTA). The chevron at the right is decorative — same hit target as
+     the rest of the strip, just a visual cue that this opens something. */
+  .brief-strip {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: var(--sp-base);
+    padding: 10px 32px;
+    background: var(--bg);
+    border-bottom: 1px solid var(--hairline-soft);
+    border-top: none;
+    border-left: none;
+    border-right: none;
+    cursor: pointer;
+    color: var(--text);
+    font-family: inherit;
+    text-align: left;
+    transition: background var(--dur-fast);
+  }
+  .brief-strip:hover {
+    background: var(--hover-tint);
+  }
+  .brief-strip:focus-visible {
+    outline: 2px solid var(--highlight);
+    outline-offset: -2px;
+    background: var(--hover-tint);
+  }
+  .brief-strip-label {
+    font-size: var(--fs-sm);
+    font-weight: 600;
+    color: var(--text-soft);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+  .brief-strip-meta {
+    flex: 1;
+    font-size: var(--fs-md);
+    color: var(--text-faint);
+    letter-spacing: -0.005em;
+  }
+  .brief-strip svg {
+    color: var(--text-faint);
+    flex-shrink: 0;
+  }
+
   /* ───── Filters bar (search / filter / sort) ───── */
   .filters-bar {
     padding: 10px 32px;

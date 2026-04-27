@@ -19,8 +19,10 @@ import type { ColumnId, Priority, Task, Client, Service, Member, TaskComment } f
 import { daysBetween, formatMonthDay } from '../utils/dateFormat';
 import FlizowCardModal from '../components/FlizowCardModal';
 import { BoardFilters, applyFilters, EMPTY_FILTERS, type BoardFilterState, type GroupBy } from '../components/BoardFilters';
+import { BriefModal } from '../components/BriefModal';
 import { EditServiceModal } from '../components/EditServiceModal';
 import { ConfirmDangerDialog } from '../components/ConfirmDangerDialog';
+import { relativeTimeAgo } from '../utils/clientDerived';
 import { labelById } from '../constants/labels';
 import { useDismissable } from '../hooks/useDismissable';
 import { InlineCardComposer } from '../components/shared/InlineCardComposer';
@@ -421,6 +423,10 @@ function BoardBody({
   // Selected card in the detail modal. null = modal closed. Reset any
   // time the user navigates away from this page (unmount handles it).
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
+  // Project brief modal. Toggle from the header strip above the
+  // columns; closing happens through the modal's own dismiss paths
+  // (Save / Cancel / Esc-with-discard-confirm).
+  const [briefOpen, setBriefOpen] = useState(false);
   // Swimlane grouping mode for this board. Persisted on the service so
   // each board remembers its layout across sessions. Switching to
   // 'none' flips the board back to its flat-columns shape.
@@ -581,6 +587,12 @@ function BoardBody({
         onGroupByChange={(next) => flizowStore.updateService(service.id, { groupBy: next })}
       />
 
+      <BriefStrip
+        service={service}
+        todayISO={todayISO}
+        onOpen={() => setBriefOpen(true)}
+      />
+
       <DndContext
         sensors={sensors}
         collisionDetection={closestCenter}
@@ -687,6 +699,15 @@ function BoardBody({
         <FlizowCardModal
           taskId={selectedTaskId}
           onClose={() => setSelectedTaskId(null)}
+        />
+      )}
+
+      {briefOpen && (
+        <BriefModal
+          serviceId={service.id}
+          serviceName={service.name}
+          initialBrief={service.brief}
+          onClose={() => setBriefOpen(false)}
         />
       )}
     </>
@@ -1175,6 +1196,53 @@ function FiltersBar({
         onGroupByChange={onGroupByChange}
       />
     </div>
+  );
+}
+
+// ── Project Brief strip ─────────────────────────────────────────────
+//
+// Sits between the filters bar and the kanban columns. Single-line
+// row; click anywhere on it to open the BriefModal. When the brief
+// has been written, the strip surfaces a "Last updated · X ago"
+// indicator + a one-line excerpt; when empty, it surfaces a soft CTA.
+//
+// Stays as a button so screen readers and keyboard users hit it the
+// same as a click. The whole strip is the hit target — no nested
+// affordances to fight over focus.
+
+function BriefStrip({
+  service,
+  todayISO,
+  onOpen,
+}: {
+  service: Service;
+  todayISO: string;
+  onOpen: () => void;
+}) {
+  const hasBrief = !!service.brief && service.brief.trim() !== '' && service.brief !== '<p></p>';
+  const lastUpdated = service.briefUpdatedAt
+    ? relativeTimeAgo(service.briefUpdatedAt, todayISO)
+    : null;
+
+  return (
+    <button
+      type="button"
+      className="brief-strip"
+      onClick={onOpen}
+      aria-label={hasBrief ? 'Open project brief' : 'Add project brief'}
+    >
+      <span className="brief-strip-label">Project Brief</span>
+      <span className="brief-strip-meta">
+        {hasBrief
+          ? lastUpdated
+            ? `Last updated · ${lastUpdated}`
+            : 'Click to read'
+          : '+ Add project brief'}
+      </span>
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+        <polyline points="9 18 15 12 9 6" />
+      </svg>
+    </button>
   );
 }
 
