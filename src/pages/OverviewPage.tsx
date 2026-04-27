@@ -1,9 +1,10 @@
-import { useEffect, useMemo, useState, useSyncExternalStore, type ComponentType, type SVGProps } from 'react';
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore, type ComponentType, type SVGProps } from 'react';
 import { CheckIcon, ExclamationTriangleIcon, FireIcon } from '@heroicons/react/24/outline';
 import { useAuth } from '../contexts/AuthContext';
 import { navigate } from '../router';
+import { flizowStore } from '../store/flizowStore';
 import { useFlizow } from '../store/useFlizow';
-import type { Client, Task, ClientStatus, OnboardingItem, Service } from '../types/flizow';
+import type { Client, Member, Task, ClientStatus, OnboardingItem, Service } from '../types/flizow';
 
 /** localStorage key for the one-time first-run welcome banner. Versioned
  *  so a future revision can re-show the banner if we change the
@@ -200,6 +201,24 @@ export function OverviewPage() {
     [data.clients, liveTasks, data.onboardingItems, data.services, currentMemberId],
   );
   const [attentionExpanded, setAttentionExpanded] = useState(false);
+
+  // Delegate popover state. Set when the user clicks a "Delegate"
+  // button on an attention card; cleared on assign / outside click /
+  // Esc. The anchor lets the popover position itself relative to the
+  // exact button that opened it (matches the mockup behaviour where
+  // the popover floats just above the trigger).
+  const [delegating, setDelegating] = useState<{
+    taskId: string;
+    anchor: HTMLButtonElement;
+  } | null>(null);
+  const handleDelegate = (taskId: string, anchor: HTMLButtonElement) => {
+    setDelegating({ taskId, anchor });
+  };
+  const handleAssign = (memberId: string) => {
+    if (!delegating) return;
+    flizowStore.updateTask(delegating.taskId, { assigneeId: memberId });
+    setDelegating(null);
+  };
   // Split into "always-shown" (first 6) + "extras" (7+). Extras live
   // in an animated wrapper that uses the grid-template-rows trick to
   // transition from 0fr to 1fr — pure CSS, no JS measurement, smooth
@@ -399,7 +418,7 @@ export function OverviewPage() {
             ) : (
               <>
                 {/* First batch — always visible. */}
-                {firstBatchAttention.map((card) => renderAttentionCard(card))}
+                {firstBatchAttention.map((card) => renderAttentionCard(card, handleDelegate))}
 
                 {/* Extras — height-animated reveal via the
                     grid-template-rows trick. Wrapper has 0fr when
@@ -416,7 +435,7 @@ export function OverviewPage() {
                     {...(attentionExpanded ? {} : { inert: '' as unknown as boolean })}
                   >
                     <div className="attn-extras-inner">
-                      {extraBatchAttention.map((card) => renderAttentionCard(card))}
+                      {extraBatchAttention.map((card) => renderAttentionCard(card, handleDelegate))}
                     </div>
                   </div>
                 )}
@@ -567,6 +586,16 @@ export function OverviewPage() {
           </div>
         </section>
       </main>
+
+      {delegating && (
+        <DelegatePopover
+          anchor={delegating.anchor}
+          members={data.members}
+          currentMemberId={currentMemberId}
+          onAssign={handleAssign}
+          onClose={() => setDelegating(null)}
+        />
+      )}
     </div>
   );
 }
@@ -802,8 +831,16 @@ type AttentionCard = {
 
 /** Render one attention card. Pulled out of the inline map() so the
  *  same JSX can render the always-shown "first batch" and the
- *  height-animated "extras batch" without duplication. */
-function renderAttentionCard(card: AttentionCard) {
+ *  height-animated "extras batch" without duplication.
+ *
+ *  onDelegate is fired when the user clicks the per-card "Delegate"
+ *  button — only available for cards backed by a real kanban task
+ *  (onboarding cards have no task to reassign). The page-level handler
+ *  opens the assignee popover anchored to the click target. */
+function renderAttentionCard(
+  card: AttentionCard,
+  onDelegate: (taskId: string, anchor: HTMLButtonElement) => void,
+) {
   // Card variant + severity-pill class share the same tier name.
   // Three tiers: critical (fire) → warn (risk) → onboard (preventive).
   const cardTier =
@@ -849,6 +886,39 @@ function renderAttentionCard(card: AttentionCard) {
         </div>
         <div className="attn-title">{card.title}</div>
         {card.desc && <div className="attn-desc">{card.desc}</div>}
+      </div>
+      {/* Per-card actions — Delegate (secondary) + Review (primary).
+          Both buttons stop propagation so they don't trigger the
+          card-level click handler. Delegate only renders when there's
+          a real kanban task backing the card; onboarding entries have
+          no task to reassign. */}
+      <div className="attn-actions">
+        {card.primaryTaskId && (
+          <button
+            type="button"
+            className="attn-btn"
+            onClick={(e) => {
+              e.stopPropagation();
+              onDelegate(card.primaryTaskId!, e.currentTarget);
+            }}
+            aria-label="Assign this to a team member who can follow up"
+            title="Assign this to a team member who can follow up"
+          >
+            Delegate
+          </button>
+        )}
+        <button
+          type="button"
+          className="attn-btn primary"
+          onClick={(e) => {
+            e.stopPropagation();
+            navigate(target);
+          }}
+          aria-label="Open this item and take action now"
+          title="Open this item and take action now"
+        >
+          Review
+        </button>
       </div>
     </div>
   );
@@ -1099,5 +1169,140 @@ function HealthCell({ label, value, sub, Icon, onClick, ariaLabel, valueClass, i
         <div className="health-sub">{sub}</div>
       </div>
     </div>
+  );
+}
+
+// ── Delegate popover ──────────────────────────────────────────────────────
+//
+// Picker that floats just above the Delegate button on an attention card.
+// Click a teammate → assign the underlying task to them and close. Esc or
+// outside-click also closes. Reuses the existing .delegate-pop /
+// .dp-combo-* CSS recipe from the original mockup (kept in flizow.css
+// when the audit removed the old delegate flow).
+//
+// Positioning matches the mockup: position:fixed, anchored to the
+// trigger button's bounding rect — popover opens *above* the button so
+// it doesn't get clipped by the parent attention card's overflow.
+
+function DelegatePopover({
+  anchor,
+  members,
+  currentMemberId,
+  onAssign,
+  onClose,
+}: {
+  anchor: HTMLButtonElement;
+  members: Member[];
+  currentMemberId: string | null;
+  onAssign: (memberId: string) => void;
+  onClose: () => void;
+}) {
+  const [filter, setFilter] = useState('');
+  const inputRef = useRef<HTMLInputElement>(null);
+  const popRef = useRef<HTMLDivElement>(null);
+
+  // Calculate position once on mount. Re-running on scroll would be
+  // nicer but the popover dismisses on outside-click anyway, so a
+  // brief misalignment after scroll is acceptable for this MVP.
+  const rect = anchor.getBoundingClientRect();
+  const popStyle: React.CSSProperties = {
+    right: `${window.innerWidth - rect.right}px`,
+    bottom: `${window.innerHeight - rect.top + 8}px`,
+  };
+
+  // Outside-click + Esc dismissal. Pointerdown beats click because
+  // click fires too late — by the time we'd close, the new click
+  // target has already received focus.
+  useEffect(() => {
+    function onDown(e: PointerEvent) {
+      if (popRef.current && !popRef.current.contains(e.target as Node)) {
+        // Don't dismiss if the click was on the trigger itself —
+        // the trigger's onClick will toggle anyway.
+        if (anchor && anchor.contains(e.target as Node)) return;
+        onClose();
+      }
+    }
+    function onKey(e: KeyboardEvent) {
+      if (e.key === 'Escape') onClose();
+    }
+    window.addEventListener('pointerdown', onDown);
+    window.addEventListener('keydown', onKey);
+    return () => {
+      window.removeEventListener('pointerdown', onDown);
+      window.removeEventListener('keydown', onKey);
+    };
+  }, [anchor, onClose]);
+
+  // Autofocus the filter input on open so keyboard users can start
+  // typing immediately. setTimeout to wait one tick for the popover
+  // animation to start.
+  useEffect(() => {
+    const t = window.setTimeout(() => inputRef.current?.focus(), 30);
+    return () => window.clearTimeout(t);
+  }, []);
+
+  // Filter + exclude self. The user can't delegate a task back to
+  // themselves — that's a no-op assignment.
+  const q = filter.trim().toLowerCase();
+  const candidates = members.filter(m => {
+    if (m.id === currentMemberId) return false;
+    if (!q) return true;
+    return m.name.toLowerCase().includes(q)
+        || (m.role ?? '').toLowerCase().includes(q);
+  });
+
+  return (
+    <>
+      <div className="delegate-backdrop" onClick={onClose} />
+      <div ref={popRef} className="delegate-pop" style={popStyle} role="dialog" aria-label="Delegate task">
+        <h4>Delegate task</h4>
+        <div className="dp-field">
+          <label className="dp-label" htmlFor="dp-assignee-input">Assign to</label>
+          <div className="dp-combo">
+            <input
+              ref={inputRef}
+              id="dp-assignee-input"
+              type="text"
+              value={filter}
+              onChange={e => setFilter(e.target.value)}
+              placeholder="Search team member…"
+              autoComplete="off"
+            />
+            <div className="dp-combo-list open" role="listbox">
+              {candidates.length === 0 ? (
+                <div className="dp-combo-item" style={{ color: 'var(--text-faint)', cursor: 'default' }}>
+                  No matches
+                </div>
+              ) : (
+                candidates.map(m => (
+                  <div
+                    key={m.id}
+                    className="dp-combo-item"
+                    role="option"
+                    tabIndex={0}
+                    onClick={() => onAssign(m.id)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        onAssign(m.id);
+                      }
+                    }}
+                  >
+                    <span
+                      className="dp-combo-avatar"
+                      style={{ background: m.bg ?? m.color, color: m.bg ? m.color : '#fff' }}
+                    >
+                      {m.initials}
+                    </span>
+                    <span style={{ flex: 1 }}>{m.name}</span>
+                    {m.role && <span className="dp-combo-role">{m.role}</span>}
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    </>
   );
 }
