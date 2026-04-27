@@ -909,20 +909,23 @@ function AddClientModal({ members, todayISO, onClose }: {
                   Contact {idx + 2}{' '}
                   <span style={{ fontWeight: 400, color: 'var(--text-faint)' }}>(optional)</span>
                 </div>
+                {/* Icon-only × button — matches the modal-close glyph at
+                    the top of the modal so the dismiss affordance reads
+                    consistently. The aria-label still spells out the
+                    target so screen readers announce "Remove contact 2"
+                    rather than "x button". */}
                 <button
                   type="button"
                   onClick={() => removeExtraContact(ec.draftId)}
                   aria-label={`Remove contact ${idx + 2}`}
-                  style={{
-                    fontSize: 'var(--fs-xs)',
-                    color: 'var(--text-muted)',
-                    background: 'transparent',
-                    border: 'none',
-                    cursor: 'pointer',
-                    padding: 4,
-                  }}
+                  title="Remove contact"
+                  className="wip-modal-close"
+                  style={{ width: 24, height: 24, padding: 0 }}
                 >
-                  Remove
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <line x1="18" y1="6" x2="6" y2="18" />
+                    <line x1="6" y1="6" x2="18" y2="18" />
+                  </svg>
                 </button>
               </div>
 
