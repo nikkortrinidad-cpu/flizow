@@ -1395,7 +1395,107 @@ function WorkspaceSection({
           </div>
         </dl>
       </div>
+
+      {/* Workspace data block — Export.
+          Insurance policy. The user's about to put real client data
+          in; downloads should be one click away. Members AND owners
+          can both export — they already see the data in the UI, so
+          gating the download adds friction without protecting
+          anything new. */}
+      <div style={{ marginTop: 18, paddingTop: 14, borderTop: '1px solid var(--hairline)' }}>
+        <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-muted)', letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 10 }}>
+          Workspace data
+        </div>
+        <ExportWorkspaceButton workspaceName={meta.name} />
+      </div>
     </section>
+  );
+}
+
+/** One-click JSON download. Builds the export object via the store,
+ *  serializes, triggers a Blob download with a sensible filename. */
+function ExportWorkspaceButton({ workspaceName }: { workspaceName: string }) {
+  const { store } = useFlizow();
+  const [exporting, setExporting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  function handleExport() {
+    setError(null);
+    setExporting(true);
+    try {
+      const payload = store.exportWorkspace();
+      if (!payload) {
+        setError('No workspace loaded — nothing to export.');
+        setExporting(false);
+        return;
+      }
+      // Format the filename with a slugged workspace name + today's
+      // date so multiple exports don't collide in the user's
+      // Downloads folder.
+      const slug = (workspaceName || 'workspace')
+        .toLowerCase()
+        .replace(/[^\w\s-]/g, '')
+        .replace(/\s+/g, '-')
+        .slice(0, 40) || 'workspace';
+      const dateStr = new Date().toISOString().slice(0, 10);
+      const filename = `flizow-${slug}-${dateStr}.json`;
+
+      const json = JSON.stringify(payload, null, 2);
+      const blob = new Blob([json], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      // Clean up after a tick so the download actually fires before
+      // the URL becomes invalid.
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Export failed.');
+    } finally {
+      setExporting(false);
+    }
+  }
+
+  return (
+    <div>
+      <button
+        type="button"
+        onClick={handleExport}
+        disabled={exporting}
+        className="acct-btn-text"
+        style={{
+          padding: '7px 14px',
+          borderRadius: 8,
+          border: '1px solid var(--hairline)',
+          background: 'var(--bg-elev)',
+          color: 'var(--text)',
+          fontSize: 13,
+          fontWeight: 500,
+          cursor: exporting ? 'not-allowed' : 'pointer',
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: 6,
+        }}
+      >
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+          <polyline points="7 10 12 15 17 10" />
+          <line x1="12" y1="15" x2="12" y2="3" />
+        </svg>
+        {exporting ? 'Preparing…' : 'Export workspace as JSON'}
+      </button>
+      <p style={{ marginTop: 8, fontSize: 11, color: 'var(--text-muted)', lineHeight: 1.45 }}>
+        Downloads everything in this workspace — clients, services, tasks, notes, members. Excludes pending invite tokens. Use it as a backup or to migrate to a new workspace later.
+      </p>
+      {error && (
+        <p style={{ marginTop: 6, fontSize: 12, color: 'var(--accent)' }} role="alert">
+          {error}
+        </p>
+      )}
+    </div>
   );
 }
 

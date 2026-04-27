@@ -2249,6 +2249,54 @@ class FlizowStore {
     const { generateDemoData } = await import('../data/demoData');
     this.replaceAll(generateDemoData());
   }
+
+  /** Build a serializable snapshot of the entire workspace for export.
+   *  Insurance policy: a user about to put real client data in should
+   *  be able to download a full backup. The shape is versioned so a
+   *  future Import feature can detect what schema it's reading.
+   *
+   *  What's included:
+   *    - All workspace data (clients, services, tasks, comments, etc.)
+   *    - Workspace identity (name, initials, color, ownerUid, createdAt)
+   *    - Member list with display fields + roles
+   *
+   *  What's excluded:
+   *    - Pending invite tokens. These are time-sensitive secrets;
+   *      if the export file leaks, tokens could be replayed by anyone
+   *      who finds it. Backups carry data, not credentials.
+   *    - The `users/{uid}` lookup docs. Those are routing metadata,
+   *      not workspace content.
+   *
+   *  Returns null in dev-bypass / pre-auth where there's no active
+   *  workspace. Caller should handle that gracefully. */
+  exportWorkspace(): {
+    exportedAt: string;
+    exportVersion: 1;
+    workspace: {
+      ownerUid: string;
+      name: string;
+      initials: string;
+      color: string;
+      createdAt: string;
+      members: WorkspaceMembership[];
+    };
+    data: FlizowData;
+  } | null {
+    if (!this.workspaceMeta) return null;
+    return {
+      exportedAt: new Date().toISOString(),
+      exportVersion: 1,
+      workspace: {
+        ownerUid: this.workspaceMeta.ownerUid,
+        name: this.workspaceMeta.name,
+        initials: this.workspaceMeta.initials,
+        color: this.workspaceMeta.color,
+        createdAt: this.workspaceMeta.createdAt,
+        members: this.workspaceMeta.members,
+      },
+      data: this.data,
+    };
+  }
 }
 
 // ── Helpers ──────────────────────────────────────────────────────────────
