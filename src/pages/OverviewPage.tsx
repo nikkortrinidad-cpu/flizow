@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useState, useSyncExternalStore } from 'react';
+import { useEffect, useMemo, useState, useSyncExternalStore, type ComponentType, type SVGProps } from 'react';
+import { CheckIcon, ExclamationTriangleIcon, FireIcon } from '@heroicons/react/24/outline';
 import { useAuth } from '../contexts/AuthContext';
 import { navigate } from '../router';
 import { useFlizow } from '../store/useFlizow';
@@ -278,7 +279,7 @@ export function OverviewPage() {
               iconClass="alert"
               onClick={() => navigate('#clients/view/fire')}
               ariaLabel="View On Fire clients"
-              icon={<path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z" />}
+              Icon={FireIcon}
             />
             <div className="health-divider" />
             <HealthCell
@@ -288,11 +289,7 @@ export function OverviewPage() {
               iconClass="warn"
               onClick={() => navigate('#clients/view/risk')}
               ariaLabel="View At Risk clients"
-              icon={<>
-                <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
-                <line x1="12" y1="9" x2="12" y2="13" />
-                <line x1="12" y1="17" x2="12.01" y2="17" />
-              </>}
+              Icon={ExclamationTriangleIcon}
             />
             <div className="health-divider" />
             <HealthCell
@@ -302,7 +299,7 @@ export function OverviewPage() {
               iconClass="success"
               onClick={() => navigate('#clients/view/track')}
               ariaLabel="View On Track clients"
-              icon={<polyline points="20 6 9 17 4 12" />}
+              Icon={CheckIcon}
             />
           </div>
         </section>
@@ -504,7 +501,13 @@ type HealthCellProps = {
   label: string;
   value: number;
   sub: string;
-  icon: React.ReactNode;
+  /** A Heroicons (or any SVG-component) constructor — rendered inside
+   *  the rounded coloured tile. Capitalised because it's a component
+   *  reference, not an element. The cell used to take inner SVG paths
+   *  via an `icon` prop; refactored 2026-04-27 because Heroicons each
+   *  ship their own <svg> wrapper, so the old "paste paths into our
+   *  shared svg" pattern couldn't compose. */
+  Icon: ComponentType<SVGProps<SVGSVGElement>>;
   onClick: () => void;
   ariaLabel: string;
   valueClass?: string;
@@ -1000,7 +1003,7 @@ function buildAttentionCards(
   return [...fireRiskCards, ...onboardingCards];
 }
 
-function HealthCell({ label, value, sub, icon, onClick, ariaLabel, valueClass, iconClass }: HealthCellProps) {
+function HealthCell({ label, value, sub, Icon, onClick, ariaLabel, valueClass, iconClass }: HealthCellProps) {
   return (
     <div
       className="health-cell clickable"
@@ -1011,9 +1014,10 @@ function HealthCell({ label, value, sub, icon, onClick, ariaLabel, valueClass, i
       onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onClick(); } }}
     >
       <div className={`health-icon${iconClass ? ` ${iconClass}` : ''}`}>
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          {icon}
-        </svg>
+        {/* Heroicons render as a self-contained <svg>, sized + coloured
+            by the .health-icon CSS rules (width:20 / height:20 / colour
+            inherits via currentColor). */}
+        <Icon aria-hidden="true" />
       </div>
       <div>
         <div className="health-label">{label}</div>

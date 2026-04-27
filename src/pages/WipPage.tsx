@@ -1,5 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { ChevronRightIcon, PlusIcon, XMarkIcon } from '@heroicons/react/24/outline';
+import {
+  CheckIcon,
+  ChevronRightIcon,
+  ClipboardIcon,
+  PlusIcon,
+  XMarkIcon,
+} from '@heroicons/react/24/outline';
 import { navigate } from '../router';
 import { flizowStore } from '../store/flizowStore';
 import { useFlizow } from '../store/useFlizow';
@@ -1093,16 +1099,16 @@ function PreReadModal({ groups, todayISO, nextMeeting, itemCount, estMinutes, on
             Open in email
           </button>
           <button type="button" className="wip-btn wip-btn-primary" onClick={handleCopy}>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-              {copied ? (
-                <polyline points="20 6 9 17 4 12" />
-              ) : (
-                <>
-                  <rect x="9" y="9" width="13" height="13" rx="2" />
-                  <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-                </>
-              )}
-            </svg>
+            {/* Whole-icon swap on copy state. The previous shape was a
+                shared <svg> wrapper with conditional inner shapes — fine
+                for hand-rolled paths but didn't compose with Heroicons
+                (each Heroicon is itself a complete <svg>). Component-level
+                swap reads cleaner anyway. */}
+            {copied ? (
+              <CheckIcon     width={14} height={14} aria-hidden="true" />
+            ) : (
+              <ClipboardIcon width={14} height={14} aria-hidden="true" />
+            )}
             {copied ? 'Copied' : 'Copy to clipboard'}
           </button>
         </footer>
