@@ -57,17 +57,28 @@ export function TopNav({
   const active = ACTIVE_NAV_BY_ROUTE[route.name] ?? '';
   const { user, logout } = useAuth();
   const { data } = useFlizow();
-  const displayName = user?.displayName || user?.email?.split('@')[0] || 'Signed in';
+  // Pull the signed-in user's Member record once. Every chrome
+  // detail that personalises (display name, initials, avatar color,
+  // access pill) reads from here so they stay in sync — when the
+  // user edits their name in Profile, the top-nav reacts the same
+  // moment the popover does.
+  const ownMember = user?.uid ? data.members.find((m) => m.id === user.uid) : undefined;
+  // Prefer the persisted Member.name (user-edited) over Firebase's
+  // displayName (read-only Google value). Falls back to the email
+  // local-part when neither is set, then to "Signed in" for the
+  // dev-bypass path.
+  const displayName =
+    ownMember?.name || user?.displayName || user?.email?.split('@')[0] || 'Signed in';
   const email = user?.email || '';
-  const initials = deriveInitials(user?.displayName || user?.email || 'U');
-  // Access level for the signed-in user. Set to 'admin' on every
-  // upsertOwnMember in flizowStore — but read from the member record
-  // here so the pill reacts if the level ever changes (future role
-  // management). Falls back to undefined for the dev-bypass path
-  // where there's no Firebase user.
-  const ownAccessLevel: AccessLevel | undefined = user?.uid
-    ? data.members.find((m) => m.id === user.uid)?.accessLevel
-    : undefined;
+  // Initials follow the same precedence: persisted Member.initials
+  // (refreshed on name save), then derived from displayName.
+  const initials = ownMember?.initials || deriveInitials(displayName);
+  // Avatar color picker in Profile writes to Member.color. Top-nav
+  // avatar + popover avatar both read here so they reflect the
+  // user's choice. Falls back to the brand indigo for the dev-bypass
+  // path where there's no Member record.
+  const avatarColor = ownMember?.color || '#5e5ce6';
+  const ownAccessLevel: AccessLevel | undefined = ownMember?.accessLevel;
   const notifBtnRef = useRef<HTMLButtonElement>(null);
   const [unreadNotifs, setUnreadNotifs] = useState(0);
 
@@ -180,6 +191,13 @@ export function TopNav({
             aria-expanded={menuOpen}
             onClick={() => setMenuOpen((v) => !v)}
             title="Account menu"
+            // Inline override of the default --avatar-bg/--avatar-fg
+            // tokens. All 7 swatches in the Profile picker are
+            // saturated enough that white text reads with good
+            // contrast — including the lightest cyan #64d2ff which
+            // still hits ~3.4:1 on white text. Acceptable for a
+            // 14px-bold short label.
+            style={{ background: avatarColor, color: '#fff' }}
           >{initials}</button>
           <div
             className="account-menu"
@@ -188,7 +206,13 @@ export function TopNav({
             aria-hidden={!menuOpen}
           >
             <div className="account-menu-identity">
-              <div className="account-menu-identity-avatar" aria-hidden="true">{initials}</div>
+              <div
+                className="account-menu-identity-avatar"
+                aria-hidden="true"
+                style={{ background: avatarColor, color: '#fff' }}
+              >
+                {initials}
+              </div>
               <div className="account-menu-identity-text">
                 <div className="account-menu-identity-name">
                   <span>{displayName}</span>
