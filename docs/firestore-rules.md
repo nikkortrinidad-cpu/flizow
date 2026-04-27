@@ -20,12 +20,14 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // users/{uid} — lookup doc mapping a Firebase user to their workspace.
-    // Only the user themselves can read/write their own row. Other
-    // workspace members write to it during a "remove member" flow, so
-    // we relax write to allow any signed-in user (kept tight by the
-    // app — Firestore rules can't easily check "the only field
-    // changing is workspaceId set to null by the workspace owner").
+    // users/{uid} — lookup doc mapping a Firebase user to their workspace,
+    // plus the `revokedAt` timestamp used by "Sign out everywhere"
+    // (cross-device session revocation). Only the user themselves can
+    // read their own row. Other workspace members can write to clear
+    // workspaceId during a "remove member" flow, so we relax write to
+    // allow any signed-in user (kept tight by the app — Firestore rules
+    // can't easily check "the only field changing is workspaceId set to
+    // null by the workspace owner").
     match /users/{uid} {
       allow read: if request.auth != null && request.auth.uid == uid;
       allow write: if request.auth != null;

@@ -190,6 +190,30 @@ export default function FlizowAccountModal({ onClose }: Props) {
     onClose();
   }
 
+  /** Sign out everywhere — writes a revocation timestamp to the
+   *  user's lookup doc, then signs out the current device. Other
+   *  devices subscribed via AuthContext detect the timestamp on
+   *  their next Firestore snapshot and force their own sign-outs. */
+  async function handleSignOutEverywhere() {
+    if (!window.confirm(
+      "This signs you out on every device, including this one. Continue?"
+    )) {
+      return;
+    }
+    try {
+      await store.writeRevokeAllTimestamp();
+    } catch (err) {
+      // eslint-disable-next-line no-console
+      console.error('[FlizowAccountModal] revoke timestamp write failed:', err);
+      // Even if the cloud write fails, sign out the current device —
+      // the user's intent was security; failing to propagate isn't a
+      // reason to leave their current session active. The syncError
+      // banner will surface the failure if any.
+    }
+    await logout();
+    onClose();
+  }
+
   /** Stage a theme change in the local draft. Persists via Save. */
   function setAppearance(mode: 'light' | 'dark' | 'system') {
     if (mode === 'system') {
@@ -738,17 +762,40 @@ export default function FlizowAccountModal({ onClose }: Props) {
                 </div>
 
                 <div style={{ marginTop: 14, paddingTop: 14, borderTop: '1px solid var(--hairline)' }}>
-                  <button
-                    type="button"
-                    onClick={handleSignOut}
-                    style={{
-                      padding: '8px 16px', borderRadius: 8,
-                      background: 'transparent',
-                      border: '1px solid var(--hairline)',
-                      color: 'var(--text)',
-                      fontSize: 13, fontWeight: 600, cursor: 'pointer',
-                    }}
-                  >Sign out of Flizow</button>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                    <button
+                      type="button"
+                      onClick={handleSignOut}
+                      style={{
+                        padding: '8px 16px', borderRadius: 8,
+                        background: 'transparent',
+                        border: '1px solid var(--hairline)',
+                        color: 'var(--text)',
+                        fontSize: 13, fontWeight: 600, cursor: 'pointer',
+                      }}
+                    >Sign out of Flizow</button>
+                    <button
+                      type="button"
+                      onClick={handleSignOutEverywhere}
+                      title="Other devices sign out within seconds, when their browser tab next reaches Firestore."
+                      style={{
+                        padding: '8px 16px', borderRadius: 8,
+                        background: 'transparent',
+                        border: '1px solid rgba(255, 59, 48, 0.4)',
+                        color: 'var(--accent)',
+                        fontSize: 13, fontWeight: 600, cursor: 'pointer',
+                      }}
+                    >Sign out everywhere</button>
+                  </div>
+                  <p style={{
+                    marginTop: 8,
+                    fontSize: 11,
+                    color: 'var(--text-muted)',
+                    lineHeight: 1.45,
+                  }}>
+                    "Sign out of Flizow" signs out this device only. "Sign out everywhere" revokes
+                    every active session — other devices sign out within seconds.
+                  </p>
                 </div>
               </section>
             )}

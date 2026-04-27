@@ -2250,6 +2250,32 @@ class FlizowStore {
     this.replaceAll(generateDemoData());
   }
 
+  /** Revoke every active session for the current user across all
+   *  devices. Pure client-side implementation — Firebase's actual
+   *  `revokeRefreshTokens` is admin-only and would need a Cloud
+   *  Function. Instead:
+   *    1. Write `revokedAt: <now>` to the user's lookup doc
+   *       (`users/{uid}`). Visible to every device subscribed to
+   *       that doc.
+   *    2. Other devices' AuthContext compares `revokedAt` against
+   *       their own `lastSignInTime`; older sessions sign out.
+   *    3. Caller signs out the current device explicitly via
+   *       AuthContext (separate code path — this method just
+   *       writes the timestamp).
+   *
+   *  Caveat acknowledged in the UI tooltip: other devices sign out
+   *  on next Firestore snapshot, not instantly. In practice that's
+   *  within seconds for an active browser tab. */
+  async writeRevokeAllTimestamp(): Promise<void> {
+    if (!this.userId) return;
+    const userDocRef = doc(db, USERS_COLLECTION, this.userId);
+    await setDoc(
+      userDocRef,
+      { revokedAt: new Date().toISOString() },
+      { merge: true },
+    );
+  }
+
   /** Build a serializable snapshot of the entire workspace for export.
    *  Insurance policy: a user about to put real client data in should
    *  be able to download a full backup. The shape is versioned so a
