@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { EllipsisVerticalIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import { useRoute, navigate } from '../router';
 import { useFlizow } from '../store/useFlizow';
 import type {
@@ -545,11 +546,7 @@ function Hero({ client, am, onArchive, onUnarchive, onRequestDelete }: {
           aria-expanded={menuOpen}
           onClick={() => setMenuOpen(v => !v)}
         >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-            <circle cx="12" cy="5"  r="1.8" />
-            <circle cx="12" cy="12" r="1.8" />
-            <circle cx="12" cy="19" r="1.8" />
-          </svg>
+          <EllipsisVerticalIcon width={16} height={16} aria-hidden="true" />
         </button>
         <div className={`tb-menu${menuOpen ? ' open' : ''}`} role="menu">
           <div
@@ -2449,10 +2446,7 @@ function AddContactModal({ clientId, existingPrimary, contact, onClose }: {
             {isEdit ? 'Edit contact' : 'Add contact'}
           </h2>
           <button type="button" className="wip-modal-close" onClick={onClose} aria-label="Close">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <line x1="18" y1="6" x2="6" y2="18" />
-              <line x1="6" y1="6" x2="18" y2="18" />
-            </svg>
+            <XMarkIcon width={14} height={14} aria-hidden="true" />
           </button>
         </header>
 
@@ -2768,10 +2762,7 @@ function AddQuickLinkModal({ clientId, link, onClose }: {
             {isEdit ? 'Edit quick link' : 'Add quick link'}
           </h2>
           <button type="button" className="wip-modal-close" onClick={onClose} aria-label="Close">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-              <line x1="18" y1="6" x2="6" y2="18" />
-              <line x1="6" y1="6" x2="18" y2="18" />
-            </svg>
+            <XMarkIcon width={14} height={14} aria-hidden="true" />
           </button>
         </header>
 
@@ -2903,10 +2894,7 @@ function AddOperatorModal({ clientId, allMembers, currentTeamIds, onClose }: {
         <header className="wip-modal-head">
           <h2 className="wip-modal-title" id="add-operator-title">Add operators</h2>
           <button type="button" className="wip-modal-close" onClick={onClose} aria-label="Close">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <line x1="18" y1="6" x2="6" y2="18" />
-              <line x1="6" y1="6" x2="18" y2="18" />
-            </svg>
+            <XMarkIcon width={14} height={14} aria-hidden="true" />
           </button>
         </header>
 

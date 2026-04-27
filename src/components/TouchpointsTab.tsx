@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { EllipsisHorizontalIcon } from '@heroicons/react/24/outline';
 import type {
   Client, Touchpoint, ActionItem, Member, Contact, Service, TouchpointKind,
 } from '../types/flizow';
@@ -322,11 +323,7 @@ function MeetingEntry({ touchpoint, actions, members, contacts, clientServices, 
               color: 'var(--text-muted)', cursor: 'pointer',
             }}
           >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-              <circle cx="5" cy="12" r="1.8" />
-              <circle cx="12" cy="12" r="1.8" />
-              <circle cx="19" cy="12" r="1.8" />
-            </svg>
+            <EllipsisHorizontalIcon width={16} height={16} aria-hidden="true" />
           </button>
           <div className={`tb-menu${menuOpen ? ' open' : ''}`} role="menu">
             <div

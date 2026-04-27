@@ -1,4 +1,5 @@
 import { useRef, type ReactNode } from 'react';
+import { XMarkIcon } from '@heroicons/react/24/outline';
 import { useModalAutofocus } from '../hooks/useModalAutofocus';
 import { useModalKeyboard } from '../hooks/useModalKeyboard';
 
@@ -55,10 +56,7 @@ export function ConfirmDangerDialog({ title, body, confirmLabel, onConfirm, onCl
         <header className="wip-modal-head">
           <h2 className="wip-modal-title" id="confirm-danger-title">{title}</h2>
           <button type="button" className="wip-modal-close" onClick={onClose} aria-label="Close">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <line x1="18" y1="6" x2="6" y2="18" />
-              <line x1="6" y1="6" x2="18" y2="18" />
-            </svg>
+            <XMarkIcon width={14} height={14} aria-hidden="true" />
           </button>
         </header>
 

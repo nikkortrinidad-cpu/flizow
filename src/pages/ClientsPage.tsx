@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { XMarkIcon } from '@heroicons/react/24/outline';
 import { useRoute, navigate } from '../router';
 import { flizowStore } from '../store/flizowStore';
 import { useFlizow } from '../store/useFlizow';
@@ -792,10 +793,7 @@ function AddClientModal({ clients, members, todayISO, onClose }: {
         <header className="wip-modal-head">
           <h2 className="wip-modal-title" id="add-client-title">Add client</h2>
           <button type="button" className="wip-modal-close" onClick={onClose} aria-label="Close">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <line x1="18" y1="6" x2="6" y2="18" />
-              <line x1="6" y1="6" x2="18" y2="18" />
-            </svg>
+            <XMarkIcon width={14} height={14} aria-hidden="true" />
           </button>
         </header>
 
@@ -1089,10 +1087,7 @@ function AddClientModal({ clients, members, todayISO, onClose }: {
                   className="wip-modal-close"
                   style={{ width: 24, height: 24, padding: 0 }}
                 >
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <line x1="18" y1="6" x2="6" y2="18" />
-                    <line x1="6" y1="6" x2="18" y2="18" />
-                  </svg>
+                  <XMarkIcon width={12} height={12} aria-hidden="true" />
                 </button>
               </div>
 

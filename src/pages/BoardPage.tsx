@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type ReactElement, type ReactNode } from 'react';
+import { XMarkIcon } from '@heroicons/react/24/outline';
 import { DndContext, DragOverlay, PointerSensor, KeyboardSensor, useSensor, useSensors, closestCenter, useDraggable, useDroppable } from '@dnd-kit/core';
 import type { DragEndEvent, DragStartEvent } from '@dnd-kit/core';
 import { useRoute, navigate } from '../router';
@@ -1822,10 +1823,7 @@ function ArchivedCardsModal({
             Archived cards
           </h2>
           <button type="button" className="wip-modal-close" onClick={onClose} aria-label="Close">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <line x1="18" y1="6" x2="6" y2="18" />
-              <line x1="6" y1="6" x2="18" y2="18" />
-            </svg>
+            <XMarkIcon width={14} height={14} aria-hidden="true" />
           </button>
         </header>
 
