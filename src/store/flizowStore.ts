@@ -219,25 +219,45 @@ function slugLabel(label: string): string {
     .slice(0, 40) || 'item';
 }
 
+/** Derive a 2-letter workspace tile from a workspace name. Splits on
+ *  whitespace, takes the first letter of the first two words. Falls
+ *  back to the first two characters when the name is one word. The
+ *  user can override this in the Workspace tab — derivation only
+ *  fires when seeding a new workspace or auto-deriving for a doc
+ *  that pre-dated the identity slice. */
+function deriveWorkspaceInitials(name: string): string {
+  const words = (name || '').trim().split(/\s+/).filter((w) => w.length > 0);
+  if (words.length === 0) return 'WS';
+  if (words.length === 1) return words[0].slice(0, 2).toUpperCase();
+  return (words[0][0] + words[1][0]).toUpperCase();
+}
+
 /** Pre-auth stash for invite query params. App.tsx reads `?join=&token=`
  *  on boot and calls `stashPendingJoin` so the params survive the
  *  Google sign-in redirect. setUser then reads it to run the accept
  *  flow inside resolveWorkspaceId. sessionStorage (not localStorage)
  *  so the stash dies with the tab — leftover invite tokens don't
  *  haunt future sessions. */
-export function stashPendingJoin(workspaceId: string, token: string): void {
+export function stashPendingJoin(workspaceId: string, token: string, name?: string): void {
   try {
-    sessionStorage.setItem(PENDING_JOIN_KEY, JSON.stringify({ workspaceId, token }));
+    sessionStorage.setItem(
+      PENDING_JOIN_KEY,
+      JSON.stringify({ workspaceId, token, ...(name ? { name } : {}) }),
+    );
   } catch { /* private mode — invite just won't auto-resume across sign-in */ }
 }
 
-export function readPendingJoin(): { workspaceId: string; token: string } | null {
+export function readPendingJoin(): { workspaceId: string; token: string; name?: string } | null {
   try {
     const raw = sessionStorage.getItem(PENDING_JOIN_KEY);
     if (!raw) return null;
     const parsed = JSON.parse(raw);
     if (parsed && typeof parsed === 'object' && parsed.workspaceId && parsed.token) {
-      return { workspaceId: String(parsed.workspaceId), token: String(parsed.token) };
+      return {
+        workspaceId: String(parsed.workspaceId),
+        token: String(parsed.token),
+        name: typeof parsed.name === 'string' ? parsed.name : undefined,
+      };
     }
   } catch { /* corrupt — clear it */ }
   return null;
@@ -258,13 +278,18 @@ class FlizowStore {
   /** Workspace the signed-in user belongs to. Null in local-only /
    *  dev-bypass mode. Set during setUser(uid). */
   private workspaceId: string | null = null;
-  /** Workspace-level metadata: members, invites, ownerUid. Separate
-   *  from `data` (which holds clients/services/etc.) so the Members UI
-   *  can subscribe without re-rendering on every card edit. */
+  /** Workspace-level metadata: identity (name/initials/color), members,
+   *  invites, ownerUid, timestamps. Separate from `data` (which holds
+   *  clients/services/etc.) so the Members UI can subscribe without
+   *  re-rendering on every card edit. */
   private workspaceMeta: {
     ownerUid: string;
+    name: string;
+    initials: string;
+    color: string;
     members: WorkspaceMembership[];
     pendingInvites: PendingInvite[];
+    createdAt: string;
   } | null = null;
   private workspaceListeners: Set<Listener> = new Set();
   private firestoreUnsub: Unsubscribe | null = null;
@@ -418,11 +443,39 @@ class FlizowStore {
       // just sourced from the workspace doc instead of flizow/{uid}.
       const cloud = migrate(ws.data ?? {});
       this.data = cloud;
+      // Identity backfill for workspaces created before the
+      // name/initials/color slice landed. Default name derives from
+      // the owner's cached display name (best-effort: pull from the
+      // owner's WorkspaceMembership record). If everything's
+      // missing, fall back to "My workspace" rather than blank.
+      const ownerMember = (ws.members ?? []).find((m) => m.uid === ws.ownerUid);
+      const fallbackName = ownerMember?.displayName
+        ? `${ownerMember.displayName}'s workspace`
+        : 'My workspace';
+      const wsName = ws.name || fallbackName;
+      const wsInitials = ws.initials || deriveWorkspaceInitials(wsName);
+      const wsColor = ws.color || '#5e5ce6';
       this.workspaceMeta = {
         ownerUid: ws.ownerUid,
+        name: wsName,
+        initials: wsInitials,
+        color: wsColor,
         members: ws.members ?? [],
         pendingInvites: ws.pendingInvites ?? [],
+        createdAt: ws.createdAt || new Date().toISOString(),
       };
+      // If the cloud doc was missing identity fields, push the
+      // backfilled values so subsequent reads (and other devices)
+      // see the defaults. Wrapped in a one-shot guard so this fires
+      // exactly once per session at most.
+      const needsIdentityBackfill = !ws.name || !ws.initials || !ws.color;
+      if (needsIdentityBackfill && this.userId === ws.ownerUid) {
+        this.persistWorkspaceIdentity({
+          name: wsName,
+          initials: wsInitials,
+          color: wsColor,
+        }).catch(() => { /* non-fatal — banner already covers sync errors */ });
+      }
       this.upsertOwnMember(userId, displayName, email, photoURL);
       this.safeSetItem(STORAGE_KEY, JSON.stringify(this.data));
       this.notify();
@@ -498,8 +551,17 @@ class FlizowStore {
       role: 'admin',
       joinedAt: now,
     };
+    // Seed workspace identity. Name derives from the owner's display
+    // name ("Nikko Trinidad's workspace"); initials + color get
+    // sensible defaults the user can change in Account Settings.
+    const wsName = displayName
+      ? `${displayName}'s workspace`
+      : 'My workspace';
     const wsDoc: WorkspaceDoc = {
       ownerUid: uid,
+      name: wsName,
+      initials: deriveWorkspaceInitials(wsName),
+      color: '#5e5ce6',
       members: [ownMembership],
       memberUids: [uid],
       pendingInvites: [],
@@ -674,6 +736,52 @@ class FlizowStore {
     }, FIRESTORE_DEBOUNCE_MS);
   }
 
+  // ── Workspace identity ────────────────────────────────────────────────
+
+  /** Patch workspace name / initials / color. Owner-only — non-owners
+   *  hit the Firestore rule (member can write but the UI hides the
+   *  controls anyway). All three fields optional; only the keys
+   *  actually present in `patch` get changed. */
+  async updateWorkspaceIdentity(patch: {
+    name?: string;
+    initials?: string;
+    color?: string;
+  }): Promise<void> {
+    if (!this.workspaceId || !this.workspaceMeta) return;
+    // Local optimistic update so the UI feels instant. The snapshot
+    // listener will reconcile on the next round-trip.
+    this.workspaceMeta = {
+      ...this.workspaceMeta,
+      ...(patch.name !== undefined ? { name: patch.name } : {}),
+      ...(patch.initials !== undefined ? { initials: patch.initials } : {}),
+      ...(patch.color !== undefined ? { color: patch.color } : {}),
+    };
+    this.notifyWorkspace();
+    await this.persistWorkspaceIdentity({
+      name: this.workspaceMeta.name,
+      initials: this.workspaceMeta.initials,
+      color: this.workspaceMeta.color,
+    });
+  }
+
+  /** Internal: write the identity fields to Firestore. Used by both
+   *  the explicit edit path (updateWorkspaceIdentity) and the silent
+   *  backfill when an existing workspace doc lacks identity fields. */
+  private async persistWorkspaceIdentity(fields: {
+    name: string;
+    initials: string;
+    color: string;
+  }): Promise<void> {
+    if (!this.workspaceId) return;
+    const wsRef = doc(db, WORKSPACES_COLLECTION, this.workspaceId);
+    await setDoc(wsRef, {
+      name: fields.name,
+      initials: fields.initials,
+      color: fields.color,
+      updatedAt: new Date().toISOString(),
+    }, { merge: true });
+  }
+
   // ── Member + invite operations ────────────────────────────────────────
 
   /** Generate an invite link that any new user can click to join this
@@ -706,8 +814,19 @@ class FlizowStore {
     this.notifyWorkspace();
     // Build the URL. Use window.location.origin + the app's base path
     // so the link works regardless of dev/prod hosting.
+    // Include the workspace name in the URL as a `n` (name) param so
+    // the invite-landing page can show "You've been invited to join
+    // Acme Marketing" BEFORE the user signs in. Pre-auth, Firestore
+    // rules prevent reading the workspace doc to fetch the name, so
+    // we ferry it through the URL. Trust model: an attacker could
+    // construct a link with a fake name, but the wsId + token combo
+    // still has to match a real pending invite — the worst they can
+    // do is mislead the invitee about which workspace; the actual
+    // join (post-sign-in) hits the real workspace doc.
     const base = window.location.origin + window.location.pathname.split('#')[0];
-    return `${base}?join=${encodeURIComponent(this.workspaceId)}&token=${encodeURIComponent(token)}`;
+    const wsName = this.workspaceMeta?.name ?? '';
+    const nameParam = wsName ? `&n=${encodeURIComponent(wsName)}` : '';
+    return `${base}?join=${encodeURIComponent(this.workspaceId)}&token=${encodeURIComponent(token)}${nameParam}`;
   }
 
   /** Revoke an outstanding invite by token. The link becomes invalid

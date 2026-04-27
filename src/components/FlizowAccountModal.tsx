@@ -30,7 +30,7 @@ import { initialsOf } from '../utils/avatar';
  *   • Timezone-driven date formatting — future pass
  */
 
-type Section = 'profile' | 'preferences' | 'notifications' | 'members' | 'signin';
+type Section = 'profile' | 'workspace' | 'preferences' | 'notifications' | 'members' | 'signin';
 
 const AVATAR_COLORS = [
   { id: 'indigo', hex: '#5e5ce6' },
@@ -232,6 +232,16 @@ export default function FlizowAccountModal({ onClose }: Props) {
           <nav className="acct-nav" role="tablist" aria-label="Settings sections" aria-orientation="vertical">
             <NavItem section="profile" label="Profile" active={section === 'profile'} onClick={() => setSection('profile')}>
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>
+            </NavItem>
+            <NavItem section="workspace" label="Workspace" active={section === 'workspace'} onClick={() => setSection('workspace')}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M3 21h18" />
+                <path d="M5 21V7l8-4v18" />
+                <path d="M19 21V11l-6-4" />
+                <line x1="9" y1="9" x2="9" y2="9.01" />
+                <line x1="9" y1="13" x2="9" y2="13.01" />
+                <line x1="9" y1="17" x2="9" y2="17.01" />
+              </svg>
             </NavItem>
             <NavItem section="preferences" label="Preferences" active={section === 'preferences'} onClick={() => setSection('preferences')}>
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12a9 9 0 1 1-9-9"/><path d="M12 3v4"/><path d="M12 17v4"/><path d="M3 12h4"/><path d="M17 12h4"/></svg>
@@ -461,6 +471,11 @@ export default function FlizowAccountModal({ onClose }: Props) {
                   </div>
                 </div>
               </section>
+            )}
+
+            {/* ── Workspace ──────────────────────────────────────── */}
+            {section === 'workspace' && (
+              <WorkspaceSection />
             )}
 
             {/* ── Preferences ────────────────────────────────────── */}
@@ -866,7 +881,7 @@ function MembersSection() {
         <h3 className="acct-section-title">Members</h3>
         <p className="acct-section-sub">
           {isOwner
-            ? 'People with access to this workspace.'
+            ? `People with access to ${meta.name}.`
             : 'Only the workspace owner can invite or remove members.'}
         </p>
       </div>
@@ -1044,6 +1059,241 @@ function MembersSection() {
       </div>
     </section>
   );
+}
+
+// ── Workspace tab ──────────────────────────────────────────────────────
+
+/** Workspace tab — name + initials + color tile + read-only stats.
+ *  Owner-only edits; non-owners see the same fields as read-only.
+ *  Image-upload logo deferred (needs Firebase Storage + uploader);
+ *  initials + color tile carries 90% of the value for now. */
+function WorkspaceSection() {
+  const { data, store } = useFlizow();
+  const meta = useSyncExternalStore(store.subscribeWorkspace, store.getWorkspaceMeta);
+  const ownUid = store.getCurrentMemberId();
+
+  const [nameDraft, setNameDraft] = useState('');
+  const [initialsDraft, setInitialsDraft] = useState('');
+  const [actionError, setActionError] = useState<string | null>(null);
+
+  // Sync local drafts to the meta whenever it changes externally
+  // (another teammate edited the workspace name, or the doc just
+  // loaded). Without this, a freshly-mounted tab would show empty
+  // inputs even though meta.name is populated.
+  useEffect(() => {
+    if (!meta) return;
+    setNameDraft((prev) => (prev === meta.name ? prev : meta.name));
+    setInitialsDraft((prev) => (prev === meta.initials ? prev : meta.initials));
+  }, [meta?.name, meta?.initials]);
+
+  if (!meta) {
+    return (
+      <section
+        className="acct-section"
+        role="tabpanel"
+        id="acct-panel-workspace"
+        aria-labelledby="acct-tab-workspace"
+        tabIndex={0}
+        data-active="true"
+      >
+        <div className="acct-section-header">
+          <h3 className="acct-section-title">Workspace</h3>
+          <p className="acct-section-sub">Loading workspace…</p>
+        </div>
+      </section>
+    );
+  }
+
+  const isOwner = ownUid === meta.ownerUid;
+  const ownerMember = meta.members.find((m) => m.uid === meta.ownerUid);
+  const ownerLabel = ownerMember?.displayName || ownerMember?.email || 'Unknown';
+
+  // Stats sourced from the data slice — counts only, not rendered as
+  // links. The "About" block is informational; navigation lives in
+  // the regular nav.
+  const clientCount = data.clients.length;
+  const serviceCount = data.services.length;
+  const memberCount = meta.members.length;
+
+  async function commitName() {
+    setActionError(null);
+    const trimmed = nameDraft.trim();
+    if (!trimmed) {
+      // Don't accept blank; revert.
+      setNameDraft(meta?.name ?? '');
+      return;
+    }
+    if (trimmed === meta?.name) return;
+    try {
+      await store.updateWorkspaceIdentity({ name: trimmed });
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : 'Could not save name.');
+    }
+  }
+
+  async function commitInitials() {
+    setActionError(null);
+    const trimmed = initialsDraft.trim().toUpperCase().slice(0, 2);
+    if (!trimmed) {
+      setInitialsDraft(meta?.initials ?? '');
+      return;
+    }
+    if (trimmed === meta?.initials) return;
+    setInitialsDraft(trimmed);
+    try {
+      await store.updateWorkspaceIdentity({ initials: trimmed });
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : 'Could not save initials.');
+    }
+  }
+
+  async function pickColor(hex: string) {
+    setActionError(null);
+    if (hex === meta?.color) return;
+    try {
+      await store.updateWorkspaceIdentity({ color: hex });
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : 'Could not save color.');
+    }
+  }
+
+  return (
+    <section
+      className="acct-section"
+      role="tabpanel"
+      id="acct-panel-workspace"
+      aria-labelledby="acct-tab-workspace"
+      tabIndex={0}
+      data-active="true"
+    >
+      <div className="acct-section-header">
+        <h3 className="acct-section-title">Workspace</h3>
+        <p className="acct-section-sub">
+          {isOwner
+            ? 'How your workspace appears to teammates and on invite links.'
+            : 'Workspace identity. Only the owner can edit these.'}
+        </p>
+      </div>
+
+      {actionError && (
+        <div className="mbrs-error" role="alert">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <circle cx="12" cy="12" r="10" />
+            <line x1="12" y1="8" x2="12" y2="12" />
+            <line x1="12" y1="16" x2="12.01" y2="16" />
+          </svg>
+          <span>{actionError}</span>
+        </div>
+      )}
+
+      {/* Workspace mark + name block — same shape as the Profile tab's
+          avatar block so the two sections feel like family. */}
+      <div className="acct-avatar-block">
+        <div
+          className="acct-avatar-large"
+          style={{ background: meta.color, color: '#fff', fontSize: 17 }}
+          aria-hidden="true"
+        >
+          {meta.initials}
+        </div>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <Field label="Workspace name" htmlFor="acct-ws-name">
+            <input
+              id="acct-ws-name"
+              type="text"
+              className="acct-input"
+              value={nameDraft}
+              onChange={(e) => setNameDraft(e.target.value)}
+              onBlur={commitName}
+              disabled={!isOwner}
+              maxLength={60}
+              placeholder="e.g. Acme Marketing"
+            />
+          </Field>
+        </div>
+      </div>
+
+      {isOwner && (
+        <>
+          <div className="acct-form-grid">
+            <Field label="Initials" htmlFor="acct-ws-initials">
+              <input
+                id="acct-ws-initials"
+                type="text"
+                className="acct-input"
+                value={initialsDraft}
+                onChange={(e) => setInitialsDraft(e.target.value.toUpperCase())}
+                onBlur={commitInitials}
+                maxLength={2}
+                style={{ textTransform: 'uppercase', letterSpacing: '0.05em', textAlign: 'center', width: 80 }}
+                aria-label="Workspace initials (2 characters max)"
+              />
+            </Field>
+            <Field label="Logo color">
+              <div className="acct-avatar-colors" role="group" aria-label="Workspace color">
+                {AVATAR_COLORS.map((c) => (
+                  <button
+                    key={c.id}
+                    type="button"
+                    className="acct-avatar-color"
+                    style={{ background: c.hex }}
+                    aria-label={c.id}
+                    aria-pressed={meta.color === c.hex}
+                    onClick={() => pickColor(c.hex)}
+                  />
+                ))}
+              </div>
+            </Field>
+          </div>
+          <p className="acct-section-sub" style={{ marginTop: 12, color: 'var(--text-faint)', fontStyle: 'italic' }}>
+            Image-upload logo lands when image storage wires up. The 2-letter tile carries the same identity in pickers + invite landings for now.
+          </p>
+        </>
+      )}
+
+      {/* About this workspace — read-only stats. */}
+      <div style={{ marginTop: 18, paddingTop: 14, borderTop: '1px solid var(--hairline)' }}>
+        <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-muted)', letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 10 }}>
+          About this workspace
+        </div>
+        <dl className="ws-about-grid">
+          <div className="ws-about-row">
+            <dt>Created</dt>
+            <dd>{formatFullDateOrFallback(meta.createdAt)}</dd>
+          </div>
+          <div className="ws-about-row">
+            <dt>Owner</dt>
+            <dd>{ownerLabel}</dd>
+          </div>
+          <div className="ws-about-row">
+            <dt>Members</dt>
+            <dd>{memberCount}</dd>
+          </div>
+          <div className="ws-about-row">
+            <dt>Clients</dt>
+            <dd>{clientCount}</dd>
+          </div>
+          <div className="ws-about-row">
+            <dt>Services</dt>
+            <dd>{serviceCount}</dd>
+          </div>
+        </dl>
+      </div>
+    </section>
+  );
+}
+
+/** Format an ISO timestamp into "Apr 27, 2026". Falls back to a dash
+ *  on bad input so the About block never shows "Invalid Date." */
+function formatFullDateOrFallback(iso: string | undefined): string {
+  if (!iso) return '—';
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return '—';
+  return d.toLocaleDateString(undefined, {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  });
 }
 
 /** Tiny relative-time helper local to the Members tab — keeps the

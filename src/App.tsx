@@ -38,10 +38,17 @@ function App() {
     const params = new URLSearchParams(window.location.search);
     const join = params.get('join');
     const token = params.get('token');
+    const wsName = params.get('n') ?? undefined;
     if (join && token) {
-      stashPendingJoin(join, token);
+      // Stash the workspace name alongside the wsId/token so the
+      // LoginPage can show "You've been invited to join {name}"
+      // before the user signs in. Pre-auth Firestore rules block
+      // reading the workspace doc to fetch the name, so we ferry
+      // it through the URL.
+      stashPendingJoin(join, token, wsName);
       params.delete('join');
       params.delete('token');
+      params.delete('n');
       const remaining = params.toString();
       const url =
         window.location.pathname +

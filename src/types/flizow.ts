@@ -100,6 +100,19 @@ export interface PendingInvite {
  */
 export interface WorkspaceDoc {
   ownerUid: string;
+  /** Display name shown on invite landings, in the Members section
+   *  sub-copy, and (when image upload ships later) the source-of-
+   *  truth caption alongside the logo. Seeded as
+   *  `${ownerDisplayName}'s workspace` on creation; editable via
+   *  Account Settings → Workspace. */
+  name: string;
+  /** Two-letter workspace mark — the "[AC]" tile shown next to the
+   *  workspace name. Defaults to derived from `name` (first letters
+   *  of the first two words). User can override. */
+  initials: string;
+  /** Hex color for the workspace mark tile. Reuses the same 7-swatch
+   *  palette as user avatars. Defaults to brand indigo (#5e5ce6). */
+  color: string;
   /** Full member objects with roles + display info. */
   members: WorkspaceMembership[];
   /** Denormalized UID list. Firestore rules can't easily check

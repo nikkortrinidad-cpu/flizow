@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 
 /**
@@ -6,6 +6,12 @@ import { useAuth } from '../contexts/AuthContext';
  *
  * Composition: brand (icon + title + subtitle) anchors the sign-in action
  * inside a single card. Meta footer sits below, intentionally de-emphasized.
+ *
+ * Invite-landing variant: when the URL carries `?join=&token=&n=`
+ * params (set by an invite link), we read the workspace name from
+ * the `n` param and show "You've been invited to join {name}" above
+ * the regular sign-in card. Pre-auth Firestore rules prevent reading
+ * the workspace doc to fetch the name, so we ferry it through the URL.
  *
  * Note on styling: the exact card dimensions, corner radius, and layered
  * shadow are in `style={}` not Tailwind arbitrary-value classes. The JIT
@@ -17,6 +23,30 @@ export function LoginPage() {
   const { signInWithGoogle } = useAuth();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+  // Read invite-landing params on render. App.tsx scrubs these from
+  // the URL after stashing them in sessionStorage, so on a refresh
+  // we won't have them in window.location.search. We don't need them
+  // there — sessionStorage is the source of truth for the join name
+  // post-stash. We also fall back to URL on initial render before
+  // App's effect fires.
+  const inviteName = useMemo<string | null>(() => {
+    try {
+      const stashed = sessionStorage.getItem('flizow-pending-join');
+      if (stashed) {
+        const parsed = JSON.parse(stashed);
+        if (parsed && typeof parsed.name === 'string' && parsed.name.trim()) {
+          return parsed.name.trim();
+        }
+      }
+    } catch { /* fall through */ }
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const n = params.get('n');
+      if (n && n.trim()) return n.trim();
+    } catch { /* fall through */ }
+    return null;
+  }, []);
 
   const handleGoogleSignIn = async () => {
     setLoading(true);
@@ -95,29 +125,78 @@ export function LoginPage() {
               </svg>
             </div>
 
-            {/* Brand pair — title + subtitle are one Gestalt unit (4px gap). */}
-            <h1
-              style={{
-                marginTop: 20,
-                fontSize: 26,
-                fontWeight: 600,
-                letterSpacing: '-0.02em',
-                color: '#1d1d1f',
-                lineHeight: 1.15,
-              }}
-            >
-              Flizow
-            </h1>
-            <p
-              style={{
-                marginTop: 4,
-                fontSize: 15,
-                color: '#86868b',
-                lineHeight: 1.4,
-              }}
-            >
-              Project Management
-            </p>
+            {/* Brand pair — title + subtitle are one Gestalt unit (4px gap).
+                Variant: when arriving from an invite link with a workspace
+                name, the title becomes "Join {name}" and the sub-copy
+                explains the action — Flizow brand demoted to a meta line
+                below since the user's mental model right now is "join
+                Acme Marketing," not "discover Flizow." */}
+            {inviteName ? (
+              <>
+                <p
+                  style={{
+                    marginTop: 16,
+                    marginBottom: 0,
+                    fontSize: 12,
+                    fontWeight: 600,
+                    color: '#86868b',
+                    letterSpacing: '0.06em',
+                    textTransform: 'uppercase',
+                  }}
+                >
+                  You've been invited
+                </p>
+                <h1
+                  style={{
+                    marginTop: 6,
+                    fontSize: 24,
+                    fontWeight: 600,
+                    letterSpacing: '-0.02em',
+                    color: '#1d1d1f',
+                    lineHeight: 1.2,
+                    textAlign: 'center',
+                    padding: '0 8px',
+                  }}
+                >
+                  Join {inviteName}
+                </h1>
+                <p
+                  style={{
+                    marginTop: 6,
+                    fontSize: 13,
+                    color: '#86868b',
+                    lineHeight: 1.4,
+                  }}
+                >
+                  Sign in with Google to accept · Flizow
+                </p>
+              </>
+            ) : (
+              <>
+                <h1
+                  style={{
+                    marginTop: 20,
+                    fontSize: 26,
+                    fontWeight: 600,
+                    letterSpacing: '-0.02em',
+                    color: '#1d1d1f',
+                    lineHeight: 1.15,
+                  }}
+                >
+                  Flizow
+                </h1>
+                <p
+                  style={{
+                    marginTop: 4,
+                    fontSize: 15,
+                    color: '#86868b',
+                    lineHeight: 1.4,
+                  }}
+                >
+                  Project Management
+                </p>
+              </>
+            )}
           </div>
 
           {error && (
