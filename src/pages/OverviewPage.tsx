@@ -882,43 +882,49 @@ function renderAttentionCard(
             <span className="dot" />{card.severityLabel}
           </span>
           <span className="attn-client">{card.clientName}</span>
-          <span className="attn-age">{card.ageLabel}</span>
         </div>
         <div className="attn-title">{card.title}</div>
         {card.desc && <div className="attn-desc">{card.desc}</div>}
       </div>
-      {/* Per-card actions — Delegate (secondary) + Review (primary).
-          Both buttons stop propagation so they don't trigger the
+      {/* Per-card actions column — age timestamp on top, action
+          buttons (Delegate + Review) below. The age moved out of
+          row1 (where it competed with severity + client name in a
+          tight horizontal strip) into the right column where it's
+          visually anchored to the buttons that act on it. Both
+          buttons stop propagation so they don't trigger the
           card-level click handler. Delegate only renders when there's
           a real kanban task backing the card; onboarding entries have
           no task to reassign. */}
       <div className="attn-actions">
-        {card.primaryTaskId && (
+        <span className="attn-age">{card.ageLabel}</span>
+        <div className="attn-actions-buttons">
+          {card.primaryTaskId && (
+            <button
+              type="button"
+              className="attn-btn"
+              onClick={(e) => {
+                e.stopPropagation();
+                onDelegate(card.primaryTaskId!, e.currentTarget);
+              }}
+              aria-label="Assign this to a team member who can follow up"
+              title="Assign this to a team member who can follow up"
+            >
+              Delegate
+            </button>
+          )}
           <button
             type="button"
-            className="attn-btn"
+            className="attn-btn primary"
             onClick={(e) => {
               e.stopPropagation();
-              onDelegate(card.primaryTaskId!, e.currentTarget);
+              navigate(target);
             }}
-            aria-label="Assign this to a team member who can follow up"
-            title="Assign this to a team member who can follow up"
+            aria-label="Open this item and take action now"
+            title="Open this item and take action now"
           >
-            Delegate
+            Review
           </button>
-        )}
-        <button
-          type="button"
-          className="attn-btn primary"
-          onClick={(e) => {
-            e.stopPropagation();
-            navigate(target);
-          }}
-          aria-label="Open this item and take action now"
-          title="Open this item and take action now"
-        >
-          Review
-        </button>
+        </div>
       </div>
     </div>
   );

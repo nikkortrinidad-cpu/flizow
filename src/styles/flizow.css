@@ -6659,10 +6659,21 @@
     letter-spacing: -0.005em;
   }
   .attn-actions {
-    display: flex; align-items: center; gap: var(--sp-sm);
+    /* Column stack: age timestamp on top, button row beneath.
+       align-items:flex-end keeps both anchored to the right edge so
+       the rightmost button (Review) lines up with the card's right
+       padding. Switched from horizontal flex to column 2026-04-27 to
+       host the age above the buttons. */
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: var(--sp-xs);
     flex-shrink: 0;
     overflow: visible;
     position: relative;
+  }
+  .attn-actions-buttons {
+    display: flex; align-items: center; gap: var(--sp-sm);
   }
   .attn-btn {
     padding: var(--sp-sm) var(--sp-xl); border-radius: 980px;
