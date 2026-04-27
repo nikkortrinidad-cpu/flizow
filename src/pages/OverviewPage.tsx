@@ -128,10 +128,13 @@ export function OverviewPage() {
     [data.clients, liveTasks, data.onboardingItems, data.services, currentMemberId],
   );
   const [attentionExpanded, setAttentionExpanded] = useState(false);
-  const attention = attentionExpanded
-    ? allAttention
-    : allAttention.slice(0, ATTENTION_INITIAL_CAP);
-  const hasMoreAttention = allAttention.length > ATTENTION_INITIAL_CAP;
+  // Split into "always-shown" (first 6) + "extras" (7+). Extras live
+  // in an animated wrapper that uses the grid-template-rows trick to
+  // transition from 0fr to 1fr — pure CSS, no JS measurement, smooth
+  // height-auto animation.
+  const firstBatchAttention = allAttention.slice(0, ATTENTION_INITIAL_CAP);
+  const extraBatchAttention = allAttention.slice(ATTENTION_INITIAL_CAP);
+  const hasMoreAttention = extraBatchAttention.length > 0;
   // If the list shrinks back below the cap (a teammate cleared some
   // urgent work, etc.) while we're expanded, snap back to collapsed —
   // there's nothing left to "show less" of, and the toggle button
@@ -313,69 +316,35 @@ export function OverviewPage() {
             <div className="block-title" id="block-attention-title">Needs Your Attention</div>
           </div>
           <div className="attention-list" id="attention-list">
-            {attention.length === 0 ? (
+            {allAttention.length === 0 ? (
               <div className="attn-empty" style={{ padding: 24, color: 'var(--text-soft)', fontSize: 14 }}>
                 Nothing urgent right now. Enjoy the quiet.
               </div>
             ) : (
               <>
-                {attention.map((card) => {
-                  // Card variant + severity-pill class share the same
-                  // tier name. Three tiers: critical (fire) → warn
-                  // (risk) → onboard (preventive). Class names match
-                  // the CSS modifiers so styling stays per-tier.
-                  const cardTier =
-                    card.severity === 'critical' ? 'critical'
-                    : card.severity === 'warning' ? 'warn'
-                    : 'onboard';
-                  const sevTier =
-                    card.severity === 'critical' ? 'critical'
-                    : card.severity === 'warning' ? 'warning'
-                    : 'onboarding';
-                  // Deep-link target. When the attention card is
-                  // backed by a specific kanban task (overdue or
-                  // blocked), open that card's modal directly via
-                  // `#board/{svcId}/card/{cardId}`. BoardPage's
-                  // auto-open effect catches the URL and pops the
-                  // modal. When there's no primary task (onboarding
-                  // cards, or status-only fire alerts), fall back to
-                  // the client detail page.
-                  const target =
-                    card.primaryTaskId && card.primaryServiceId
-                      ? `#board/${card.primaryServiceId}/card/${card.primaryTaskId}`
-                      : `#clients/${card.clientId}`;
-                  const ariaLabel = card.primaryTaskTitle
-                    ? `Open card: ${card.primaryTaskTitle} (${card.clientName})`
-                    : `Open ${card.clientName}`;
-                  return (
-                    <div
-                      key={card.clientId}
-                      className={`attn-card ${cardTier}`}
-                      role="button"
-                      tabIndex={0}
-                      aria-label={ariaLabel}
-                      onClick={() => navigate(target)}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' || e.key === ' ') {
-                          e.preventDefault();
-                          navigate(target);
-                        }
-                      }}
-                    >
-                      <div className="attn-content">
-                        <div className="attn-row1">
-                          <span className={`attn-severity ${sevTier}`}>
-                            <span className="dot" />{card.severityLabel}
-                          </span>
-                          <span className="attn-client">{card.clientName}</span>
-                          <span className="attn-age">{card.ageLabel}</span>
-                        </div>
-                        <div className="attn-title">{card.title}</div>
-                        {card.desc && <div className="attn-desc">{card.desc}</div>}
-                      </div>
+                {/* First batch — always visible. */}
+                {firstBatchAttention.map((card) => renderAttentionCard(card))}
+
+                {/* Extras — height-animated reveal via the
+                    grid-template-rows trick. Wrapper has 0fr when
+                    collapsed, 1fr when expanded. The 1s transition is
+                    on grid-template-rows specifically; the inner div
+                    has overflow:hidden so cards clip during the
+                    height change instead of overflowing the parent.
+                    inert+aria-hidden when collapsed so Tab + screen
+                    readers skip the off-screen cards. */}
+                {hasMoreAttention && (
+                  <div
+                    className={`attn-extras ${attentionExpanded ? 'expanded' : ''}`}
+                    aria-hidden={!attentionExpanded}
+                    {...(attentionExpanded ? {} : { inert: '' as unknown as boolean })}
+                  >
+                    <div className="attn-extras-inner">
+                      {extraBatchAttention.map((card) => renderAttentionCard(card))}
                     </div>
-                  );
-                })}
+                  </div>
+                )}
+
                 {hasMoreAttention && (
                   <button
                     type="button"
@@ -746,6 +715,60 @@ type AttentionCard = {
    *  click will open. Reads better than just "3 overdue cards →". */
   primaryTaskTitle?: string;
 };
+
+/** Render one attention card. Pulled out of the inline map() so the
+ *  same JSX can render the always-shown "first batch" and the
+ *  height-animated "extras batch" without duplication. */
+function renderAttentionCard(card: AttentionCard) {
+  // Card variant + severity-pill class share the same tier name.
+  // Three tiers: critical (fire) → warn (risk) → onboard (preventive).
+  const cardTier =
+    card.severity === 'critical' ? 'critical'
+    : card.severity === 'warning' ? 'warn'
+    : 'onboard';
+  const sevTier =
+    card.severity === 'critical' ? 'critical'
+    : card.severity === 'warning' ? 'warning'
+    : 'onboarding';
+  // Deep-link target. When the attention card is backed by a specific
+  // kanban task, open that card's modal directly. Otherwise fall back
+  // to the client detail page.
+  const target =
+    card.primaryTaskId && card.primaryServiceId
+      ? `#board/${card.primaryServiceId}/card/${card.primaryTaskId}`
+      : `#clients/${card.clientId}`;
+  const ariaLabel = card.primaryTaskTitle
+    ? `Open card: ${card.primaryTaskTitle} (${card.clientName})`
+    : `Open ${card.clientName}`;
+  return (
+    <div
+      key={card.clientId}
+      className={`attn-card ${cardTier}`}
+      role="button"
+      tabIndex={0}
+      aria-label={ariaLabel}
+      onClick={() => navigate(target)}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          navigate(target);
+        }
+      }}
+    >
+      <div className="attn-content">
+        <div className="attn-row1">
+          <span className={`attn-severity ${sevTier}`}>
+            <span className="dot" />{card.severityLabel}
+          </span>
+          <span className="attn-client">{card.clientName}</span>
+          <span className="attn-age">{card.ageLabel}</span>
+        </div>
+        <div className="attn-title">{card.title}</div>
+        {card.desc && <div className="attn-desc">{card.desc}</div>}
+      </div>
+    </div>
+  );
+}
 
 // Why we group by client (not by task): the AM's first move when the
 // Overview surfaces something urgent is to open the client and look at

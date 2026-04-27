@@ -7164,6 +7164,42 @@
     border-radius: 6px;
   }
 
+  /* Height-auto animation for the "View all N tasks" expand toggle
+     under Needs Your Attention. Uses the grid-template-rows: 0fr ↔ 1fr
+     trick — when 1fr behaves like auto (sized by content), we get a
+     true height-auto transition without measuring with JS. The 1s
+     duration matches the user's request; ease-in-out feels less
+     mechanical than linear on a 1-second curve. The inner div clips
+     overflow so the cards don't spill out during the slide. */
+  .attn-extras {
+    display: grid;
+    grid-template-rows: 0fr;
+    transition: grid-template-rows 1s ease-in-out;
+  }
+  .attn-extras.expanded {
+    grid-template-rows: 1fr;
+  }
+  .attn-extras-inner {
+    overflow: hidden;
+    /* Same vertical gap between extra cards as the rest of the
+       attention list. The flex gap on .attention-list doesn't reach
+       inside this wrapper, so we replicate it here. */
+    display: flex;
+    flex-direction: column;
+    gap: var(--sp-md, 12px);
+    /* Pad the top so the first extra card doesn't butt up against
+       the 6th first-batch card during the slide. Matches the gap. */
+    padding-top: var(--sp-md, 12px);
+  }
+  /* When collapsed, the padding above is also hidden because the
+     row collapses to 0. When expanded, padding kicks back in.
+     No extra rule needed — overflow:hidden handles it. */
+
+  /* Reduced motion — instant toggle, no slide. */
+  @media (prefers-reduced-motion: reduce) {
+    .attn-extras { transition: none; }
+  }
+
   /* --- BLOCK 4: TEAM WORKLOAD --- */
   .workload-grid {
     display: flex;
