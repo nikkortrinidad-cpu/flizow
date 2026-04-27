@@ -391,6 +391,17 @@ export interface Member {
    *  etc.) that maps to a label in the Profile picker today. Future
    *  cleanup will migrate to IANA names ('America/Los_Angeles'). */
   timezone?: string;
+  /** Per-user notification preferences. Both fields are optional with
+   *  default-true semantics — undefined means "show me everything,"
+   *  matching how the bell behaved before this prefs slice landed.
+   *  Wired into deriveNotifications: false on `digest` skips the
+   *  system-digest line; false on `urgent` skips the overdue /
+   *  due-today / on-fire categories. Editable in Account Settings →
+   *  Notifications. */
+  notifPrefs?: {
+    digest?: boolean;
+    urgent?: boolean;
+  };
 }
 
 export interface Integration {

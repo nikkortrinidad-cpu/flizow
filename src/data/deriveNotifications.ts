@@ -31,6 +31,14 @@ export function deriveNotifications(
 ): NotificationItem[] {
   if (!memberId) return [];
 
+  // Read the current user's notification prefs. Both default to true
+  // when undefined (legacy members from before the prefs slice land).
+  // Toggles live on Member.notifPrefs and are edited in Account
+  // Settings → Notifications.
+  const me = data.members.find((m) => m.id === memberId);
+  const showUrgent = me?.notifPrefs?.urgent !== false;
+  const showDigest = me?.notifPrefs?.digest !== false;
+
   const todayStr = data.today;
   const items: NotificationItem[] = [];
 
@@ -54,19 +62,24 @@ export function deriveNotifications(
     )
     .sort((a, b) => a.dueDate.localeCompare(b.dueDate));
 
-  for (const t of myOverdue.slice(0, 6)) {
-    const days = daysBetween(t.dueDate, todayStr);
-    const client = clientById.get(t.clientId);
-    const service = serviceById.get(t.serviceId);
-    items.push({
-      id: `overdue-${t.id}`,
-      type: 'overdue',
-      group: 'Today',
-      ago: `${days}d`,
-      text: `<em>${escapeHTML(t.title)}</em> is ${days} ${pluralize(days, 'day', 'days')} overdue`,
-      context: `${client?.name ?? 'Unknown'} · ${service?.name ?? 'Service'}`,
-      href: `#board/${t.serviceId}`,
-    });
+  // We always compute counts (used by the digest line below) even
+  // when showUrgent is false — turning off urgent items in the bell
+  // shouldn't suppress the digest line if THAT toggle is on.
+  if (showUrgent) {
+    for (const t of myOverdue.slice(0, 6)) {
+      const days = daysBetween(t.dueDate, todayStr);
+      const client = clientById.get(t.clientId);
+      const service = serviceById.get(t.serviceId);
+      items.push({
+        id: `overdue-${t.id}`,
+        type: 'overdue',
+        group: 'Today',
+        ago: `${days}d`,
+        text: `<em>${escapeHTML(t.title)}</em> is ${days} ${pluralize(days, 'day', 'days')} overdue`,
+        context: `${client?.name ?? 'Unknown'} · ${service?.name ?? 'Service'}`,
+        href: `#board/${t.serviceId}`,
+      });
+    }
   }
 
   // ── 2. Due today (assigned to me, not done) ───────────────────────
@@ -77,18 +90,20 @@ export function deriveNotifications(
       t.assigneeId === memberId &&
       t.dueDate === todayStr,
   );
-  for (const t of myDueToday.slice(0, 5)) {
-    const client = clientById.get(t.clientId);
-    const service = serviceById.get(t.serviceId);
-    items.push({
-      id: `due-today-${t.id}`,
-      type: 'due',
-      group: 'Today',
-      ago: 'Today',
-      text: `<em>${escapeHTML(t.title)}</em> is due today`,
-      context: `${client?.name ?? 'Unknown'} · ${service?.name ?? 'Service'}`,
-      href: `#board/${t.serviceId}`,
-    });
+  if (showUrgent) {
+    for (const t of myDueToday.slice(0, 5)) {
+      const client = clientById.get(t.clientId);
+      const service = serviceById.get(t.serviceId);
+      items.push({
+        id: `due-today-${t.id}`,
+        type: 'due',
+        group: 'Today',
+        ago: 'Today',
+        text: `<em>${escapeHTML(t.title)}</em> is due today`,
+        context: `${client?.name ?? 'Unknown'} · ${service?.name ?? 'Service'}`,
+        href: `#board/${t.serviceId}`,
+      });
+    }
   }
 
   // ── 3. Currently On Fire clients ──────────────────────────────────
@@ -96,29 +111,33 @@ export function deriveNotifications(
   // changes back to risk/track/etc. Only surface if I'm on the team
   // (amId or teamIds) so I'm not pestered about clients that aren't
   // mine.
-  const myFireClients = data.clients.filter(
-    (c) =>
-      c.status === 'fire' &&
-      (c.amId === memberId || (c.teamIds ?? []).includes(memberId)),
-  );
-  for (const c of myFireClients.slice(0, 5)) {
-    items.push({
-      id: `fire-${c.id}`,
-      type: 'overdue',
-      group: 'Today',
-      ago: 'Now',
-      text: `<strong>${escapeHTML(c.name)}</strong> is marked <em>On Fire</em>`,
-      context: `${escapeHTML(c.industry)} · Client status`,
-      href: `#clients/${c.id}`,
-    });
+  if (showUrgent) {
+    const myFireClients = data.clients.filter(
+      (c) =>
+        c.status === 'fire' &&
+        (c.amId === memberId || (c.teamIds ?? []).includes(memberId)),
+    );
+    for (const c of myFireClients.slice(0, 5)) {
+      items.push({
+        id: `fire-${c.id}`,
+        type: 'overdue',
+        group: 'Today',
+        ago: 'Now',
+        text: `<strong>${escapeHTML(c.name)}</strong> is marked <em>On Fire</em>`,
+        context: `${escapeHTML(c.industry)} · Client status`,
+        href: `#clients/${c.id}`,
+      });
+    }
   }
 
   // ── 4. System digest line ─────────────────────────────────────────
   // One quiet roll-up at the top of the panel when there's anything
-  // urgent. Mirrors the "Daily digest" line the mockup carried, but
-  // honest to the live count instead of hardcoded.
+  // urgent. Independent toggle — a user might want the digest line as
+  // a quick "how busy am I" glance even with the urgent rows
+  // suppressed. The count itself reflects what the bell *would* show
+  // if urgent were on.
   const urgent = myOverdue.length + myDueToday.length;
-  if (urgent > 0) {
+  if (showDigest && urgent > 0) {
     items.push({
       id: 'system-daily-digest',
       type: 'system',

@@ -143,12 +143,19 @@ export default function FlizowAccountModal({ onClose }: Props) {
   // because the Schedule grid is Mon–Fri-only.
   const [timeFmt, setTimeFmt] = useState<'12h' | '24h'>('12h');
 
-  // Notifications — local checkbox state. No persistence yet.
-  const [notifDigest, setNotifDigest]   = useState(true);
-  const [notifWip, setNotifWip]         = useState(true);
-  const [notifMentions, setNotifMentions] = useState(true);
-  const [notifOverdue, setNotifOverdue] = useState(false);
-  const [notifInapp, setNotifInapp]     = useState(true);
+  // Notification preferences. Default-true semantics — undefined on
+  // a Member record means "show me everything," matching pre-prefs
+  // bell behaviour. Both wired into deriveNotifications: digest gates
+  // the system roll-up line; urgent gates the overdue / due-today /
+  // on-fire cards.
+  const notifDigest = myMember?.notifPrefs?.digest !== false;
+  const notifUrgent = myMember?.notifPrefs?.urgent !== false;
+
+  function patchNotifPrefs(patch: { digest?: boolean; urgent?: boolean }) {
+    if (!ownUid) return;
+    const current = myMember?.notifPrefs ?? {};
+    store.updateMember(ownUid, { notifPrefs: { ...current, ...patch } });
+  }
 
   // Danger-zone state — the Reset confirmation needs a typed confirmation.
   const [resetPhase, setResetPhase] = useState<'idle' | 'confirm'>('idle');
@@ -513,24 +520,40 @@ export default function FlizowAccountModal({ onClose }: Props) {
               >
                 <div className="acct-section-header">
                   <h3 className="acct-section-title">Notifications</h3>
-                  <p className="acct-section-sub">We err on the side of quiet. Opt in to what's useful.</p>
+                  <p className="acct-section-sub">
+                    Controls what shows up in the bell at the top of the page.
+                  </p>
                 </div>
 
-                <Row title="Daily email digest" sub="One email at 8:00 AM with what needs you today.">
-                  <Toggle checked={notifDigest} onChange={setNotifDigest} label="Daily email digest" />
+                <Row
+                  title="Urgent items in the bell"
+                  sub="Overdue tasks, due-today work, and on-fire client alerts."
+                >
+                  <Toggle
+                    checked={notifUrgent}
+                    onChange={(next) => patchNotifPrefs({ urgent: next })}
+                    label="Urgent items in the bell"
+                  />
                 </Row>
-                <Row title="Weekly WIP reminder" sub="Monday morning nudge to prep your WIP meetings.">
-                  <Toggle checked={notifWip} onChange={setNotifWip} label="Weekly WIP reminder" />
+                <Row
+                  title="Daily digest"
+                  sub="Top-of-bell summary line when you have urgent items."
+                >
+                  <Toggle
+                    checked={notifDigest}
+                    onChange={(next) => patchNotifPrefs({ digest: next })}
+                    label="Daily digest"
+                  />
                 </Row>
-                <Row title="@Mentions & direct assignments" sub="Email when someone tags you or assigns you a card.">
-                  <Toggle checked={notifMentions} onChange={setNotifMentions} label="Mentions and direct assignments" />
-                </Row>
-                <Row title="Overdue tasks" sub="Evening summary of anything slipping on your clients.">
-                  <Toggle checked={notifOverdue} onChange={setNotifOverdue} label="Overdue tasks" />
-                </Row>
-                <Row title="In-app notifications" sub="The bell icon lights up. Always on by default.">
-                  <Toggle checked={notifInapp} onChange={setNotifInapp} label="In-app notifications" />
-                </Row>
+
+                {/* Honest note about what's NOT here yet. The previous
+                    revision shipped 5 toggles describing email-based
+                    behaviours that don't actually work — no email
+                    infra exists. Removed the 3 email-only ones; the
+                    other 2 got repurposed as bell-only controls. */}
+                <p className="acct-section-sub" style={{ marginTop: 14, color: 'var(--text-faint)', fontStyle: 'italic' }}>
+                  Email digests, mention alerts, and per-channel controls land when email delivery wires up.
+                </p>
               </section>
             )}
 
