@@ -27,6 +27,59 @@ function firstNameOf(displayName: string | null | undefined): string {
   return displayName.split(' ')[0] || 'there';
 }
 
+/**
+ * One-line tagline rendered below the greeting.
+ *
+ * The original mockup rotated 14 generic strings by day-of-year ("Your
+ * projects at a glance.", "Let's make today count.", etc.). A previous
+ * audit pulled it for being decoration without signal. This version is
+ * the compromise: when there's actual urgent work the line names it
+ * (signal), when the day is calm the line gives a short tone (warmth).
+ *
+ * Order matters: workload signals override time-of-day. Showing
+ * "Steady morning ahead." while 4 clients are on fire would be
+ * gaslighting.
+ */
+function pickTagline(
+  now: Date,
+  fireCount: number,
+  overdueCount: number,
+  totalClients: number,
+): string {
+  // Fresh workspace — onboarding tone, not work-status.
+  if (totalClients === 0) {
+    return "Let's get your workspace set up.";
+  }
+
+  // Active urgency. Names the actual count so the line is information
+  // *and* tone in one go. Singular/plural matters; "1 clients" reads
+  // wrong fast.
+  if (fireCount > 0) {
+    return fireCount === 1
+      ? '1 client needs you now.'
+      : `${fireCount} clients need you now.`;
+  }
+  if (overdueCount > 0) {
+    return overdueCount === 1
+      ? '1 card is overdue. Worth a glance.'
+      : `${overdueCount} cards are overdue. Worth a glance.`;
+  }
+
+  // Calm day — tone-only, scoped to time + day-of-week. Monday and
+  // Friday get their own lines because they read differently from
+  // the middle-of-week steady state.
+  const hour = now.getHours();
+  const dow = now.getDay();
+  const isWeekend = dow === 0 || dow === 6;
+
+  if (isWeekend)                   return "Quiet weekend. Nothing's on fire.";
+  if (dow === 1 && hour < 12)      return 'Fresh week. Set the tone.';
+  if (dow === 5 && hour >= 12)     return 'Last lap. Wrap it up clean.';
+  if (hour < 12)                   return 'Steady morning ahead.';
+  if (hour < 17)                   return 'Halfway through.';
+  return "Wrapping up — good day's work.";
+}
+
 export function OverviewPage() {
   const { user } = useAuth();
   const { data, store } = useFlizow();
@@ -81,6 +134,19 @@ export function OverviewPage() {
   const greetingLine = `${DAYS[now.getDay()]}, ${MONTHS[now.getMonth()]} ${now.getDate()}`;
   const title = `${greetingFor(now.getHours())}, ${firstNameOf(user?.displayName)}.`;
 
+  // Overdue tasks across the whole workspace — used by the tagline below
+  // the greeting to surface "N cards are overdue" when the workload is
+  // actually overdue. Mirrors the Schedule grid filter: archived OR done
+  // tasks don't count. ISO date strings sort lexicographically, so a <
+  // comparison is fine.
+  const overdueCount = useMemo(() => {
+    return data.tasks.filter(
+      t => !t.archived && t.columnId !== 'done' && t.dueDate && t.dueDate < data.today,
+    ).length;
+  }, [data.tasks, data.today]);
+  // `tagline` is wired below the `health` useMemo so it can read the
+  // live fire-status count without recomputing from data.clients twice.
+
   // Portfolio health counts, computed from live client statuses. `active`
   // is everything that isn't paused — the Overview is about what's in
   // play, so a paused retainer doesn't count toward "active clients"
@@ -98,6 +164,11 @@ export function OverviewPage() {
       active: data.clients.length - byStatus.paused,
     };
   }, [data.clients]);
+
+  // Tagline below the greeting. Workload signals (fire / overdue) take
+  // precedence; the time-of-day fallback runs only when the day is
+  // genuinely calm. See pickTagline for the branch table.
+  const tagline = pickTagline(now, health.fire, overdueCount, data.clients.length);
 
   // Archived tasks are hidden from every Overview panel — they don't
   // contribute to client health, schedule entries, or needs-attention
@@ -237,16 +308,19 @@ export function OverviewPage() {
           </section>
         )}
 
-        {/* Two-line header: the greeting eyebrow + the title. The
-            rotating tagline row used to sit below, rendering one of
-            14 strings per day-of-year — ambient decoration with no
-            signal on a page whose job is to surface urgent work.
-            Dropping it also lifts the first data block ~20-40px
-            closer to the top of the viewport. Audit: overview M1 +
-            M4. */}
+        {/* Three-line header: date eyebrow + greeting title + tagline.
+            The tagline came back 2026-04-27 in a smarter shape — it
+            reads workload first ("3 clients need you now.") and falls
+            back to a short time-of-day tone only when the day is
+            actually calm. Worth its ~24px of vertical because it
+            carries information when there's urgent work, not just
+            decoration. The original day-of-year random rotation was
+            dropped; see pickTagline for the new branch table.
+            Audit: overview M1 + M4 (revised). */}
         <div className="page-header">
           <div className="page-greeting">{greetingLine}</div>
           <div className="page-title">{title}</div>
+          <div className="page-date">{tagline}</div>
         </div>
 
         {/* BLOCK 1 — Portfolio Health */}
