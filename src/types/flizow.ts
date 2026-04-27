@@ -383,6 +383,14 @@ export interface Member {
    *  The signed-in user always gets 'admin' set via upsertOwnMember on
    *  every sign-in. Future-invited teammates get assigned at invite. */
   accessLevel?: AccessLevel;
+  /** What the user goes by — first-name shorthand. Optional; falls
+   *  back to the first word of `name` when absent. Editable in the
+   *  Profile tab of Account Settings. */
+  preferredName?: string;
+  /** User's preferred timezone. Stored as a short slug ('pst', 'est',
+   *  etc.) that maps to a label in the Profile picker today. Future
+   *  cleanup will migrate to IANA names ('America/Los_Angeles'). */
+  timezone?: string;
 }
 
 export interface Integration {

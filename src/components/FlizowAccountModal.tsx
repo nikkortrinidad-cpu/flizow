@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useFlizow } from '../store/useFlizow';
-import type { AccessLevel } from '../types/flizow';
+import type { AccessLevel, Member } from '../types/flizow';
+import { initialsOf } from '../utils/avatar';
 
 /**
  * FlizowAccountModal — the Account Settings overlay reachable from the
@@ -86,21 +87,54 @@ export default function FlizowAccountModal({ onClose }: Props) {
     return () => window.removeEventListener('keydown', onKey);
   }, [onClose]);
 
-  // Identity. Name/email come from Firebase; avatar initial is the first
-  // letter of the display name (fall back to "U").
-  const displayName = user?.displayName || 'You';
+  // Identity. Email comes from Firebase (Google-managed). Display
+  // name + preferred name + role + timezone + avatar color all
+  // live on the agency-side Member record (data.members) and persist
+  // through store.updateMember. Falls back to Firebase displayName
+  // when the Member record's name field hasn't been overridden yet.
+  const ownUid = user?.uid ?? null;
+  const myMember = ownUid ? data.members.find((m) => m.id === ownUid) : undefined;
+  const displayName = myMember?.name || user?.displayName || 'You';
   const email = user?.email || '—';
   const initials = (displayName || 'U').trim().split(/\s+/)
     .map(p => p[0]?.toUpperCase() ?? '').join('').slice(0, 2) || 'U';
 
-  // Draft state for editable fields. No Save button — we store locally
-  // only until a user prefs slice lands. Matches the mockup's "edits
-  // save instantly" pattern for the segmented controls.
+  // Local drafts mirror the persisted Member record. Edits commit on
+  // blur (text/select) or click (color picker) via store.updateMember.
+  // The drafts re-sync whenever the Member record changes from
+  // outside (another teammate's edit or Firebase Auth refresh).
   const [nameDraft, setNameDraft] = useState(displayName);
-  const [preferredDraft, setPreferredDraft] = useState(displayName.split(' ')[0]);
-  const [roleDraft, setRoleDraft] = useState('Account Manager');
-  const [tzDraft, setTzDraft] = useState('pst');
-  const [avatarHex, setAvatarHex] = useState('#5e5ce6');
+  const [preferredDraft, setPreferredDraft] = useState(myMember?.preferredName ?? displayName.split(' ')[0]);
+  const [roleDraft, setRoleDraft] = useState(myMember?.role ?? '');
+  const [tzDraft, setTzDraft] = useState(myMember?.timezone ?? 'pst');
+  const [avatarHex, setAvatarHex] = useState(myMember?.color ?? '#5e5ce6');
+
+  // Re-sync drafts when the Member record changes externally. Without
+  // this, a teammate editing your role/timezone wouldn't surface in
+  // your open settings panel until you reloaded.
+  useEffect(() => {
+    if (!myMember) return;
+    setNameDraft((prev) => (prev === myMember.name ? prev : myMember.name));
+    setPreferredDraft((prev) =>
+      prev === (myMember.preferredName ?? '') ? prev : (myMember.preferredName ?? prev),
+    );
+    setRoleDraft((prev) => (prev === (myMember.role ?? '') ? prev : (myMember.role ?? '')));
+    setTzDraft((prev) =>
+      prev === (myMember.timezone ?? prev) ? prev : (myMember.timezone ?? prev),
+    );
+    setAvatarHex((prev) => (prev === myMember.color ? prev : myMember.color));
+    // Intentionally narrow deps — only react to the persisted record
+    // changing, not to draft state changes (would loop).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [myMember?.name, myMember?.preferredName, myMember?.role, myMember?.timezone, myMember?.color]);
+
+  // Patch helper — every Profile field uses the same call shape, so
+  // pulling it into one closure keeps the JSX uncluttered. No-op
+  // when there's no signed-in user (dev-bypass mode).
+  function patchOwnMember(patch: Partial<Member>) {
+    if (!ownUid) return;
+    store.updateMember(ownUid, patch);
+  }
 
   // Preferences. Appearance is the only one wired through — light/dark/system
   // routes through flizowStore.setTheme(). "System" applies the OS-preferred
@@ -226,13 +260,6 @@ export default function FlizowAccountModal({ onClose }: Props) {
                 <div className="acct-section-header">
                   <h3 className="acct-section-title">Profile</h3>
                   <p className="acct-section-sub">How you appear across Flizow — visible to your team and clients you share work with.</p>
-                  {/* Honest signal that profile-field saving isn't wired
-                      yet — without this, users edit, navigate away, come
-                      back to defaults, and don't know why. Audit:
-                      account MED (silent persistence gap). */}
-                  <p className="acct-section-sub" style={{ marginTop: 6, color: 'var(--text-faint)', fontStyle: 'italic' }}>
-                    Profile field saving lands in the next pass. Theme &amp; sign-out work today.
-                  </p>
                 </div>
 
                 <div className="acct-avatar-block">
@@ -250,7 +277,10 @@ export default function FlizowAccountModal({ onClose }: Props) {
                           style={{ background: c.hex }}
                           aria-label={c.id}
                           aria-pressed={avatarHex === c.hex}
-                          onClick={() => setAvatarHex(c.hex)}
+                          onClick={() => {
+                            setAvatarHex(c.hex);
+                            patchOwnMember({ color: c.hex });
+                          }}
                         />
                       ))}
                     </div>
@@ -265,6 +295,25 @@ export default function FlizowAccountModal({ onClose }: Props) {
                       className="acct-input"
                       value={nameDraft}
                       onChange={(e) => setNameDraft(e.target.value)}
+                      onBlur={() => {
+                        // Save on blur — persists to the workspace member record.
+                        // Empty input reverts to whatever's stored (we don't
+                        // accept blank names; falls back to the previous
+                        // value from useEffect when myMember updates).
+                        const trimmed = nameDraft.trim();
+                        if (!trimmed) {
+                          setNameDraft(myMember?.name ?? user?.displayName ?? '');
+                          return;
+                        }
+                        if (trimmed !== myMember?.name) {
+                          patchOwnMember({
+                            name: trimmed,
+                            // Refresh initials when the name changes so
+                            // pickers and avatars stay in sync.
+                            initials: initialsOf(trimmed),
+                          });
+                        }
+                      }}
                       autoComplete="name"
                     />
                   </Field>
@@ -275,6 +324,12 @@ export default function FlizowAccountModal({ onClose }: Props) {
                       className="acct-input"
                       value={preferredDraft}
                       onChange={(e) => setPreferredDraft(e.target.value)}
+                      onBlur={() => {
+                        const trimmed = preferredDraft.trim();
+                        if (trimmed !== (myMember?.preferredName ?? '')) {
+                          patchOwnMember({ preferredName: trimmed || undefined });
+                        }
+                      }}
                       autoComplete="nickname"
                     />
                   </Field>
@@ -299,6 +354,12 @@ export default function FlizowAccountModal({ onClose }: Props) {
                       className="acct-input"
                       value={roleDraft}
                       onChange={(e) => setRoleDraft(e.target.value)}
+                      onBlur={() => {
+                        const trimmed = roleDraft.trim();
+                        if (trimmed !== (myMember?.role ?? '')) {
+                          patchOwnMember({ role: trimmed || undefined });
+                        }
+                      }}
                       autoComplete="organization-title"
                     />
                   </Field>
@@ -307,7 +368,15 @@ export default function FlizowAccountModal({ onClose }: Props) {
                       id="acct-tz"
                       className="acct-input"
                       value={tzDraft}
-                      onChange={(e) => setTzDraft(e.target.value)}
+                      onChange={(e) => {
+                        // Selects commit on change (not blur) — picking
+                        // an option IS the commit gesture.
+                        const next = e.target.value;
+                        setTzDraft(next);
+                        if (next !== myMember?.timezone) {
+                          patchOwnMember({ timezone: next });
+                        }
+                      }}
                     >
                       <option value="pst">Pacific · Los Angeles</option>
                       <option value="mst">Mountain · Denver</option>
