@@ -111,6 +111,56 @@ export function clientMetric(
   }
 }
 
+/**
+ * Health tier for a single service — fire / risk / track. Mirrors the
+ * client-level health tiers so the visual key (red dot / amber dot /
+ * green dot) reads the same wherever a service shows up.
+ *
+ * Rules, in order:
+ *   fire   →  any open task is overdue, marked critical severity, or
+ *             stuck in the blocked column
+ *   risk   →  any open task is marked warning severity (drifting work,
+ *             reviews piling up)
+ *   track  →  everything else, including "no tasks yet" — a brand-new
+ *             service shouldn't read as a problem
+ *
+ * "Open" excludes archived + done. todayIso is YYYY-MM-DD; ISO strings
+ * sort lexicographically so the < comparison is correct without parsing.
+ */
+export type ServiceHealth = 'fire' | 'risk' | 'track';
+
+export function serviceHealth(
+  serviceId: string,
+  tasks: Task[],
+  todayIso: string,
+): ServiceHealth {
+  let hasRisk = false;
+  for (const t of tasks) {
+    if (t.serviceId !== serviceId) continue;
+    if (t.archived) continue;
+    if (t.columnId === 'done') continue;
+    if (
+      t.severity === 'critical' ||
+      t.columnId === 'blocked' ||
+      (t.dueDate && t.dueDate < todayIso)
+    ) {
+      // Single fire signal is enough; short-circuit to skip the rest.
+      return 'fire';
+    }
+    if (t.severity === 'warning') hasRisk = true;
+  }
+  return hasRisk ? 'risk' : 'track';
+}
+
+/** Friendly label for a service-health tier — matches the client status
+ *  chip labels exactly so the same visual chip reads the same words
+ *  whether it's hung off a client hero or a service card. */
+export function serviceHealthLabel(h: ServiceHealth): string {
+  if (h === 'fire') return 'On Fire';
+  if (h === 'risk') return 'At Risk';
+  return 'On Track';
+}
+
 function countOverdueTasks(client: Client, data: FlizowData): number {
   const today = data.today;
   return data.tasks.filter(

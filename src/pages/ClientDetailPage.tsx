@@ -8,7 +8,7 @@ import type {
 } from '../types/flizow';
 import { flizowStore, type FlizowStore } from '../store/flizowStore';
 import { formatMonthYear, formatMonthDay, daysBetween } from '../utils/dateFormat';
-import { categoryLabel } from '../utils/clientDerived';
+import { categoryLabel, serviceHealth, serviceHealthLabel, type ServiceHealth } from '../utils/clientDerived';
 import { NotesTab } from '../components/NotesTab';
 import { TouchpointsTab } from '../components/TouchpointsTab';
 import { StatsTab } from '../components/StatsTab';
@@ -161,6 +161,8 @@ function ClientDetail({ client, data, store }: DetailProps) {
           <AttentionSection tasks={openTasks} services={services} />
           <ServicesSection
             services={services}
+            tasks={liveTasks}
+            todayIso={data.today}
             onAdd={() => setShowAddService(true)}
             editing={servicesEditMode}
             onToggleEdit={() => setServicesEditMode(v => !v)}
@@ -749,8 +751,13 @@ function buildAttentionChips(
 
 // ── Overview · Active Services ────────────────────────────────────────────
 
-function ServicesSection({ services, onAdd, editing, onToggleEdit, onDelete, onMoveUp, onMoveDown, favoriteIds, onToggleFavorite }: {
+function ServicesSection({ services, tasks, todayIso, onAdd, editing, onToggleEdit, onDelete, onMoveUp, onMoveDown, favoriteIds, onToggleFavorite }: {
   services: Service[];
+  /** All open (non-archived) tasks across the workspace. Used here to
+   *  compute a fire/risk/track health tier per service so each card
+   *  carries the same visual key the client hero / Clients list dot use. */
+  tasks: Task[];
+  todayIso: string;
   onAdd: () => void;
   editing: boolean;
   onToggleEdit: () => void;
@@ -760,6 +767,14 @@ function ServicesSection({ services, onAdd, editing, onToggleEdit, onDelete, onM
   favoriteIds: string[];
   onToggleFavorite: (id: string) => void;
 }) {
+  // Health map: serviceId → 'fire' | 'risk' | 'track'. Memoised so we
+  // don't re-walk the task list on every parent render — the section
+  // re-renders on any FlizowData change.
+  const healthById = useMemo(() => {
+    const m = new Map<string, ServiceHealth>();
+    for (const s of services) m.set(s.id, serviceHealth(s.id, tasks, todayIso));
+    return m;
+  }, [services, tasks, todayIso]);
   if (services.length === 0) {
     // Empty state: the "Add a service" hint becomes the CTA itself. A button
     // right inside the empty panel beats a button far away in the header —
@@ -842,6 +857,7 @@ function ServicesSection({ services, onAdd, editing, onToggleEdit, onDelete, onM
           <ServiceCard
             key={s.id}
             service={s}
+            health={healthById.get(s.id) ?? 'track'}
             editing={editing}
             onRemove={editing ? () => onDelete(s.id) : undefined}
             onMoveUp={editing && i > 0 ? () => onMoveUp(s.id) : undefined}
@@ -855,8 +871,14 @@ function ServicesSection({ services, onAdd, editing, onToggleEdit, onDelete, onM
   );
 }
 
-function ServiceCard({ service, editing, onRemove, onMoveUp, onMoveDown, isFavorite, onToggleFavorite }: {
+function ServiceCard({ service, health, editing, onRemove, onMoveUp, onMoveDown, isFavorite, onToggleFavorite }: {
   service: Service;
+  /** Live fire/risk/track tier derived from this service's open tasks.
+   *  Replaced the static "Project / Retainer" type label 2026-04-27 —
+   *  the type is still on `service.type` and drives template / due-date
+   *  copy below; the chip surfaces health, which is the actually
+   *  scannable signal at this density. */
+  health: ServiceHealth;
   editing?: boolean;
   onRemove?: () => void;
   /** Undefined when the card is already at the top — lets this component
@@ -979,8 +1001,13 @@ function ServiceCard({ service, editing, onRemove, onMoveUp, onMoveDown, isFavor
       <div className="service-card-body">
         <div className="service-name-row">
           <div className="service-name">{service.name}</div>
-          <span className={`service-type ${service.type}`}>
-            {service.type === 'project' ? 'Project' : 'Retainer'}
+          {/* Reuses the .status-chip recipe from the client hero so
+              the dot + label treatment matches across the app. The
+              previous .service-type pill (Project / Retainer) was
+              static metadata; health is live and changes as work moves. */}
+          <span className={`status-chip ${health}`}>
+            <span className="dot" />
+            {serviceHealthLabel(health)}
           </span>
         </div>
         <div className="service-sub">
