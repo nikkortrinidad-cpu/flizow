@@ -302,7 +302,12 @@ export default function FlizowAccountModal({ onClose }: Props) {
       store.setTheme(draftTheme);
     }
 
-    onClose();
+    // Save no longer closes the modal — the user often wants to make
+    // a few changes, see them save, then keep tweaking. The drafts
+    // now equal the source values (we just committed), so isDirty
+    // flips to false and the Save button greys out — that's the
+    // primary visual confirmation. The toast below is the verbal one.
+    showToast('Changes saved');
   }
 
   /** Close-with-dirty-check used by the X button, Esc handler, and
@@ -729,7 +734,33 @@ export default function FlizowAccountModal({ onClose }: Props) {
         </div>
 
         <footer className="acct-footer">
-          <span className="acct-footer-status" role="status" aria-live="polite">{toast ?? ''}</span>
+          {/* Footer status — currently only renders the toast text
+              ("Changes saved", "Demo workspace loaded", etc). The
+              checkmark icon paints in the success tint when there's
+              a message; otherwise the span collapses to empty so the
+              footer reads cleanly. role="status" + aria-live="polite"
+              announces saves to screen readers without stealing focus. */}
+          <span className="acct-footer-status" role="status" aria-live="polite">
+            {toast && (
+              <>
+                <svg
+                  className="acct-footer-status-icon"
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.4"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden="true"
+                >
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
+                {toast}
+              </>
+            )}
+          </span>
           <button
             type="button"
             className="acct-btn-text"

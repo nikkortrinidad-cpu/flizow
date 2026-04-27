@@ -1014,7 +1014,18 @@
     box-sizing: border-box;
   }
   .acct-footer-status {
-    flex: 1; font-size: 12px; color: var(--text-muted);
+    flex: 1;
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 12px;
+    font-weight: 500;
+    color: #30d158; /* Apple system green — reads as "success"
+                       without competing with the brand blue Save
+                       button. Footer is a quiet rail; the toast is
+                       the only colored thing here. */
+    letter-spacing: -0.005em;
+  }
+  .acct-footer-status-icon {
+    flex-shrink: 0;
   }
   .acct-btn-text {
     padding: 8px 14px; border-radius: 980px;
