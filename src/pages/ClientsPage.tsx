@@ -269,6 +269,7 @@ export function ClientsPage() {
 
       {showAddClient && (
         <AddClientModal
+          clients={data.clients}
           members={data.members}
           todayISO={data.today}
           onClose={() => setShowAddClient(false)}
@@ -455,6 +456,72 @@ const LOGO_CLASSES = [
   'logo-amber',  'logo-orange', 'logo-pink', 'logo-purple', 'logo-slate',
 ] as const;
 
+type LogoClass = typeof LOGO_CLASSES[number];
+
+/**
+ * Pick a logo colour for a brand-new client.
+ *
+ * The colour is decoration, not data — its only job is to help the eye
+ * tell rows apart on the Clients list. So the picker's goal is **maximum
+ * visual spread**, not user expression. The Add Client modal used to ask
+ * the user to choose; that turned out to be the wrong tool for the job
+ * because the user couldn't see the existing palette in context and
+ * often picked colours already used by neighbouring rows.
+ *
+ * Algorithm — "least currently used, tiebreak by least recently added":
+ *   1. Count usages of each of the nine LOGO_CLASSES across the
+ *      existing clients.
+ *   2. Pick the colour with the lowest count. After 9 clients each
+ *      colour appears once; after 18 each appears twice; never two of
+ *      the same colour adjacent in time.
+ *   3. Tiebreak: among colours tied at the minimum count, pick the one
+ *      whose most recent appearance is *earliest* in `existingClients`
+ *      (creation order, since the store appends in insertion order).
+ *      This keeps the rotation moving forward instead of getting stuck
+ *      on whichever colour LOGO_CLASSES happens to list first.
+ *   4. Final tiebreak (e.g. very first client when nothing has been
+ *      used): LOGO_CLASSES declaration order, so the first client
+ *      always lands on `logo-indigo` — predictable, deterministic,
+ *      easy to reason about.
+ *
+ * Users who care about the colour for a specific client (brand match,
+ * boss preference) can change it from the Client Detail page.
+ */
+function pickLogoClass(existingClients: Client[]): LogoClass {
+  // Count how often each colour is currently in use. Ignore any logoClass
+  // values that aren't in the canonical list (e.g. legacy/unknown values
+  // from imported data) — we don't want them skewing the tally.
+  const counts = new Map<LogoClass, number>();
+  for (const cls of LOGO_CLASSES) counts.set(cls, 0);
+  for (const c of existingClients) {
+    const cls = c.logoClass as LogoClass;
+    if (counts.has(cls)) counts.set(cls, counts.get(cls)! + 1);
+  }
+
+  // Find the minimum count, then narrow to the colours tied at that count.
+  let minCount = Infinity;
+  for (const v of counts.values()) if (v < minCount) minCount = v;
+  const candidates = LOGO_CLASSES.filter(cls => counts.get(cls) === minCount);
+  if (candidates.length === 1) return candidates[0];
+
+  // Tiebreak by recency: for each tied colour, find the index of its most
+  // recent appearance in existingClients. Lower index = older = wins.
+  // A colour with zero uses gets recency -1, which beats any real index.
+  let best: LogoClass = candidates[0];
+  let bestRecency = Infinity;
+  for (const cls of candidates) {
+    let recency = -1;
+    for (let i = 0; i < existingClients.length; i++) {
+      if (existingClients[i].logoClass === cls) recency = i;
+    }
+    if (recency < bestRecency) {
+      bestRecency = recency;
+      best = cls;
+    }
+  }
+  return best;
+}
+
 const INDUSTRY_CATEGORIES: { value: IndustryCategory; label: string }[] = [
   { value: 'saas',         label: 'SaaS / Tech' },
   { value: 'ecommerce',    label: 'E-commerce / Retail' },
@@ -498,7 +565,11 @@ interface DraftExtraContact {
   phone: string;
 }
 
-function AddClientModal({ members, todayISO, onClose }: {
+function AddClientModal({ clients, members, todayISO, onClose }: {
+  /** Snapshot of the workspace's current clients. Used at save time
+   *  to auto-pick a logo colour that's least-recently-used; the modal
+   *  no longer asks the user to choose one. */
+  clients: Client[];
   members: Member[];
   todayISO: string;
   onClose: () => void;
@@ -507,7 +578,6 @@ function AddClientModal({ members, todayISO, onClose }: {
   const [industryCategory, setIndustryCategory] = useState<IndustryCategory>('saas');
   const [amId, setAmId] = useState<string>('');
   const [status, setStatus] = useState<ClientStatus>('onboard');
-  const [logoClass, setLogoClass] = useState<typeof LOGO_CLASSES[number]>('logo-indigo');
   // Primary-contact fields — REQUIRED. A new client must ship with one
   // primary point of contact (name, position, email, mobile). Save is
   // blocked until all five required fields (client name + the four
@@ -607,13 +677,17 @@ function AddClientModal({ members, todayISO, onClose }: {
     }
 
     // 2. Build + persist the Client. Initials are derived at save time
-    //    so the user doesn't have to maintain them separately.
+    //    so the user doesn't have to maintain them separately. Logo
+    //    colour is auto-picked from the least-used end of the palette
+    //    using the current clients snapshot — see pickLogoClass for the
+    //    spread algorithm. Users who want a specific colour can change
+    //    it from the Client Detail page.
     const id = `cl-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
     const client: Client = {
       id,
       name: trimmedName,
       initials: deriveInitials(trimmedName),
-      logoClass,
+      logoClass: pickLogoClass(clients),
       status,
       industryCategory,
       amId: amId || null,
@@ -1012,31 +1086,14 @@ function AddClientModal({ members, todayISO, onClose }: {
             Add another contact
           </button>
 
-          <div className="wip-field">
-            <span className="wip-field-label">Logo colour</span>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }} role="radiogroup" aria-label="Logo colour">
-              {LOGO_CLASSES.map(cls => (
-                <button
-                  key={cls}
-                  type="button"
-                  role="radio"
-                  aria-checked={logoClass === cls}
-                  aria-label={cls.replace('logo-', '')}
-                  className={`client-logo ${cls}`}
-                  onClick={() => setLogoClass(cls)}
-                  style={{
-                    width: 36, height: 36, borderRadius: 8,
-                    border: logoClass === cls
-                      ? '2px solid var(--highlight)'
-                      : '2px solid transparent',
-                    outline: 'none',
-                    cursor: 'pointer',
-                    color: 'transparent', // hide any text content
-                  }}
-                />
-              ))}
-            </div>
-          </div>
+          {/* Logo colour swatches used to live here. Removed 2026-04-27
+              — the colour was decoration, not data, and asking the user
+              to pick from 9 swatches without seeing the existing
+              palette in context produced clusters of same-coloured
+              rows that defeated the differentiation purpose. The save
+              path now calls pickLogoClass(clients) to auto-assign the
+              least-used colour. Users who want a specific colour can
+              change it from the Client Detail page. */}
         </div>
 
         <footer className="wip-modal-foot">
