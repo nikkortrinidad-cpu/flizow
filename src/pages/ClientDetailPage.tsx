@@ -2011,14 +2011,19 @@ function QuickLinksCard({ links, onAdd, editing, onToggleEdit, onRemove, onEdit 
                   }
                 }}
                 aria-label={`Edit ${l.label}`}
+                // Title carries the full URL on hover. The host text
+                // used to render inline next to the label; hidden
+                // 2026-04-28 — the URL was visual noise the user
+                // never needed to read at a glance. Hover-on-tooltip
+                // keeps the info one mouseover away when it actually
+                // matters (e.g. confirming which Drive folder this is
+                // before opening the edit modal).
+                title={l.url}
               >
                 <span className="quick-link-icon" aria-hidden="true">
                   {renderLinkIcon(l.icon)}
                 </span>
-                <span>
-                  <span className="quick-link-label">{l.label}</span>
-                  <span className="quick-link-host">{hostOf(l.url)}</span>
-                </span>
+                <span className="quick-link-label">{l.label}</span>
                 <button
                   type="button"
                   className="quick-link-remove-btn"
@@ -2044,14 +2049,15 @@ function QuickLinksCard({ links, onAdd, editing, onToggleEdit, onRemove, onEdit 
                 href={l.url}
                 target="_blank"
                 rel="noreferrer noopener"
+                // Browsers natively surface href on hover via the
+                // status bar, so no extra title needed here. The
+                // inline host text was hidden 2026-04-28; same
+                // rationale as the editing-mode row above.
               >
                 <span className="quick-link-icon" aria-hidden="true">
                   {renderLinkIcon(l.icon)}
                 </span>
-                <span>
-                  <span className="quick-link-label">{l.label}</span>
-                  <span className="quick-link-host">{hostOf(l.url)}</span>
-                </span>
+                <span className="quick-link-label">{l.label}</span>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" width="14" height="14" style={{ color: 'var(--text-faint)' }}>
                   <path d="M7 17L17 7M9 7h8v8" />
                 </svg>
@@ -2162,10 +2168,11 @@ function initialsOf(name: string): string {
   return (parts[0][0] + parts[1][0]).toUpperCase();
 }
 
-function hostOf(url: string): string {
-  try { return new URL(url).host.replace(/^www\./, ''); }
-  catch { return url; }
-}
+// hostOf() used to render the inline URL preview next to each quick
+// link's label ("Website acmecorporation.com"). Pulled 2026-04-28
+// when the host text was hidden — kept removed rather than left as
+// dead code; if a future surface needs the same parser, build it
+// fresh against the URL it actually serves.
 
 function renderLinkIcon(kind?: QuickLink['icon']): React.ReactNode {
   const props = {
