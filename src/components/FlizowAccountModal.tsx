@@ -52,9 +52,10 @@ interface Props {
 export default function FlizowAccountModal({ onClose }: Props) {
   const { user, logout } = useAuth();
   const { data, store } = useFlizow();
-  // isDark used to drive the Light/Dark segment buttons directly;
-  // those now key off draftTheme, so this derivation is gone. The
-  // committed theme reads via `data.theme` where needed.
+  // The Light/Dark segment buttons read `data.theme` directly and
+  // commit instantly via setAppearance — no draft, no Save round-trip.
+  // See setAppearance + the dirty-detection block below for the full
+  // policy. (System mode resolves to the OS preference at click time.)
 
   const [section, setSection] = useState<Section>('profile');
   const closeBtnRef = useRef<HTMLButtonElement | null>(null);
@@ -155,14 +156,14 @@ export default function FlizowAccountModal({ onClose }: Props) {
     () => myMember?.notifPrefs?.urgent !== false,
   );
 
-  // Theme draft. Stops the previous behaviour of switching the theme
-  // immediately on click — under the new Save/Cancel contract,
-  // picking dark in the modal *previews nothing* until Save fires.
-  // Tradeoff acknowledged in the commit message; the strict
-  // transactional model is what the user asked for.
-  const [draftTheme, setDraftTheme] = useState<'light' | 'dark'>(
-    () => (data.theme === 'dark' ? 'dark' : 'light'),
-  );
+  // Theme is the one setting that doesn't go through Save/Cancel —
+  // it's instant-apply by design (2026-04-28). Picking Light / Dark /
+  // System in the segmented control immediately writes to the store
+  // and updates the DOM, so the user can see the mode flip behind the
+  // modal. Cancel doesn't revert it, Save doesn't commit it. The
+  // trade-off: choosing the "wrong" mode is reversible in one click;
+  // making the user click Save to preview the visual change felt
+  // backwards for a setting whose whole purpose is the preview.
 
   // Danger-zone state — the Reset confirmation needs a typed confirmation.
   const [resetPhase, setResetPhase] = useState<'idle' | 'confirm'>('idle');
@@ -217,13 +218,16 @@ export default function FlizowAccountModal({ onClose }: Props) {
     onClose();
   }
 
-  /** Stage a theme change in the local draft. Persists via Save. */
+  /** Apply a theme change immediately. No draft, no Save — the click
+   *  itself commits. "System" resolves to the current OS preference
+   *  at click-time and stores the resolved value (light or dark);
+   *  the picker doesn't keep "follow system" as a sticky mode. */
   function setAppearance(mode: 'light' | 'dark' | 'system') {
     if (mode === 'system') {
       const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-      setDraftTheme(prefersDark ? 'dark' : 'light');
+      store.setTheme(prefersDark ? 'dark' : 'light');
     } else {
-      setDraftTheme(mode);
+      store.setTheme(mode);
     }
   }
 
@@ -234,7 +238,6 @@ export default function FlizowAccountModal({ onClose }: Props) {
   const sourceWsName = wsMeta?.name ?? '';
   const sourceWsInitials = wsMeta?.initials ?? '';
   const sourceWsColor = wsMeta?.color ?? '#5e5ce6';
-  const sourceTheme: 'light' | 'dark' = data.theme === 'dark' ? 'dark' : 'light';
   const sourceNotifDigest = myMember?.notifPrefs?.digest !== false;
   const sourceNotifUrgent = myMember?.notifPrefs?.urgent !== false;
   const dirtyProfile =
@@ -247,11 +250,12 @@ export default function FlizowAccountModal({ onClose }: Props) {
     draftWsName.trim() !== sourceWsName ||
     draftWsInitials.trim().toUpperCase() !== sourceWsInitials ||
     draftWsColor !== sourceWsColor;
-  const dirtyTheme = draftTheme !== sourceTheme;
   const dirtyNotif =
     draftNotifDigest !== sourceNotifDigest ||
     draftNotifUrgent !== sourceNotifUrgent;
-  const isDirty = dirtyProfile || dirtyWorkspace || dirtyTheme || dirtyNotif;
+  // Theme is excluded from isDirty — instant-apply, doesn't ride the
+  // Save/Cancel contract. See setAppearance comment above.
+  const isDirty = dirtyProfile || dirtyWorkspace || dirtyNotif;
 
   /** Walk every draft and commit the diffs to the store. Called on
    *  Save click. Members tab actions (invite/revoke/remove) sit
@@ -324,10 +328,8 @@ export default function FlizowAccountModal({ onClose }: Props) {
       }
     }
 
-    // Theme.
-    if (dirtyTheme) {
-      store.setTheme(draftTheme);
-    }
+    // Theme is instant-apply — it was already saved when the user
+    // clicked the Light/Dark/System button. Nothing to commit here.
 
     // Save no longer closes the modal — the user often wants to make
     // a few changes, see them save, then keep tweaking. The drafts
@@ -352,7 +354,7 @@ export default function FlizowAccountModal({ onClose }: Props) {
     setDraftWsName(wsMeta?.name ?? '');
     setDraftWsInitials(wsMeta?.initials ?? '');
     setDraftWsColor(wsMeta?.color ?? '#5e5ce6');
-    setDraftTheme(data.theme === 'dark' ? 'dark' : 'light');
+    // Theme isn't in the draft set — instant-apply, no revert path.
     setDraftNotifDigest(myMember?.notifPrefs?.digest !== false);
     setDraftNotifUrgent(myMember?.notifPrefs?.urgent !== false);
     showToast('Changes reverted');
@@ -647,8 +649,13 @@ export default function FlizowAccountModal({ onClose }: Props) {
                   sub="Match your device or pick a fixed theme."
                 >
                   <Segment>
-                    <SegBtn pressed={draftTheme === 'light'} onClick={() => setAppearance('light')}>Light</SegBtn>
-                    <SegBtn pressed={draftTheme === 'dark'} onClick={() => setAppearance('dark')}>Dark</SegBtn>
+                    <SegBtn pressed={data.theme === 'light'} onClick={() => setAppearance('light')}>Light</SegBtn>
+                    <SegBtn pressed={data.theme === 'dark'} onClick={() => setAppearance('dark')}>Dark</SegBtn>
+                    {/* "System" is a one-shot resolver, not a sticky
+                        mode — it picks the OS preference at click and
+                        commits as light/dark. Pressed stays false so
+                        the visible state always reflects the actually
+                        applied theme. */}
                     <SegBtn pressed={false} onClick={() => setAppearance('system')}>System</SegBtn>
                   </Segment>
                 </Row>
