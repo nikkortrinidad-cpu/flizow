@@ -627,21 +627,6 @@ export default function FlizowCardModal({ taskId, onClose, kind = 'task', onDupl
                   </div>
                 </div>
 
-                {/* Effort — slot weight + estimated/confirmed status.
-                    Sits between Priority and Assignees because the
-                    weight + the assignee together determine capacity
-                    impact, and AMs should see them adjacent when
-                    triaging. */}
-                <div className="meta-row">
-                  <div className="meta-label">
-                    <ScaleIcon width={16} height={16} aria-hidden="true" />
-                    Effort
-                  </div>
-                  <div className="meta-value">
-                    <SlotsEditor task={task} onPatch={patchCard} />
-                  </div>
-                </div>
-
                 <div className="meta-row">
                   <div className="meta-label">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
@@ -701,6 +686,21 @@ export default function FlizowCardModal({ taskId, onClose, kind = 'task', onDupl
                         />
                       )}
                     </div>
+                  </div>
+                </div>
+
+                {/* Effort — slot weight + estimated/confirmed status.
+                    Sits below Assignees so the row reads "who's doing
+                    it, then how much it costs them." Effort without an
+                    assignee context is meaningless; reading order
+                    matches that reality. */}
+                <div className="meta-row">
+                  <div className="meta-label">
+                    <ScaleIcon width={16} height={16} aria-hidden="true" />
+                    Effort
+                  </div>
+                  <div className="meta-value">
+                    <SlotsEditor task={task} onPatch={patchCard} />
                   </div>
                 </div>
 
