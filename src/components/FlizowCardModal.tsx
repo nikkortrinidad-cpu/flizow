@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { CheckIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
+import { CheckIcon, ChevronRightIcon, ScaleIcon } from '@heroicons/react/24/outline';
 import { createPortal } from 'react-dom';
 import { useFlizow } from '../store/useFlizow';
 import type { ColumnId, Priority, Member, TaskComment, TaskActivity, Task, OpsTask } from '../types/flizow';
@@ -627,6 +627,21 @@ export default function FlizowCardModal({ taskId, onClose, kind = 'task', onDupl
                   </div>
                 </div>
 
+                {/* Effort — slot weight + estimated/confirmed status.
+                    Sits between Priority and Assignees because the
+                    weight + the assignee together determine capacity
+                    impact, and AMs should see them adjacent when
+                    triaging. */}
+                <div className="meta-row">
+                  <div className="meta-label">
+                    <ScaleIcon width={16} height={16} aria-hidden="true" />
+                    Effort
+                  </div>
+                  <div className="meta-value">
+                    <SlotsEditor task={task} onPatch={patchCard} />
+                  </div>
+                </div>
+
                 <div className="meta-row">
                   <div className="meta-label">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
@@ -995,6 +1010,85 @@ export default function FlizowCardModal({ taskId, onClose, kind = 'task', onDupl
         />,
         document.body,
       )}
+    </div>
+  );
+}
+
+/**
+ * Slots editor — the inline number + status pill that lives in the
+ * Effort meta-row. Two controls in one cell:
+ *
+ *   [ 2 ] slots · [Estimated]      ← italic, muted while estimated
+ *   [ 2 ] slots · ✓ Confirmed       ← solid, green pill once confirmed
+ *
+ * Number input commits on change (the store is local; no debounce
+ * needed). The status pill toggles between estimated and confirmed
+ * with a single click — designers flip it to "Confirmed" once they've
+ * sized the task themselves; AMs leave it as "Estimated" by default.
+ *
+ * The math doesn't care about status — capacity helpers always use
+ * the current slots value. Status is a trust cue for humans, not a
+ * math input. The italic/muted treatment when estimated tells AMs
+ * "the load number you're seeing is a guess."
+ *
+ * Generic over Task / OpsTask via the shared `AnyCard` patcher; both
+ * have `slots` + `weightStatus` on their type.
+ */
+function SlotsEditor({
+  task,
+  onPatch,
+}: {
+  task: Task | OpsTask;
+  onPatch: (id: string, patch: Partial<AnyCard>) => void;
+}) {
+  const slots = task.slots ?? 1;
+  const status = task.weightStatus ?? 'estimated';
+
+  function commitSlots(raw: string) {
+    const trimmed = raw.trim();
+    // Empty input falls back to the default of 1 slot — same behavior
+    // as a freshly-created task. Negative numbers clamped to 0;
+    // non-numeric input is rejected silently rather than thrown.
+    if (trimmed === '') {
+      onPatch(task.id, { slots: 1 });
+      return;
+    }
+    const n = Number(trimmed);
+    if (!Number.isFinite(n) || n < 0) return;
+    onPatch(task.id, { slots: n });
+  }
+
+  function toggleStatus() {
+    onPatch(task.id, {
+      weightStatus: status === 'estimated' ? 'confirmed' : 'estimated',
+    });
+  }
+
+  return (
+    <div className={`slots-editor slots-editor--${status}`}>
+      <input
+        type="number"
+        min={0}
+        step={0.5}
+        className="slots-input"
+        value={slots}
+        onChange={(e) => commitSlots(e.target.value)}
+        aria-label="Slot weight"
+      />
+      <span className="slots-suffix">{slots === 1 ? 'slot' : 'slots'}</span>
+      <button
+        type="button"
+        className={`slots-status-pill slots-status-pill--${status}`}
+        onClick={toggleStatus}
+        title={status === 'estimated'
+          ? "Estimated by the AM. Click once you've sized it yourself to confirm."
+          : 'Confirmed weight. Click to flip back to estimated.'}
+      >
+        {status === 'confirmed' && (
+          <CheckIcon width={11} height={11} aria-hidden="true" style={{ marginRight: 3 }} />
+        )}
+        {status === 'estimated' ? 'Estimated' : 'Confirmed'}
+      </button>
     </div>
   );
 }

@@ -2488,6 +2488,84 @@
     min-height: 26px;
   }
   .meta-value.empty { color: var(--text-faint); }
+
+  /* Slots editor (Effort meta-row). Inline number + suffix + status pill.
+     Two visual states tied to weightStatus:
+       --estimated  → italic + muted; the load math is provisional
+       --confirmed  → solid + normal; assignee has signed off on the size */
+  .slots-editor {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .slots-input {
+    width: 52px;
+    padding: 3px 8px;
+    font-family: inherit;
+    font-size: var(--fs-md);
+    color: inherit;
+    background: var(--bg);
+    border: 1px solid var(--hairline);
+    border-radius: 6px;
+    text-align: center;
+    /* Hide the spin buttons — fewer than 12 valid values usually; the
+       chevrons add noise without speeding anything up. Step still works
+       via keyboard up/down arrows. */
+    -moz-appearance: textfield;
+  }
+  .slots-input::-webkit-outer-spin-button,
+  .slots-input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+  .slots-input:focus {
+    outline: none;
+    border-color: var(--highlight);
+    box-shadow: 0 0 0 3px var(--highlight-soft);
+  }
+  .slots-suffix {
+    font-size: var(--fs-md);
+    color: var(--text-soft);
+  }
+  .slots-status-pill {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 8px;
+    border-radius: 980px;
+    font-family: inherit;
+    font-size: var(--fs-xs);
+    font-weight: 500;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    border: 1px solid transparent;
+    cursor: pointer;
+    transition: background var(--dur-fast), color var(--dur-fast), border-color var(--dur-fast);
+  }
+  .slots-status-pill--estimated {
+    background: var(--bg-soft);
+    color: var(--text-soft);
+    border-color: var(--hairline);
+  }
+  .slots-status-pill--estimated:hover {
+    background: var(--hover-tint);
+    color: var(--text);
+  }
+  .slots-status-pill--confirmed {
+    background: var(--status-track-soft);
+    color: var(--status-track);
+    border-color: color-mix(in srgb, var(--status-track) 30%, transparent);
+  }
+  .slots-status-pill--confirmed:hover {
+    opacity: 0.85;
+  }
+  /* Estimated state: italic + muted on the numeric portion so the
+     load number reads honestly as "this is a guess." */
+  .slots-editor--estimated .slots-input,
+  .slots-editor--estimated .slots-suffix {
+    font-style: italic;
+    color: var(--text-soft);
+  }
+
   .status-dot {
     width: 8px; height: 8px; border-radius: 50%;
     display: inline-block; flex-shrink: 0;

@@ -646,6 +646,12 @@ export interface OpsTask {
   startDate?: string;
   archived?: boolean;
   archivedAt?: string;
+  /** Slot weight — same shape as Task.slots. Ops tasks count toward
+   *  the assignee's daily capacity just like client tasks; a designer
+   *  doing internal work consumes the same finite attention. */
+  slots?: number;
+  /** Same shape as Task.weightStatus. */
+  weightStatus?: 'estimated' | 'confirmed';
 }
 
 // ── Notifications ────────────────────────────────────────────────────────
